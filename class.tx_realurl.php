@@ -36,40 +36,49 @@
  *
  *
  *
- *   94: class tx_realurl 
+ *  103: class tx_realurl 
  *
  *              SECTION: Translate parameters to a Speaking URL (t3lib_tstemplate::linkData)
- *  124:     function encodeSpURL(&$params, $ref)	
- *  164:     function encodeSpURL_doEncode($inputURL)	
- *  226:     function encodeSpURL_pathFromId(&$paramKeyValues, &$pathParts)	
- *  259:     function encodeSpURL_gettingPostVarSets(&$paramKeyValues, &$pathParts, $postVarSetCfg)	
- *  296:     function encodeSpURL_fileName(&$paramKeyValues)	
- *  318:     function encodeSpURL_setSequence($varSetCfg, &$paramKeyValues, &$pathParts)	
- *  406:     function encodeSpURL_setSingle($keyWord, $keyValues, &$paramKeyValues, &$pathParts)	
- *  439:     function encodeSpURL_encodeCache($urlToEncode, $setEncodedURL='')	
+ *  134:     function encodeSpURL(&$params, $ref)	
+ *  184:     function encodeSpURL_doEncode($inputQuery, $cHashCache=FALSE)	
+ *  248:     function encodeSpURL_pathFromId(&$paramKeyValues, &$pathParts)	
+ *  281:     function encodeSpURL_gettingPostVarSets(&$paramKeyValues, &$pathParts, $postVarSetCfg)	
+ *  318:     function encodeSpURL_fileName(&$paramKeyValues)
+ *  340:     function encodeSpURL_setSequence($varSetCfg, &$paramKeyValues, &$pathParts)	
+ *  428:     function encodeSpURL_setSingle($keyWord, $keyValues, &$paramKeyValues, &$pathParts)	
+ *  461:     function encodeSpURL_encodeCache($urlToEncode, $setEncodedURL='')	
+ *  483:     function encodeSpURL_cHashCache($newUrl, &$paramKeyValues)	
  *
  *              SECTION: Translate a Speaking URL to parameters (tslib_fe)
- *  477:     function decodeSpURL($params, $ref)	
- *  522:     function decodeSpURL_checkRedirects($speakingURIpath)	
- *  537:     function decodeSpURL_doDecode($speakingURIpath)	
- *  582:     function decodeSpURL_idFromPath(&$pathParts)	
- *  609:     function decodeSpURL_settingPreVars(&$pathParts, $config)	
- *  631:     function decodeSpURL_settingPostVarSets(&$pathParts, $postVarSetCfg)	
- *  669:     function decodeSpURL_fileName($fileName)	
- *  691:     function decodeSpURL_getSequence(&$pathParts,$setupArr)	
- *  770:     function decodeSpURL_getSingle($keyValues)	
- *  787:     function decodeSpURL_throw404($msg)	
- *  796:     function decodeSpURL_jumpAdmin()	
- *  819:     function decodeSpURL_decodeCache($speakingURIpath,$cachedInfo='')	
+ *  546:     function decodeSpURL($params, $ref)	
+ *  592:     function decodeSpURL_checkRedirects($speakingURIpath)	
+ *  608:     function decodeSpURL_doDecode($speakingURIpath, $cHashCache=FALSE)	
+ *  660:     function decodeSpURL_idFromPath(&$pathParts)	
+ *  687:     function decodeSpURL_settingPreVars(&$pathParts, $config)	
+ *  709:     function decodeSpURL_settingPostVarSets(&$pathParts, $postVarSetCfg)	
+ *  749:     function decodeSpURL_fileName($fileName)	
+ *  771:     function decodeSpURL_getSequence(&$pathParts,$setupArr)	
+ *  850:     function decodeSpURL_getSingle($keyValues)	
+ *  867:     function decodeSpURL_throw404($msg)	
+ *  876:     function decodeSpURL_jumpAdmin()	
+ *  899:     function decodeSpURL_decodeCache($speakingURIpath,$cachedInfo='')	
+ *  910:     function decodeSpURL_cHashCache($speakingURIpath)	
+ *
+ *              SECTION: Alias-ID look up functions
+ *  939:     function lookUpTranslation($cfg,$value,$aliasToUid=FALSE)	
+ *  995:     function lookUp_uniqAliasToId($cfg,$aliasValue)	
+ * 1020:     function lookUp_idToUniqAlias($cfg,$idValue)	
+ * 1045:     function lookUp_newAlias($cfg,$newAliasValue,$idValue)	
+ * 1100:     function lookUp_cleanAlias($cfg,$newAliasValue)	
  *
  *              SECTION: General helper functions (both decode/encode)
- *  844:     function lookUpTranslation($cfg,$value,$aliasToUid=FALSE)	
- *  881:     function setConfig()	
- *  903:     function getPostVarSetConfig($page_id, $mainCat='postVarSets')	
- *  924:     function pageAliasToID($alias)	
- *  944:     function rawurlencodeParam($str)	
+ * 1143:     function setConfig()	
+ * 1165:     function getPostVarSetConfig($page_id, $mainCat='postVarSets')	
+ * 1186:     function pageAliasToID($alias)	
+ * 1206:     function rawurlencodeParam($str)	
+ * 1219:     function checkCondition($setup,$prevVal)
  *
- * TOTAL FUNCTIONS: 25
+ * TOTAL FUNCTIONS: 32
  * (This index is automatically created/updated by the extension "extdeveval")
  *
  */
@@ -151,7 +160,7 @@ class tx_realurl {
 		if (!$newUrl)	{
 
 				// Encode URL:
-			$newUrl = $this->encodeSpURL_doEncode($uParts['query']);
+			$newUrl = $this->encodeSpURL_doEncode($uParts['query'], $this->extConf['init']['enableCHashCache']);
 
 				// Set new URL in cache:
 			$this->encodeSpURL_encodeCache($uParts['query'], $newUrl);
@@ -167,11 +176,12 @@ class tx_realurl {
 	/**
 	 * Transforms a query string into a speaking URL according to the configuration in ->extConf
 	 *
-	 * @param	string		Input URL (with GET parameters)
+	 * @param	string		Input query string
+	 * @param	boolean		If set, the cHashCache table is used for "&cHash"
 	 * @return	string		Output Speaking URL (with as many GET parameters encoded into the URL as possible).
 	 * @see encodeSpURL()
 	 */
-	function encodeSpURL_doEncode($inputQuery)	{
+	function encodeSpURL_doEncode($inputQuery, $cHashCache=FALSE)	{
 
 			// Extract all GET parameters into an ARRAY:
 		$paramKeyValues = array();
@@ -207,7 +217,16 @@ class tx_realurl {
 
 			// Add filename, if any:
 		$fileName = $this->encodeSpURL_fileName($paramKeyValues);
-		$newUrl.= rawurlencode($fileName);
+		if (!strlen($fileName) && $this->extConf['fileName']['defaultToHTMLsuffixOnPrev'])	{
+			$newUrl = substr($newUrl,0,-1).'.html';
+		} else {
+			$newUrl.= rawurlencode($fileName);
+		}
+
+			// Store cHash cache:
+		if ($cHashCache)	{
+			$this->encodeSpURL_cHashCache($newUrl,$paramKeyValues);
+		}
 
 			// Manage remaining GET parameters:
 		if (count($paramKeyValues))	{
@@ -361,7 +380,7 @@ class tx_realurl {
 						}
 					break;
 					default:
-						if (!isset($setup['condPrevValue']) || !strcmp($prevVal,$setup['condPrevValue']))	{
+						if (!is_array($setup['cond']) || $this->checkCondition($setup['cond'], $prevVal))	{
 
 								// Looking if the GET var is found in parameter index:
 							$GETvarVal = isset($paramKeyValues[$setup['GETvar']]) ? $paramKeyValues[$setup['GETvar']] : '';
@@ -451,6 +470,53 @@ class tx_realurl {
 		}
 	}
 
+	/**
+	 * Will store a record in a cachetable holding the value of the "cHash" parameter in a link, if any.
+	 * Background:
+	 * The "cHash" parameter is a hash over the values in the Query String of a URL and it "authenticates" the URL to the frontend so we can safely cache page content with that parameter combination.
+	 * Technically, there is no problem with the "cHash" parameter - it is like any other parameter something we could encode with Speaking URLs. The problem is: a cHash string is not "speaking" (and never will be!)
+	 * So; the only option we are left with if we want to remove the "?cHash=...:" remains in URLs and at the same time do not want to include it in the virtual path is; store it in the database!
+	 * This is what this function does: Stores a record in the database which relates the cHash value to a hash id of the URL. This is done ONLY if the "cHash" parameter is the only one left which would make the URL non-speaking. Otherwise it is left behind.
+	 * Obviously, this whole thing only works if there is a function in the decode part which will look up the cHash again and include it in the GET parameters resolved from the Speaking URL - but there is of course...
+	 *
+	 * @param	string		Speaking URL path (being hashed to an integer and cHash value related to this.)
+	 * @param	array		Params array, passed by reference. If "cHash" is the only value left it will be put in the cache table and the value is unset in the array.
+	 * @return	void
+	 * @see decodeSpURL_cHashCache()
+	 */
+	function encodeSpURL_cHashCache($newUrl, &$paramKeyValues)	{
+
+			// If "cHash" is the ONLY parameter left...
+			// (if there are others our problem is that the cHash probably covers those as well and if we include the cHash anyways we might get duplicates for the same speaking URL in the cache table!)
+		if (isset($paramKeyValues['cHash']) && count($paramKeyValues)==1)	{
+
+				// first, look if a cHash is already there for this SpURL (If that chash_string is different from the one we want to insert, that would be an error, but we don't check here):
+			$spUrlHash = hexdec(substr(md5($newUrl),0,7));
+			$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('chash_string', 'tx_realurl_chashcache', 'spurl_hash='.$spUrlHash);
+
+				// If nothing found, lets insert:
+			if (!$GLOBALS['TYPO3_DB']->sql_num_rows($res))	{
+
+					// Insert the new id<->alias relation:
+				$insertArray = array(
+					'spurl_hash' => $spUrlHash,
+					'chash_string' => $paramKeyValues['cHash']
+				);
+				$GLOBALS['TYPO3_DB']->exec_INSERTquery('tx_realurl_chashcache', $insertArray);
+			} else {
+				$row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res);
+				$storedCHash = $row['chash_string'];
+				if ($storedCHash!=$paramKeyValues['cHash'])	{
+debug(array($paramKeyValues['cHash'],$storedCHash,$newUrl,$spUrlHash),'Error: Stored cHash and calculated did not match!');
+				}
+			}
+				// Unset "cHash" (and array should now be empty!)
+			unset($paramKeyValues['cHash']);
+		}
+
+#if (count($paramKeyValues))	debug($paramKeyValues,'parameters left:');
+	}
+
 
 
 
@@ -494,6 +560,8 @@ class tx_realurl {
 				// Getting the path which is above the current site url:
 				// For instance "first/second/third/index.html?&param1=value1&param2=value2" should be the result of the URL "http://localhost/typo3/dev/dummy_1/first/second/third/index.html?&param1=value1&param2=value2"
 			$speakingURIpath = substr(t3lib_div::getIndpEnv('TYPO3_REQUEST_URL'),strlen(t3lib_div::getIndpEnv('TYPO3_SITE_URL')));
+			$uParts = parse_url($speakingURIpath);
+			$speakingURIpath = $uParts['path'];
 
 				// Redirecting if needed (exits if so).
 			$this->decodeSpURL_checkRedirects($speakingURIpath);
@@ -505,7 +573,7 @@ class tx_realurl {
 			if (!is_array($cachedInfo))	{
 
 					// Decode URL:
-				$cachedInfo = $this->decodeSpURL_doDecode($speakingURIpath);
+				$cachedInfo = $this->decodeSpURL_doDecode($speakingURIpath, $this->extConf['init']['enableCHashCache']);
 
 					// Storing cached information:
 				$this->decodeSpURL_decodeCache($speakingURIpath, $cachedInfo);
@@ -536,19 +604,26 @@ class tx_realurl {
 	/**
 	 * Decodes a speaking URL path into an array of GET parameters and a page id.
 	 *
-	 * @param	string		Speaking URL path (after the "root" path of the website!)
+	 * @param	string		Speaking URL path (after the "root" path of the website!) but without query parameters
+	 * @param	[type]		$cHashCache: ...
 	 * @return	array		Array with id and GET parameters.
 	 * @see decodeSpURL()
 	 */
-	function decodeSpURL_doDecode($speakingURIpath)	{
+	function decodeSpURL_doDecode($speakingURIpath, $cHashCache=FALSE)	{
 
 			// Cached info:
 		$cachedInfo = array();
 
 			// Split URL + resolve parts of path:
-		$uParts = parse_url($speakingURIpath);
-		$pathParts = explode('/', $uParts['path']);
+		$pathParts = explode('/', $speakingURIpath);
 		$this->filePart = array_pop($pathParts);
+
+			// Checking default HTML name:
+		if (strlen($this->filePart) && $this->extConf['fileName']['defaultToHTMLsuffixOnPrev'] && !isset($this->extConf['fileName']['index'][$this->filePart]))	{
+			$pathParts[] = ereg_replace('.html$','',$this->filePart);
+			$this->filePart = '';
+		}
+
 
 			// Setting "preVars":
 		$pre_GET_VARS = $this->decodeSpURL_settingPreVars($pathParts, $this->extConf['preVars']);
@@ -573,6 +648,14 @@ class tx_realurl {
 		if (is_array($fixedPost_GET_VARS)) $cachedInfo['GET_VARS'] = t3lib_div::array_merge_recursive_overrule($cachedInfo['GET_VARS'],$fixedPost_GET_VARS);
 		if (is_array($post_GET_VARS)) $cachedInfo['GET_VARS'] = t3lib_div::array_merge_recursive_overrule($cachedInfo['GET_VARS'],$post_GET_VARS);
 		if (is_array($file_GET_VARS)) $cachedInfo['GET_VARS'] = t3lib_div::array_merge_recursive_overrule($cachedInfo['GET_VARS'],$file_GET_VARS);
+
+			// cHash handling:
+		if ($cHashCache)	{
+			$cHash_value = $this->decodeSpURL_cHashCache($speakingURIpath);
+			if ($cHash_value)	{
+				$cachedInfo['GET_VARS']['cHash'] = $cHash_value;
+			}
+		}
 
 			// Return information found:
 		return $cachedInfo;
@@ -734,7 +817,7 @@ class tx_realurl {
 					}
 				break;
 				default:
-					if (!isset($setup['condPrevValue']) || !strcmp($prevVal,$setup['condPrevValue']))	{
+					if (!is_array($setup['cond']) || $this->checkCondition($setup['cond'], $prevVal))	{
 
 							// Map value if applicable:
 						if (isset($setup['valueMap'][$value]))	{
@@ -754,7 +837,7 @@ class tx_realurl {
 						$prevVal = $value;
 
 							// Add to GET string:
-						if ($setup['GETvar'])	{
+						if ($setup['GETvar'] && strlen($value))	{	// Checking length of value; normally a *blank* parameter is not found in the URL! And if we don't do this we may disturb "cHash" calculations!
 							$GET_string.= '&'.rawurlencode($setup['GETvar']).'='.rawurlencode($value);
 						}
 					} else {
@@ -828,7 +911,22 @@ class tx_realurl {
 		#debug(array($speakingURIpath));
 	}
 
+	/**
+	 * Get "cHash" GET var from database. See explanation in encodeSpURL_cHashCache()
+	 *
+	 * @param	string		Speaking URL path (virtual path)
+	 * @return	string		cHash value, if any.
+	 * @see encodeSpURL_cHashCache()
+	 */
+	function decodeSpURL_cHashCache($speakingURIpath)	{
 
+			// first, look if a cHash is already there for this SpURL (If that chash_string is different from the one we want to insert, that would be an error, but we don't check here):
+		$spUrlHash = hexdec(substr(md5($speakingURIpath),0,7));
+		$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('chash_string', 'tx_realurl_chashcache', 'spurl_hash='.$spUrlHash);
+		if ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res))	{
+			return $row['chash_string'];
+		}
+	}
 
 
 
@@ -837,7 +935,7 @@ class tx_realurl {
 
 	/*******************************
 	 *
-	 * General helper functions (both decode/encode)
+	 * Alias-ID look up functions
 	 *
 	 ******************************/
 
@@ -853,32 +951,199 @@ class tx_realurl {
 		global $TCA;
 
 		if ($aliasToUid)	{
-			$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery(
-						$cfg['id_field'],
-						$cfg['table'],
-						$cfg['alias_field'].'="'.$GLOBALS['TYPO3_DB']->quoteStr($value,$cfg['table']).'" '.$cfg['addWhereClause']
-					);
-			if ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res))	{
-				return $row[$cfg['id_field']];
+			if ($cfg['useUniqueCache'] && $returnId = $this->lookUp_uniqAliasToId($cfg,$value))	{	// First, test if there is an entry in cache for the alias:
+				return $returnId;
+			} else {	// If no cached entry, look it up directly in the table:
+				$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery(
+							$cfg['id_field'],
+							$cfg['table'],
+							$cfg['alias_field'].'="'.$GLOBALS['TYPO3_DB']->quoteStr($value,$cfg['table']).'" '.$cfg['addWhereClause']
+						);
+				if ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res))	{
+					return $row[$cfg['id_field']];
+				}
 			}
 		} else {
-			$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery(
-						$cfg['alias_field'],
-						$cfg['table'],
-						$cfg['id_field'].'="'.$GLOBALS['TYPO3_DB']->quoteStr($value,$cfg['table']).'" '.$cfg['addWhereClause']
-					);
-			if ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res))	{
-				$mLength = $cfg['maxLength'] ? $cfg['maxLength'] : $this->maxLookUpLgd;
-				if (strlen($row[$cfg['alias_field']]) <= $mLength)	{
-					return $row[$cfg['alias_field']];
-				} else {
-					return $value;
+			if ($cfg['useUniqueCache'] && $returnAlias = $this->lookUp_idToUniqAlias($cfg,$value))	{	// First, test if there is an entry in cache for the id:
+				return $returnAlias;
+			} else {	// If no cached entry, look up alias directly in the table (and possibly store cache value)
+				$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery(
+							$cfg['alias_field'],
+							$cfg['table'],
+							$cfg['id_field'].'="'.$GLOBALS['TYPO3_DB']->quoteStr($value,$cfg['table']).'" '.$cfg['addWhereClause']
+						);
+				if ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res))	{
+					$mLength = $cfg['maxLength'] ? $cfg['maxLength'] : $this->maxLookUpLgd;
+
+					if ($cfg['useUniqueCache'])	{	// If cache is to be used, store the alias in the cache:
+						$aliasBaseValue = $row[$cfg['alias_field']];
+						return $this->lookUp_newAlias($cfg, substr($aliasBaseValue,0,$mLength), $value);
+					} else {	// If no cache for alias, then just return whatever value is appropriate:
+						if (strlen($row[$cfg['alias_field']]) <= $mLength)	{
+							return $row[$cfg['alias_field']];
+						} else {
+							return $value;
+						}
+					}
 				}
 			}
 		}
 
+			// In case no value was found in translation we return the incoming value. It may be argued that this is not a good idea but generally this can be avoided by using the "useUniqueCache" principle which will ensure unique translation both ways.
 		return $value;
 	}
+
+	/**
+	 * Looks up an ID value (integer) in lookup-table based on input alias value.
+	 * (The lookup table for id<->alias is meant to contain UNIQUE alias strings for id integers)
+	 * In the lookup table 'tx_realurl_uniqalias' the field "value_alias" should be unique (per combination of field_alias+field_id+tablename)! However the "value_id" field doesn't have to; that is a feature which allows more aliases to point to the same id. The alias selected for converting id to alias will be the first inserted at the moment. This might be more intelligent in the future, having an order column which can be controlled from the backend for instance!
+	 *
+	 * @param	array		Configuration array
+	 * @param	string		Alias value to convert to ID
+	 * @return	integer		ID integer. If none is found: false
+	 * @see lookUpTranslation(), lookUp_idToUniqAlias()
+	 */
+	function lookUp_uniqAliasToId($cfg,$aliasValue)	{
+
+			// Look up the ID based on input alias value:
+		$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery(
+					'value_id',
+					'tx_realurl_uniqalias',
+					'value_alias="'.$GLOBALS['TYPO3_DB']->quoteStr($aliasValue,'tx_realurl_uniqalias').'"
+						AND field_alias="'.$GLOBALS['TYPO3_DB']->quoteStr($cfg['alias_field'],'tx_realurl_uniqalias').'"
+						AND field_id="'.$GLOBALS['TYPO3_DB']->quoteStr($cfg['id_field'],'tx_realurl_uniqalias').'"
+						AND tablename="'.$GLOBALS['TYPO3_DB']->quoteStr($cfg['table'],'tx_realurl_uniqalias').'"'
+				);
+		if ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res))	{
+			return $row['value_id'];
+		}
+	}
+
+	/**
+	 * Looks up a alias string in lookup-table based on input ID value (integer)
+	 * (The lookup table for id<->alias is meant to contain UNIQUE alias strings for id integers)
+	 *
+	 * @param	array		Configuration array
+	 * @param	string		ID value to convert to alias value
+	 * @return	string		Alias string. If none is found: false
+	 * @see lookUpTranslation(), lookUp_uniqAliasToId()
+	 */
+	function lookUp_idToUniqAlias($cfg,$idValue)	{
+
+			// Look for an alias based on ID:
+		$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery(
+					'value_alias',
+					'tx_realurl_uniqalias',
+					'value_id="'.$GLOBALS['TYPO3_DB']->quoteStr($idValue,'tx_realurl_uniqalias').'"
+						AND field_alias="'.$GLOBALS['TYPO3_DB']->quoteStr($cfg['alias_field'],'tx_realurl_uniqalias').'"
+						AND field_id="'.$GLOBALS['TYPO3_DB']->quoteStr($cfg['id_field'],'tx_realurl_uniqalias').'"
+						AND tablename="'.$GLOBALS['TYPO3_DB']->quoteStr($cfg['table'],'tx_realurl_uniqalias').'"'
+				);
+		if ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res))	{
+			return $row['value_alias'];
+		}
+	}
+
+	/**
+	 * Creates a new alias<->id relation in database lookup table
+	 *
+	 * @param	array		Configuration array of lookup table
+	 * @param	string		Preferred new alias (final alias might be different if duplicates were found in the cache)
+	 * @param	integer		ID associated with alias
+	 * @return	string		Final alias string
+	 * @see lookUpTranslation()
+	 */
+	function lookUp_newAlias($cfg,$newAliasValue,$idValue)	{
+
+			// Clean preferred alias
+		$newAliasValue = $this->lookUp_cleanAlias($cfg,$newAliasValue);
+
+			//
+		$uniqueAlias = '';
+		$counter = 0;
+		$maxTry = 100;
+		while($counter < $maxTry)	{
+
+				// Suffix numbers if counter is larger than zero (in order to make unique alias):
+			if ($counter > 0) {
+				$test_newAliasValue = $newAliasValue.'-'.$counter;
+			} else {
+				$test_newAliasValue = $newAliasValue;
+			}
+				// If the test-alias did NOT exist, it must be unique and we break out:
+			if (!$this->lookUp_uniqAliasToId($cfg, $test_newAliasValue))	{
+				$uniqueAlias = $test_newAliasValue;
+				break;
+			}
+				// Otherwise, increment counter and test again...
+			$counter++;
+		}
+
+			// if no unique alias was found in the process above, just suffix a hash string and assume that is unique...
+		if (!$uniqueAlias)	{
+			$uniqueAlias = $newAliasValue.='-'.t3lib_div::shortMD5(microtime());
+		}
+
+			// Insert the new id<->alias relation:
+		$insertArray = array(
+			'tstamp' => time(),
+			'tablename' => $cfg['table'],
+			'field_alias' => $cfg['alias_field'],
+			'field_id' => $cfg['id_field'],
+			'value_alias' => $uniqueAlias,
+			'value_id' => $idValue
+		);
+		$GLOBALS['TYPO3_DB']->exec_INSERTquery('tx_realurl_uniqalias', $insertArray);
+
+			// Return new unique alias:
+		return $uniqueAlias;
+	}
+
+	/**
+	 * Clean up the alias
+	 * (Same function as in tx_realurl_advanced - however it should be more configurable and able to handle various charsets in some way...)
+	 *
+	 * @param	array		Configuration array
+	 * @param	string		Alias value to clean up
+	 * @return	string		New alias value
+	 * @see lookUpTranslation()
+	 */
+	function lookUp_cleanAlias($cfg,$newAliasValue)	{
+
+			// lowercase page path:
+		if ($cfg['useUniqueCache_conf']['strtolower'])	{
+			$newAliasValue = strtolower($newAliasValue);
+		}
+
+			// Translate space and individual chars:
+		$space = $cfg['useUniqueCache_conf']['spaceCharacter'] ? substr($cfg['useUniqueCache_conf']['spaceCharacter'],0,1) : '_';
+		$newAliasValue = strtr($newAliasValue,'àáâãäåçèéêëìíîïñòóôõöøùúûüýÿµ -+_','aaaaaaceeeeiiiinoooooouuuuyyu'.$space.$space.$space.$space); // remove accents, convert spaces
+		$newAliasValue = strtr($newAliasValue,array('þ' => 'th', 'ð' => 'dh', 'ß' => 'ss', 'æ' => 'ae')); // rewrite some special chars
+
+			// Strip of non-allowed chars, convert multiple spacechar to a single one + remove any of them in the end of the string
+		$newAliasValue = ereg_replace('[^[:alnum:]_]', $space, $newAliasValue);
+		$newAliasValue = ereg_replace('\\'.$space.'+',$space,$newAliasValue);
+		$newAliasValue = trim($newAliasValue,$space);
+
+		return $newAliasValue;
+	}
+
+
+
+
+
+
+
+
+
+
+
+
+	/*******************************
+	 *
+	 * General helper functions (both decode/encode)
+	 *
+	 ******************************/
 
 	/**
 	 * Sets configuration in $this->extConf, taking host domain into account
@@ -920,7 +1185,8 @@ class tx_realurl {
 			$page_id = $this->extConf[$mainCat][$page_id];
 		}
 
-		return is_array($this->extConf[$mainCat][$page_id]) ? $this->extConf[$mainCat][$page_id] : $this->extConf[$mainCat]['_DEFAULT'];
+		$cfg = is_array($this->extConf[$mainCat][$page_id]) ? $this->extConf[$mainCat][$page_id] : $this->extConf[$mainCat]['_DEFAULT'];
+		return $cfg;
 	}
 
 	/**
@@ -932,14 +1198,14 @@ class tx_realurl {
 	function pageAliasToID($alias)	{
 
 			// Look in memory cache first, and if not there, look it up:
-		if (!isset($GLOBALS['TSFE']->applicationData['tx_realurl']['_CACHE_aliases'][$page_id]))	{
-			$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('uid','pages','alias="'.$GLOBALS['TYPO3_DB']->quoteStr($page_id, 'pages').'" AND NOT pages.deleted');
+		if (!isset($GLOBALS['TSFE']->applicationData['tx_realurl']['_CACHE_aliases'][$alias]))	{
+			$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('uid','pages','alias="'.$GLOBALS['TYPO3_DB']->quoteStr($alias, 'pages').'" AND NOT pages.deleted');
 			$pageRec = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res);
-			$GLOBALS['TSFE']->applicationData['tx_realurl']['_CACHE_aliases'][$page_id] = intval($pageRec['uid']);
+			$GLOBALS['TSFE']->applicationData['tx_realurl']['_CACHE_aliases'][$alias] = intval($pageRec['uid']);
 		}
 
 			// Return ID:
-		return $GLOBALS['TSFE']->applicationData['tx_realurl']['_CACHE_aliases'][$page_id];
+		return $GLOBALS['TSFE']->applicationData['tx_realurl']['_CACHE_aliases'][$alias];
 	}
 
 	/**
@@ -953,6 +1219,26 @@ class tx_realurl {
 		if (!$this->extConf['init']['doNotRawUrlEncodeParameterNames'])	{
 			return rawurlencode($str);
 		} else return $str;
+	}
+
+	/**
+	 * Checks condition for varSets
+	 *
+	 * @param	array		Configuration for condition
+	 * @param	string		Previous value in sequence of GET vars. The value is the "system" value; In other words: The *real* id, not the alias for a value.
+	 * @return	boolean		TRUE if proceed is ok, otherwise false.
+	 * @see encodeSpURL_setSequence(), decodeSpURL_getSequence()
+	 */
+	function checkCondition($setup,$prevVal)	{
+
+		$return = TRUE;
+
+			//	 Check previous value:
+		if (isset($setup['prevValueInList']))	{
+			if (!t3lib_div::inList($setup['prevValueInList'], $prevVal))	$return = FALSE;
+		}
+
+		return $return;
 	}
 }
 

@@ -52,9 +52,15 @@ function test($urls,$config,$title,$displayOnlyOnStateNo=0)	{
 	$urls = t3lib_div::trimExplode(chr(10),$urls,1);
 	$resultPairs = array();
 	foreach($urls as $k => $singleUrl)	{
-		$SpURL = $urlObj->encodeSpURL_doEncode($singleUrl);
-		$GETvars = $urlObj->decodeSpURL_doDecode($SpURL);
-		list(,$remainingP) = explode('?',$SpURL,2);
+
+			// Encode:
+		$uParts = parse_url($singleUrl);
+		$SpURL = $urlObj->encodeSpURL_doEncode($uParts['query']);
+
+			// Decode:
+		$uParts = parse_url($SpURL);
+		$GETvars = $urlObj->decodeSpURL_doDecode($uParts['path']);
+		$remainingP = $uParts['query'];
 
 		list(,$origP) = explode('?',$singleUrl,2);
 		$origP = orderParameters($origP);
