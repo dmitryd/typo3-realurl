@@ -36,10 +36,10 @@
  *
  *
  *
- *   68: class tx_realurl_dummy 
- *   82:     function main(&$params,$ref)	
- *  109:     function idToPath(&$paramKeyValues, &$pathParts)	
- *  121:     function pathToId(&$pathParts)	
+ *   68: class tx_realurl_dummy
+ *   82:     function main(&$params,$ref)
+ *  109:     function idToPath(&$paramKeyValues, &$pathParts)
+ *  121:     function pathToId(&$pathParts)
  *
  * TOTAL FUNCTIONS: 3
  * (This index is automatically created/updated by the extension "extdeveval")
@@ -91,7 +91,7 @@ class tx_realurl_dummy {
 			case 'decode':
 				$this->pObjRef = &$params['pObj'];
 				$this->conf = $params['conf'];
-				return $this->pathToId($params['pathParts']);
+				return array($this->pathToId($params['pathParts']));
 			break;
 			default:
 			break;

@@ -90,9 +90,6 @@ class tx_realurl_advanced {
 
 
 
-
-
-
 	/**
 	 * Main function, called for both encoding and deconding of URLs.
 	 * Based on the "mode" key in the $params array it branches out to either decode or encode functions.
@@ -103,19 +100,17 @@ class tx_realurl_advanced {
 	 */
 	function main(&$params,$ref)	{
 
+			// Setting internal variables:
+		$this->pObjRef = &$params['pObj'];
+		$this->conf = $params['conf'];
+
 			// Branching out based on type:
 		switch((string)$params['mode'])	{
 			case 'encode':
-				$this->pObjRef = &$params['pObj'];
-				$this->conf = $params['conf'];
 				return $this->IDtoPagePath($params['paramKeyValues'],$params['pathParts']);
 			break;
 			case 'decode':
-				$this->pObjRef = &$params['pObj'];
-				$this->conf = $params['conf'];
 				return $this->pagePathtoID($params['pathParts']);
-			break;
-			default:
 			break;
 		}
 	}
@@ -141,7 +136,7 @@ class tx_realurl_advanced {
 	/**
 	 * Retrieve the page path for the given page-id.
 	 * If the page is a shortcut to another page, it returns the page path to the shortcutted page.
-	 * This routine also takes care of updating the cache in case a page has been changed etc.
+	 * MP get variables are also encoded with the page id.
 	 *
 	 * @param	array		GETvar parameters containing eg. "id" key with the page id/alias (passed by reference)
 	 * @param	array		Path parts array (passed by reference)
@@ -153,6 +148,10 @@ class tx_realurl_advanced {
 			// Get page id and remove entry in paramKeyValues:
 		$pageid = $paramKeyValues['id'];
 		unset($paramKeyValues['id']);
+
+			// Get MP variable and remove entry in paramKeyValues:
+		$mpvar = $paramKeyValues['MP'];
+		unset($paramKeyValues['MP']);
 
 			// Convert a page-alias to a page-id if needed
 		if (!is_numeric($pageid)) {
@@ -188,12 +187,17 @@ class tx_realurl_advanced {
 		} else $lang = 0;
 
 			// Fetch cached path
-			// Don't select an expiring path though...
 		if (!$this->conf['disablePathCache'])	{
 
-			if (TYPO3_DLOG)	t3lib_div::devLog("(select from cache $pageid,$lang)", 'realurl');
-			$path = '';
-			$result = $GLOBALS['TYPO3_DB']->exec_SELECTquery('pagepath', 'tx_realurl_pathcache', 'page_id='.intval($pageid).' AND language_id='.intval($lang).' AND expire=0');
+			$result = $GLOBALS['TYPO3_DB']->exec_SELECTquery(
+					'pagepath',
+					'tx_realurl_pathcache',
+					'page_id='.intval($pageid).
+						' AND language_id='.intval($lang).
+						' AND rootpage_id='.intval($this->conf['rootpage_id']).
+						' AND expire=0'
+				);
+
 			if ($GLOBALS['TYPO3_DB']->sql_num_rows($result) > 1) { // If there seems to be more than one page path cached for this combo, go fix it
 				$this->fixURLCache($pageid,$lang);
 				$cachedPagePath = FALSE;
@@ -211,12 +215,14 @@ class tx_realurl_advanced {
 		} else {
 				// There's no page path cached yet, just call updateCache() to let it fix that
 			if (TYPO3_DLOG)	t3lib_div::devLog("(create new)",'realurl');
-			$pagePath = $this->updateURLCache($pageid,$lang);
+			$pagePath = $this->updateURLCache($pageid,$mpvar,$lang);
 		}
 
 			// Exploding the path, adding the entries to $pathParts (which is passed by reference and therefore automatically returned to main application)
-		$pagePath_exploded = explode('/',$pagePath);
-		$pathParts = array_merge($pathParts,$pagePath_exploded);
+		if (strlen($pagePath))	{
+			$pagePath_exploded = explode('/',$pagePath);
+			$pathParts = array_merge($pathParts,$pagePath_exploded);
+		}
     }
 
 	/**
@@ -245,25 +251,32 @@ class tx_realurl_advanced {
 	 * Optionally find cached page-content containing one of these page paths and delete it.
 	 *
 	 * @param	integer		Page id
+	 * @param	string		MP variable string
 	 * @param	integer		Language uid
 	 * @return	string		The page path
 	 */
-	function updateURLCache($id,$lang = -1) {
+	function updateURLCache($id,$mpvar,$lang) {
 		if (TYPO3_DLOG)	t3lib_div::devLog('{ Update '.$id.','.$lang.' ','realurl');
 
 			// Build the new page path, in the correct language
-		$pagepathRec = $this->IDtoPagePathSegments($id, $lang);
+		$pagepathRec = $this->IDtoPagePathSegments($id, $mpvar, $lang);
 		$pagepath = $pagepathRec['pagepath'];
 		$pagepathHash = $pagepathRec['pagepathhash'];
 		$langID = $pagepathRec['langID'];
 
 		if (!$this->conf['disablePathCache'])	{
-
+/*
 			if (TYPO3_DLOG)	t3lib_div::devLog('(fetch old)','realurl');
 
 				// Fetch all current versions of the page path (i.e. all languages)
 			$oldUrls = array();
-			$result = $GLOBALS['TYPO3_DB']->exec_SELECTquery('language_id, pagepath', 'tx_realurl_pathcache', 'page_id='.intval($id).' AND expire=0');
+			$result = $GLOBALS['TYPO3_DB']->exec_SELECTquery(
+					'language_id, pagepath',
+					'tx_realurl_pathcache',
+					'page_id='.intval($id).
+						' AND expire=0'.
+						' AND rootpage_id='.intval($this->conf['rootpage_id'])
+				);
 			while ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($result))	{
 				$oldUrls[$row['language_id']] = $row['pagepath'];
 			}
@@ -306,18 +319,21 @@ class tx_realurl_advanced {
 					}
 				}
 			}
+*/
 
+				// Insert URL in cache:
 			$insertArray = array(
 				'page_id' => $id,
 				'language_id' => $langID,
 				'pagepath' => $pagepath,
 				'hash' => $pagepathHash,
-				'expire' => 0
+				'expire' => 0,
+				'rootpage_id' => intval($this->conf['rootpage_id']),
+				'mpvar' => $mpvar
 			);
+
 			$GLOBALS['TYPO3_DB']->exec_INSERTquery('tx_realurl_pathcache', $insertArray);
 		}
-
-		if (TYPO3_DLOG)	t3lib_div::devLog("[$pagepath] }",5);
 
 		return $pagepathRec['pagepath'];
 	}
@@ -332,43 +348,44 @@ class tx_realurl_advanced {
 	 *   );
 	 *
 	 * @param	integer		Page ID
+	 * @param	string		MP variable string
 	 * @param	integer		Language id
 	 * @return	array		The page path etc.
 	 */
-	function IDtoPagePathSegments($id,$langID = -1) {
+	function IDtoPagePathSegments($id,$mpvar,$langID) {
 			// Check to see if we already built this one in this session
-		$cacheKey = $id.'.'.$langID;
-		if (isset($this->IDtoPagePathCache[$cacheKey]))
-			return($this->IDtoPagePathCache[$cacheKey]);
+		$cacheKey = $id.'.'.$mpvar.'.'.$langID;
+		if (!isset($this->IDtoPagePathCache[$cacheKey]))	{
 
-			// Get rootLine for current site (overlaid with any language overlay records).
-		if (!is_object($this->sys_page))	{	// Create object if not found before:
-				// Initialize the page-select functions.
-			$this->sys_page = t3lib_div::makeInstance('t3lib_pageSelect');
-			$this->sys_page->init($GLOBALS['TSFE']->showHiddenPage);
-		}
-		$this->sys_page->sys_language_uid = $langID;
-		$rootLine = $this->sys_page->getRootLine($id);
-		$cc = count($rootLine);
-		$newRootLine = array();
-		$rootFound = FALSE;
-		for($a=0;$a<$cc;$a++)	{
-			if ($GLOBALS['TSFE']->tmpl->rootLine[0]['uid'] == $rootLine[$a]['uid'])	{
-				$rootFound = TRUE;
+				// Get rootLine for current site (overlaid with any language overlay records).
+			if (!is_object($this->sys_page))	{	// Create object if not found before:
+					// Initialize the page-select functions.
+				$this->sys_page = t3lib_div::makeInstance('t3lib_pageSelect');
+				$this->sys_page->init($GLOBALS['TSFE']->showHiddenPage);
 			}
-			if ($rootFound)	{
-				$newRootLine[] = $rootLine[$a];
+			$this->sys_page->sys_language_uid = $langID;
+			$rootLine = $this->sys_page->getRootLine($id,$mpvar);
+			$cc = count($rootLine);
+			$newRootLine = array();
+			$rootFound = FALSE;
+			for($a=0;$a<$cc;$a++)	{
+				if ($GLOBALS['TSFE']->tmpl->rootLine[0]['uid'] == $rootLine[$a]['uid'])	{
+					$rootFound = TRUE;
+				}
+				if ($rootFound)	{
+					$newRootLine[] = $rootLine[$a];
+				}
 			}
+
+				// Translate the rootline to a valid path (rootline contains localized titles at this point!):
+			$pagepath = $this->rootLineToPath($newRootLine);
+
+			$this->IDtoPagePathCache[$cacheKey] = array(
+				'pagepath' => $pagepath,
+				'langID' => $langID,
+				'pagepathhash' => substr(md5($pagepath),0,10),
+			);
 		}
-
-			 // Translate the rootline to a valid path (rootline contains localized titles at this point!):
-		$pagepath = $this->rootLineToPath($newRootLine);
-
-		$this->IDtoPagePathCache[$cacheKey] = array(
-			'pagepath' => $pagepath,
-			'langID' => $langID,
-			'pagepathhash' => substr(md5($pagepath),0,10)
-		);
 
 		return $this->IDtoPagePathCache[$cacheKey];
 	}
@@ -408,28 +425,22 @@ class tx_realurl_advanced {
 		return implode('/',$paths); // Return path, ending in a slash, or empty string
 	}
 
-	/**
-	 * Convert a title to something that can be used in an page path:
-	 * - Convert spaces to underscores
-	 * - Convert accented characters to their non-accented variant
-	 * - Convert some special things like the 'ae'-character
-	 * - Strip off all other symbols
-	 * Works only on iso-8859-1 strings.
+
+
+
+
+
+
+
+
+
+
+
+	/*******************************
 	 *
-	 * @param	string		Input title to clean
-	 * @return	string		Encoded title.
-	 * @see rootLineToPath()
-	 */
-	function encodeTitle($title) {
-		$title = strtolower($title); // lowercase page path
-		$space = $this->conf['spaceCharacter'];
-		$title = strtr($title,'àáâãäåçèéêëìíîïñòóôõöøùúûüýÿµ -+_','aaaaaaceeeeiiiinoooooouuuuyyu'.$space.$space.$space.$space); // remove accents, convert spaces
-		$title = strtr($title,array('þ' => 'th', 'ð' => 'dh', 'ß' => 'ss', 'æ' => 'ae')); // rewrite some special chars
-		$title = ereg_replace('[^a-z0-9\\'.$space.']', '', $title); // strip the rest
-		$title = ereg_replace('\\'.$space.'+',$space,$title); // Convert multiple underscores to a single one
-		$title = trim($title,$space);
-		return rawurlencode($title);
-	}
+	 * URL-to-ID methods
+	 *
+	 ******************************/
 
 	/**
 	 * Convert a page path to an ID.
@@ -440,14 +451,20 @@ class tx_realurl_advanced {
 	 */
 	function pagePathtoID(&$pathParts) {
 
+			// Init:
+		$GET_VARS = '';
+
+			// If pagePath cache is not disabled, look for entry:
 		if (!$this->conf['disablePathCache'])	{
+
 				// Work from outside-in to look up path in cache:
 			$copy_pathParts = $pathParts;
 			while(1)	{
 				$result = $GLOBALS['TYPO3_DB']->exec_SELECTquery(
-							'page_id, expire',
+							'page_id, expire, mpvar',
 							'tx_realurl_pathcache',
-							'hash="'.substr(md5(implode('/',$copy_pathParts)),0,10).'"'
+							'hash="'.substr(md5(implode('/',$copy_pathParts)),0,10).'"'.
+								' AND rootpage_id='.intval($this->conf['rootpage_id'])
 						);
 				if ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($result))	{
 					break;
@@ -462,6 +479,7 @@ class tx_realurl_advanced {
 			$row = FALSE;
 		}
 
+			// Process row if found:
 		if ($row) { // We found it in the cache
 			if (TYPO3_DLOG)	t3lib_div::devLog("FOUND ",'realurl',1);
 
@@ -473,34 +491,19 @@ class tx_realurl_advanced {
 
 				// Assume we can use this info at first
 			$id = $row['page_id'];
-
-			if ($row['expire']) { // Is the URL marked as an old URL?
-				if (TYPO3_DLOG)	t3lib_div::devLog("EXPIRED ",'realurl');
-				$info = $this->findIDByURL($pathParts); // Search if there's a newly created page with the same URL
-				if ($info['id']!=-1) {
-						// We actually found something, so we should store the NEW page<->pagepath-pair.
-						// We can't call UpdateURLCache here though, because sys_page->getRootLine doesn't exist yet...
-					if (TYPO3_DLOG)	t3lib_div::devLog("NEW ",'realurl');
-					$id = $info['id'];
-					$this->cacheURLlater = 1; // The new pagepath is cached in fetch_the_id();
-				}
-			} else {
-				$this->freshURLFound = 1; // We actually found a fresh URL
-			}
+			$GET_VARS = $row['mpvar'] ? array('MP' => $row['mpvar']) : '';
 		} else { // Let's search for it
 			if (TYPO3_DLOG)	t3lib_div::devLog("NOT_FOUND_SEARCHING ",'realurl');
 
-				// Find & cache it
-			$info = $this->findIDByURL($pathParts);
+				// Find it
+			list($info,$GET_VARS) = $this->findIDByURL($pathParts);
 
-				// !! TODO !! Even a 404 is returned as an array. Could be used to implement the following TODO.
-			if ($info['id']!=-1) {
+				// Setting id:
+			if ($info['id']) {
 				if (TYPO3_DLOG)	t3lib_div::devLog("FOUND ",'realurl');
-
 				$id = $info['id'];
-				$this->cacheURLlater = 1;
 			} else {
-				// !! TODO !! Multilanguage 404-error. We DO have the language, so we could use it...
+					// No page found!
 				if (TYPO3_DLOG)	t3lib_div::devLog("NOT_FOUND ",'realurl');
 				$id = -1;
 			}
@@ -508,35 +511,26 @@ class tx_realurl_advanced {
 
 			// Return found ID:
 		if (TYPO3_DLOG)	t3lib_div::devLog("Path resolved to ID: ".$id,'realurl');
-		return $id;
+		return array($id,$GET_VARS);
 	}
 
 	/**
-	 * Search recursively for the URL in the page tree
-	 * If we find, it will be cached and we return something like:
-	 *   array('id' => 123);
-	 * If we don't find it, return FALSE
+	 * Search recursively for the URL in the page tree and return the ID of the path ("manual" id resolve)
 	 *
 	 * @param	array		Path parts, passed by reference.
 	 * @return	array		Info array, currently with "id" set to the ID.
 	 */
 	function findIDByURL(&$urlParts) {
 
+			// Initialize:
 		$info = array();
 		$info['id'] = 0;
+		$GET_VARS = '';
 
-
-			// Find the rootpage of $domain
-		$domain = ereg('^[[:alnum:]]*:\/\/','',t3lib_div::getIndpEnv('TYPO3_SITE_URL'));
-		$result = $GLOBALS['TYPO3_DB']->exec_SELECTquery(
-						'pid',
-						'sys_domain',
-						'(domainName="'.$GLOBALS['TYPO3_DB']->quoteStr($domain, 'sys_domain').'" OR domainName="'.$GLOBALS['TYPO3_DB']->quoteStr(substr($domain,0,-1),'sys_domain').'") AND hidden=0'
-					);
-		$row = $GLOBALS['TYPO3_DB']->sql_fetch_row($result);
-
-			// Find the default startpid when we couldn't find the domain, so we can search for the URL.
-		if (!$row) {
+			// Find the PID where to begin the resolve:
+		if ($this->conf['rootpage_id'])	{	// Take PID from rootpage_id if any:
+			$pid = intval($this->conf['rootpage_id']);
+		} else {	// Otherwise, take the FIRST page under root level!
 			$result = $GLOBALS['TYPO3_DB']->exec_SELECTquery(
 							'uid',
 							'pages',
@@ -545,80 +539,215 @@ class tx_realurl_advanced {
 							'sorting',
 							'1'
 						);
-			$row = $GLOBALS['TYPO3_DB']->sql_fetch_row($result);
-			if ($row)
-				$pid = $row[0]; // Use the first 'visible' page in the tree as the root
-			else
-				$pid = 0; // Let Type figure it out
-		} else {
-			$pid = $row[0];
+			list($pid) = $GLOBALS['TYPO3_DB']->sql_fetch_row($result);
 		}
 
-			// Now, recursively search for the path from this root
-		if ($pid != 0)	{
-   			$info['id'] = $this->searchTitle($pid,$urlParts,0);
+			// Now, recursively search for the path from this root (if there are any elements in $urlParts)
+		if ($pid && count($urlParts))	{
+   			list($info['id'],$mpvar) = $this->searchTitle($pid,'',$urlParts);
+			if ($mpvar)	{
+				$GET_VARS = array('MP' => $mpvar);
+			}
 		}
 
-		return $info;
+		return array($info,$GET_VARS);
 	}
-
 
 	/**
 	 * Recursively search the subpages of $pid for the first part of $urlParts
-	 * If we find it, we return the id, if we don't we return -1.
 	 *
 	 * @param	integer		Page id in which to search subpages matching first part of urlParts
-	 * @param	array		Segments of the virtual path
-	 * @param	integer		Language uid - not used currently.
-	 * @return	integer		The resolved page id.
+	 * @param	string		MP variable string
+	 * @param	array		Segments of the virtual path (passed by reference; items removed)
+	 * @param	array		Array with the current pid/mpvar to return if no processing is done.
+	 * @return	array		With resolved id and $mpvar
 	 */
-	function searchTitle($pid,&$urlParts,$lang) {
+	function searchTitle($pid, $mpvar, &$urlParts, $currentIdMp='') {
 
-			// Done, the $pid is the requested id
-		if (count($urlParts)==0)	return $pid;
+			// Creating currentIdMp variable if not set:
+		if (!is_array($currentIdMp))	{
+			$currentIdMp = array($pid, $mpvar);
+		}
 
-		// Get the title we need to find now
+			// No more urlparts? Return what we have.
+		if (count($urlParts)==0)	{
+			return $currentIdMp;
+		}
+
+			// Get the title we need to find now:
 		$title = array_shift($urlParts);
+
+			// Perform search:
+		list($uid, $row) = $this->searchTitle_searchPid($pid,$title);
+
+			// If a title was found...
+		if ($uid)	{
+
+				// Set base currentIdMp for next level:
+			$currentIdMp = array($uid, $mpvar);
+
+				// Modify values if it was a mount point:
+			if (is_array($row['_IS_MOUNTPOINT']))	{
+				$mpvar.= ($mpvar?',':'').$row['_IS_MOUNTPOINT']['MPvar'];
+				if ($row['_IS_MOUNTPOINT']['overlay'])	{
+					$currentIdMp[1] = $mpvar;	// Change mpvar for the currentIdMp variable.
+				} else {
+					$uid = $row['_IS_MOUNTPOINT']['mount_pid'];
+				}
+			}
+
+				// Yep, go search for the next subpage
+			return $this->searchTitle($uid,$mpvar,$urlParts,$currentIdMp);
+		} else {
+				// No title, so we reached the end of the id identifying part of the path and now put back the current non-matched title segment before we return the PID:
+			array_unshift($urlParts,$title);
+			return $currentIdMp;
+		}
+	}
+
+	/**
+	 * Search for a title in a certain PID
+	 *
+	 * @param	integer		Page id in which to search subpages matching title
+	 * @param	string		Title to search for
+	 * @return	array		First entry is uid , second entry is the row selected, including information about the page as a mount point.
+	 * @see searchTitle()
+	 * @access private
+	 */
+	function searchTitle_searchPid($searchPid,$title)	{
 
 			// List of "pages" fields to traverse for a "directory title" in the speaking URL (only from RootLine!!):
 		$segTitleFieldList = $this->conf['segTitleFieldList'] ? $this->conf['segTitleFieldList'] : 'nav_title,title';
-		$selList = t3lib_div::uniqueList('uid,'.$segTitleFieldList);
+		$selList = t3lib_div::uniqueList('uid,pid,doktype,mount_pid,mount_pid_ol,'.$segTitleFieldList);
 		$segTitleFieldArray = t3lib_div::trimExplode(',', $segTitleFieldList, 1);
+
+			// page select object - used to analyse mount points.
+		$sys_page = t3lib_div::makeInstance('t3lib_pageSelect');
 
 			// Build an array with encoded values from the segTitleFieldArray of the subpages
 			// First we find field values from the default language
+			// Pages are selected in menu order and if duplicate titles are found the first takes precedence!
 		$titles = array(); // array(title => uid);
-		$result = $GLOBALS['TYPO3_DB']->exec_SELECTquery($selList, 'pages', 'pid = '.intval($pid).' AND deleted = 0 AND doktype != 255');
-		while ($row = mysql_fetch_assoc($result)) {
-			foreach($segTitleFieldArray as $fieldName)	{
-				if ($row[$fieldName])	{
-					$titles[$this->encodeTitle($row[$fieldName])] = $row['uid'];
+		$uidTrack = array();
+		$result = $GLOBALS['TYPO3_DB']->exec_SELECTquery($selList, 'pages', 'pid = '.intval($searchPid).' AND deleted = 0 AND doktype != 255','','sorting');
+		while ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($result)) {
+
+				// Mount points:
+			$mount_info = $sys_page->getMountPointInfo($row['uid'], $row);
+			if (is_array($mount_info))	{	// There is a valid mount point.
+				if ($mount_info['overlay'])	{	// Overlay mode: Substitute WHOLE record:
+					$result2 = $GLOBALS['TYPO3_DB']->exec_SELECTquery($selList, 'pages', 'uid = '.intval($mount_info['mount_pid']).' AND deleted = 0 AND doktype != 255');
+					$mp_row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($result2);
+					if (is_array($mp_row))	{
+						$row = $mp_row;
+					} else unset($row);	// If the mount point could not be fetched, unset the row
+				}
+				$row['_IS_MOUNTPOINT'] = $mount_info;
+			}
+
+				// Collect titles from selected row:
+			if (is_array($row))	{
+				$uidTrack[$row['uid']] = $row;
+				foreach($segTitleFieldArray as $fieldName)	{
+					if ($row[$fieldName])	{
+						$encodedTitle = $this->encodeTitle($row[$fieldName]);
+						if (!isset($titles[$fieldName][$encodedTitle]))	{
+							$titles[$fieldName][$encodedTitle] = $row['uid'];
+						}
+					}
 				}
 			}
 		}
 
 			// We have to search the language overlay too, if: a) the language isn't the default (0), b) if it's not set (-1)
-		$titles_backup = $titles; // We're gonna change the array in the loop, so let's be safe and loop with the backup
-		foreach($titles_backup as $l_title => $l_id) {
-			$result = $GLOBALS['TYPO3_DB']->exec_SELECTquery('title', 'pages_language_overlay', 'pid='.intval($l_id));		// Check deleted=0 ???
-			$row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($result);
-
-			if ($row) { // If a language overlay is found, ...
-				#unset($titles[$l_title]); // throw the entry of the default language away
-				$titles[$this->encodeTitle($row['title'])] = $l_id; // Add this language
+		$uidTrackKeys = array_keys($uidTrack);
+		foreach($uidTrackKeys as $l_id) {
+			$result = $GLOBALS['TYPO3_DB']->exec_SELECTquery('nav_title,title', 'pages_language_overlay', 'pid='.intval($l_id));
+			while ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($result)) {
+				foreach($segTitleFieldArray as $fieldName)	{
+					if ($row[$fieldName])	{
+						$encodedTitle = $this->encodeTitle($row[$fieldName]);
+						if (!isset($titles[$fieldName][$encodedTitle]))	{
+							$titles[$fieldName][$encodedTitle] = $l_id;
+						}
+					}
+				}
 			}
 		}
 
-			// Does $title exist in $titles?
-		if (!isset($titles[$title]))	{
-			#return -1; // Nope, return 404
-
-				// Instead of returning "-1" when a page is not found anymore, we return the id of the page so far as we got up the tree! This is because the remaining parts of hte path MIGHT belong to postVarSets and therefore it is not necessarily an error!
-			array_unshift($urlParts,$title);	//
-			return $pid;
-		} else {
-			return $this->searchTitle($titles[$title],$urlParts,$lang); // Yep, go search for the next subpage
+			// Merge titles:
+		$segTitleFieldArray = array_reverse($segTitleFieldArray);	// To observe the priority order...
+		$allTitles = array();
+		foreach($segTitleFieldArray as $fieldName)	{
+			if (is_array($titles[$fieldName]))	{
+				$allTitles = array_merge($allTitles,$titles[$fieldName]);
+			}
 		}
+
+			// Return:
+		if (isset($allTitles[$title]))	{
+			return array($allTitles[$title], $uidTrack[$allTitles[$title]]);
+		}
+	}
+
+
+
+
+
+
+
+
+
+
+	/*******************************
+	 *
+	 * Helper functions
+	 *
+	 ******************************/
+
+	/**
+	 * Convert a title to something that can be used in an page path:
+	 * - Convert spaces to underscores
+	 * - Convert non A-Z characters to ASCII equivalents
+	 * - Convert some special things like the 'ae'-character
+	 * - Strip off all other symbols
+	 * Works with the character set defined as "forceCharset"
+	 *
+	 * @param	string		Input title to clean
+	 * @return	string		Encoded title, passed through rawurlencode() = ready to put in the URL.
+	 * @see rootLineToPath()
+	 */
+	function encodeTitle($title) {
+
+			// Fetch character set:
+		$charset = $GLOBALS['TYPO3_CONF_VARS']['BE']['forceCharset'] ? $GLOBALS['TYPO3_CONF_VARS']['BE']['forceCharset'] : $GLOBALS['TSFE']->defaultCharSet;
+
+			// Convert to lowercase:
+		$processedTitle = $GLOBALS['TSFE']->csConvObj->conv_case($charset,$title,'toLower');
+
+			// Convert some special tokens to the space character:
+		$space = $this->conf['spaceCharacter'] ? $this->conf['spaceCharacter'] : '_';
+		$processedTitle = strtr($processedTitle,' -+_',$space.$space.$space.$space); // convert spaces
+
+			// Convert extended letters to ascii equivalents:
+		$processedTitle = $GLOBALS['TSFE']->csConvObj->specCharsToASCII($charset,$processedTitle);
+
+			// Strip the rest...:
+		$processedTitle = ereg_replace('[^a-zA-Z0-9\\'.$space.']', '', $processedTitle); // strip the rest
+		$processedTitle = ereg_replace('\\'.$space.'+',$space,$processedTitle); // Convert multiple 'spaces' to a single one
+		$processedTitle = trim($processedTitle,$space);
+
+		if ($this->conf['encodeTitle_userProc'])	{
+			$params = array(
+				'pObj' => &$this,
+				'title' => $title,
+				'processedTitle' => $processedTitle,
+			);
+			$processedTitle = t3lib_div::callUserFunction($this->conf['encodeTitle_userProc'], $params, $this);
+		}
+
+			// Return encoded URL:
+		return rawurlencode($processedTitle);
 	}
 }
 

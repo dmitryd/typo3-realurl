@@ -5,6 +5,8 @@ CREATE TABLE tx_realurl_pathcache (
   cache_id int(11) DEFAULT '0' NOT NULL auto_increment,
   page_id int(11) DEFAULT '0' NOT NULL,
   language_id int(11) DEFAULT '0' NOT NULL,
+  rootpage_id int(11) DEFAULT '0' NOT NULL,
+  mpvar tinytext NOT NULL,
   hash varchar(10) DEFAULT '' NOT NULL,
   pagepath text NOT NULL,
   expire int(11) DEFAULT '0' NOT NULL,

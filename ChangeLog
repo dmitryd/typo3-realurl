@@ -1,3 +1,12 @@
+2004-09-01  Kasper Skårhøj,,,  <kasper@typo3.com>
+	* encodeTitle(): Support of multibyte encodings like UTF-8 in the encoding of page titles. Also extended letters => ASCII equivalents are working now (using t3lib_cs)
+	* Implemented support for usage over multiple domains. Manual has been updated. Basically you have to configure the id-resolver (like "tx_realurl_advanced") to know of its root page id so it has a starting point. This is cannot be automatic and therefore you have to configure it to correspond with the root page UID in the page tree. This is documented with examples in the manual.
+	* !!! Changed return values type for some functions, in particular observe that the user processing of path-to-id is now returning and ARRAY NOT AN INTEGER (Id)!
+	* &MP vars are now encoded with page id. Works with both pagepath cache and without.
+	* Generally, the manual URL decoding (without pagepath cache) has been updated and tested to work well.
+	* Fixed bug with ".html" prefix when page path is blank
+	(This development was sponsored by Forbrugernes Hus in Denmark. Thanks.)
+
 2004-06-10  Kasper Skårhøj,,,  <kasper@typo3.com>
 
 	* Added option to disable pathcache (and more for that)

@@ -217,11 +217,11 @@ class tx_realurl {
 		$this->encodeSpURL_gettingPostVarSets($paramKeyValues,$pathParts,$postVarSetCfg);
 
 			// Compile Speaking URL path
-		$newUrl = ereg_replace('\/*$','',implode('/',$pathParts)).'/';
+		$newUrl = count($pathParts) ? ereg_replace('\/*$','',implode('/',$pathParts)).'/' : '';
 
 			// Add filename, if any:
 		$fileName = $this->encodeSpURL_fileName($paramKeyValues);
-		if (!strlen($fileName) && $this->extConf['fileName']['defaultToHTMLsuffixOnPrev'])	{
+		if (strlen($newUrl) && !strlen($fileName) && $this->extConf['fileName']['defaultToHTMLsuffixOnPrev'])	{
 			$newUrl = substr($newUrl,0,-1).'.html';
 		} else {
 			$newUrl.= rawurlencode($fileName);
@@ -693,7 +693,7 @@ $GLOBALS['TT']->setTSlogMessage('Do decoding');
 		$pre_GET_VARS = $this->decodeSpURL_settingPreVars($pathParts, $this->extConf['preVars']);
 
 			// Setting page id:
-		$cachedInfo['id'] = $this->decodeSpURL_idFromPath($pathParts);
+		list($cachedInfo['id'], $id_GET_VARS) = $this->decodeSpURL_idFromPath($pathParts);
 
 			// Fixed Post-vars:
 		$fixedPostVarSetCfg = $this->getPostVarSetConfig($cachedInfo['id'], 'fixedPostVars');
@@ -709,6 +709,7 @@ $GLOBALS['TT']->setTSlogMessage('Do decoding');
 			// Merge Get vars together:
 		$cachedInfo['GET_VARS'] = array();
 		if (is_array($pre_GET_VARS)) $cachedInfo['GET_VARS'] = t3lib_div::array_merge_recursive_overrule($cachedInfo['GET_VARS'],$pre_GET_VARS);
+		if (is_array($id_GET_VARS)) $cachedInfo['GET_VARS'] = t3lib_div::array_merge_recursive_overrule($cachedInfo['GET_VARS'],$id_GET_VARS);
 		if (is_array($fixedPost_GET_VARS)) $cachedInfo['GET_VARS'] = t3lib_div::array_merge_recursive_overrule($cachedInfo['GET_VARS'],$fixedPost_GET_VARS);
 		if (is_array($post_GET_VARS)) $cachedInfo['GET_VARS'] = t3lib_div::array_merge_recursive_overrule($cachedInfo['GET_VARS'],$post_GET_VARS);
 		if (is_array($file_GET_VARS)) $cachedInfo['GET_VARS'] = t3lib_div::array_merge_recursive_overrule($cachedInfo['GET_VARS'],$file_GET_VARS);
@@ -729,7 +730,7 @@ $GLOBALS['TT']->setTSlogMessage('Do decoding');
 	 * Extracts the page ID from URL.
 	 *
 	 * @param	array		Parts of path. NOTICE: Passed by reference.
-	 * @return	integer		Page ID
+	 * @return	array		array(Page ID, GETvars array if any eg. MP)
 	 * @see decodeSpURL_doDecode()
 	 */
 	function decodeSpURL_idFromPath(&$pathParts)	{
@@ -746,7 +747,7 @@ $GLOBALS['TT']->setTSlogMessage('Do decoding');
 			break;
 			default:	// Default: Just passing through the ID/alias of the page:
 				$value = array_shift($pathParts);
-				return $value;
+				return array($value);
 			break;
 		}
 	}

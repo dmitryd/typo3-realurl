@@ -1,23 +1,11 @@
 Todo:
-- Encoding of remaining parameters (M5/B6) (Probably not needed since the whole idea of encoding is obsolete by using Speaking URLs!)
-- Handling of situations with multiple sites where no domain is used; Maybe look up pages NOT only in pid=0 but also which has a template record with the root-flag set!
+- Overview module / other things on ToDo.
+	- expire / mgm of path? (benoit issue)
+	- Todo for uniqalias table: Create backend facilities which makes it possible to modify/create new aliases associated with ids; This way the automatically created aliases can be customized afterwards.
+
+********
 - Update documentation feature list + screenshot for introduction.
-- encodeTitle(): Support of multibyte encodings like UTF-8 in the encoding of page titles.
-- &MP should be encoded with page id!
-- Add user-processing various places.
 - Required-GETvars on postVarSets... (instead of taking the postVarSet if just a SINGLE Getvar matches...?)
 - NA value / null setting
-- Multiple sites in the same database? Binding cached records/paths to domains or?
 
-Todo for uniqalias table:
-- Create backend facilities which makes it possible to modify/create new aliases associated with ids; This way the automatically created aliases can be customized afterwards.
-
-Alternative flow for page ID resolve (idea):
-	- Adding a "SpURL" field to "Pages" which is unique within a PID
-	- Forward analysis: first "SpURL" field, then alias, then check page title.
-	- Finding root page by look up a) on domain first, then b) by template record PIDs page titles/SpURL fields.
-
-Backend Hooks:
-- Implementing a hook so "realurl" can intercept the "Edit page ID" field in the shortcut frame and allow people to paste in a URL from the website which will be analysed to find the page id from the URL
-- Implementing a hook similar to this, but used in the RTE link selector box (browse_links.php) so a link to a page can be made in the same way. Such an interface will just link to the page if an ID could be found, otherwise tell that the URL din't have a page id associated with it.
 
