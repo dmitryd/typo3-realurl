@@ -383,7 +383,18 @@ class tx_realurl_advanced {
 		$c = count($rl);
 		for ($i = 1; $i <= $c; $i++) {
 			$page = array_shift($rl);
-			$paths[$i] = $this->encodeTitle($page['nav_title'] ? $page['nav_title'] : $page['title']);
+
+				// List of "pages" fields to traverse for a "directory title" in the speaking URL (only from RootLine!!):
+			$segTitleFieldArray = t3lib_div::trimExplode(',', $this->conf['segTitleFieldList'] ? $this->conf['segTitleFieldList'] : 'nav_title,title', 1);
+			$theTitle = '';
+			foreach($segTitleFieldArray as $fieldName)	{
+				if ($page[$fieldName])	{
+					$theTitle = $page[$fieldName];
+					break;
+				}
+			}
+
+			$paths[$i] = $this->encodeTitle($theTitle);
 		}
 
 		return implode('/',$paths); // Return path, ending in a slash, or empty string
@@ -555,23 +566,32 @@ class tx_realurl_advanced {
 		// Get the title we need to find now
 		$title = array_shift($urlParts);
 
-			// Build an array with encoded titles of the subpages
-			// First we find titles in the default language
+			// List of "pages" fields to traverse for a "directory title" in the speaking URL (only from RootLine!!):
+		$segTitleFieldList = $this->conf['segTitleFieldList'] ? $this->conf['segTitleFieldList'] : 'nav_title,title';
+		$selList = t3lib_div::uniqueList('uid,'.$segTitleFieldList);
+		$segTitleFieldArray = t3lib_div::trimExplode(',', $segTitleFieldList, 1);
+
+			// Build an array with encoded values from the segTitleFieldArray of the subpages
+			// First we find field values from the default language
 		$titles = array(); // array(title => uid);
-		$result = $GLOBALS['TYPO3_DB']->exec_SELECTquery('uid,title', 'pages', 'pid = '.intval($pid).' AND deleted = 0 AND doktype != 255');
-		while ($row = mysql_fetch_row($result)) {
-			$titles[$this->encodeTitle($row[1])] = $row[0];
+		$result = $GLOBALS['TYPO3_DB']->exec_SELECTquery($selList, 'pages', 'pid = '.intval($pid).' AND deleted = 0 AND doktype != 255');
+		while ($row = mysql_fetch_assoc($result)) {
+			foreach($segTitleFieldArray as $fieldName)	{
+				if ($row[$fieldName])	{
+					$titles[$this->encodeTitle($row[$fieldName])] = $row['uid'];
+				}
+			}
 		}
 
-		 	// We have to search the language overlay too, if: a) the language isn't the default (0), b) if it's not set (-1)
+			// We have to search the language overlay too, if: a) the language isn't the default (0), b) if it's not set (-1)
 		$titles_backup = $titles; // We're gonna change the array in the loop, so let's be safe and loop with the backup
 		foreach($titles_backup as $l_title => $l_id) {
 			$result = $GLOBALS['TYPO3_DB']->exec_SELECTquery('title', 'pages_language_overlay', 'pid='.intval($l_id));		// Check deleted=0 ???
-			$row = $GLOBALS['TYPO3_DB']->sql_fetch_row($result);
+			$row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($result);
 
 			if ($row) { // If a language overlay is found, ...
 				#unset($titles[$l_title]); // throw the entry of the default language away
-				$titles[$this->encodeTitle($row[0])] = $l_id; // Add this language
+				$titles[$this->encodeTitle($row['title'])] = $l_id; // Add this language
 			}
 		}
 
