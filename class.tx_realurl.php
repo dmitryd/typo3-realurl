@@ -36,46 +36,46 @@
  *
  *
  *
- *  103: class tx_realurl 
+ *  103: class tx_realurl
  *
  *              SECTION: Translate parameters to a Speaking URL (t3lib_tstemplate::linkData)
- *  134:     function encodeSpURL(&$params, $ref)	
- *  184:     function encodeSpURL_doEncode($inputQuery, $cHashCache=FALSE)	
- *  248:     function encodeSpURL_pathFromId(&$paramKeyValues, &$pathParts)	
- *  281:     function encodeSpURL_gettingPostVarSets(&$paramKeyValues, &$pathParts, $postVarSetCfg)	
+ *  134:     function encodeSpURL(&$params, $ref)
+ *  184:     function encodeSpURL_doEncode($inputQuery, $cHashCache=FALSE)
+ *  248:     function encodeSpURL_pathFromId(&$paramKeyValues, &$pathParts)
+ *  281:     function encodeSpURL_gettingPostVarSets(&$paramKeyValues, &$pathParts, $postVarSetCfg)
  *  318:     function encodeSpURL_fileName(&$paramKeyValues)
- *  340:     function encodeSpURL_setSequence($varSetCfg, &$paramKeyValues, &$pathParts)	
- *  428:     function encodeSpURL_setSingle($keyWord, $keyValues, &$paramKeyValues, &$pathParts)	
- *  461:     function encodeSpURL_encodeCache($urlToEncode, $setEncodedURL='')	
- *  483:     function encodeSpURL_cHashCache($newUrl, &$paramKeyValues)	
+ *  340:     function encodeSpURL_setSequence($varSetCfg, &$paramKeyValues, &$pathParts)
+ *  428:     function encodeSpURL_setSingle($keyWord, $keyValues, &$paramKeyValues, &$pathParts)
+ *  461:     function encodeSpURL_encodeCache($urlToEncode, $setEncodedURL='')
+ *  483:     function encodeSpURL_cHashCache($newUrl, &$paramKeyValues)
  *
  *              SECTION: Translate a Speaking URL to parameters (tslib_fe)
- *  546:     function decodeSpURL($params, $ref)	
- *  592:     function decodeSpURL_checkRedirects($speakingURIpath)	
- *  608:     function decodeSpURL_doDecode($speakingURIpath, $cHashCache=FALSE)	
- *  660:     function decodeSpURL_idFromPath(&$pathParts)	
- *  687:     function decodeSpURL_settingPreVars(&$pathParts, $config)	
- *  709:     function decodeSpURL_settingPostVarSets(&$pathParts, $postVarSetCfg)	
- *  749:     function decodeSpURL_fileName($fileName)	
- *  771:     function decodeSpURL_getSequence(&$pathParts,$setupArr)	
- *  850:     function decodeSpURL_getSingle($keyValues)	
- *  867:     function decodeSpURL_throw404($msg)	
- *  876:     function decodeSpURL_jumpAdmin()	
- *  899:     function decodeSpURL_decodeCache($speakingURIpath,$cachedInfo='')	
- *  910:     function decodeSpURL_cHashCache($speakingURIpath)	
+ *  546:     function decodeSpURL($params, $ref)
+ *  592:     function decodeSpURL_checkRedirects($speakingURIpath)
+ *  608:     function decodeSpURL_doDecode($speakingURIpath, $cHashCache=FALSE)
+ *  660:     function decodeSpURL_idFromPath(&$pathParts)
+ *  687:     function decodeSpURL_settingPreVars(&$pathParts, $config)
+ *  709:     function decodeSpURL_settingPostVarSets(&$pathParts, $postVarSetCfg)
+ *  749:     function decodeSpURL_fileName($fileName)
+ *  771:     function decodeSpURL_getSequence(&$pathParts,$setupArr)
+ *  850:     function decodeSpURL_getSingle($keyValues)
+ *  867:     function decodeSpURL_throw404($msg)
+ *  876:     function decodeSpURL_jumpAdmin()
+ *  899:     function decodeSpURL_decodeCache($speakingURIpath,$cachedInfo='')
+ *  910:     function decodeSpURL_cHashCache($speakingURIpath)
  *
  *              SECTION: Alias-ID look up functions
- *  939:     function lookUpTranslation($cfg,$value,$aliasToUid=FALSE)	
- *  995:     function lookUp_uniqAliasToId($cfg,$aliasValue)	
- * 1020:     function lookUp_idToUniqAlias($cfg,$idValue)	
- * 1045:     function lookUp_newAlias($cfg,$newAliasValue,$idValue)	
- * 1100:     function lookUp_cleanAlias($cfg,$newAliasValue)	
+ *  939:     function lookUpTranslation($cfg,$value,$aliasToUid=FALSE)
+ *  995:     function lookUp_uniqAliasToId($cfg,$aliasValue)
+ * 1020:     function lookUp_idToUniqAlias($cfg,$idValue)
+ * 1045:     function lookUp_newAlias($cfg,$newAliasValue,$idValue)
+ * 1100:     function lookUp_cleanAlias($cfg,$newAliasValue)
  *
  *              SECTION: General helper functions (both decode/encode)
- * 1143:     function setConfig()	
- * 1165:     function getPostVarSetConfig($page_id, $mainCat='postVarSets')	
- * 1186:     function pageAliasToID($alias)	
- * 1206:     function rawurlencodeParam($str)	
+ * 1143:     function setConfig()
+ * 1165:     function getPostVarSetConfig($page_id, $mainCat='postVarSets')
+ * 1186:     function pageAliasToID($alias)
+ * 1206:     function rawurlencodeParam($str)
  * 1219:     function checkCondition($setup,$prevVal)
  *
  * TOTAL FUNCTIONS: 32
@@ -552,33 +552,43 @@ debug(array($paramKeyValues['cHash'],$storedCHash,$newUrl,$spUrlHash),'Error: St
 	function decodeSpURL($params, $ref)	{
 
 		if (TYPO3_DLOG) t3lib_div::devLog('Entering decodeSpURL','realurl',-1);
-		
+
 			// Setting parent object reference (which is $GLOBALS['TSFE'])
 		$this->pObj = &$params['pObj'];
 
 			// Initializing config / request URL:
 		$this->setConfig();
 
-		/* There is little problem with REDIRECT_URL when you use the rewrite-rules in httpd.conf (so not in .htaccess).
-		   The variable just isn't present then. Maybe we should just check if an id was set in the URL, like
-			 I did in the old version. That seemed to work OK, especially with some extensions that just generate an URL
-			 like 'index.php?id=123', because that WILL be rewritten by Apache, but in fact will yield the wrong path
-			 because RealURL will resolve it, whereas we should disregard the path then and just look at the id.
-			 I know it's bad, but that's the way it is I think ;(
+			// If there has been a redirect (basically; we arrived here otherwise than via "index.php" in the URL) this can happend either due to a CGI-script or because of reWrite rule. Earlier we used $GLOBALS['HTTP_SERVER_VARS']['REDIRECT_URL'] to check but
+		if ($this->pObj->siteScript && substr($this->pObj->siteScript,0,9)!='index.php')	{
 
-				if (!isset($GLOBALS['HTTP_GET_VARS']['id']) && !isset($GLOBALS['HTTP_POST_VARS']['id'])) { // If no id was set in the request, we can use our new scheme, otherwise we revert to default TYPO3-behaviour
-		*/
-#		if ($GLOBALS['HTTP_SERVER_VARS']['REDIRECT_URL'])	{		// If there has been a redirect (basically; we arrived here otherwise than via "index.php" in the URL) this can happend either due to a CGI-script or because of reWrite rule.
+				// Getting the path which is above the current site url:
+				// For instance "first/second/third/index.html?&param1=value1&param2=value2" should be the result of the URL "http://localhost/typo3/dev/dummy_1/first/second/third/index.html?&param1=value1&param2=value2"
+			$speakingURIpath = $this->pObj->siteScript;
 
-		$fI = t3lib_div::split_fileref($this->pObj->siteScript);
+				// Append missing slash if configured for:
+			if ($this->extConf['init']['appendMissingSlash'])	{
+				if (!ereg('\/$',$speakingURIpath))	{	// Only process if a slash is missing:
+					switch((string)$this->extConf['init']['appendMissingSlash'])	{
+						case 'ifNotFile':
+							if (!ereg('\/[^\/]+\.[^\/]+$','/'.$speakingURIpath))	{
+								$speakingURIpath.= '/';
+							}
+						break;
+						default:
+							$speakingURIpath.= '/';
+							debug($speakingURIpath,'default');
+						break;
+					}
+				}
+			}
 
-		if ($this->pObj->siteScript && substr($this->pObj->siteScript,0,9)!='index.php')	{		// If there has been a redirect (basically; we arrived here otherwise than via "index.php" in the URL) this can happend either due to a CGI-script or because of reWrite rule. Earlier we used $GLOBALS['HTTP_SERVER_VARS']['REDIRECT_URL'] to check but
-			if (!$this->extConf['init']['respectSimulateStaticURLs'] || $fI['path'])	{	// If the URL is a single script like "123.1.html" it might be an "old" simulateStaticDocument request. If this is the case and support for this is configured, do NOT try and resolve it as a Speaking URL
+				// If the URL is a single script like "123.1.html" it might be an "old" simulateStaticDocument request. If this is the case and support for this is configured, do NOT try and resolve it as a Speaking URL
+			$fI = t3lib_div::split_fileref($speakingURIpath);
+			if (!$this->extConf['init']['respectSimulateStaticURLs'] || $fI['path'])	{
 				if (TYPO3_DLOG) t3lib_div::devLog('RealURL powered decoding (TM) starting!','realurl');
 
-					// Getting the path which is above the current site url:
-					// For instance "first/second/third/index.html?&param1=value1&param2=value2" should be the result of the URL "http://localhost/typo3/dev/dummy_1/first/second/third/index.html?&param1=value1&param2=value2"
-				$speakingURIpath = $this->pObj->siteScript;
+					// Parse path:
 				$uParts = parse_url($speakingURIpath);
 				$speakingURIpath = $uParts['path'];
 

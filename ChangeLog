@@ -1,3 +1,7 @@
+2004-04-22  Kasper Skårhøj,,,  <kasper@typo3.com>
+
+	* Added new option "appendMissingSlash" which appends a trailing slash to the path if it was not set by the user.
+
 2004-03-23  Kasper Skårhøj,,,  <kasper@typo3.com>
 
 	* Added the possibility of specifying more than just the "nav_title,title" fields from the rootline in the generation/resolve of the speaking URL. Documentation updated accordingly.
