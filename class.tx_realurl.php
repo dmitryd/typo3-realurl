@@ -569,9 +569,11 @@ debug(array($paramKeyValues['cHash'],$storedCHash,$newUrl,$spUrlHash),'Error: St
 				if (!isset($GLOBALS['HTTP_GET_VARS']['id']) && !isset($GLOBALS['HTTP_POST_VARS']['id'])) { // If no id was set in the request, we can use our new scheme, otherwise we revert to default TYPO3-behaviour
 		*/
 #		if ($GLOBALS['HTTP_SERVER_VARS']['REDIRECT_URL'])	{		// If there has been a redirect (basically; we arrived here otherwise than via "index.php" in the URL) this can happend either due to a CGI-script or because of reWrite rule.
-		if ($this->pObj->siteScript && substr($this->pObj->siteScript,0,9)!='index.php')	{		// If there has been a redirect (basically; we arrived here otherwise than via "index.php" in the URL) this can happend either due to a CGI-script or because of reWrite rule. Earlier we used $GLOBALS['HTTP_SERVER_VARS']['REDIRECT_URL'] to check but
-			if (!$this->extConf['init']['respectSimulateStaticURLs'] || dirname($this->pObj->siteScript)!='.')	{	// If the URL is a single script like "123.1.html" it might be an "old" simulateStaticDocument request. If this is the case and support for this is configured, do NOT try and resolve it as a Speaking URL
 
+		$fI = t3lib_div::split_fileref($this->pObj->siteScript);
+
+		if ($this->pObj->siteScript && substr($this->pObj->siteScript,0,9)!='index.php')	{		// If there has been a redirect (basically; we arrived here otherwise than via "index.php" in the URL) this can happend either due to a CGI-script or because of reWrite rule. Earlier we used $GLOBALS['HTTP_SERVER_VARS']['REDIRECT_URL'] to check but
+			if (!$this->extConf['init']['respectSimulateStaticURLs'] || $fI['path'])	{	// If the URL is a single script like "123.1.html" it might be an "old" simulateStaticDocument request. If this is the case and support for this is configured, do NOT try and resolve it as a Speaking URL
 				if (TYPO3_DLOG) t3lib_div::devLog('RealURL powered decoding (TM) starting!','realurl');
 
 					// Getting the path which is above the current site url:
