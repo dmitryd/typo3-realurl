@@ -171,7 +171,7 @@ class tx_realurl_advanced {
 				break;
 			}
 
-			if ($page['doktype']==4)	{ // Shortcut. Martin! Watch out for the kind of shortcuts that redirects to "first subpage" etc - they cannot be translated! You should look for such a configuration and NOT translate the id if that is found!
+			if (($page['doktype']==4) && ($page['shortcut_mode'] == 0))	{ // Shortcut
 				$pageid = $page['shortcut'] ? $page['shortcut'] : $pageid;
 			} else { // done
 				$pageid = $page['uid'];

@@ -132,7 +132,7 @@ class tx_realurl {
 	 * @return	void
 	 */
 	function encodeSpURL(&$params, $ref)	{
-		if (TYPO3_DLOG)	t3lib_div::devLog('Starting encoding: '.$params['LD']['totalURL'], 'realurl');
+		if (TYPO3_DLOG)	t3lib_div::devLog('Entering encodeSpURL for '.$params['LD']['totalURL'], 'realurl');
 
 			// Return directly, if simulateStaticDocuments is set:
 		if ($GLOBALS['TSFE']->config['config']['simulateStaticDocuments'])		return;
@@ -142,6 +142,8 @@ class tx_realurl {
 
 			// Checking prefix:
 		if (substr($params['LD']['totalURL'],0,strlen($this->prefixEnablingSpURL)) != $this->prefixEnablingSpURL)	return;
+
+		if (TYPO3_DLOG)	t3lib_div::devLog('Starting URL encode', 'realurl',-1);
 
 			// Initializing config / request URL:
 		$this->setConfig();
@@ -549,13 +551,26 @@ debug(array($paramKeyValues['cHash'],$storedCHash,$newUrl,$spUrlHash),'Error: St
 	 */
 	function decodeSpURL($params, $ref)	{
 
+		if (TYPO3_DLOG) t3lib_div::devLog('Entering decodeSpURL','realurl',-1);
+		
 			// Setting parent object reference (which is $GLOBALS['TSFE'])
 		$this->pObj = &$params['pObj'];
 
 			// Initializing config / request URL:
 		$this->setConfig();
 
+		/* There is little problem with REDIRECT_URL when you use the rewrite-rules in httpd.conf (so not in .htaccess).
+		   The variable just isn't present then. Maybe we should just check if an id was set in the URL, like
+			 I did in the old version. That seemed to work OK, especially with some extensions that just generate an URL
+			 like 'index.php?id=123', because that WILL be rewritten by Apache, but in fact will yield the wrong path
+			 because RealURL will resolve it, whereas we should disregard the path then and just look at the id.
+			 I know it's bad, but that's the way it is I think ;(
+			 
+				if (!isset($GLOBALS['HTTP_GET_VARS']['id']) && !isset($GLOBALS['HTTP_POST_VARS']['id'])) { // If no id was set in the request, we can use our new scheme, otherwise we revert to default TYPO3-behaviour
+		*/
 		if ($GLOBALS['HTTP_SERVER_VARS']['REDIRECT_URL'])	{		// If there has been a redirect (basically; we arrived here otherwise than via "index.php" in the URL) this can happend either due to a CGI-script or because of reWrite rule.
+
+			if (TYPO3_DLOG) t3lib_div::devLog('RealURL powered decoding (TM) starting!','realurl');
 
 				// Getting the path which is above the current site url:
 				// For instance "first/second/third/index.html?&param1=value1&param2=value2" should be the result of the URL "http://localhost/typo3/dev/dummy_1/first/second/third/index.html?&param1=value1&param2=value2"
