@@ -1,3 +1,7 @@
+2005-02-22  Kasper Skårhøj,,,  <kasper@typo3.com>
+
+	* Added Web>Info / Speaking Url Management module: Finally it does something. Can manage the pagepath cache, show decode and encode cached content and manage unique-alias maps.
+
 2004-12-20  Kasper Skårhøj,,,  <kasper@typo3.com>
 
 	* Added support for frontend login triggered bypass keywords (for proxy cache-control situations) (look for "feLogin" in manual)

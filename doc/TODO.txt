@@ -1,10 +1,10 @@
-Todo:
-- Overview module / other things on ToDo.
-	- expire / mgm of path? (benoit issue)
-	- Todo for uniqalias table: Create backend facilities which makes it possible to modify/create new aliases associated with ids; This way the automatically created aliases can be customized afterwards.
+Exploit:
+- It is possible to spam the pathcache table from outside: If you call a page id with &no_cache=1 and incrementing &L, pages will be generated with the &L variable in the links and the pathcache table is filled with bogus entries. Maybe the same with encodecache. Possible solution: To check L against sys_language table. Or for encode cache, only use it when &no_cache is not used. (or totally disable &no_cache parameter!)
 
-********
+Todo:
+- Implement path-expire-time so OLD urls referenced from outside will work for a while...
 - Update documentation feature list + screenshot for introduction.
+- Backend module: Add CSH / Skinning / XHTML and getLL()
 - Required-GETvars on postVarSets... (instead of taking the postVarSet if just a SINGLE Getvar matches...?)
 - NA value / null setting
 

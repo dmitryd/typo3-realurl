@@ -12,6 +12,7 @@ CREATE TABLE tx_realurl_pathcache (
   expire int(11) DEFAULT '0' NOT NULL,
 
   PRIMARY KEY (cache_id),
+  KEY page_id (page_id),
   KEY hash (hash)
 );
 
