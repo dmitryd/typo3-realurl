@@ -112,10 +112,12 @@ class tx_realurl {
 	var $pObj;						// tslib_fe / GLOBALS['TSFE'] (for ->decodeSpURL())
 	var $extConf;					// Configuration for extension, from $TYPO3_CONF_VARS['EXTCONF']['realurl']
 	var $adminJumpSet = FALSE;		// Is set true (->encodeSpURL) if AdminJump is active in some way. Is set false again when captured first time!
+	var $fe_user_prefix_set = FALSE;		// Is set true (->encodeSpURL) if there is a frontend user logged in
 	var $filePart;					// Contains the filename when a Speaking URL is decoded.
 	var $dirParts;					// All directory parts of the string
 	var $orig_paramKeyValues = array();	// Contains the index of GETvars that the URL had when the encoding began.
 	var $appendedSlash=FALSE;		// Set true if slash is appended
+	var $encodePageId=0;			// Set with the page id during encoding. for internal use only.
 
 	var $decode_editInBackend = FALSE;	// If set (in adminjump function) then we will redirect to edit the found page id in the backend.
 	var $encodeError = FALSE;		// If set true encoding failed , probably because the url was outside of root line - and the input url is returned directly.
@@ -151,25 +153,33 @@ class tx_realurl {
 
 			// Initializing config / request URL:
 		$this->setConfig();
+		$internalExtras = array();
 
 			// Init "Admin Jump"; If frontend edit was enabled by the current URL of the page, set it again in the generated URL (and disable caching!)
 		if ($GLOBALS['TSFE']->applicationData['tx_realurl']['adminJumpActive'])	{
 			$GLOBALS['TSFE']->set_no_cache();
 			$this->adminJumpSet = TRUE;
+			$internalExtras['adminJump'] = 1;
+		}
+
+			// If there is a frontend user logged in, set fe_user_prefix
+		if (is_array($GLOBALS['TSFE']->fe_user->user))	{
+			$this->fe_user_prefix_set = TRUE;
+			$internalExtras['feLogin'] = 1;
 		}
 
 			// Parse current URL into main parts:
 		$uParts = parse_url($params['LD']['totalURL']);
 
 			// Look in memory cache first:
-		$newUrl = $this->encodeSpURL_encodeCache($uParts['query']);
+		$newUrl = $this->encodeSpURL_encodeCache($uParts['query'],$internalExtras);
 		if (!$newUrl)	{
 
 				// Encode URL:
 			$newUrl = $this->encodeSpURL_doEncode($uParts['query'], $this->extConf['init']['enableCHashCache'], $params['LD']['totalURL']);
 
 				// Set new URL in cache:
-			$this->encodeSpURL_encodeCache($uParts['query'], $newUrl);
+			$this->encodeSpURL_encodeCache($uParts['query'], $internalExtras, $newUrl);
 		}
 
 			// Adding any anchor there might be:
@@ -206,7 +216,7 @@ class tx_realurl {
 		$this->encodeSpURL_setSequence($this->extConf['preVars'],$paramKeyValues,$pathParts);
 
 			// Create path from ID value:
-		$page_id = $paramKeyValues['id'];
+		$page_id = $this->encodePageId = $paramKeyValues['id'];
 		$this->encodeError = FALSE;
 		$this->encodeSpURL_pathFromId($paramKeyValues,$pathParts);
 		if ($this->encodeError)	{
@@ -382,6 +392,17 @@ class tx_realurl {
 							}
 						}
 
+							// Look for frontend user login:
+						if ($this->fe_user_prefix_set)	{
+							foreach($setup['index'] as $pKey => $pCfg)	{
+								if ((string)$pCfg['type']=='feLogin')	{
+									$pathPartVal = $pKey;
+									$this->fe_user_prefix_set = FALSE;
+									break;
+								}
+							}
+						}
+
 							// If either pathPartVal has been set OR if _DEFAULT type is not bypass, set a value:
 						if (strlen($pathPartVal) || $setup['index']['_DEFAULT']['type']!='bypass')	{
 
@@ -478,13 +499,15 @@ class tx_realurl {
 	 * Setting / Getting encoded URL to/from cache (memory cache, but could be extended to database cache)
 	 *
 	 * @param	string		The original URL with GET parameters - identifying the cached version to find.
+	 * @param	array		Array with extra data to include in encoding. This is flags if adminJump url or feLogin flags are set since these are NOT a part of the URL to encode and therefore are needed for the hash to be true.
 	 * @param	string		If set, this URL will be cached as the encoded version of $urlToEncode. Otherwise the function will look for and return the cached version of $urlToEncode
 	 * @return	mixed		If $setEncodedURL is true, this will be STORED as the cached version and the function returns false, otherwise the cached version is returned (string).
 	 * @see encodeSpURL()
 	 */
-	function encodeSpURL_encodeCache($urlToEncode, $setEncodedURL='')	{
+	function encodeSpURL_encodeCache($urlToEncode, $internalExtras, $setEncodedURL='')	{
+
 			// Create hash string:
-		$hash = t3lib_div::md5int($urlToEncode);
+		$hash = t3lib_div::md5int($urlToEncode.'///'.serialize($internalExtras));
 
 		if (!$setEncodedURL)	{	// Asking for cached encoded URL:
 
@@ -508,6 +531,7 @@ class tx_realurl {
 					'url_hash' => $hash,
 					'origparams' => $urlToEncode,
 					'content' => $setEncodedURL,
+					'page_id' => $this->encodePageId,
 					'tstamp' => time()
 				);
 				$GLOBALS['TYPO3_DB']->exec_DELETEquery('tx_realurl_urlencodecache', 'url_hash='.intval($hash));
@@ -921,6 +945,9 @@ $GLOBALS['TT']->setTSlogMessage('Do decoding');
 						case 'bypass':
 							array_unshift($pathParts,$origValue);
 						break;
+						case 'feLogin':
+							// Do nothing.
+						break;
 					}
 				break;
 				default:
@@ -1042,6 +1069,7 @@ $GLOBALS['TT']->setTSlogMessage('Do decoding');
 					'url_hash' => $hash,
 					'spurl' => $speakingURIpath,
 					'content' => serialize($cachedInfo),
+					'page_id' => $cachedInfo['id'],
 					'tstamp' => time()
 				);
 				$GLOBALS['TYPO3_DB']->exec_DELETEquery('tx_realurl_urldecodecache', 'url_hash='.intval($hash));
@@ -1392,6 +1420,35 @@ $GLOBALS['TT']->setTSlogMessage('Do decoding');
 		}
 
 		return $return;
+	}
+
+
+
+
+
+
+
+
+
+	/**********************************
+	 *
+	 * External Hooks
+	 *
+	 **********************************/
+
+	/**
+	 * Hook function for clearing page cache
+	 *
+	 * @param	array		Params for hook
+	 * @param	object		Reference to parent object (copy)
+	 * @return	void
+	 */
+	function clearPageCacheMgm($params, $ref)	{
+		$pageIdList = $params['table']=='pages' ? array(intval($params['uid'])) : $params['pageIdArray'];
+		if (is_array($pageIdList))	{
+			$GLOBALS['TYPO3_DB']->exec_DELETEquery('tx_realurl_urlencodecache','page_id IN ('.implode(',',$GLOBALS['TYPO3_DB']->cleanIntArray($pageIdList)).')');
+			$GLOBALS['TYPO3_DB']->exec_DELETEquery('tx_realurl_urldecodecache','page_id IN ('.implode(',',$GLOBALS['TYPO3_DB']->cleanIntArray($pageIdList)).')');
+		}
 	}
 }
 

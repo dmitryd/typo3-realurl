@@ -22,7 +22,7 @@ $TCA['pages']['columns']['tx_realurl_pathsegment'] = array(
 		'type' => 'input',
 		'size' => '30',
 		'max' => '30',
-		'eval' => 'uniqueInPid'
+		//'eval' => 'uniqueInPid'	// DON'T use this anyway, it is very confusing when a path is automatically set!
 	)
 );
 

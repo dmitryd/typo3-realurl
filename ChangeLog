@@ -1,3 +1,8 @@
+2004-12-20  Kasper Skårhøj,,,  <kasper@typo3.com>
+
+	* Added support for frontend login triggered bypass keywords (for proxy cache-control situations) (look for "feLogin" in manual)
+	* Added registration of page id for url encoding  - for cache management.
+
 2004-09-01  Kasper Skårhøj,,,  <kasper@typo3.com>
 	* encodeTitle(): Support of multibyte encodings like UTF-8 in the encoding of page titles. Also extended letters => ASCII equivalents are working now (using t3lib_cs)
 	* Implemented support for usage over multiple domains. Manual has been updated. Basically you have to configure the id-resolver (like "tx_realurl_advanced") to know of its root page id so it has a starting point. This is cannot be automatic and therefore you have to configure it to correspond with the root page UID in the page tree. This is documented with examples in the manual.
