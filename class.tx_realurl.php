@@ -112,9 +112,11 @@ class tx_realurl {
 	var $extConf;					// Configuration for extension, from $TYPO3_CONF_VARS['EXTCONF']['realurl']
 	var $adminJumpSet = FALSE;		// Is set true (->encodeSpURL) if AdminJump is active in some way. Is set false again when captured first time!
 	var $filePart;					// Contains the filename when a Speaking URL is decoded.
+	var $dirParts;					// All directory parts of the string
 	var $orig_paramKeyValues = array();	// Contains the index of GETvars that the URL had when the encoding began.
+	var $appendedSlash=FALSE;		// Set true if slash is appended
 
-
+	var $decode_editInBackend = FALSE;	// If set (in adminjump function) then we will redirect to edit the found page id in the backend.
 
 
 	/************************************
@@ -465,10 +467,36 @@ class tx_realurl {
 	 * @see encodeSpURL()
 	 */
 	function encodeSpURL_encodeCache($urlToEncode, $setEncodedURL='')	{
+			// Create hash string:
+		$hash = t3lib_div::md5int($urlToEncode);
+
 		if (!$setEncodedURL)	{	// Asking for cached encoded URL:
-			return $GLOBALS['TSFE']->applicationData['tx_realurl']['_CACHE'][md5($urlToEncode)];
+
+				// First, check memory, otherwise ask database:
+			if (!isset($GLOBALS['TSFE']->applicationData['tx_realurl']['_CACHE'][$hash]) && $this->extConf['init']['enableUrlEncodeCache'])	{
+				$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery(
+							'content',
+							'tx_realurl_urlencodecache',
+							'url_hash='.intval($hash)
+						);
+				if ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res))	{
+					$GLOBALS['TSFE']->applicationData['tx_realurl']['_CACHE'][$hash] = $row['content'];
+				}
+			}
+			return $GLOBALS['TSFE']->applicationData['tx_realurl']['_CACHE'][$hash];
 		} else {	// Setting encoded URL in cache:
-			$GLOBALS['TSFE']->applicationData['tx_realurl']['_CACHE'][md5($urlToEncode)] = $setEncodedURL;
+			$GLOBALS['TSFE']->applicationData['tx_realurl']['_CACHE'][$hash] = $setEncodedURL;
+
+			if ($this->extConf['init']['enableUrlEncodeCache'])	{	// Otherwise ask database:
+				$insertFields = array(
+					'url_hash' => $hash,
+					'origparams' => $urlToEncode,
+					'content' => $setEncodedURL,
+					'tstamp' => time()
+				);
+				$GLOBALS['TYPO3_DB']->exec_DELETEquery('tx_realurl_urlencodecache', 'url_hash='.intval($hash));
+				$GLOBALS['TYPO3_DB']->exec_INSERTquery('tx_realurl_urlencodecache', $insertFields);
+			}
 		}
 	}
 
@@ -552,13 +580,13 @@ debug(array($paramKeyValues['cHash'],$storedCHash,$newUrl,$spUrlHash),'Error: St
 	function decodeSpURL($params, $ref)	{
 
 		if (TYPO3_DLOG) t3lib_div::devLog('Entering decodeSpURL','realurl',-1);
-
+$GLOBALS['TT']->setTSlogMessage('called');
 			// Setting parent object reference (which is $GLOBALS['TSFE'])
 		$this->pObj = &$params['pObj'];
 
 			// Initializing config / request URL:
 		$this->setConfig();
-
+$GLOBALS['TT']->setTSlogMessage('$this->pObj->siteScript: '.$this->pObj->siteScript);
 			// If there has been a redirect (basically; we arrived here otherwise than via "index.php" in the URL) this can happend either due to a CGI-script or because of reWrite rule. Earlier we used $GLOBALS['HTTP_SERVER_VARS']['REDIRECT_URL'] to check but
 		if ($this->pObj->siteScript && substr($this->pObj->siteScript,0,9)!='index.php')	{
 
@@ -573,21 +601,22 @@ debug(array($paramKeyValues['cHash'],$storedCHash,$newUrl,$spUrlHash),'Error: St
 						case 'ifNotFile':
 							if (!ereg('\/[^\/]+\.[^\/]+$','/'.$speakingURIpath))	{
 								$speakingURIpath.= '/';
+								$this->appendedSlash = TRUE;
 							}
 						break;
 						default:
 							$speakingURIpath.= '/';
-							debug($speakingURIpath,'default');
+							$this->appendedSlash = TRUE;
 						break;
 					}
 				}
 			}
-
+$GLOBALS['TT']->setTSlogMessage('$speakingURIpath: '.$speakingURIpath);
 				// If the URL is a single script like "123.1.html" it might be an "old" simulateStaticDocument request. If this is the case and support for this is configured, do NOT try and resolve it as a Speaking URL
 			$fI = t3lib_div::split_fileref($speakingURIpath);
 			if (!$this->extConf['init']['respectSimulateStaticURLs'] || $fI['path'])	{
 				if (TYPO3_DLOG) t3lib_div::devLog('RealURL powered decoding (TM) starting!','realurl');
-
+$GLOBALS['TT']->setTSlogMessage('Do decoding');
 					// Parse path:
 				$uParts = parse_url($speakingURIpath);
 				$speakingURIpath = $uParts['path'];
@@ -607,6 +636,9 @@ debug(array($paramKeyValues['cHash'],$storedCHash,$newUrl,$spUrlHash),'Error: St
 						// Storing cached information:
 					$this->decodeSpURL_decodeCache($speakingURIpath, $cachedInfo);
 				}
+
+					// Jump-admin if configured:
+				$this->decodeSpURL_jumpAdmin_goBackend($cachedInfo['id']);
 
 					// Setting info in TSFE:
 				$this->pObj->mergingWithGetVars($cachedInfo['GET_VARS']);
@@ -654,6 +686,8 @@ debug(array($paramKeyValues['cHash'],$storedCHash,$newUrl,$spUrlHash),'Error: St
 			$this->filePart = '';
 		}
 
+			// Setting original dir-parts:
+		$this->dirParts = $pathParts;
 
 			// Setting "preVars":
 		$pre_GET_VARS = $this->decodeSpURL_settingPreVars($pathParts, $this->extConf['preVars']);
@@ -767,6 +801,28 @@ debug(array($paramKeyValues['cHash'],$storedCHash,$newUrl,$spUrlHash),'Error: St
 							$GET_string.= $this->decodeSpURL_getSequence($pathParts, $postVarSetCfg[$key]);
 						break;
 					}
+				} elseif ($this->extConf['init']['postVarSet_failureMode']=='redirect_goodUpperDir') {
+						// Add the element just taken off. What is left now will be the post-parts that were not mapped to anything.
+					array_unshift($pathParts,$key);
+
+					$originalDirs = $this->dirParts;
+
+						// Popping of pages of original dirs (as many as are remaining in $pathParts)
+					while(count($pathParts))	{
+						array_pop($pathParts);
+						array_pop($originalDirs);
+					}
+						// If a file part was detected, add that:
+					$originalDirs[] = $this->filePart;
+
+						// Implode URL and redirect:
+					$redirectUrl = implode('/',$originalDirs);
+					header('Location: '.t3lib_div::locationHeaderUrl($redirectUrl));
+					exit;
+				} elseif ($this->extConf['init']['postVarSet_failureMode']=='ignore') {
+						// Add the element just taken off. What is left now will be the post-parts that were not mapped to anything.
+					array_unshift($pathParts,$key);
+					break;
 				} else {
 					$this->decodeSpURL_throw404('Segment "'.$key.'" was not a keyword for a postVarSet as expected!');
 				}
@@ -830,7 +886,11 @@ debug(array($paramKeyValues['cHash'],$storedCHash,$newUrl,$spUrlHash),'Error: St
 							$url = (string)$setup['index'][$idx]['url'];
 							$url = str_replace('###INDEX###', rawurlencode($value), $url);
 							$pathParts[] = $this->filePart;
-							$url = str_replace('###REMAIN_PATH###', rawurlencode(rawurldecode(implode('/',$pathParts))), $url);
+							$remainPath = implode('/',$pathParts);
+							if ($this->appendedSlash)	{
+								$remainPath = substr($remainPath,0,-1);
+							}
+							$url = str_replace('###REMAIN_PATH###', rawurlencode(rawurldecode($remainPath)), $url);
 
 							header('Location: '.t3lib_div::locationHeaderUrl($url));
 							exit;
@@ -906,7 +966,7 @@ debug(array($paramKeyValues['cHash'],$storedCHash,$newUrl,$spUrlHash),'Error: St
 	 * @return	void
 	 */
 	function decodeSpURL_throw404($msg)	{
-		die($msg);
+		$this->pObj->pageNotFoundAndExit($msg);
 	}
 
 	/**
@@ -916,7 +976,9 @@ debug(array($paramKeyValues['cHash'],$storedCHash,$newUrl,$spUrlHash),'Error: St
 	 */
 	function decodeSpURL_jumpAdmin()	{
 		if ($this->pObj->beUserLogin && is_object($GLOBALS['BE_USER']))	{
-			if ($GLOBALS['BE_USER']->extAdmEnabled)	{
+			if ($this->extConf['init']['adminJumpToBackend'])	{
+				$this->decode_editInBackend = TRUE;
+			} elseif ($GLOBALS['BE_USER']->extAdmEnabled)	{
     			$GLOBALS['TSFE']->displayFieldEditIcons = 1;
 				$GLOBALS['BE_USER']->uc['TSFE_adminConfig']['edit_editNoPopup'] = 1;
 
@@ -931,6 +993,20 @@ debug(array($paramKeyValues['cHash'],$storedCHash,$newUrl,$spUrlHash),'Error: St
 	}
 
 	/**
+	 * Will exit after redirect to backend (with "&edit=...") if $this->decode_editInBackend is set
+	 *
+	 * @param	integer		Page id.
+	 * @return	void
+	 */
+	function decodeSpURL_jumpAdmin_goBackend($pageId)	{
+		if ($this->decode_editInBackend)	{
+			$editUrl = t3lib_div::getIndpEnv('TYPO3_SITE_URL').TYPO3_mainDir.'alt_main.php?edit='.intval($pageId);
+			header('Location: '.t3lib_div::locationHeaderUrl($editUrl));
+			exit;
+		}
+	}
+
+	/**
 	 * Manages caching of URLs to be decoded.
 	 *
 	 * @param	string		Speaking URL path to be decoded
@@ -938,7 +1014,37 @@ debug(array($paramKeyValues['cHash'],$storedCHash,$newUrl,$spUrlHash),'Error: St
 	 * @return	mixed		Returns array with cached information related to $speakingURIpath (unless $cachedInfo is an array in which case it is stored back to database).
 	 */
 	function decodeSpURL_decodeCache($speakingURIpath,$cachedInfo='')	{
-		#debug(array($speakingURIpath));
+
+		if ($this->extConf['init']['enableUrlDecodeCache'])	{
+
+				// Create hash string:
+			$hash = t3lib_div::md5int($speakingURIpath);
+
+			if (is_array($cachedInfo))	{	// STORE cachedInfo
+				$insertFields = array(
+					'url_hash' => $hash,
+					'spurl' => $speakingURIpath,
+					'content' => serialize($cachedInfo),
+					'tstamp' => time()
+				);
+				$GLOBALS['TYPO3_DB']->exec_DELETEquery('tx_realurl_urldecodecache', 'url_hash='.intval($hash));
+				$GLOBALS['TYPO3_DB']->exec_INSERTquery('tx_realurl_urldecodecache', $insertFields);
+
+				$GLOBALS['TT']->setTSlogMessage('Decode cache: SpUrl stored in cache');
+			} else {	// GET cachedInfo.
+				$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery(
+							'content',
+							'tx_realurl_urldecodecache',
+							'url_hash='.intval($hash)
+						);
+				if ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res))	{
+					$GLOBALS['TT']->setTSlogMessage('Decode cache: SpUrl found in cache');
+					return unserialize($row['content']);
+				} else {
+					$GLOBALS['TT']->setTSlogMessage('Decode cache: SpUrl NOT found in cache');
+				}
+			}
+		}
 	}
 
 	/**

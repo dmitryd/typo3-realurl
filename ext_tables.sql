@@ -40,3 +40,28 @@ CREATE TABLE tx_realurl_chashcache (
   KEY tablename (chash_string)
 );
 
+#
+# Table structure for table 'tx_realurl_urldecodecache'
+# Cache for Speaking URLS when translated to internal GET vars.
+# Flushable
+#
+CREATE TABLE tx_realurl_urldecodecache (
+  url_hash int(11) DEFAULT '0' NOT NULL,
+  spurl tinytext NOT NULL,
+  content blob NOT NULL,
+  tstamp int(11) DEFAULT '0' NOT NULL,
+  PRIMARY KEY (url_hash)
+);
+
+#
+# Table structure for table 'tx_realurl_urlencodecache'
+# Cache for GEt parameter strings being translated to Speaking URls.
+# Flushable
+#
+CREATE TABLE tx_realurl_urlencodecache (
+  url_hash int(11) DEFAULT '0' NOT NULL,
+  origparams tinytext NOT NULL,
+  content text NOT NULL,
+  tstamp int(11) DEFAULT '0' NOT NULL,
+  PRIMARY KEY (url_hash)
+);

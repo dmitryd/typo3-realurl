@@ -1,3 +1,12 @@
+2004-06-10  Kasper Skårhøj,,,  <kasper@typo3.com>
+
+	* Added option to disable pathcache (and more for that)
+	* For 404 handling, realurl will now use the default TYPO# pageNotFound handling.
+	* "Admin" jump functionality had a new feature which can link people into the backend for editing the page rather than showing frontend icons only.
+	* Created modes for "soft" segment-not-found handling.
+	* Implemented true URL decode/encode caching
+	* All document, but some features depends on TYPO3 3.7.0-dev+
+
 2004-04-22  Kasper Skårhøj,,,  <kasper@typo3.com>
 
 	* Added new option "appendMissingSlash" which appends a trailing slash to the path if it was not set by the user.

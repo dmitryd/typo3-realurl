@@ -37,20 +37,20 @@
  *
  *
  *
- *   77: class tx_realurl_advanced 
- *  104:     function main(&$params,$ref)	
+ *   77: class tx_realurl_advanced
+ *  104:     function main(&$params,$ref)
  *
  *              SECTION: "path" ID-to-URL methods
- *  151:     function IDtoPagePath(&$paramKeyValues, &$pathParts) 
- *  228:     function fixURLCache($id,$lang = -1) 
- *  248:     function updateURLCache($id,$lang = -1) 
- *  332:     function IDtoPagePathSegments($id,$langID = -1) 
- *  384:     function rootLineToPath($rl) 
- *  408:     function encodeTitle($title) 
- *  426:     function pagePathtoID(&$pathParts) 
+ *  151:     function IDtoPagePath(&$paramKeyValues, &$pathParts)
+ *  228:     function fixURLCache($id,$lang = -1)
+ *  248:     function updateURLCache($id,$lang = -1)
+ *  332:     function IDtoPagePathSegments($id,$langID = -1)
+ *  384:     function rootLineToPath($rl)
+ *  408:     function encodeTitle($title)
+ *  426:     function pagePathtoID(&$pathParts)
  *  497:     function findIDByURL(&$urlParts)
- *  548:     function searchTitle($pid,&$urlParts,$lang) 
- *  590:     function setupPathPrefix() 
+ *  548:     function searchTitle($pid,&$urlParts,$lang)
+ *  590:     function setupPathPrefix()
  *
  * TOTAL FUNCTIONS: 11
  * (This index is automatically created/updated by the extension "extdeveval")
@@ -189,14 +189,19 @@ class tx_realurl_advanced {
 
 			// Fetch cached path
 			// Don't select an expiring path though...
-		if (TYPO3_DLOG)	t3lib_div::devLog("(select from cache $pageid,$lang)", 'realurl');
-		$path = '';
-		$result = $GLOBALS['TYPO3_DB']->exec_SELECTquery('pagepath', 'tx_realurl_pathcache', 'page_id='.intval($pageid).' AND language_id='.intval($lang).' AND expire=0');
-		if ($GLOBALS['TYPO3_DB']->sql_num_rows($result) > 1) { // If there seems to be more than one page path cached for this combo, go fix it
-			$this->fixURLCache($pageid,$lang);
-			$cachedPagePath = FALSE;
+		if (!$this->conf['disablePathCache'])	{
+
+			if (TYPO3_DLOG)	t3lib_div::devLog("(select from cache $pageid,$lang)", 'realurl');
+			$path = '';
+			$result = $GLOBALS['TYPO3_DB']->exec_SELECTquery('pagepath', 'tx_realurl_pathcache', 'page_id='.intval($pageid).' AND language_id='.intval($lang).' AND expire=0');
+			if ($GLOBALS['TYPO3_DB']->sql_num_rows($result) > 1) { // If there seems to be more than one page path cached for this combo, go fix it
+				$this->fixURLCache($pageid,$lang);
+				$cachedPagePath = FALSE;
+			} else {
+				$cachedPagePath = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($result);
+			}
 		} else {
-			$cachedPagePath = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($result);
+			$cachedPagePath = FALSE;
 		}
 
 			// If a cached page path was found, get it now:
@@ -252,62 +257,65 @@ class tx_realurl_advanced {
 		$pagepathHash = $pagepathRec['pagepathhash'];
 		$langID = $pagepathRec['langID'];
 
-		if (TYPO3_DLOG)	t3lib_div::devLog('(fetch old)','realurl');
+		if (!$this->conf['disablePathCache'])	{
 
-			// Fetch all current versions of the page path (i.e. all languages)
-		$oldUrls = array();
-		$result = $GLOBALS['TYPO3_DB']->exec_SELECTquery('language_id, pagepath', 'tx_realurl_pathcache', 'page_id='.intval($id).' AND expire=0');
-		while ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($result))	{
-			$oldUrls[$row['language_id']] = $row['pagepath'];
-		}
+			if (TYPO3_DLOG)	t3lib_div::devLog('(fetch old)','realurl');
 
-			// Now let's see if the path has changed:
-			// - If the page path isn't present in the requested language, we should just insert it and exit
-			// - If it IS present, it should match. If it doesn't match, we should update the cache
-		if (isset($oldUrls[$langID])) {
-			if ($oldUrls[$langID]==$pagepath)	{
-				if (TYPO3_DLOG)	t3lib_div::devLog('(no change) }','realurl');
-				return $pagepathRec['pagepath'];
-			} else {
+				// Fetch all current versions of the page path (i.e. all languages)
+			$oldUrls = array();
+			$result = $GLOBALS['TYPO3_DB']->exec_SELECTquery('language_id, pagepath', 'tx_realurl_pathcache', 'page_id='.intval($id).' AND expire=0');
+			while ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($result))	{
+				$oldUrls[$row['language_id']] = $row['pagepath'];
+			}
 
-				if (TYPO3_DLOG)	t3lib_div::devLog('(changed)','realurl');
+				// Now let's see if the path has changed:
+				// - If the page path isn't present in the requested language, we should just insert it and exit
+				// - If it IS present, it should match. If it doesn't match, we should update the cache
+			if (isset($oldUrls[$langID])) {
+				if ($oldUrls[$langID]==$pagepath)	{
+					if (TYPO3_DLOG)	t3lib_div::devLog('(no change) }','realurl');
+					return $pagepathRec['pagepath'];
+				} else {
 
-					// !! TODO !! It might be a cool to search the rootline for this page, and see if the page path
-					// of every page in that root matches the cached version.
-					// If not, we just call UpdateURLCache of that URL first.
+					if (TYPO3_DLOG)	t3lib_div::devLog('(changed)','realurl');
 
-					// Update (=set expire-time of) all pagepaths starting with one of the $oldUrls
-				$days = intval($this->conf['expireDays']);
+						// !! TODO !! It might be a cool to search the rootline for this page, and see if the page path
+						// of every page in that root matches the cached version.
+						// If not, we just call UpdateURLCache of that URL first.
 
-				$updateArray = array();
-				$updateArray['expire'] = time()+$days*3600*24;
+						// Update (=set expire-time of) all pagepaths starting with one of the $oldUrls
+					$days = intval($this->conf['expireDays']);
 
-				foreach ($oldUrls as $index => $oldUrl)	{
-					$oldUrls[$index] = '(pagepath LIKE "'.$GLOBALS['TYPO3_DB']->quoteStr($oldUrl,'tx_realurl_pathcache').'%")';
-				}
-				$updateWhere = 'expire=0 AND ('.implode(' OR ',$oldUrls).')';
+					$updateArray = array();
+					$updateArray['expire'] = time()+$days*3600*24;
 
-				if (TYPO3_DLOG)	t3lib_div::devLog("(updating old pagepaths)",'realurl');
-				$GLOBALS['TYPO3_DB']->exec_UPDATEquery('tx_realurl_pathcache', $updateArray, $updateWhere);
-				if (TYPO3_DLOG)	t3lib_div::devLog("Update status: ".$GLOBALS['TYPO3_DB']->sql_error(),'realurl');
+					foreach ($oldUrls as $index => $oldUrl)	{
+						$oldUrls[$index] = '(pagepath LIKE "'.$GLOBALS['TYPO3_DB']->quoteStr($oldUrl,'tx_realurl_pathcache').'%")';
+					}
+					$updateWhere = 'expire=0 AND ('.implode(' OR ',$oldUrls).')';
 
-					// We have to see if there are old pages that previously had the same path as this one currently has.
-				if (TYPO3_DLOG)	t3lib_div::devLog('(deleting same pagepath)','realurl');
-				$result = $GLOBALS['TYPO3_DB']->exec_SELECTquery('DISTINCT page_id','tx_realurl_pathcache', 'pagepath LIKE "'.$GLOBALS['TYPO3_DB']->quoteStr($pagepath,'tx_realurl_pathcache').'%"');
-				while ($row = $GLOBALS['TYPO3_DB']->sql_fetch_row($result)) {
-					$GLOBALS['TYPO3_DB']->exec_DELETEquery('tx_realurl_pathcache', 'page_id='.intval($row[0]));
+					if (TYPO3_DLOG)	t3lib_div::devLog("(updating old pagepaths)",'realurl');
+					$GLOBALS['TYPO3_DB']->exec_UPDATEquery('tx_realurl_pathcache', $updateArray, $updateWhere);
+					if (TYPO3_DLOG)	t3lib_div::devLog("Update status: ".$GLOBALS['TYPO3_DB']->sql_error(),'realurl');
+
+						// We have to see if there are old pages that previously had the same path as this one currently has.
+					if (TYPO3_DLOG)	t3lib_div::devLog('(deleting same pagepath)','realurl');
+					$result = $GLOBALS['TYPO3_DB']->exec_SELECTquery('DISTINCT page_id','tx_realurl_pathcache', 'pagepath LIKE "'.$GLOBALS['TYPO3_DB']->quoteStr($pagepath,'tx_realurl_pathcache').'%"');
+					while ($row = $GLOBALS['TYPO3_DB']->sql_fetch_row($result)) {
+						$GLOBALS['TYPO3_DB']->exec_DELETEquery('tx_realurl_pathcache', 'page_id='.intval($row[0]));
+					}
 				}
 			}
-		}
 
-		$insertArray = array(
-			'page_id' => $id,
-			'language_id' => $langID,
-			'pagepath' => $pagepath,
-			'hash' => $pagepathHash,
-			'expire' => 0
-		);
-		$GLOBALS['TYPO3_DB']->exec_INSERTquery('tx_realurl_pathcache', $insertArray);
+			$insertArray = array(
+				'page_id' => $id,
+				'language_id' => $langID,
+				'pagepath' => $pagepath,
+				'hash' => $pagepathHash,
+				'expire' => 0
+			);
+			$GLOBALS['TYPO3_DB']->exec_INSERTquery('tx_realurl_pathcache', $insertArray);
+		}
 
 		if (TYPO3_DLOG)	t3lib_div::devLog("[$pagepath] }",5);
 
@@ -432,20 +440,26 @@ class tx_realurl_advanced {
 	 */
 	function pagePathtoID(&$pathParts) {
 
-			// Work from outside-in to look up path in cache:
-		$copy_pathParts = $pathParts;
-		while(1)	{
-			$result = $GLOBALS['TYPO3_DB']->exec_SELECTquery(
-						'page_id, expire',
-						'tx_realurl_pathcache',
-						'hash="'.substr(md5(implode('/',$copy_pathParts)),0,10).'"'
-					);
-			if ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($result))	{
-				break;
-			} else {	// If no row was found, we simply pop off one element of the path and try again until there are no more elements in the array - which means we didn't find a match!
-				array_pop($copy_pathParts);
-				if (!count($copy_pathParts))	break;
+		if (!$this->conf['disablePathCache'])	{
+				// Work from outside-in to look up path in cache:
+			$copy_pathParts = $pathParts;
+			while(1)	{
+				$result = $GLOBALS['TYPO3_DB']->exec_SELECTquery(
+							'page_id, expire',
+							'tx_realurl_pathcache',
+							'hash="'.substr(md5(implode('/',$copy_pathParts)),0,10).'"'
+						);
+				if ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($result))	{
+					break;
+				} elseif ($this->conf['firstHitPathCache'])	{
+					break;
+				} else {	// If no row was found, we simply pop off one element of the path and try again until there are no more elements in the array - which means we didn't find a match!
+					array_pop($copy_pathParts);
+					if (!count($copy_pathParts))	break;
+				}
 			}
+		} else {
+			$row = FALSE;
 		}
 
 		if ($row) { // We found it in the cache
