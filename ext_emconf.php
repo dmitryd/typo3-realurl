@@ -1,10 +1,10 @@
 <?php
 
 ########################################################################
-# Extension Manager/Repository config file for ext: 'realurl'
-#
-# Auto generated 26-01-2004 19:40
-#
+# Extension Manager/Repository config file for ext: "realurl"
+# 
+# Auto generated 16-09-2004 11:02
+# 
 # Manual updates:
 # Only the data in the array - anything else is removed by next write
 ########################################################################
@@ -17,6 +17,9 @@ $EM_CONF[$_EXTKEY] = Array (
 	'dependencies' => '',
 	'conflicts' => '',
 	'priority' => '',
+	'loadOrder' => '',
+	'TYPO3_version' => '3.7.0-',
+	'PHP_version' => '-',
 	'module' => 'testmod',
 	'state' => 'beta',
 	'internal' => 0,
@@ -28,10 +31,12 @@ $EM_CONF[$_EXTKEY] = Array (
 	'author' => 'Martin Poelstra',
 	'author_email' => 'martin@beryllium.net',
 	'author_company' => 'Beryllium Engineering',
+	'CGLcompliance' => '',
+	'CGLcompliance_note' => '',
 	'private' => 0,
 	'download_password' => '',
-	'version' => '0.1.4',	// Don't modify this! Managed automatically during upload to repository.
-	'_md5_values_when_last_written' => 'a:10:{s:10:"_.htaccess";s:4:"e513";s:21:"class.ux_tslib_fe.php";s:4:"9da7";s:12:"ext_icon.gif";s:4:"ea80";s:17:"ext_localconf.php";s:4:"555b";s:14:"ext_tables.php";s:4:"fdb3";s:14:"ext_tables.sql";s:4:"c121";s:22:"localconf.advanced.php";s:4:"47c6";s:20:"localconf.simple.php";s:4:"961a";s:16:"locallang_db.php";s:4:"dcdd";s:14:"doc/manual.sxw";s:4:"bd7d";}',
+	'version' => '0.2.0',	// Don't modify this! Managed automatically during upload to repository.
+	'_md5_values_when_last_written' => 'a:29:{s:9:"ChangeLog";s:4:"8a45";s:10:"_.htaccess";s:4:"90b6";s:20:"class.tx_realurl.php";s:4:"0346";s:29:"class.tx_realurl_advanced.php";s:4:"1a80";s:26:"class.tx_realurl_dummy.php";s:4:"1966";s:12:"ext_icon.gif";s:4:"ea80";s:17:"ext_localconf.php";s:4:"0b6b";s:14:"ext_tables.php";s:4:"ec55";s:14:"ext_tables.sql";s:4:"f205";s:16:"locallang_db.php";s:4:"cd04";s:11:"CVS/Entries";s:4:"cad5";s:15:"CVS/Entries.Log";s:4:"a561";s:14:"CVS/Repository";s:4:"7320";s:8:"CVS/Root";s:4:"bbeb";s:12:"doc/TODO.txt";s:4:"2e78";s:14:"doc/manual.sxw";s:4:"47b1";s:15:"doc/CVS/Entries";s:4:"61e6";s:18:"doc/CVS/Repository";s:4:"9ed8";s:12:"doc/CVS/Root";s:4:"bbeb";s:16:"testmod/conf.php";s:4:"4ad1";s:17:"testmod/index.php";s:4:"3b21";s:19:"testmod/CVS/Entries";s:4:"ea78";s:22:"testmod/CVS/Repository";s:4:"1635";s:16:"testmod/CVS/Root";s:4:"bbeb";s:38:"modfunc1/class.tx_realurl_modfunc1.php";s:4:"bfad";s:22:"modfunc1/locallang.php";s:4:"b523";s:20:"modfunc1/CVS/Entries";s:4:"d450";s:23:"modfunc1/CVS/Repository";s:4:"e2ff";s:17:"modfunc1/CVS/Root";s:4:"bbeb";}',
 );
 
 ?>
