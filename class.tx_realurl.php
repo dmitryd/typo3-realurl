@@ -565,38 +565,41 @@ debug(array($paramKeyValues['cHash'],$storedCHash,$newUrl,$spUrlHash),'Error: St
 			 like 'index.php?id=123', because that WILL be rewritten by Apache, but in fact will yield the wrong path
 			 because RealURL will resolve it, whereas we should disregard the path then and just look at the id.
 			 I know it's bad, but that's the way it is I think ;(
-			 
+
 				if (!isset($GLOBALS['HTTP_GET_VARS']['id']) && !isset($GLOBALS['HTTP_POST_VARS']['id'])) { // If no id was set in the request, we can use our new scheme, otherwise we revert to default TYPO3-behaviour
 		*/
-		if ($GLOBALS['HTTP_SERVER_VARS']['REDIRECT_URL'])	{		// If there has been a redirect (basically; we arrived here otherwise than via "index.php" in the URL) this can happend either due to a CGI-script or because of reWrite rule.
+#		if ($GLOBALS['HTTP_SERVER_VARS']['REDIRECT_URL'])	{		// If there has been a redirect (basically; we arrived here otherwise than via "index.php" in the URL) this can happend either due to a CGI-script or because of reWrite rule.
+		if ($this->pObj->siteScript && substr($this->pObj->siteScript,0,9)!='index.php')	{		// If there has been a redirect (basically; we arrived here otherwise than via "index.php" in the URL) this can happend either due to a CGI-script or because of reWrite rule. Earlier we used $GLOBALS['HTTP_SERVER_VARS']['REDIRECT_URL'] to check but
+			if (!$this->extConf['init']['respectSimulateStaticURLs'] || dirname($this->pObj->siteScript)!='.')	{	// If the URL is a single script like "123.1.html" it might be an "old" simulateStaticDocument request. If this is the case and support for this is configured, do NOT try and resolve it as a Speaking URL
 
-			if (TYPO3_DLOG) t3lib_div::devLog('RealURL powered decoding (TM) starting!','realurl');
+				if (TYPO3_DLOG) t3lib_div::devLog('RealURL powered decoding (TM) starting!','realurl');
 
-				// Getting the path which is above the current site url:
-				// For instance "first/second/third/index.html?&param1=value1&param2=value2" should be the result of the URL "http://localhost/typo3/dev/dummy_1/first/second/third/index.html?&param1=value1&param2=value2"
-			$speakingURIpath = substr(t3lib_div::getIndpEnv('TYPO3_REQUEST_URL'),strlen(t3lib_div::getIndpEnv('TYPO3_SITE_URL')));
-			$uParts = parse_url($speakingURIpath);
-			$speakingURIpath = $uParts['path'];
+					// Getting the path which is above the current site url:
+					// For instance "first/second/third/index.html?&param1=value1&param2=value2" should be the result of the URL "http://localhost/typo3/dev/dummy_1/first/second/third/index.html?&param1=value1&param2=value2"
+				$speakingURIpath = $this->pObj->siteScript;
+				$uParts = parse_url($speakingURIpath);
+				$speakingURIpath = $uParts['path'];
 
-				// Redirecting if needed (exits if so).
-			$this->decodeSpURL_checkRedirects($speakingURIpath);
+					// Redirecting if needed (exits if so).
+				$this->decodeSpURL_checkRedirects($speakingURIpath);
 
-				// Looking for cached information:
-			$cachedInfo = $this->decodeSpURL_decodeCache($speakingURIpath);
+					// Looking for cached information:
+				$cachedInfo = $this->decodeSpURL_decodeCache($speakingURIpath);
 
-				// If no cached info was found, create it:
-			if (!is_array($cachedInfo))	{
+					// If no cached info was found, create it:
+				if (!is_array($cachedInfo))	{
 
-					// Decode URL:
-				$cachedInfo = $this->decodeSpURL_doDecode($speakingURIpath, $this->extConf['init']['enableCHashCache']);
+						// Decode URL:
+					$cachedInfo = $this->decodeSpURL_doDecode($speakingURIpath, $this->extConf['init']['enableCHashCache']);
 
-					// Storing cached information:
-				$this->decodeSpURL_decodeCache($speakingURIpath, $cachedInfo);
+						// Storing cached information:
+					$this->decodeSpURL_decodeCache($speakingURIpath, $cachedInfo);
+				}
+
+					// Setting info in TSFE:
+				$this->pObj->mergingWithGetVars($cachedInfo['GET_VARS']);
+				$this->pObj->id = $cachedInfo['id'];
 			}
-
-				// Setting info in TSFE:
-			$this->pObj->mergingWithGetVars($cachedInfo['GET_VARS']);
-			$this->pObj->id = $cachedInfo['id'];
 		}
 	}
 
