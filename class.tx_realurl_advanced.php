@@ -37,20 +37,24 @@
  *
  *
  *
- *   77: class tx_realurl_advanced
- *  104:     function main(&$params,$ref)
+ *   81: class tx_realurl_advanced
+ *  105:     function main(&$params,$ref)
  *
  *              SECTION: "path" ID-to-URL methods
- *  151:     function IDtoPagePath(&$paramKeyValues, &$pathParts)
- *  228:     function fixURLCache($id,$lang = -1)
- *  248:     function updateURLCache($id,$lang = -1)
- *  332:     function IDtoPagePathSegments($id,$langID = -1)
- *  384:     function rootLineToPath($rl)
- *  408:     function encodeTitle($title)
- *  426:     function pagePathtoID(&$pathParts)
- *  497:     function findIDByURL(&$urlParts)
- *  548:     function searchTitle($pid,&$urlParts,$lang)
- *  590:     function setupPathPrefix()
+ *  150:     function IDtoPagePath(&$paramKeyValues, &$pathParts)
+ *  241:     function fixURLCache($id,$lang = -1)
+ *  262:     function updateURLCache($id,$mpvar,$lang)
+ *  359:     function IDtoPagePathSegments($id,$mpvar,$langID)
+ *  409:     function rootLineToPath($rl)
+ *
+ *              SECTION: URL-to-ID methods
+ *  456:     function pagePathtoID(&$pathParts)
+ *  527:     function findIDByURL(&$urlParts)
+ *  569:     function searchTitle($pid, $mpvar, &$urlParts, $currentIdMp='')
+ *  621:     function searchTitle_searchPid($searchPid,$title)
+ *
+ *              SECTION: Helper functions
+ *  724:     function encodeTitle($title)
  *
  * TOTAL FUNCTIONS: 11
  * (This index is automatically created/updated by the extension "extdeveval")
@@ -170,7 +174,7 @@ class tx_realurl_advanced {
 				break;
 			}
 
-			if (($page['doktype']==4) && ($page['shortcut_mode'] == 0))	{ // Shortcut
+			if (!$this->conf['dontResolveShortcuts'] && ($page['doktype']==4) && ($page['shortcut_mode'] == 0))	{ // Shortcut
 				$pageid = $page['shortcut'] ? $page['shortcut'] : $pageid;
 			} else { // done
 				$pageid = $page['uid'];
@@ -180,6 +184,14 @@ class tx_realurl_advanced {
 
 			// The page wasn't found. Just return FALSE, so the calling function can revert to another way to build the link
 		if ($pageid == -1)	return FALSE;
+
+
+			// Set error if applicable.
+		if ($this->conf['excludePageIds'] && t3lib_div::inList($this->conf['excludePageIds'],$pageid))	{
+			$this->pObjRef->encodeError = TRUE;
+			return;
+		}
+
 
 			// Setting the language variable based on GETvar in URL which has been configured to carry the language uid:
 		if ($this->conf['languageGetVar'])	{
@@ -216,6 +228,12 @@ class tx_realurl_advanced {
 				// There's no page path cached yet, just call updateCache() to let it fix that
 			if (TYPO3_DLOG)	t3lib_div::devLog("(create new)",'realurl');
 			$pagePath = $this->updateURLCache($pageid,$mpvar,$lang);
+		}
+
+			// Set error if applicable.
+		if ($pagePath==='__ERROR')	{
+			$this->pObjRef->encodeError = TRUE;
+			return;
 		}
 
 			// Exploding the path, adding the entries to $pathParts (which is passed by reference and therefore automatically returned to main application)
@@ -260,6 +278,11 @@ class tx_realurl_advanced {
 
 			// Build the new page path, in the correct language
 		$pagepathRec = $this->IDtoPagePathSegments($id, $mpvar, $lang);
+		if (!$pagepathRec)	{
+			return '__ERROR';
+		}
+
+
 		$pagepath = $pagepathRec['pagepath'];
 		$pagepathHash = $pagepathRec['pagepathhash'];
 		$langID = $pagepathRec['langID'];
@@ -377,14 +400,17 @@ class tx_realurl_advanced {
 				}
 			}
 
-				// Translate the rootline to a valid path (rootline contains localized titles at this point!):
-			$pagepath = $this->rootLineToPath($newRootLine);
-
-			$this->IDtoPagePathCache[$cacheKey] = array(
-				'pagepath' => $pagepath,
-				'langID' => $langID,
-				'pagepathhash' => substr(md5($pagepath),0,10),
-			);
+			if ($rootFound)	{
+					// Translate the rootline to a valid path (rootline contains localized titles at this point!):
+				$pagepath = $this->rootLineToPath($newRootLine);
+				$this->IDtoPagePathCache[$cacheKey] = array(
+					'pagepath' => $pagepath,
+					'langID' => $langID,
+					'pagepathhash' => substr(md5($pagepath),0,10),
+				);
+			} else {	// Outside of root line:
+				$this->IDtoPagePathCache[$cacheKey] = FALSE;
+			}
 		}
 
 		return $this->IDtoPagePathCache[$cacheKey];
@@ -410,7 +436,7 @@ class tx_realurl_advanced {
 			$page = array_shift($rl);
 
 				// List of "pages" fields to traverse for a "directory title" in the speaking URL (only from RootLine!!):
-			$segTitleFieldArray = t3lib_div::trimExplode(',', $this->conf['segTitleFieldList'] ? $this->conf['segTitleFieldList'] : 'nav_title,title', 1);
+			$segTitleFieldArray = t3lib_div::trimExplode(',', $this->conf['segTitleFieldList'] ? $this->conf['segTitleFieldList'] : 'tx_realurl_pathsegment,alias,nav_title,title', 1);
 			$theTitle = '';
 			foreach($segTitleFieldArray as $fieldName)	{
 				if ($page[$fieldName])	{
@@ -505,7 +531,7 @@ class tx_realurl_advanced {
 			} else {
 					// No page found!
 				if (TYPO3_DLOG)	t3lib_div::devLog("NOT_FOUND ",'realurl');
-				$id = -1;
+				$id = 0;	// no id resolved, root page will be reached.
 			}
 		}
 
@@ -611,13 +637,13 @@ class tx_realurl_advanced {
 	 * @param	integer		Page id in which to search subpages matching title
 	 * @param	string		Title to search for
 	 * @return	array		First entry is uid , second entry is the row selected, including information about the page as a mount point.
-	 * @see searchTitle()
 	 * @access private
+	 * @see searchTitle()
 	 */
 	function searchTitle_searchPid($searchPid,$title)	{
 
 			// List of "pages" fields to traverse for a "directory title" in the speaking URL (only from RootLine!!):
-		$segTitleFieldList = $this->conf['segTitleFieldList'] ? $this->conf['segTitleFieldList'] : 'nav_title,title';
+		$segTitleFieldList = $this->conf['segTitleFieldList'] ? $this->conf['segTitleFieldList'] : 'tx_realurl_pathsegment,alias,nav_title,title';
 		$selList = t3lib_div::uniqueList('uid,pid,doktype,mount_pid,mount_pid_ol,'.$segTitleFieldList);
 		$segTitleFieldArray = t3lib_div::trimExplode(',', $segTitleFieldList, 1);
 
@@ -680,7 +706,7 @@ class tx_realurl_advanced {
 		$allTitles = array();
 		foreach($segTitleFieldArray as $fieldName)	{
 			if (is_array($titles[$fieldName]))	{
-				$allTitles = array_merge($allTitles,$titles[$fieldName]);
+				$allTitles = t3lib_div::array_merge($allTitles,$titles[$fieldName]);
 			}
 		}
 

@@ -2,9 +2,9 @@
 
 ########################################################################
 # Extension Manager/Repository config file for ext: 'realurl'
-# 
+#
 # Auto generated 26-01-2004 19:40
-# 
+#
 # Manual updates:
 # Only the data in the array - anything else is removed by next write
 ########################################################################
@@ -17,7 +17,7 @@ $EM_CONF[$_EXTKEY] = Array (
 	'dependencies' => '',
 	'conflicts' => '',
 	'priority' => '',
-	'module' => 'testmod,mod1',
+	'module' => 'testmod',
 	'state' => 'beta',
 	'internal' => 0,
 	'uploadfolder' => 0,

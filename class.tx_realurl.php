@@ -36,49 +36,50 @@
  *
  *
  *
- *  103: class tx_realurl
+ *  104: class tx_realurl
  *
  *              SECTION: Translate parameters to a Speaking URL (t3lib_tstemplate::linkData)
- *  134:     function encodeSpURL(&$params, $ref)
- *  184:     function encodeSpURL_doEncode($inputQuery, $cHashCache=FALSE)
- *  248:     function encodeSpURL_pathFromId(&$paramKeyValues, &$pathParts)
- *  281:     function encodeSpURL_gettingPostVarSets(&$paramKeyValues, &$pathParts, $postVarSetCfg)
- *  318:     function encodeSpURL_fileName(&$paramKeyValues)
- *  340:     function encodeSpURL_setSequence($varSetCfg, &$paramKeyValues, &$pathParts)
- *  428:     function encodeSpURL_setSingle($keyWord, $keyValues, &$paramKeyValues, &$pathParts)
- *  461:     function encodeSpURL_encodeCache($urlToEncode, $setEncodedURL='')
- *  483:     function encodeSpURL_cHashCache($newUrl, &$paramKeyValues)
+ *  137:     function encodeSpURL(&$params, $ref)
+ *  189:     function encodeSpURL_doEncode($inputQuery, $cHashCache=FALSE)
+ *  262:     function encodeSpURL_pathFromId(&$paramKeyValues, &$pathParts)
+ *  295:     function encodeSpURL_gettingPostVarSets(&$paramKeyValues, &$pathParts, $postVarSetCfg)
+ *  332:     function encodeSpURL_fileName(&$paramKeyValues)
+ *  354:     function encodeSpURL_setSequence($varSetCfg, &$paramKeyValues, &$pathParts)
+ *  442:     function encodeSpURL_setSingle($keyWord, $keyValues, &$paramKeyValues, &$pathParts)
+ *  475:     function encodeSpURL_encodeCache($urlToEncode, $setEncodedURL='')
+ *  523:     function encodeSpURL_cHashCache($newUrl, &$paramKeyValues)
  *
  *              SECTION: Translate a Speaking URL to parameters (tslib_fe)
- *  546:     function decodeSpURL($params, $ref)
- *  592:     function decodeSpURL_checkRedirects($speakingURIpath)
- *  608:     function decodeSpURL_doDecode($speakingURIpath, $cHashCache=FALSE)
- *  660:     function decodeSpURL_idFromPath(&$pathParts)
- *  687:     function decodeSpURL_settingPreVars(&$pathParts, $config)
- *  709:     function decodeSpURL_settingPostVarSets(&$pathParts, $postVarSetCfg)
- *  749:     function decodeSpURL_fileName($fileName)
- *  771:     function decodeSpURL_getSequence(&$pathParts,$setupArr)
- *  850:     function decodeSpURL_getSingle($keyValues)
- *  867:     function decodeSpURL_throw404($msg)
- *  876:     function decodeSpURL_jumpAdmin()
- *  899:     function decodeSpURL_decodeCache($speakingURIpath,$cachedInfo='')
- *  910:     function decodeSpURL_cHashCache($speakingURIpath)
+ *  586:     function decodeSpURL($params, $ref)
+ *  664:     function decodeSpURL_checkRedirects($speakingURIpath)
+ *  680:     function decodeSpURL_doDecode($speakingURIpath, $cHashCache=FALSE)
+ *  742:     function decodeSpURL_idFromPath(&$pathParts)
+ *  769:     function decodeSpURL_settingPreVars(&$pathParts, $config)
+ *  791:     function decodeSpURL_settingPostVarSets(&$pathParts, $postVarSetCfg)
+ *  853:     function decodeSpURL_fileName($fileName)
+ *  875:     function decodeSpURL_getSequence(&$pathParts,$setupArr)
+ *  958:     function decodeSpURL_getSingle($keyValues)
+ *  975:     function decodeSpURL_throw404($msg)
+ *  984:     function decodeSpURL_jumpAdmin()
+ * 1008:     function decodeSpURL_jumpAdmin_goBackend($pageId)
+ * 1023:     function decodeSpURL_decodeCache($speakingURIpath,$cachedInfo='')
+ * 1064:     function decodeSpURL_cHashCache($speakingURIpath)
  *
  *              SECTION: Alias-ID look up functions
- *  939:     function lookUpTranslation($cfg,$value,$aliasToUid=FALSE)
- *  995:     function lookUp_uniqAliasToId($cfg,$aliasValue)
- * 1020:     function lookUp_idToUniqAlias($cfg,$idValue)
- * 1045:     function lookUp_newAlias($cfg,$newAliasValue,$idValue)
- * 1100:     function lookUp_cleanAlias($cfg,$newAliasValue)
+ * 1093:     function lookUpTranslation($cfg,$value,$aliasToUid=FALSE)
+ * 1149:     function lookUp_uniqAliasToId($cfg,$aliasValue)
+ * 1174:     function lookUp_idToUniqAlias($cfg,$idValue)
+ * 1199:     function lookUp_newAlias($cfg,$newAliasValue,$idValue)
+ * 1254:     function lookUp_cleanAlias($cfg,$newAliasValue)
  *
  *              SECTION: General helper functions (both decode/encode)
- * 1143:     function setConfig()
- * 1165:     function getPostVarSetConfig($page_id, $mainCat='postVarSets')
- * 1186:     function pageAliasToID($alias)
- * 1206:     function rawurlencodeParam($str)
- * 1219:     function checkCondition($setup,$prevVal)
+ * 1297:     function setConfig()
+ * 1319:     function getPostVarSetConfig($page_id, $mainCat='postVarSets')
+ * 1341:     function pageAliasToID($alias)
+ * 1361:     function rawurlencodeParam($str)
+ * 1375:     function checkCondition($setup,$prevVal)
  *
- * TOTAL FUNCTIONS: 32
+ * TOTAL FUNCTIONS: 33
  * (This index is automatically created/updated by the extension "extdeveval")
  *
  */
@@ -117,6 +118,7 @@ class tx_realurl {
 	var $appendedSlash=FALSE;		// Set true if slash is appended
 
 	var $decode_editInBackend = FALSE;	// If set (in adminjump function) then we will redirect to edit the found page id in the backend.
+	var $encodeError = FALSE;		// If set true encoding failed , probably because the url was outside of root line - and the input url is returned directly.
 
 
 	/************************************
@@ -164,7 +166,7 @@ class tx_realurl {
 		if (!$newUrl)	{
 
 				// Encode URL:
-			$newUrl = $this->encodeSpURL_doEncode($uParts['query'], $this->extConf['init']['enableCHashCache']);
+			$newUrl = $this->encodeSpURL_doEncode($uParts['query'], $this->extConf['init']['enableCHashCache'], $params['LD']['totalURL']);
 
 				// Set new URL in cache:
 			$this->encodeSpURL_encodeCache($uParts['query'], $newUrl);
@@ -182,10 +184,11 @@ class tx_realurl {
 	 *
 	 * @param	string		Input query string
 	 * @param	boolean		If set, the cHashCache table is used for "&cHash"
+	 * @param	string		Original URL
 	 * @return	string		Output Speaking URL (with as many GET parameters encoded into the URL as possible).
 	 * @see encodeSpURL()
 	 */
-	function encodeSpURL_doEncode($inputQuery, $cHashCache=FALSE)	{
+	function encodeSpURL_doEncode($inputQuery, $cHashCache=FALSE, $origUrl='')	{
 
 			// Extract all GET parameters into an ARRAY:
 		$paramKeyValues = array();
@@ -204,7 +207,11 @@ class tx_realurl {
 
 			// Create path from ID value:
 		$page_id = $paramKeyValues['id'];
+		$this->encodeError = FALSE;
 		$this->encodeSpURL_pathFromId($paramKeyValues,$pathParts);
+		if ($this->encodeError)	{
+			return $origUrl;
+		}
 
 			// Fixed Post-vars:
 		$fixedPostVarSetCfg = $this->getPostVarSetConfig($page_id, 'fixedPostVars');
@@ -225,6 +232,15 @@ class tx_realurl {
 			$newUrl = substr($newUrl,0,-1).'.html';
 		} else {
 			$newUrl.= rawurlencode($fileName);
+		}
+
+			// Totally blank URLs will be set $GLOBALS['TSFE']->"
+		if (!strlen($newUrl))	{
+			if (is_bool($this->extConf['init']['emptyUrlReturnValue']) && $this->extConf['init']['emptyUrlReturnValue'])	{
+				$newUrl = $GLOBALS['TSFE']->baseUrl;
+			} else {
+				$newUrl = ''.$this->extConf['init']['emptyUrlReturnValue'];
+			}
 		}
 
 			// Store cHash cache:
@@ -639,7 +655,7 @@ $GLOBALS['TT']->setTSlogMessage('Do decoding');
 
 					// Jump-admin if configured:
 				$this->decodeSpURL_jumpAdmin_goBackend($cachedInfo['id']);
-
+#debug($cachedInfo);
 					// Setting info in TSFE:
 				$this->pObj->mergingWithGetVars($cachedInfo['GET_VARS']);
 				$this->pObj->id = $cachedInfo['id'];

@@ -67,3 +67,11 @@ CREATE TABLE tx_realurl_urlencodecache (
   tstamp int(11) DEFAULT '0' NOT NULL,
   PRIMARY KEY (url_hash)
 );
+
+#
+# Modifying pages table
+#
+CREATE TABLE pages (
+	tx_realurl_pathsegment varchar(30) DEFAULT '' NOT NULL,
+);
+

@@ -1,15 +1,13 @@
 <?php
 /**
- * Language labels for module "tools_txrealurlM1" - header, description
- * 
+ * Language labels for module ""
+ *
  * This file is detected by the translation tool.
  */
 
 $LOCAL_LANG = Array (
 	"default" => Array (
-		"mlang_tabs_tab" => "RealURL",	
-		"mlang_labels_tabdescr" => "Configuration and testing of RealURL can be done in this module.",	
-		"mlang_labels_tablabel" => "RealURL",	
+		"title" => "Speaking Url Management",
 	),
 	"dk" => Array (
 	),
@@ -76,6 +74,12 @@ $LOCAL_LANG = Array (
 	"he" => Array (
 	),
 	"ua" => Array (
+	),
+	"lv" => Array (
+	),
+	"jp" => Array (
+	),
+	"vn" => Array (
 	),
 );
 ?>
