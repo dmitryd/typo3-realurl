@@ -560,7 +560,7 @@ class tx_realurl {
 			// (if there are others our problem is that the cHash probably covers those as well and if we include the cHash anyways we might get duplicates for the same speaking URL in the cache table!)
 		if (isset($paramKeyValues['cHash']) && count($paramKeyValues)==1)	{
 
-				// first, look if a cHash is already there for this SpURL (If that chash_string is different from the one we want to insert, that would be an error, but we don't check here):
+				// first, look if a cHash is already there for this SpURL
 			$spUrlHash = hexdec(substr(md5($newUrl),0,7));
 			$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('chash_string', 'tx_realurl_chashcache', 'spurl_hash='.$spUrlHash);
 
@@ -573,18 +573,20 @@ class tx_realurl {
 					'chash_string' => $paramKeyValues['cHash']
 				);
 				$GLOBALS['TYPO3_DB']->exec_INSERTquery('tx_realurl_chashcache', $insertArray);
-			} else {
+			} else {	// If one found, check if it is different, and if so update:
 				$row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res);
-				$storedCHash = $row['chash_string'];
-				if ($storedCHash!=$paramKeyValues['cHash'])	{
-debug(array($paramKeyValues['cHash'],$storedCHash,$newUrl,$spUrlHash),'Error: Stored cHash and calculated did not match!');
+				if ($row['chash_string']!=$paramKeyValues['cHash'])	{
+						// If that chash_string is different from the one we want to insert, that might be a bug or mean that encryptionKey was changed so cHash values will be different now
+						// In any case we will just silently update the value:
+					$insertArray = array(
+						'chash_string' => $paramKeyValues['cHash']
+					);
+					$GLOBALS['TYPO3_DB']->exec_UPDATEquery('tx_realurl_chashcache', 'spurl_hash='.$spUrlHash, $insertArray);
 				}
 			}
 				// Unset "cHash" (and array should now be empty!)
 			unset($paramKeyValues['cHash']);
 		}
-
-#if (count($paramKeyValues))	debug($paramKeyValues,'parameters left:');
 	}
 
 
@@ -697,9 +699,21 @@ $GLOBALS['TT']->setTSlogMessage('Do decoding');
 	 */
 	function decodeSpURL_checkRedirects($speakingURIpath)	{
 		$speakingURIpath = trim($speakingURIpath);
+
 		if (isset($this->extConf['redirects'][$speakingURIpath]))	{
 			header('Location: '.t3lib_div::locationHeaderUrl($this->extConf['redirects'][$speakingURIpath]));
 			exit;
+		}
+
+			// Regex redirects:
+		if (is_array($this->extConf['redirects_regex']))	{
+			foreach($this->extConf['redirects_regex'] as $regex => $substString)	{
+				if (ereg($regex,$speakingURIpath))	{
+					$speakingURIpath = ereg_replace($regex,$substString,$speakingURIpath);
+					header('Location: '.t3lib_div::locationHeaderUrl($speakingURIpath));
+					exit;
+				}
+			}
 		}
 	}
 
@@ -707,7 +721,7 @@ $GLOBALS['TT']->setTSlogMessage('Do decoding');
 	 * Decodes a speaking URL path into an array of GET parameters and a page id.
 	 *
 	 * @param	string		Speaking URL path (after the "root" path of the website!) but without query parameters
-	 * @param	[type]		$cHashCache: ...
+	 * @param	boolean		If cHash caching is enabled or not.
 	 * @return	array		Array with id and GET parameters.
 	 * @see decodeSpURL()
 	 */
@@ -1100,8 +1114,12 @@ $GLOBALS['TT']->setTSlogMessage('Do decoding');
 	 * @see encodeSpURL_cHashCache()
 	 */
 	function decodeSpURL_cHashCache($speakingURIpath)	{
-
-			// first, look if a cHash is already there for this SpURL (If that chash_string is different from the one we want to insert, that would be an error, but we don't check here):
+			// Look up cHash for this spURL
+			// Apart from returning the right cHash value it can also:
+				// - Return no value (eg. if table has been cleared) even if there should be one! In this scenario it will look to the outside as if all parameters except cHash has been set.
+				// - Return a WRONG value (eg. if URLs has been changed internally, there are dublets etc.). In this scenario the cHash value should not match the calculated one in the tslib_fe and the usual error of that problem be issued (whatever that is). This scenario could even mean that a cHash value is returned even if no cHash value applies at all.
+				// Bottomline is: the realurl extension makes it more likely that a wrong cHash value is passed to the frontend but as such it doesn't do anything which a fabricated URL couldn't contain.
+				// I still don't know how to handle wrong cHash values in this table. It will seldomly be a problem (when parameters are changed manually mostly) butwhen it is, we have no standard procedure to clean it up. Of course clearing it will mean it is built up again - but also that tons of URLs will not work reliably!
 		$spUrlHash = hexdec(substr(md5($speakingURIpath),0,7));
 		$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('chash_string', 'tx_realurl_chashcache', 'spurl_hash='.$spUrlHash);
 		if ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res))	{

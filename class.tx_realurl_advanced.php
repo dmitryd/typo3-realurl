@@ -42,7 +42,6 @@
  *
  *              SECTION: "path" ID-to-URL methods
  *  150:     function IDtoPagePath(&$paramKeyValues, &$pathParts)
- *  241:     function fixURLCache($id,$lang = -1)
  *  262:     function updateURLCache($id,$mpvar,$lang)
  *  359:     function IDtoPagePathSegments($id,$mpvar,$langID)
  *  409:     function rootLineToPath($rl)
@@ -196,7 +195,14 @@ class tx_realurl_advanced {
 			// Setting the language variable based on GETvar in URL which has been configured to carry the language uid:
 		if ($this->conf['languageGetVar'])	{
 			$lang = intval($this->pObjRef->orig_paramKeyValues[$this->conf['languageGetVar']]);
-		} else $lang = 0;
+
+				// Might be excepted (like you should for CJK cases which does not translate to ASCII equivalents)
+			if (t3lib_div::inList($this->conf['languageExceptionUids'], $lang))		{
+				$lang = 0;
+			}
+		} else {
+			$lang = 0;
+		}
 
 			// Fetch cached path
 		if (!$this->conf['disablePathCache'])	{
@@ -207,11 +213,10 @@ class tx_realurl_advanced {
 					'page_id='.intval($pageid).
 						' AND language_id='.intval($lang).
 						' AND rootpage_id='.intval($this->conf['rootpage_id']).
+						' AND mpvar='.$GLOBALS['TYPO3_DB']->fullQuoteStr($mpvar,'tx_realurl_pathcache').
 						' AND expire=0'
 				);
-
 			if ($GLOBALS['TYPO3_DB']->sql_num_rows($result) > 1) { // If there seems to be more than one page path cached for this combo, go fix it
-				$this->fixURLCache($pageid,$lang);
 				$cachedPagePath = FALSE;
 			} else {
 				$cachedPagePath = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($result);
@@ -244,22 +249,6 @@ class tx_realurl_advanced {
     }
 
 	/**
-	 * Fix the cache.
-	 * This function is called when something appears to be wrong. This shouldn't ever be the case,
-	 * but you'll never now...
-	 *
-	 * @param	integer		Page ID
-	 * @param	integer		Language ID
-	 * @return	void
-	 */
-	function fixURLCache($id,$lang = -1) {
-			// Currently the only thing it does, is throw away all information about $id, because it
-			// probably has duplicates in the database.
-		if (TYPO3_DLOG)	t3lib_div::devLog('!!!! ERROR IN URLCACHE, FIXING ('.$id.','.$lang.') !!!!', 'realurl');
-		$GLOBALS['TYPO3_DB']->exec_DELETEquery('tx_realurl_pathcache', 'page_id = '.intval($id));
-	}
-
-	/**
 	 * Update the cache.
 	 * We don't check if it's a shortcut or something. We just cache it.
 	 * First find all current page paths that refer to this page (= all languages). Now first check if there actually IS a change
@@ -288,61 +277,6 @@ class tx_realurl_advanced {
 		$langID = $pagepathRec['langID'];
 
 		if (!$this->conf['disablePathCache'])	{
-/*
-			if (TYPO3_DLOG)	t3lib_div::devLog('(fetch old)','realurl');
-
-				// Fetch all current versions of the page path (i.e. all languages)
-			$oldUrls = array();
-			$result = $GLOBALS['TYPO3_DB']->exec_SELECTquery(
-					'language_id, pagepath',
-					'tx_realurl_pathcache',
-					'page_id='.intval($id).
-						' AND expire=0'.
-						' AND rootpage_id='.intval($this->conf['rootpage_id'])
-				);
-			while ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($result))	{
-				$oldUrls[$row['language_id']] = $row['pagepath'];
-			}
-
-				// Now let's see if the path has changed:
-				// - If the page path isn't present in the requested language, we should just insert it and exit
-				// - If it IS present, it should match. If it doesn't match, we should update the cache
-			if (isset($oldUrls[$langID])) {
-				if ($oldUrls[$langID]==$pagepath)	{
-					if (TYPO3_DLOG)	t3lib_div::devLog('(no change) }','realurl');
-					return $pagepathRec['pagepath'];
-				} else {
-
-					if (TYPO3_DLOG)	t3lib_div::devLog('(changed)','realurl');
-
-						// !! TODO !! It might be a cool to search the rootline for this page, and see if the page path
-						// of every page in that root matches the cached version.
-						// If not, we just call UpdateURLCache of that URL first.
-
-						// Update (=set expire-time of) all pagepaths starting with one of the $oldUrls
-					$days = intval($this->conf['expireDays']);
-
-					$updateArray = array();
-					$updateArray['expire'] = time()+$days*3600*24;
-
-					foreach ($oldUrls as $index => $oldUrl)	{
-						$oldUrls[$index] = '(pagepath LIKE "'.$GLOBALS['TYPO3_DB']->quoteStr($oldUrl,'tx_realurl_pathcache').'%")';
-					}
-					$updateWhere = 'expire=0 AND ('.implode(' OR ',$oldUrls).')';
-
-					if (TYPO3_DLOG)	t3lib_div::devLog("(updating old pagepaths)",'realurl');
-					$GLOBALS['TYPO3_DB']->exec_UPDATEquery('tx_realurl_pathcache', $updateArray, $updateWhere);
-					if (TYPO3_DLOG)	t3lib_div::devLog("Update status: ".$GLOBALS['TYPO3_DB']->sql_error(),'realurl');
-
-						// We have to see if there are old pages that previously had the same path as this one currently has.
-					if (TYPO3_DLOG)	t3lib_div::devLog('(deleting same pagepath)','realurl');
-					$result = $GLOBALS['TYPO3_DB']->exec_SELECTquery('DISTINCT page_id','tx_realurl_pathcache', 'pagepath LIKE "'.$GLOBALS['TYPO3_DB']->quoteStr($pagepath,'tx_realurl_pathcache').'%"');
-					while ($row = $GLOBALS['TYPO3_DB']->sql_fetch_row($result)) {
-						$GLOBALS['TYPO3_DB']->exec_DELETEquery('tx_realurl_pathcache', 'page_id='.intval($row[0]));
-					}
-				}
-			}
-*/
 
 				// Insert URL in cache:
 			$insertArray = array(
@@ -402,7 +336,7 @@ class tx_realurl_advanced {
 
 			if ($rootFound)	{
 					// Translate the rootline to a valid path (rootline contains localized titles at this point!):
-				$pagepath = $this->rootLineToPath($newRootLine);
+				$pagepath = $this->rootLineToPath($newRootLine,$langID);
 				$this->IDtoPagePathCache[$cacheKey] = array(
 					'pagepath' => $pagepath,
 					'langID' => $langID,
@@ -428,24 +362,51 @@ class tx_realurl_advanced {
 	 * @return	string		Path for the page, eg.
 	 * @see IDtoPagePathSegments()
 	 */
-	function rootLineToPath($rl) {
+	function rootLineToPath($rl,$lang) {
 		$paths = array();
 		array_shift($rl); // Ignore the first path, as this is the root of the website
 		$c = count($rl);
 		for ($i = 1; $i <= $c; $i++) {
 			$page = array_shift($rl);
 
-				// List of "pages" fields to traverse for a "directory title" in the speaking URL (only from RootLine!!):
-			$segTitleFieldArray = t3lib_div::trimExplode(',', $this->conf['segTitleFieldList'] ? $this->conf['segTitleFieldList'] : 'tx_realurl_pathsegment,alias,nav_title,title', 1);
-			$theTitle = '';
-			foreach($segTitleFieldArray as $fieldName)	{
-				if ($page[$fieldName])	{
-					$theTitle = $page[$fieldName];
-					break;
+				// First, check for cached path of this page:
+			$cachedPagePath = FALSE;
+			if (!$this->conf['disablePathCache'])	{
+
+				$result = $GLOBALS['TYPO3_DB']->exec_SELECTquery(
+						'pagepath',
+						'tx_realurl_pathcache',
+						'page_id='.intval($page['uid']).
+							' AND language_id='.intval($lang).
+							' AND rootpage_id='.intval($this->conf['rootpage_id']).
+							' AND mpvar='.$GLOBALS['TYPO3_DB']->fullQuoteStr($page['_MP_PARAM'],'tx_realurl_pathcache').
+							' AND expire=0'
+					);
+
+				if ($GLOBALS['TYPO3_DB']->sql_num_rows($result) > 1) { // If there seems to be more than one page path cached for this combo, go fix it
+					$cachedPagePath = FALSE;
+				} else {
+					$cachedPagePath = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($result);
 				}
 			}
 
-			$paths[$i] = $this->encodeTitle($theTitle);
+				// If a cached path was found for the page it will be inserted as the base of the new path, overriding anything build prior to this:
+			if (is_array($cachedPagePath))	{
+				$paths = array();
+				$paths[$i] = $cachedPagePath['pagepath'];
+			} else {	// Building up the path from page title etc.
+					// List of "pages" fields to traverse for a "directory title" in the speaking URL (only from RootLine!!):
+				$segTitleFieldArray = t3lib_div::trimExplode(',', $this->conf['segTitleFieldList'] ? $this->conf['segTitleFieldList'] : 'tx_realurl_pathsegment,alias,nav_title,title', 1);
+				$theTitle = '';
+				foreach($segTitleFieldArray as $fieldName)	{
+					if ($page[$fieldName])	{
+						$theTitle = $page[$fieldName];
+						break;
+					}
+				}
+
+				$paths[$i] = $this->encodeTitle($theTitle);
+			}
 		}
 
 		return implode('/',$paths); // Return path, ending in a slash, or empty string
@@ -487,11 +448,12 @@ class tx_realurl_advanced {
 			$copy_pathParts = $pathParts;
 			while(1)	{
 				$result = $GLOBALS['TYPO3_DB']->exec_SELECTquery(
-							'page_id, expire, mpvar',
+							'*',
 							'tx_realurl_pathcache',
 							'hash="'.substr(md5(implode('/',$copy_pathParts)),0,10).'"'.
 								' AND rootpage_id='.intval($this->conf['rootpage_id'])
 						);
+							// This lookup does not include language and MP var since those are supposed to be fully reflected in the built url!
 				if ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($result))	{
 					break;
 				} elseif ($this->conf['firstHitPathCache'])	{

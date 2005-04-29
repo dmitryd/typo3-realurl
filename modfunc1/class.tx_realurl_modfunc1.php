@@ -95,12 +95,14 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 				1 => $LANG->sL('LLL:EXT:lang/locallang_core.php:labels.depth_1'),
 				2 => $LANG->sL('LLL:EXT:lang/locallang_core.php:labels.depth_2'),
 				3 => $LANG->sL('LLL:EXT:lang/locallang_core.php:labels.depth_3'),
+				99 => $LANG->sL('LLL:EXT:lang/locallang_core.php:labels.depth_infi'),
 			),
 			'type' => array(
 				'pathcache' => 'ID-to-path mapping',
 				'decode' => 'Decode cache',
 				'encode' => 'Encode cache',
 				'uniqalias' => 'Unique Aliases',
+				'config' => 'Configuration',
 			)
 		);
 	}
@@ -183,6 +185,9 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 					$this->edit_save_uniqAlias();
 					$theOutput.= $this->uniqueAlias();
 				break;
+				case 'config':
+					$theOutput.= $this->configView();
+				break;
 			}
 		}
 
@@ -257,7 +262,7 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 
 						// Init:
 					$deletedEntry = FALSE;
-					$hash = $inf['pagepath'].'|'.$inf['language_id'].'|'.$inf['rootpage_id'];
+					$hash = $inf['pagepath'].'|'.$inf['rootpage_id'];	// MP and language is not a part of this because the path itself should be different simply because the MP makes a different path! (see tx_realurl_advanced::pagePathtoID())
 
 						// Add icon/title and ID:
 					$tCells = array();
@@ -534,7 +539,8 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 	 */
 	function editPathCacheEntry($cache_id,$value)	{
 		$field_values = array(
-			'pagepath' => $value
+			'pagepath' => $value,
+			'hash' => substr(md5($value),0,10),
 		);
 		$GLOBALS['TYPO3_DB']->exec_UPDATEquery('tx_realurl_pathcache','cache_id='.intval($cache_id), $field_values);
 	}
@@ -955,6 +961,52 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 				$this->editUniqAliasEntry($cache_id,trim($value));
 			}
 		}
+	}
+
+
+
+
+
+
+
+
+
+
+
+	/*****************************
+	 *
+	 * Configuration view:
+	 *
+	 *****************************/
+
+	/**
+	 * Shows configuration of the extension.
+	 *
+	 * @return	string		HTML
+	 */
+	function configView()	{
+		global $TYPO3_CONF_VARS;
+
+			// Include array browser:
+		require_once (PATH_t3lib."class.t3lib_arraybrowser.php");
+
+			// Initialize array browser:
+		$arrayBrowser = t3lib_div::makeInstance("t3lib_arrayBrowser");
+
+		$arrayBrowser->expAll = TRUE;
+		$arrayBrowser->fixedLgd = FALSE;
+		$arrayBrowser->dontLinkVar = TRUE;
+
+			// Create the display code:
+		$theVar = $TYPO3_CONF_VARS['EXTCONF']['realurl'];
+		$tree = $arrayBrowser->tree($theVar, '', '');
+
+		$tree = '<hr/>
+		<b>$TYPO3_CONF_VARS[\'EXTCONF\'][\'realurl\']</b>
+		<br/>
+		<span class="nobr">'.$tree.'</span>';
+
+		return $tree;
 	}
 }
 

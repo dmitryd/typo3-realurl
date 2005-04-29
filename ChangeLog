@@ -1,3 +1,7 @@
+2005-04-19  Kasper Skårhøj,,,  <kasper@typo3.com>
+
+	* Added "redirects_regex" feature to match URLs with a regex for initial redirection.
+
 2005-02-22  Kasper Skårhøj,,,  <kasper@typo3.com>
 
 	* Added Web>Info / Speaking Url Management module: Finally it does something. Can manage the pagepath cache, show decode and encode cached content and manage unique-alias maps.
