@@ -1,17 +1,39 @@
-2005-04-19  Kasper Skårhøj,,,  <kasper@typo3.com>
+2005-10-14  Kasper SkÃ¥rhÃ¸j  <kasper2005@typo3.com>
 
-	* Added "redirects_regex" feature to match URLs with a regex for initial redirection.
+ * en/decode caches will expire after 24 hours
+ * Adding "userFunc" for id-alias translation (alternative to built in "lookUpTable")
+ * Fixed a few bugs
+ * Implemented "301 Moved Permanently" headers
+ * Implemented a table where you can define permanent redirect URLs, for instance for keep backwards compatibility with specific old urls.
+ * Implemented an error log that will track all URLs which resulted in a 404 - useful for checking most typical "lost links" and creating a redirect. Can be disabled with ['init']['disableErrorLog']
+ * By default realurl will return 404 if the whole url is not used in the decoding. 
+ * Can throw a 404 if the alias mapping to id didn't succed (configuration)
+ * Supports localization for alias-id mapping, eg. when titles of news elements are used in realurl and the language is different than default it will take the localized title and use that (if configured for it). (lookUpTable feature)
+ * Supports auto-update of aliases if titles of eg. news items changed. Must be configured. (lookUpTable feature)
+ * Improved the lookUp_cleanAlias function to respect charset - should fix clean up on non danish/german titles, just like it has been done for page titles some time ago.
+ * Implemented that expired URLs will redirect to new ones, sending "301 Moved Permanently" headers
+ * Improved many management functions in backend module.
 
-2005-02-22  Kasper Skårhøj,,,  <kasper@typo3.com>
 
-	* Added Web>Info / Speaking Url Management module: Finally it does something. Can manage the pagepath cache, show decode and encode cached content and manage unique-alias maps.
+2005-10-11  Kasper Skï¿½hj,,,  <kasper@typo3.com>
 
-2004-12-20  Kasper Skårhøj,,,  <kasper@typo3.com>
+ * Introduced feature "autoUpdatePathCache" which will allow changes to eg. page title to be made instant in the URL plus keeping backwards compatibility for a period of time with the previous URL.
+ * You can add additional pathCache entries in the management module.
+
+2005-04-19  Kasper Skï¿½hj,,,  <kasper@typo3.com>
+
+ * Added "redirects_regex" feature to match URLs with a regex for initial redirection.
+
+2005-02-22  Kasper Skï¿½hj,,,  <kasper@typo3.com>
+
+ * Added Web>Info / Speaking Url Management module: Finally it does something. Can manage the pagepath cache, show decode and encode cached content and manage unique-alias maps.
+
+2004-12-20  Kasper Skï¿½hj,,,  <kasper@typo3.com>
 
 	* Added support for frontend login triggered bypass keywords (for proxy cache-control situations) (look for "feLogin" in manual)
 	* Added registration of page id for url encoding  - for cache management.
 
-2004-09-01  Kasper Skårhøj,,,  <kasper@typo3.com>
+2004-09-01  Kasper Skï¿½hj,,,  <kasper@typo3.com>
 	* encodeTitle(): Support of multibyte encodings like UTF-8 in the encoding of page titles. Also extended letters => ASCII equivalents are working now (using t3lib_cs)
 	* Implemented support for usage over multiple domains. Manual has been updated. Basically you have to configure the id-resolver (like "tx_realurl_advanced") to know of its root page id so it has a starting point. This is cannot be automatic and therefore you have to configure it to correspond with the root page UID in the page tree. This is documented with examples in the manual.
 	* !!! Changed return values type for some functions, in particular observe that the user processing of path-to-id is now returning and ARRAY NOT AN INTEGER (Id)!
@@ -20,7 +42,7 @@
 	* Fixed bug with ".html" prefix when page path is blank
 	(This development was sponsored by Forbrugernes Hus in Denmark. Thanks.)
 
-2004-06-10  Kasper Skårhøj,,,  <kasper@typo3.com>
+2004-06-10  Kasper Skï¿½hj,,,  <kasper@typo3.com>
 
 	* Added option to disable pathcache (and more for that)
 	* For 404 handling, realurl will now use the default TYPO# pageNotFound handling.
@@ -29,11 +51,11 @@
 	* Implemented true URL decode/encode caching
 	* All document, but some features depends on TYPO3 3.7.0-dev+
 
-2004-04-22  Kasper Skårhøj,,,  <kasper@typo3.com>
+2004-04-22  Kasper Skï¿½hj,,,  <kasper@typo3.com>
 
 	* Added new option "appendMissingSlash" which appends a trailing slash to the path if it was not set by the user.
 
-2004-03-23  Kasper Skårhøj,,,  <kasper@typo3.com>
+2004-03-23  Kasper Skï¿½hj,,,  <kasper@typo3.com>
 
 	* Added the possibility of specifying more than just the "nav_title,title" fields from the rootline in the generation/resolve of the speaking URL. Documentation updated accordingly.
 

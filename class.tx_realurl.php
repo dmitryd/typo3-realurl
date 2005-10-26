@@ -107,6 +107,8 @@ class tx_realurl {
 	var $NA = '-';					// Substitute value for "blank" values
 	var $maxLookUpLgd = 100;		// Max. length of look-up strings. Just a "brake"
 	var $prefixEnablingSpURL = 'index.php';		// Only work Speaking URL on URLs starting with "index.php"
+	var $decodeCacheTTL=1;			// TTL for decode cache, default is 1 day.
+	var $encodeCacheTTL=1;			// TTL for encode cache, default is 1 day.
 
 		// Internal:
 	var $pObj;						// tslib_fe / GLOBALS['TSFE'] (for ->decodeSpURL())
@@ -118,6 +120,8 @@ class tx_realurl {
 	var $orig_paramKeyValues = array();	// Contains the index of GETvars that the URL had when the encoding began.
 	var $appendedSlash=FALSE;		// Set true if slash is appended
 	var $encodePageId=0;			// Set with the page id during encoding. for internal use only.
+	var $speakingURIpath_procValue = '';	// For decoding, the path we are processing.
+	var $disableDecodeCache=FALSE;	// If set internally, decode caching is disabled. Used when a 303 header is set in tx_realurl_advanced.
 
 	var $decode_editInBackend = FALSE;	// If set (in adminjump function) then we will redirect to edit the found page id in the backend.
 	var $encodeError = FALSE;		// If set true encoding failed , probably because the url was outside of root line - and the input url is returned directly.
@@ -439,6 +443,15 @@ class tx_realurl {
 								// Set "dummy" value (?)
 								$prevVal = '';
 								$pathParts[] = '';
+							} elseif ($setup['userFunc'])	{
+								$params = array(
+									'pObj' => &$this,
+									'value' => $GETvarVal,
+									'decodeAlias' => FALSE,
+								);
+								$prevVal = $GETvarVal;
+								$GETvarVal = t3lib_div::callUserFunction($setup['userFunc'], $params, $this);
+								$pathParts[] = rawurlencode($GETvarVal);
 							} elseif (is_array($setup['lookUpTable']))	{
 								$prevVal = $GETvarVal;
 								$GETvarVal = $this->lookUpTranslation($setup['lookUpTable'],$GETvarVal);
@@ -516,7 +529,8 @@ class tx_realurl {
 				$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery(
 							'content',
 							'tx_realurl_urlencodecache',
-							'url_hash='.intval($hash)
+							'url_hash='.intval($hash).'
+								AND tstamp>'.intval(time()-24*3600*$this->encodeCacheTTL)
 						);
 				if ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res))	{
 					$GLOBALS['TSFE']->applicationData['tx_realurl']['_CACHE'][$hash] = $row['content'];
@@ -526,10 +540,16 @@ class tx_realurl {
 		} else {	// Setting encoded URL in cache:
 			$GLOBALS['TSFE']->applicationData['tx_realurl']['_CACHE'][$hash] = $setEncodedURL;
 
+				// If the page id is NOT an integer, it's an alias we have to look up:
+			if (!t3lib_div::testInt($this->encodePageId))	{
+				$this->encodePageId = $this->pageAliasToID($this->encodePageId);
+			}
+
 			if ($this->extConf['init']['enableUrlEncodeCache'])	{	// Otherwise ask database:
 				$insertFields = array(
 					'url_hash' => $hash,
 					'origparams' => $urlToEncode,
+					'internalExtras' => count($internalExtras) ? serialize($internalExtras) : '',
 					'content' => $setEncodedURL,
 					'page_id' => $this->encodePageId,
 					'tstamp' => time()
@@ -629,8 +649,8 @@ $GLOBALS['TT']->setTSlogMessage('called');
 			// Initializing config / request URL:
 		$this->setConfig();
 $GLOBALS['TT']->setTSlogMessage('$this->pObj->siteScript: '.$this->pObj->siteScript);
-			// If there has been a redirect (basically; we arrived here otherwise than via "index.php" in the URL) this can happend either due to a CGI-script or because of reWrite rule. Earlier we used $GLOBALS['HTTP_SERVER_VARS']['REDIRECT_URL'] to check but
-		if ($this->pObj->siteScript && substr($this->pObj->siteScript,0,9)!='index.php')	{
+			// If there has been a redirect (basically; we arrived here otherwise than via "index.php" in the URL) this can happend either due to a CGI-script or because of reWrite rule. Earlier we used $GLOBALS['HTTP_SERVER_VARS']['REDIRECT_URL'] to check but...
+		if ($this->pObj->siteScript && substr($this->pObj->siteScript,0,9)!='index.php' && substr($this->pObj->siteScript,0,1)!='?')	{
 
 				// Getting the path which is above the current site url:
 				// For instance "first/second/third/index.html?&param1=value1&param2=value2" should be the result of the URL "http://localhost/typo3/dev/dummy_1/first/second/third/index.html?&param1=value1&param2=value2"
@@ -661,7 +681,7 @@ $GLOBALS['TT']->setTSlogMessage('$speakingURIpath: '.$speakingURIpath);
 $GLOBALS['TT']->setTSlogMessage('Do decoding');
 					// Parse path:
 				$uParts = parse_url($speakingURIpath);
-				$speakingURIpath = $uParts['path'];
+				$speakingURIpath = $this->speakingURIpath_procValue = $uParts['path'];
 
 					// Redirecting if needed (exits if so).
 				$this->decodeSpURL_checkRedirects($speakingURIpath);
@@ -715,6 +735,28 @@ $GLOBALS['TT']->setTSlogMessage('Do decoding');
 				}
 			}
 		}
+
+			// DB defined redirects:
+		$hash = t3lib_div::md5int($speakingURIpath);
+		list($redirect_row) = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows(
+			'counter,destination,has_moved',
+			'tx_realurl_redirects',
+			'url_hash='.intval($hash)
+		);
+		if (count($redirect_row))	{
+			$fields_values = array(
+				'counter' => $redirect_row['counter']+1,
+				'tstamp' => time(),
+				'last_referer' => t3lib_div::getIndpEnv('HTTP_REFERER')
+			);
+			$GLOBALS['TYPO3_DB']->exec_UPDATEquery('tx_realurl_redirects','url_hash='.intval($hash),$fields_values);
+
+			if ($redirect_row['has_moved'])	{
+				header('HTTP/1.1 301 Moved Permanently');
+			}
+			header('Location: '.t3lib_div::locationHeaderUrl($redirect_row['destination']));
+			exit;
+		}
 	}
 
 	/**
@@ -756,6 +798,11 @@ $GLOBALS['TT']->setTSlogMessage('Do decoding');
 			// Setting "postVarSets":
 		$postVarSetCfg = $this->getPostVarSetConfig($cachedInfo['id']);
 		$post_GET_VARS = $this->decodeSpURL_settingPostVarSets($pathParts, $postVarSetCfg);
+
+			// Looking for remaining parts:
+		if (count($pathParts))	{
+			$this->decodeSpURL_throw404('"'.$speakingURIpath.'" could not be found, closest page matching is '.substr(implode('/',$this->dirParts),0,-strlen(implode('/',$pathParts))).'');
+		}
 
 			// Setting filename:
 		$file_GET_VARS = $this->decodeSpURL_fileName($this->filePart);
@@ -872,6 +919,7 @@ $GLOBALS['TT']->setTSlogMessage('Do decoding');
 
 						// Implode URL and redirect:
 					$redirectUrl = implode('/',$originalDirs);
+					header('HTTP/1.1 301 Moved Permanently');
 					header('Location: '.t3lib_div::locationHeaderUrl($redirectUrl));
 					exit;
 				} elseif ($this->extConf['init']['postVarSet_failureMode']=='ignore') {
@@ -902,7 +950,12 @@ $GLOBALS['TT']->setTSlogMessage('Do decoding');
 
 			// Create basic GET string:
 		$fileName = rawurldecode($fileName);
-		$idx = isset($this->extConf['fileName']['index'][$fileName]) ? $fileName : '_DEFAULT';
+
+		if ($fileName && !isset($this->extConf['fileName']['index'][$fileName]))	{
+			$this->decodeSpURL_throw404('File "'.$fileName.'" was not found!');
+		} else {
+			$idx = isset($this->extConf['fileName']['index'][$fileName]) ? $fileName : '_DEFAULT';
+		}
 		$GET_string = $this->decodeSpURL_getSingle($this->extConf['fileName']['index'][$idx]['keyValues']);
 
 			// If a get string is created, then:
@@ -975,8 +1028,19 @@ $GLOBALS['TT']->setTSlogMessage('Do decoding');
 							break;
 						} elseif ($setup['noMatch']=='null')	{	// If no match and "null" is set, then break (without setting any value!)
 							break;
+						} elseif ($setup['userFunc'])	{
+							$params = array(
+								'pObj' => &$this,
+								'value' => $value,
+								'decodeAlias' => TRUE,
+							);
+							$value = t3lib_div::callUserFunction($setup['userFunc'], $params, $this);
 						} elseif (is_array($setup['lookUpTable']))	{
+							$temp = $value;
 							$value = $this->lookUpTranslation($setup['lookUpTable'],$value,TRUE);
+							if ($setup['lookUpTable']['enable404forInvalidAlias'] && !t3lib_div::testInt($value) && !strcmp($value,$temp))	{
+								$this->decodeSpURL_throw404('Couldn\'t map alias "'.$value.'" to an ID');
+							}
 						} elseif (isset($setup['valueDefault']))	{	// If no matching value and a default value is given, set that:
 							$value = $setup['valueDefault'];
 						}
@@ -1018,12 +1082,43 @@ $GLOBALS['TT']->setTSlogMessage('Do decoding');
 
 	/**
 	 * Throws a 404 message.
-	 * Currently it just "die()s"
 	 *
 	 * @param	string		Message string
 	 * @return	void
 	 */
 	function decodeSpURL_throw404($msg)	{
+
+			// Log error:
+		if (!$this->extConf['init']['disableErrorLog'])	{
+			$hash = t3lib_div::md5int($this->speakingURIpath_procValue);
+			list($error_row) = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows(
+				'*',
+				'tx_realurl_errorlog',
+				'url_hash='.intval($hash)
+			);
+			if (count($error_row))	{
+				$fields_values = array(
+					'error' => $msg,
+					'counter' => $error_row['counter']+1,
+					'tstamp' => time(),
+					'last_referer' => t3lib_div::getIndpEnv('HTTP_REFERER')
+				);
+				$GLOBALS['TYPO3_DB']->exec_UPDATEquery('tx_realurl_errorlog','url_hash='.intval($hash),$fields_values);
+			} else {
+				$fields_values = array(
+					'url_hash' => $hash,
+					'url' => $this->speakingURIpath_procValue,
+					'error' => $msg,
+					'counter' => 1,
+					'tstamp' => time(),
+					'cr_date' => time(),
+					'last_referer' => t3lib_div::getIndpEnv('HTTP_REFERER')
+				);
+				$GLOBALS['TYPO3_DB']->exec_INSERTquery('tx_realurl_errorlog',$fields_values);
+			}
+		}
+
+			// Call handler
 		$this->pObj->pageNotFoundAndExit($msg);
 	}
 
@@ -1073,7 +1168,7 @@ $GLOBALS['TT']->setTSlogMessage('Do decoding');
 	 */
 	function decodeSpURL_decodeCache($speakingURIpath,$cachedInfo='')	{
 
-		if ($this->extConf['init']['enableUrlDecodeCache'])	{
+		if ($this->extConf['init']['enableUrlDecodeCache'] && !$this->disableDecodeCache)	{
 
 				// Create hash string:
 			$hash = t3lib_div::md5int($speakingURIpath);
@@ -1094,7 +1189,8 @@ $GLOBALS['TT']->setTSlogMessage('Do decoding');
 				$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery(
 							'content',
 							'tx_realurl_urldecodecache',
-							'url_hash='.intval($hash)
+							'url_hash='.intval($hash).'
+								AND tstamp>'.intval(time()-24*3600*$this->decodeCacheTTL)
 						);
 				if ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res))	{
 					$GLOBALS['TT']->setTSlogMessage('Decode cache: SpUrl found in cache');
@@ -1149,34 +1245,89 @@ $GLOBALS['TT']->setTSlogMessage('Do decoding');
 	function lookUpTranslation($cfg,$value,$aliasToUid=FALSE)	{
 		global $TCA;
 
+			// Assemble list of fields to look up. This includes localization related fields:
+		$langEnabled = FALSE;
+		$fieldList = array();
+		if ($cfg['languageGetVar']
+			&& $cfg['transOrigPointerField']
+			&& $cfg['languageField'])	{
+
+			$fieldList[] = 'uid';
+			$fieldList[] = $cfg['transOrigPointerField'];
+			$fieldList[] = $cfg['languageField'];
+			$langEnabled = TRUE;
+		}
+
+			// Translate an alias string to an ID:
 		if ($aliasToUid)	{
-			if ($cfg['useUniqueCache'] && $returnId = $this->lookUp_uniqAliasToId($cfg,$value))	{	// First, test if there is an entry in cache for the alias:
+
+				// First, test if there is an entry in cache for the alias:
+			if ($cfg['useUniqueCache'] && $returnId = $this->lookUp_uniqAliasToId($cfg,$value))	{
 				return $returnId;
 			} else {	// If no cached entry, look it up directly in the table:
+
+				$fieldList[] = $cfg['id_field'];
 				$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery(
-							$cfg['id_field'],
-							$cfg['table'],
-							$cfg['alias_field'].'="'.$GLOBALS['TYPO3_DB']->quoteStr($value,$cfg['table']).'" '.$cfg['addWhereClause']
-						);
+					implode(',',$fieldList),
+					$cfg['table'],
+					$cfg['alias_field'].'='.$GLOBALS['TYPO3_DB']->fullQuoteStr($value,$cfg['table']).' '.$cfg['addWhereClause']
+				);
+
 				if ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res))	{
-					return $row[$cfg['id_field']];
+					$returnId = $row[$cfg['id_field']];
+
+						// If localization is enabled, check if this record is a localized version and if so, find uid of the original version.
+					if ($langEnabled && $row[$cfg['languageField']]>0)	{
+						$returnId = $row[$cfg['transOrigPointerField']];
+					}
+
+						// Return the id:
+					return $returnId;
 				}
 			}
-		} else {
-			if ($cfg['useUniqueCache'] && $returnAlias = $this->lookUp_idToUniqAlias($cfg,$value))	{	// First, test if there is an entry in cache for the id:
+		} else {	// Translate an ID to alias string
+
+				// Define the language for the alias:
+			$lang = intval($this->orig_paramKeyValues[$cfg['languageGetVar']]);
+			if (t3lib_div::inList($cfg['languageExceptionUids'], $lang))	{	// Might be excepted (like you should for CJK cases which does not translate to ASCII equivalents)
+				$lang = 0;
+			}
+
+				// First, test if there is an entry in cache for the id:
+			if ($cfg['useUniqueCache'] && !$cfg['autoUpdate'] && $returnAlias = $this->lookUp_idToUniqAlias($cfg,$value,$lang))	{
 				return $returnAlias;
 			} else {	// If no cached entry, look up alias directly in the table (and possibly store cache value)
+
+				$fieldList[] = $cfg['alias_field'];
 				$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery(
+					implode(',',$fieldList),
+					$cfg['table'],
+					$cfg['id_field'].'='.$GLOBALS['TYPO3_DB']->fullQuoteStr($value,$cfg['table']).' '.$cfg['addWhereClause']
+				);
+
+				if ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res))	{
+
+						// Looking for localized version of that:
+					if ($langEnabled && $lang)	{
+
+							// If the lang value is there, look for a localized version of record:
+						$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery(
 							$cfg['alias_field'],
 							$cfg['table'],
-							$cfg['id_field'].'="'.$GLOBALS['TYPO3_DB']->quoteStr($value,$cfg['table']).'" '.$cfg['addWhereClause']
+							$cfg['transOrigPointerField'].'='.intval($row['uid']).'
+								AND '.$cfg['languageField'].'='.intval($lang).'
+								'.$cfg['addWhereClause']
 						);
-				if ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res))	{
+						if ($lrow = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res))	{
+							$row=$lrow;
+						}
+					}
+
 					$mLength = $cfg['maxLength'] ? $cfg['maxLength'] : $this->maxLookUpLgd;
 
 					if ($cfg['useUniqueCache'])	{	// If cache is to be used, store the alias in the cache:
 						$aliasBaseValue = $row[$cfg['alias_field']];
-						return $this->lookUp_newAlias($cfg, substr($aliasBaseValue,0,$mLength), $value);
+						return $this->lookUp_newAlias($cfg, substr($aliasBaseValue,0,$mLength), $value, $lang);
 					} else {	// If no cache for alias, then just return whatever value is appropriate:
 						if (strlen($row[$cfg['alias_field']]) <= $mLength)	{
 							return $row[$cfg['alias_field']];
@@ -1202,17 +1353,19 @@ $GLOBALS['TT']->setTSlogMessage('Do decoding');
 	 * @return	integer		ID integer. If none is found: false
 	 * @see lookUpTranslation(), lookUp_idToUniqAlias()
 	 */
-	function lookUp_uniqAliasToId($cfg,$aliasValue)	{
+	function lookUp_uniqAliasToId($cfg,$aliasValue,$onlyNonExpired=FALSE)	{
 
 			// Look up the ID based on input alias value:
 		$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery(
-					'value_id',
-					'tx_realurl_uniqalias',
-					'value_alias="'.$GLOBALS['TYPO3_DB']->quoteStr($aliasValue,'tx_realurl_uniqalias').'"
-						AND field_alias="'.$GLOBALS['TYPO3_DB']->quoteStr($cfg['alias_field'],'tx_realurl_uniqalias').'"
-						AND field_id="'.$GLOBALS['TYPO3_DB']->quoteStr($cfg['id_field'],'tx_realurl_uniqalias').'"
-						AND tablename="'.$GLOBALS['TYPO3_DB']->quoteStr($cfg['table'],'tx_realurl_uniqalias').'"'
-				);
+			'value_id',
+			'tx_realurl_uniqalias',
+			'value_alias='.$GLOBALS['TYPO3_DB']->fullQuoteStr($aliasValue,'tx_realurl_uniqalias').'
+				AND field_alias='.$GLOBALS['TYPO3_DB']->fullQuoteStr($cfg['alias_field'],'tx_realurl_uniqalias').'
+				AND field_id='.$GLOBALS['TYPO3_DB']->fullQuoteStr($cfg['id_field'],'tx_realurl_uniqalias').'
+				AND tablename='.$GLOBALS['TYPO3_DB']->fullQuoteStr($cfg['table'],'tx_realurl_uniqalias').'
+				AND '.($onlyNonExpired ? 'expire=0' : '(expire=0 OR expire>'.time().')')
+		);
+
 		if ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res))	{
 			return $row['value_id'];
 		}
@@ -1224,20 +1377,25 @@ $GLOBALS['TT']->setTSlogMessage('Do decoding');
 	 *
 	 * @param	array		Configuration array
 	 * @param	string		ID value to convert to alias value
+	 * @param	integer		sys_language_uid to use for lookup
 	 * @return	string		Alias string. If none is found: false
 	 * @see lookUpTranslation(), lookUp_uniqAliasToId()
 	 */
-	function lookUp_idToUniqAlias($cfg,$idValue)	{
+	function lookUp_idToUniqAlias($cfg,$idValue,$lang,$aliasValue='')	{
 
 			// Look for an alias based on ID:
 		$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery(
-					'value_alias',
-					'tx_realurl_uniqalias',
-					'value_id="'.$GLOBALS['TYPO3_DB']->quoteStr($idValue,'tx_realurl_uniqalias').'"
-						AND field_alias="'.$GLOBALS['TYPO3_DB']->quoteStr($cfg['alias_field'],'tx_realurl_uniqalias').'"
-						AND field_id="'.$GLOBALS['TYPO3_DB']->quoteStr($cfg['id_field'],'tx_realurl_uniqalias').'"
-						AND tablename="'.$GLOBALS['TYPO3_DB']->quoteStr($cfg['table'],'tx_realurl_uniqalias').'"'
-				);
+			'value_alias',
+			'tx_realurl_uniqalias',
+			'value_id='.$GLOBALS['TYPO3_DB']->fullQuoteStr($idValue,'tx_realurl_uniqalias').'
+				AND field_alias='.$GLOBALS['TYPO3_DB']->fullQuoteStr($cfg['alias_field'],'tx_realurl_uniqalias').'
+				AND field_id='.$GLOBALS['TYPO3_DB']->fullQuoteStr($cfg['id_field'],'tx_realurl_uniqalias').'
+				AND tablename='.$GLOBALS['TYPO3_DB']->fullQuoteStr($cfg['table'],'tx_realurl_uniqalias').'
+				AND lang='.intval($lang).'
+				AND expire=0'.
+				($aliasValue ? ' AND value_alias='.$GLOBALS['TYPO3_DB']->fullQuoteStr($aliasValue,'tx_realurl_uniqalias') : '')
+		);
+
 		if ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res))	{
 			return $row['value_alias'];
 		}
@@ -1249,15 +1407,21 @@ $GLOBALS['TT']->setTSlogMessage('Do decoding');
 	 * @param	array		Configuration array of lookup table
 	 * @param	string		Preferred new alias (final alias might be different if duplicates were found in the cache)
 	 * @param	integer		ID associated with alias
+	 * @param	integer		sys_language_uid to store with record
 	 * @return	string		Final alias string
 	 * @see lookUpTranslation()
 	 */
-	function lookUp_newAlias($cfg,$newAliasValue,$idValue)	{
+	function lookUp_newAlias($cfg,$newAliasValue,$idValue,$lang)	{
 
 			// Clean preferred alias
 		$newAliasValue = $this->lookUp_cleanAlias($cfg,$newAliasValue);
 
-			//
+			// If autoupdate is true we might be here even if an alias exists. Therefore we check if that alias is the $newAliasValue and if so, we return that instead of making a new, unique one.
+		if ($cfg['autoUpdate'] && $this->lookUp_idToUniqAlias($cfg,$idValue,$lang,$newAliasValue))	{
+			return $newAliasValue;
+		}
+
+			// Now, go create a unique alias:
 		$uniqueAlias = '';
 		$counter = 0;
 		$maxTry = 100;
@@ -1270,7 +1434,7 @@ $GLOBALS['TT']->setTSlogMessage('Do decoding');
 				$test_newAliasValue = $newAliasValue;
 			}
 				// If the test-alias did NOT exist, it must be unique and we break out:
-			if (!$this->lookUp_uniqAliasToId($cfg, $test_newAliasValue))	{
+			if (!$this->lookUp_uniqAliasToId($cfg, $test_newAliasValue, TRUE))	{
 				$uniqueAlias = $test_newAliasValue;
 				break;
 			}
@@ -1290,9 +1454,31 @@ $GLOBALS['TT']->setTSlogMessage('Do decoding');
 			'field_alias' => $cfg['alias_field'],
 			'field_id' => $cfg['id_field'],
 			'value_alias' => $uniqueAlias,
-			'value_id' => $idValue
+			'value_id' => $idValue,
+			'lang' => $lang
 		);
-		$GLOBALS['TYPO3_DB']->exec_INSERTquery('tx_realurl_uniqalias', $insertArray);
+
+			// Checking that this alias hasn't been stored since we looked last time:
+		if ($returnAlias = $this->lookUp_idToUniqAlias($cfg,$idValue,$lang,$uniqueAlias))	{
+				// If we are here it is because another process managed to create this alias in the time between we looked the first time and now when we want to put it in database.
+			$uniqueAlias = $returnAlias;
+		} else {
+				// Expire all other aliases:
+			// Look for an alias based on ID:
+			$res = $GLOBALS['TYPO3_DB']->exec_UPDATEquery(
+				'tx_realurl_uniqalias',
+				'value_id='.$GLOBALS['TYPO3_DB']->fullQuoteStr($idValue,'tx_realurl_uniqalias').'
+					AND field_alias='.$GLOBALS['TYPO3_DB']->fullQuoteStr($cfg['alias_field'],'tx_realurl_uniqalias').'
+					AND field_id='.$GLOBALS['TYPO3_DB']->fullQuoteStr($cfg['id_field'],'tx_realurl_uniqalias').'
+					AND tablename='.$GLOBALS['TYPO3_DB']->fullQuoteStr($cfg['table'],'tx_realurl_uniqalias').'
+					AND lang='.intval($lang).'
+					AND expire=0',
+				array('expire'=>time()+24*3600*($cfg['expireDays']?$cfg['expireDays']:60))
+			);
+
+				// Store new alias:
+			$GLOBALS['TYPO3_DB']->exec_INSERTquery('tx_realurl_uniqalias', $insertArray);
+		}
 
 			// Return new unique alias:
 		return $uniqueAlias;
@@ -1300,7 +1486,7 @@ $GLOBALS['TT']->setTSlogMessage('Do decoding');
 
 	/**
 	 * Clean up the alias
-	 * (Same function as in tx_realurl_advanced - however it should be more configurable and able to handle various charsets in some way...)
+	 * (Almost the same function as encodeTitle() in class.tx_realurl_advanced.php)
 	 *
 	 * @param	array		Configuration array
 	 * @param	string		Alias value to clean up
@@ -1309,22 +1495,38 @@ $GLOBALS['TT']->setTSlogMessage('Do decoding');
 	 */
 	function lookUp_cleanAlias($cfg,$newAliasValue)	{
 
-			// lowercase page path:
+			// Fetch character set:
+		$charset = $GLOBALS['TYPO3_CONF_VARS']['BE']['forceCharset'] ? $GLOBALS['TYPO3_CONF_VARS']['BE']['forceCharset'] : $GLOBALS['TSFE']->defaultCharSet;
+		$processedTitle = $newAliasValue;
+
+			// Convert to lowercase:
 		if ($cfg['useUniqueCache_conf']['strtolower'])	{
-			$newAliasValue = strtolower($newAliasValue);
+			$processedTitle = $GLOBALS['TSFE']->csConvObj->conv_case($charset,$processedTitle,'toLower');
 		}
 
-			// Translate space and individual chars:
+			// Convert some special tokens to the space character:
 		$space = $cfg['useUniqueCache_conf']['spaceCharacter'] ? substr($cfg['useUniqueCache_conf']['spaceCharacter'],0,1) : '_';
-		$newAliasValue = strtr($newAliasValue,'àáâãäåçèéêëìíîïñòóôõöøùúûüýÿµ -+_','aaaaaaceeeeiiiinoooooouuuuyyu'.$space.$space.$space.$space); // remove accents, convert spaces
-		$newAliasValue = strtr($newAliasValue,array('þ' => 'th', 'ð' => 'dh', 'ß' => 'ss', 'æ' => 'ae')); // rewrite some special chars
+		$processedTitle = strtr($processedTitle,' -+_',$space.$space.$space.$space); // convert spaces
 
-			// Strip of non-allowed chars, convert multiple spacechar to a single one + remove any of them in the end of the string
-		$newAliasValue = ereg_replace('[^[:alnum:]_]', $space, $newAliasValue);
-		$newAliasValue = ereg_replace('\\'.$space.'+',$space,$newAliasValue);
-		$newAliasValue = trim($newAliasValue,$space);
+			// Convert extended letters to ascii equivalents:
+		$processedTitle = $GLOBALS['TSFE']->csConvObj->specCharsToASCII($charset,$processedTitle);
 
-		return $newAliasValue;
+			// Strip the rest...:
+		$processedTitle = ereg_replace('[^a-zA-Z0-9\\'.$space.']', '', $processedTitle); // strip the rest
+		$processedTitle = ereg_replace('\\'.$space.'+',$space,$processedTitle); // Convert multiple 'spaces' to a single one
+		$processedTitle = trim($processedTitle,$space);
+
+		if ($cfg['useUniqueCache_conf']['encodeTitle_userProc'])	{
+			$params = array(
+				'pObj' => &$this,
+				'title' => $newAliasValue,
+				'processedTitle' => $processedTitle,
+			);
+			$processedTitle = t3lib_div::callUserFunction($cfg['useUniqueCache_conf']['encodeTitle_userProc'], $params, $this);
+		}
+
+			// Return value:
+		return $processedTitle;
 	}
 
 
@@ -1398,7 +1600,7 @@ $GLOBALS['TT']->setTSlogMessage('Do decoding');
 
 			// Look in memory cache first, and if not there, look it up:
 		if (!isset($GLOBALS['TSFE']->applicationData['tx_realurl']['_CACHE_aliases'][$alias]))	{
-			$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('uid','pages','alias="'.$GLOBALS['TYPO3_DB']->quoteStr($alias, 'pages').'" AND NOT pages.deleted');
+			$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('uid','pages','alias='.$GLOBALS['TYPO3_DB']->fullQuoteStr($alias, 'pages').' AND NOT pages.deleted');
 			$pageRec = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res);
 			$GLOBALS['TSFE']->applicationData['tx_realurl']['_CACHE_aliases'][$alias] = intval($pageRec['uid']);
 		}

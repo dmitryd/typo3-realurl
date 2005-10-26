@@ -102,7 +102,9 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 				'decode' => 'Decode cache',
 				'encode' => 'Encode cache',
 				'uniqalias' => 'Unique Aliases',
+				'redirects' => 'Redirects',
 				'config' => 'Configuration',
+				'log' => 'Error Log'
 			)
 		);
 	}
@@ -120,7 +122,7 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 
 				// Depth selector:
 			$h_func = t3lib_BEfunc::getFuncMenu($this->pObj->id,'SET[type]',$this->pObj->MOD_SETTINGS['type'],$this->pObj->MOD_MENU['type'],'index.php').'<br/>';
-			if ($this->pObj->MOD_SETTINGS['type']!='uniqalias')	{
+			if (!t3lib_div::inList('uniqalias,log,redirects', $this->pObj->MOD_SETTINGS['type']))	{
 				$h_func.= t3lib_BEfunc::getFuncMenu($this->pObj->id,'SET[depth]',$this->pObj->MOD_SETTINGS['depth'],$this->pObj->MOD_MENU['depth'],'index.php');
 			}
 			$theOutput.= $h_func;
@@ -188,6 +190,12 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 				case 'config':
 					$theOutput.= $this->configView();
 				break;
+				case 'redirects':
+					$theOutput.= $this->redirectView();
+				break;
+				case 'log':
+					$theOutput.= $this->logView();
+				break;
 			}
 		}
 
@@ -239,16 +247,17 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 
 				// Row title:
 			$rowTitle = $row['HTML'].t3lib_BEfunc::getRecordTitle('pages',$row['row'],TRUE);
+			$cellAttrib = ($row['row']['_CSSCLASS'] ? ' class="'.$row['row']['_CSSCLASS'].'"' : '');
 
 				// Add at least one empty element:
 			if (!count($pathCacheInfo))	{
 
 						// Add title:
 					$tCells = array();
-					$tCells[]='<td nowrap="nowrap">'.$rowTitle.'</td>';
+					$tCells[]='<td nowrap="nowrap"'.$cellAttrib.'>'.$rowTitle.'</td>';
 
 						// Empty row:
-					$tCells[]='<td colspan="9" align="center">&nbsp;</td>';
+					$tCells[]='<td colspan="10" align="center">&nbsp;</td>';
 
 						// Compile Row:
 					$output.= '
@@ -262,12 +271,12 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 
 						// Init:
 					$deletedEntry = FALSE;
-					$hash = $inf['pagepath'].'|'.$inf['rootpage_id'];	// MP and language is not a part of this because the path itself should be different simply because the MP makes a different path! (see tx_realurl_advanced::pagePathtoID())
+					$hash = $inf['pagepath'].'|'.$inf['rootpage_id'].'|'.$inf['language_id'];	// MP is not a part of this because the path itself should be different simply because the MP makes a different path! (see tx_realurl_advanced::pagePathtoID())
 
 						// Add icon/title and ID:
 					$tCells = array();
 					if (!$c)	{
-						$tCells[]='<td nowrap="nowrap" rowspan="'.count($pathCacheInfo).'">'.$rowTitle.'</td>';
+						$tCells[]='<td nowrap="nowrap" rowspan="'.count($pathCacheInfo).'"'.$cellAttrib.'>'.$rowTitle.'</td>';
 						$tCells[]='<td rowspan="'.count($pathCacheInfo).'">'.$inf['page_id'].'</td>';
 					}
 
@@ -281,6 +290,7 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 					$editIcon.= '<a href="#" onclick="'.htmlspecialchars($onClick).'">'.
 								'<img'.t3lib_iconWorks::skinImg($this->pObj->doc->backPath,'gfx/zoom.gif','width="12" height="12"').' title="" alt="" />'.
 								'</a>';
+
 					if ($inf['language_id']>0)	{	// For alternative languages, show another list of fields, form page overlay record:
 						$editIcon = '';
 						list($olRec) = t3lib_BEfunc::getRecordsByField('pages_language_overlay','pid',$row['row']['uid'],' AND sys_language_uid='.intval($inf['language_id']));
@@ -305,7 +315,7 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 					$tCells[]='<td nowrap="nowrap">'.htmlspecialchars($sources).'</td>';
 
 						// Show page path:
-					if (strcmp($searchPath,'') && t3lib_div::isFirstPartOfStr($inf['pagepath'],$searchPath))	{
+					if (strcmp($searchPath,'') && t3lib_div::isFirstPartOfStr($inf['pagepath'],$searchPath) && !$inf['expire'])	{
 
 							// Delete entry:
 						if ($searchForm_delete)	{
@@ -333,7 +343,7 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 					} else {
 							// Delete entries:
 						if ($cmd==='edit' && (!strcmp($entry,$inf['cache_id']) || !strcmp($entry,'ALL')))	{
-							$pagePath = '<input type="text" name="edit['.$inf['cache_id'].']" value="'.htmlspecialchars($inf['pagepath']).'" />';
+							$pagePath = '<input type="text" name="edit['.$inf['cache_id'].']" value="'.htmlspecialchars($inf['pagepath']).'" size="40" />';
 							if ($cmd==='edit' && $entry!='ALL')	{
 								$pagePath.= $this->saveCancelButtons();
 							}
@@ -343,23 +353,33 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 						}
 					}
 
-					$tCells[]='<td>'.$pagePath.'</td>';
+					$tCells[]='<td'.($inf['expire'] ? ' style="font-style: italic; color:#999999;"' : '').'>'.$pagePath.'</td>';
 
 					if ($deletedEntry)	{
 						$tCells[]='<td>&nbsp;</td>';
 					} else {
 						$tCells[]='<td>'.
 								'<a href="'.$this->linkSelf('&cmd=delete&entry='.$inf['cache_id']).'">'.
-								'<img'.t3lib_iconWorks::skinImg($this->pObj->doc->backPath,'gfx/garbage.gif','width="11" height="12"').' alt="" />'.
+								'<img'.t3lib_iconWorks::skinImg($this->pObj->doc->backPath,'gfx/garbage.gif','width="11" height="12"').' title="Delete" alt="" />'.
 								'</a>'.
 								'<a href="'.$this->linkSelf('&cmd=edit&entry='.$inf['cache_id']).'">'.
-								'<img'.t3lib_iconWorks::skinImg($this->pObj->doc->backPath,'gfx/edit2.gif','width="11" height="12"').' title="" alt="" />'.
+								'<img'.t3lib_iconWorks::skinImg($this->pObj->doc->backPath,'gfx/edit2.gif','width="11" height="12"').' title="Edit" alt="" />'.
 								'</a>'.
 								'<a href="'.$this->linkSelf('&pathPrefixSearch='.rawurlencode($inf['pagepath'])).'">'.
-								'<img'.t3lib_iconWorks::skinImg($this->pObj->doc->backPath,'gfx/clip_copy.gif','width="12" height="12"').' title="" alt="" />'.
+								'<img'.t3lib_iconWorks::skinImg($this->pObj->doc->backPath,'gfx/napshot.gif','width="12" height="12"').' title="Use for search" alt="" />'.
+								'</a>'.
+								'<a href="'.$this->linkSelf('&cmd=copy&entry='.$inf['cache_id']).'">'.
+								'<img'.t3lib_iconWorks::skinImg($this->pObj->doc->backPath,'gfx/clip_copy.gif','width="12" height="12"').' title="Copy entry" alt="" />'.
 								'</a>'.
 								'</td>';
 					}
+					$tCells[]='<td'.($inf['expire'] && $inf['expire']<time() ? ' style="color: red;"':'').'>'.
+								($inf['expire'] ? htmlspecialchars(t3lib_BEfunc::dateTimeAge($inf['expire'],-1)) : '').
+								($inf['expire'] ?
+									'<a href="'.$this->linkSelf('&cmd=raiseExpire&entry='.$inf['cache_id']).'">'.
+									'<img'.t3lib_iconWorks::skinImg($this->pObj->doc->backPath,'gfx/up.gif','width="14" height="14"').' title="Set expire time to 30 days" alt="" />'.
+									'</a>' : '').
+								'</td>';
 
 						// Set error msg:
 					if (!strcmp($inf['pagepath'],''))	{
@@ -367,7 +387,7 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 							$error = $this->pObj->doc->icons(2).'Empty';
 						}
 					} elseif (isset($trackSameUrl[$hash]))	{
-						$error = $this->pObj->doc->icons(2).'Duplicate';
+						$error = $this->pObj->doc->icons(2).'Already used on page ID '.$trackSameUrl[$hash];
 					} else {
 						$error = '&nbsp;';
 					}
@@ -380,11 +400,12 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 
 					#$tCells[]='<td nowrap="nowrap">'.htmlspecialchars(t3lib_BEfunc::datetime($inf['expire'])).' / '.htmlspecialchars(t3lib_BEfunc::calcAge($inf['expire']-time())).'</td>';
 
-					$trackSameUrl[$hash] = TRUE;
+					$trackSameUrl[$hash] = $inf['page_id'];
 
 						// Compile Row:
+					$rowClass = 'bgColor'.($cc%2 ? '-20':'-10');
 					$output.= '
-						<tr class="bgColor'.($cc%2 ? '-20':'-10').'">
+						<tr class="'.$rowClass.'">
 							'.implode('
 							',$tCells).'
 						</tr>';
@@ -407,6 +428,11 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 					'<a href="'.$this->linkSelf('&cmd=edit&entry=ALL').'">'.
 					'<img'.t3lib_iconWorks::skinImg($this->pObj->doc->backPath,'gfx/edit2.gif','width="11" height="12"').' title="" alt="" />'.
 					'</a>'.
+					'</td>';
+		$tCells[]='<td>Expires:'.
+						'<a href="'.$this->linkSelf('&cmd=flushExpired').'">'.
+						'<img'.t3lib_iconWorks::skinImg($this->pObj->doc->backPath,'gfx/garbage.gif','width="11" height="12"').' title="Flush all expired" alt="" />'.
+						'</a>'.
 					'</td>';
 		$tCells[]='<td>Errors:</td>';
 		$tCells[]='<td>Lang:</td>';
@@ -449,7 +475,7 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 					'page_id='.intval($pageId).
 						((string)$showLanguage!=='' ? ' AND language_id='.intval($showLanguage) : ''),
 					'',
-					'language_id'
+					'language_id,expire'
 				);
 
 			// Traverse result:
@@ -459,6 +485,15 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 				// Delete entries:
 			if ($cmd==='delete' && (!strcmp($entry,$row['cache_id']) || !strcmp($entry,'ALL')))	{
 				$this->deletePathCacheEntry($row['cache_id']);
+				// Raise expire times:
+			} elseif ($cmd==='raiseExpire' && !strcmp($entry,$row['cache_id'])) {
+				$this->raiseExpirePathCacheEntry($row);
+				$output[] = $row;
+			} elseif ($cmd==='flushExpired' && $row['expire'] && $row['expire']<time()) {
+				$this->deletePathCacheEntry($row['cache_id']);
+			} elseif ($cmd==='copy' && (!strcmp($entry,$row['cache_id'])))	{
+				$output[] = $this->copyPathCacheEntry($row);
+				$output[] = $row;
 			} else {	// ... or add:
 				$output[] = $row;
 			}
@@ -489,6 +524,11 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 
 			// Language selector:
 		$sys_languages = t3lib_BEfunc::getRecordsByField('sys_language','pid',0,'','','title');
+
+		// Masi: fix if no sys_language records defined
+		if (!is_array($sys_languages)) {
+			$sys_languages = array();
+		}
 		array_unshift($sys_languages,array('uid' => 0, 'title' => 'Default'));
 		array_unshift($sys_languages,array('uid' => '', 'title' => 'All languages'));
 
@@ -531,6 +571,43 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 	}
 
 	/**
+	 * Deletes an entry in pathcache table
+	 *
+	 * @param	integer		Path Cache id (cache_id)
+	 * @return	void
+	 */
+	function raiseExpirePathCacheEntry(&$row)	{
+		$row['expire'] = time()+30*24*3600;
+		$GLOBALS['TYPO3_DB']->exec_UPDATEquery('tx_realurl_pathcache','expire>0 AND cache_id='.intval($row['cache_id']),array('expire' => $row['expire']));
+	}
+
+	/**
+	 * Copies an entry in pathcache table
+	 *
+	 * @param	array		Record to copy, passed by reference, will be updated.
+	 * @return	array		New record.
+	 */
+	function copyPathCacheEntry(&$oEntry)	{
+
+			// Select old record:
+		$cEntry = $oEntry;
+		unset($cEntry['cache_id']);
+		$GLOBALS['TYPO3_DB']->exec_INSERTquery('tx_realurl_pathcache',$cEntry);
+		$cEntry['cache_id'] = $GLOBALS['TYPO3_DB']->sql_insert_id();
+
+			// Update the old record with expire time:
+		if (!$oEntry['expire'])	{
+			$oEntry['expire'] = time()+30*24*3600;
+			$field_values = array(
+				'expire' => $oEntry['expire'],
+			);
+			$GLOBALS['TYPO3_DB']->exec_UPDATEquery('tx_realurl_pathcache','cache_id='.intval($oEntry['cache_id']), $field_values);
+		}
+
+		return $cEntry;
+	}
+
+	/**
 	 * Changes the "pagepath" value of an entry in the pathcache table
 	 *
 	 * @param	integer		Path Cache id (cache_id)
@@ -543,6 +620,11 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 			'hash' => substr(md5($value),0,10),
 		);
 		$GLOBALS['TYPO3_DB']->exec_UPDATEquery('tx_realurl_pathcache','cache_id='.intval($cache_id), $field_values);
+
+			// Look up the page id so we can clear the encodeCache entries:
+		list($page_id_rec) = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('page_id', 'tx_realurl_pathcache','cache_id='.intval($cache_id));
+		$this->clearDEncodeCache('page_'.$page_id_rec['page_id']); // Encode cache
+		$this->clearDEncodeCache('page_'.$page_id_rec['page_id'],TRUE);	// Decode cache
 	}
 
 	/**
@@ -598,9 +680,17 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 	 */
 	function decodeView($tree)	{
 
+			// Delete entries:
+		$cmd = t3lib_div::_GP('cmd');
+		if ($cmd === 'deleteDC')	{
+			$subcmd = t3lib_div::_GP('entry');
+			$this->clearDEncodeCache($subcmd,TRUE);
+		}
+
 			// Traverse tree:
 		$output = '';
 		$cc=0;
+		$countDisplayed = 0;
 		foreach($tree->tree as $row)	{
 
 				// Select rows:
@@ -610,21 +700,28 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 			$rowTitle = $row['HTML'].t3lib_BEfunc::getRecordTitle('pages',$row['row'],TRUE);
 
 				// Add at least one empty element:
-			if (!count($displayRows))	{
-						// Add title:
-					$tCells = array();
-					$tCells[]='<td nowrap="nowrap">'.$rowTitle.'</td>';
+			if (!count($displayRows) || $subcmd==='displayed')	{
 
-						// Empty row:
-					$tCells[]='<td colspan="4" align="center">&nbsp;</td>';
+					// Add title:
+				$tCells = array();
+				$tCells[]='<td nowrap="nowrap">'.$rowTitle.'</td>';
 
-						// Compile Row:
-					$output.= '
-						<tr class="bgColor'.($cc%2 ? '-20':'-10').'">
-							'.implode('
-							',$tCells).'
-						</tr>';
-					$cc++;
+					// Empty row:
+				$tCells[]='<td colspan="6" align="center">&nbsp;</td>';
+
+					// Compile Row:
+				$output.= '
+					<tr class="bgColor'.($cc%2 ? '-20':'-10').'">
+						'.implode('
+						',$tCells).'
+					</tr>';
+				$cc++;
+
+				if ($subcmd==='displayed') {
+					foreach($displayRows as $c => $inf)	{
+						$this->clearDEncodeCache('urlhash_'.$inf['url_hash'],TRUE);
+					}
+				}
 			} else {
 				foreach($displayRows as $c => $inf)	{
 
@@ -632,6 +729,12 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 					$tCells = array();
 					if (!$c)	{
 						$tCells[]='<td nowrap="nowrap" rowspan="'.count($displayRows).'">'.$rowTitle.'</td>';
+						$tCells[]='<td nowrap="nowrap" rowspan="'.count($displayRows).'">'.$row['row']['uid'].'</td>';
+						$tCells[]='<td rowspan="'.count($displayRows).'">'.
+							'<a href="'.$this->linkSelf('&cmd=deleteDC&entry=page_'.intval($row['row']['uid'])).'">'.
+							'<img'.t3lib_iconWorks::skinImg($this->pObj->doc->backPath,'gfx/garbage.gif','width="11" height="12"').' title="Delete entries for page" alt="" />'.
+							'</a>'.
+						'</td>';
 					}
 
 						// Path:
@@ -643,6 +746,13 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 									(is_array($queryValues['GET_VARS']) ? t3lib_div::implodeArrayForUrl('',$queryValues['GET_VARS']) : '');
 					$tCells[]='<td>'.htmlspecialchars($queryParams).'</td>';
 
+						// Delete:
+					$tCells[]='<td>'.
+							'<a href="'.$this->linkSelf('&cmd=deleteDC&entry=urlhash_'.intval($inf['url_hash'])).'">'.
+							'<img'.t3lib_iconWorks::skinImg($this->pObj->doc->backPath,'gfx/garbage.gif','width="11" height="12"').' title="Delete entry" alt="" />'.
+							'</a>'.
+						'</td>';
+
 						// Timestamp:
 					$tCells[]='<td>'.htmlspecialchars(t3lib_BEfunc::datetime($inf['tstamp'])).' / '.htmlspecialchars(t3lib_BEfunc::calcAge(time()-$inf['tstamp'])).'</td>';
 
@@ -653,15 +763,21 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 							',$tCells).'
 						</tr>';
 					$cc++;
+					$countDisplayed++;
 				}
 			}
 		}
 
+		list($count_allInTable) = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('count(*) AS count','tx_realurl_urldecodecache','');
+
 			// Create header:
 		$tCells = array();
 		$tCells[]='<td>Title:</td>';
+		$tCells[]='<td>ID:</td>';
+		$tCells[]='<td>&nbsp;</td>';
 		$tCells[]='<td>Path:</td>';
 		$tCells[]='<td>GET variables:</td>';
+		$tCells[]='<td>&nbsp;</td>';
 		$tCells[]='<td>Timestamp:</td>';
 
 		$output = '
@@ -671,7 +787,17 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 			</tr>'.$output;
 
 			// Compile final table and return:
-		$output = '
+		$output = '<br/><br/>
+		Displayed entries: <b>'.$countDisplayed.'</b> '.
+			'<a href="'.$this->linkSelf('&cmd=deleteDC&entry=displayed').'">'.
+			'<img'.t3lib_iconWorks::skinImg($this->pObj->doc->backPath,'gfx/garbage.gif','width="11" height="12"').' title="Delete displayed entries" alt="" />'.
+			'</a>'.
+		'<br/>
+		Total entries in decode cache: <b>'.$count_allInTable['count'].'</b> '.
+			'<a href="'.$this->linkSelf('&cmd=deleteDC&entry=all').'">'.
+			'<img'.t3lib_iconWorks::skinImg($this->pObj->doc->backPath,'gfx/garbage.gif','width="11" height="12"').' title="Delete WHOLE decode cache!" alt="" />'.
+			'</a>'.
+		'<br/>
 		<table border="0" cellspacing="1" cellpadding="0" id="tx-realurl-pathcacheTable" class="lrPadding c-list">'.$output.'
 		</table>';
 
@@ -703,11 +829,19 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 	 */
 	function encodeView($tree)	{
 
-		$duplicates = array();
+			// Delete entries:
+		$cmd = t3lib_div::_GP('cmd');
+		if ($cmd === 'deleteEC')	{
+			$subcmd = t3lib_div::_GP('entry');
+			$this->clearDEncodeCache($subcmd);
+		}
 
 			// Traverse tree:
 		$cc = 0;
+		$countDisplayed = 0;
 		$output = '';
+		$duplicates = array();
+
 		foreach($tree->tree as $row)	{
 
 				// Select rows:
@@ -717,38 +851,65 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 			$rowTitle = $row['HTML'].t3lib_BEfunc::getRecordTitle('pages',$row['row'],TRUE);
 
 				// Add at least one empty element:
-			if (!count($displayRows))	{
-						// Add title:
-					$tCells = array();
-					$tCells[]='<td nowrap="nowrap">'.$rowTitle.'</td>';
+			if (!count($displayRows) || $subcmd==='displayed')	{
 
-						// Empty row:
-					$tCells[]='<td colspan="4" align="center">&nbsp;</td>';
+					// Add title:
+				$tCells = array();
+				$tCells[]='<td nowrap="nowrap">'.$rowTitle.'</td>';
+				$tCells[]='<td nowrap="nowrap">&nbsp;</td>';
 
-						// Compile Row:
-					$output.= '
-						<tr class="bgColor'.($cc%2 ? '-20':'-10').'">
-							'.implode('
-							',$tCells).'
-						</tr>';
-					$cc++;
+					// Empty row:
+				$tCells[]='<td colspan="7" align="center">&nbsp;</td>';
+
+					// Compile Row:
+				$output.= '
+					<tr class="bgColor'.($cc%2 ? '-20':'-10').'">
+						'.implode('
+						',$tCells).'
+					</tr>';
+				$cc++;
+
+				if ($subcmd==='displayed') {
+					foreach($displayRows as $c => $inf)	{
+						$this->clearDEncodeCache('urlhash_'.$inf['url_hash']);
+					}
+				}
 			} else {
 				foreach($displayRows as $c => $inf)	{
-
 						// Add icon/title and ID:
 					$tCells = array();
 					if (!$c)	{
 						$tCells[]='<td nowrap="nowrap" rowspan="'.count($displayRows).'">'.$rowTitle.'</td>';
+						$tCells[]='<td nowrap="nowrap" rowspan="'.count($displayRows).'">'.$row['row']['uid'].'</td>';
+						$tCells[]='<td rowspan="'.count($displayRows).'">'.
+							'<a href="'.$this->linkSelf('&cmd=deleteEC&entry=page_'.intval($row['row']['uid'])).'">'.
+							'<img'.t3lib_iconWorks::skinImg($this->pObj->doc->backPath,'gfx/garbage.gif','width="11" height="12"').' title="Delete entries for page" alt="" />'.
+							'</a>'.
+						'</td>';
 					}
 
 						// Get vars:
 					$tCells[]='<td>'.htmlspecialchars(t3lib_div::fixed_lgd($inf['origparams'],100)).'</td>';
 
-						// Error:
-					$tCells[]='<td>'.($duplicates[$inf['content']] ? $this->pObj->doc->icons(2).'Duplicate' : '&nbsp;').'</td>';
+						// Internal Extras:
+					$tCells[]='<td>'.($inf['internalExtras'] ? t3lib_div::arrayToLogString(unserialize($inf['internalExtras'])) : '&nbsp;').'</td>';
 
 						// Path:
 					$tCells[]='<td>'.htmlspecialchars(t3lib_div::fixed_lgd($inf['content'],100)).'</td>';
+
+						// Delete:
+					$tCells[]='<td>'.
+							'<a href="'.$this->linkSelf('&cmd=deleteEC&entry=urlhash_'.intval($inf['url_hash'])).'">'.
+							'<img'.t3lib_iconWorks::skinImg($this->pObj->doc->backPath,'gfx/garbage.gif','width="11" height="12"').' title="Delete entry" alt="" />'.
+							'</a>'.
+						'</td>';
+
+						// Error:
+					$eMsg = ($duplicates[$inf['content']] && $duplicates[$inf['content']] !== $row['row']['uid'] ? $this->pObj->doc->icons(2).'Already used on page ID '.$duplicates[$inf['content']].'<br/>' : '');
+					if (count($GLOBALS['TYPO3_DB']->exec_SELECTgetRows('url_hash','tx_realurl_redirects','url_hash='.intval(t3lib_div::md5int($inf['content'])))))	{
+						$eMsg.= $this->pObj->doc->icons(3).'Also a redirect!';
+					}
+					$tCells[]='<td>'.$eMsg.'</td>';
 
 						// Timestamp:
 					$tCells[]='<td>'.htmlspecialchars(t3lib_BEfunc::datetime($inf['tstamp'])).' / '.htmlspecialchars(t3lib_BEfunc::calcAge(time()-$inf['tstamp'])).'</td>';
@@ -761,17 +922,27 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 						</tr>';
 					$cc++;
 
-					$duplicates[$inf['content']] = TRUE;
+					$countDisplayed++;
+
+					if (!isset($duplicates[$inf['content']]))	{
+						$duplicates[$inf['content']] = $row['row']['uid'];
+					}
 				}
 			}
 		}
 
+		list($count_allInTable) = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('count(*) AS count','tx_realurl_urlencodecache','');
+
 			// Create header:
 		$tCells = array();
 		$tCells[]='<td>Title:</td>';
+		$tCells[]='<td>ID:</td>';
+		$tCells[]='<td>&nbsp;</td>';
 		$tCells[]='<td>GET variables:</td>';
-		$tCells[]='<td>Error:</td>';
+		$tCells[]='<td>Internal Extras:</td>';
 		$tCells[]='<td>Path:</td>';
+		$tCells[]='<td>&nbsp;</td>';
+		$tCells[]='<td>Errors:</td>';
 		$tCells[]='<td>Timestamp:</td>';
 
 		$output = '
@@ -782,13 +953,48 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 
 			// Compile final table and return:
 		$output = '
+
+		<br/>
+		<br/>
+		Displayed entries: <b>'.$countDisplayed.'</b> '.
+			'<a href="'.$this->linkSelf('&cmd=deleteEC&entry=displayed').'">'.
+			'<img'.t3lib_iconWorks::skinImg($this->pObj->doc->backPath,'gfx/garbage.gif','width="11" height="12"').' title="Delete displayed entries" alt="" />'.
+			'</a>'.
+		'<br/>
+		Total entries in encode cache: <b>'.$count_allInTable['count'].'</b> '.
+			'<a href="'.$this->linkSelf('&cmd=deleteEC&entry=all').'">'.
+			'<img'.t3lib_iconWorks::skinImg($this->pObj->doc->backPath,'gfx/garbage.gif','width="11" height="12"').' title="Delete WHOLE encode cache!" alt="" />'.
+			'</a>'.
+		'<br/>
 		<table border="0" cellspacing="1" cellpadding="0" id="tx-realurl-pathcacheTable" class="lrPadding c-list">'.$output.'
 		</table>';
 
 		return $output;
 	}
 
+	/**
+	 *
+	 */
+	function clearDEncodeCache($cmd, $decodeCache=FALSE)	{
 
+		$table = $decodeCache ? 'tx_realurl_urldecodecache' : 'tx_realurl_urlencodecache';
+
+		list($keyword,$id) = explode('_', $cmd);
+
+		switch((string)$keyword)	{
+			case 'all':
+				$GLOBALS['TYPO3_DB']->exec_DELETEquery($table, '');
+			break;
+			case 'page':
+				$GLOBALS['TYPO3_DB']->exec_DELETEquery($table, 'page_id='.intval($id));
+			break;
+			case 'urlhash':
+				$GLOBALS['TYPO3_DB']->exec_DELETEquery($table, 'url_hash='.intval($id));
+			break;
+			default:
+			break;
+		}
+	}
 
 
 
@@ -814,14 +1020,34 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 		$tableName = t3lib_div::_GP('table');
 		$cmd = t3lib_div::_GET('cmd');
 		$entry = t3lib_div::_GET('entry');
+		$search = t3lib_div::_POST('search');
 
 			// Select rows:
 		$overviewRows = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('tablename,count(*) as number_of_rows','tx_realurl_uniqalias','','tablename','','','tablename');
 
 		if ($tableName && isset($overviewRows[$tableName]))	{	// Show listing of single table:
 
+				// Some Commands:
+			if ($cmd==='delete')	{
+				if ($entry==='ALL')	{
+					$GLOBALS['TYPO3_DB']->exec_DELETEquery('tx_realurl_uniqalias','tablename='.$GLOBALS['TYPO3_DB']->fullQuoteStr($tableName,'tx_realurl_uniqalias'));
+				} else {
+					$GLOBALS['TYPO3_DB']->exec_DELETEquery('tx_realurl_uniqalias','tablename='.$GLOBALS['TYPO3_DB']->fullQuoteStr($tableName,'tx_realurl_uniqalias').' AND uid='.intval($entry));
+				}
+			}
+			if ($cmd==='flushExpired')	{
+				$GLOBALS['TYPO3_DB']->exec_DELETEquery('tx_realurl_uniqalias','tablename='.$GLOBALS['TYPO3_DB']->fullQuoteStr($tableName,'tx_realurl_uniqalias').' AND expire>0 AND expire<'.intval(time()));
+			}
+
 				// Select rows:
-			$tableContent = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('*','tx_realurl_uniqalias','tablename='.$GLOBALS['TYPO3_DB']->fullQuoteStr($tableName,'tx_realurl_uniqalias'),'','value_id');
+			$tableContent = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows(
+				'*',
+				'tx_realurl_uniqalias',
+				'tablename='.$GLOBALS['TYPO3_DB']->fullQuoteStr($tableName,'tx_realurl_uniqalias').
+					($search ? ' AND (value_id='.$GLOBALS['TYPO3_DB']->fullQuoteStr($search,$tableName).' OR value_alias LIKE \'%'.$GLOBALS['TYPO3_DB']->quoteStr($search,$tableName).'%\')':''),
+				'',
+				'value_id, lang, expire'
+			);
 
 			$cc=0;
 			$duplicates = array();
@@ -833,14 +1059,23 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 				if ((string)$cmd==='edit' && ($entry==='ALL' || !strcmp($entry,$aliasRecord['uid'])))	{
 					$tCells[]='<td>'.
 								'<input type="text" name="edit['.$aliasRecord['uid'].']" value="'.htmlspecialchars($aliasRecord['value_alias']).'" />'.
-								($entry!=='ALL' ? $this->saveCancelButtons('<input type="hidden" name="table" value="'.htmlspecialchars($tableName).'" /><input type="hidden" name="id" value="'.htmlspecialchars($this->pObj->id).'" />') : '').
+								($entry!=='ALL' ? $this->saveCancelButtons('') : '').
 								'</td>';
 				} else {
-					$tCells[]='<td>'.htmlspecialchars($aliasRecord['value_alias']).'</td>';
+					$tCells[]='<td'.($aliasRecord['expire'] ? ' style="font-style: italic; color:#999999;"' : '').'>'.htmlspecialchars($aliasRecord['value_alias']).'</td>';
 				}
+
+				$tCells[]='<td>'.htmlspecialchars($aliasRecord['lang']).'</td>';
+				$tCells[]='<td'.($aliasRecord['expire'] && $aliasRecord['expire']<time() ? ' style="color: red;"':'').'>'.htmlspecialchars(t3lib_BEfunc::dateTimeAge($aliasRecord['expire'])).'</td>';
+
 				$tCells[]='<td>'.
+								// Edit link:
 							'<a href="'.$this->linkSelf('&table='.rawurlencode($tableName).'&cmd=edit&entry='.$aliasRecord['uid']).'">'.
 							'<img'.t3lib_iconWorks::skinImg($this->pObj->doc->backPath,'gfx/edit2.gif','width="11" height="12"').' title="" alt="" />'.
+							'</a>'.
+								// Delete link:
+							'<a href="'.$this->linkSelf('&table='.rawurlencode($tableName).'&cmd=delete&entry='.$aliasRecord['uid']).'">'.
+							'<img'.t3lib_iconWorks::skinImg($this->pObj->doc->backPath,'gfx/garbage.gif','width="11" height="12"').' title="" alt="" />'.
 							'</a>'.
 							'</td>';
 
@@ -868,10 +1103,19 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 			$tCells = array();
 			$tCells[]='<td>ID (Field: '.$field_id.')</td>';
 			$tCells[]='<td>Alias (Field: '.$field_alias.'):</td>';
+			$tCells[]='<td>Lang:</td>';
+			$tCells[]='<td>Expire:'.
+						(!$search ? '<a href="'.$this->linkSelf('&table='.rawurlencode($tableName).'&cmd=flushExpired').'">'.
+						'<img'.t3lib_iconWorks::skinImg($this->pObj->doc->backPath,'gfx/garbage.gif','width="11" height="12"').' title="Flush expired" alt="" />'.
+						'</a>' : '').
+						'</td>';
 			$tCells[]='<td>'.
-						'<a href="'.$this->linkSelf('&table='.rawurlencode($tableName).'&cmd=edit&entry=ALL').'">'.
-						'<img'.t3lib_iconWorks::skinImg($this->pObj->doc->backPath,'gfx/edit2.gif','width="11" height="12"').' title="" alt="" />'.
+						(!$search ? '<a href="'.$this->linkSelf('&table='.rawurlencode($tableName).'&cmd=edit&entry=ALL').'">'.
+						'<img'.t3lib_iconWorks::skinImg($this->pObj->doc->backPath,'gfx/edit2.gif','width="11" height="12"').' title="Edit all" alt="" />'.
 						'</a>'.
+						'<a href="'.$this->linkSelf('&table='.rawurlencode($tableName).'&cmd=delete&entry=ALL').'" onclick="return confirm(\'Delete all?\');">'.
+						'<img'.t3lib_iconWorks::skinImg($this->pObj->doc->backPath,'gfx/garbage.gif','width="11" height="12"').' title="Delete all" alt="" />'.
+						'</a>' : '').
 						'</td>';
 			$tCells[]='<td>Error:</td>';
 
@@ -886,7 +1130,10 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 			<br/>
 			Table: <b>'.htmlspecialchars($tableName).'</b><br/>
 			Aliases: <b>'.htmlspecialchars(count($tableContent)).'</b><br/>
-			<br/>
+			Search: <input type="text" name="search" value="'.htmlspecialchars($search).'" /><input type="submit" name="_" value="Search" />
+			<input type="hidden" name="table" value="'.htmlspecialchars($tableName).'" />
+			<input type="hidden" name="id" value="'.htmlspecialchars($this->pObj->id).'" />
+			<br/><br/>
 			<table border="0" cellspacing="1" cellpadding="0" id="tx-realurl-pathcacheTable" class="lrPadding c-list">'.$output.'
 			</table>';
 
@@ -1007,6 +1254,282 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 		<span class="nobr">'.$tree.'</span>';
 
 		return $tree;
+	}
+
+
+
+
+
+
+
+
+
+
+
+	/*****************************
+	 *
+	 * Log view:
+	 *
+	 *****************************/
+
+	/**
+	 * View error log
+	 *
+	 * @return	string		HTML
+	 */
+	function logView()	{
+
+		$cmd = t3lib_div::_GP('cmd');
+		if ($cmd==='deleteAll')	{
+			$GLOBALS['TYPO3_DB']->exec_DELETEquery(
+				'tx_realurl_errorlog',
+				''
+			);
+		}
+
+		$list = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows(
+			'*',
+			'tx_realurl_errorlog',
+			'',
+			'',
+			'counter DESC, tstamp DESC',
+			100
+		);
+
+		if (is_array($list))	{
+			$output='';
+
+			foreach($list as $rec)	{
+
+					// Add data:
+				$tCells = array();
+				$tCells[]='<td>'.$rec['counter'].'</td>';
+				$tCells[]='<td>'.t3lib_BEfunc::dateTimeAge($rec['tstamp']).'</td>';
+				$tCells[]='<td><a href="'.htmlspecialchars(t3lib_div::getIndpEnv('TYPO3_SITE_URL').$rec['url']).'" target="_blank">'.htmlspecialchars($rec['url']).'</a>'.
+							' <a href="'.$this->linkSelf('&cmd=new&defUrl='.rawurlencode($rec['url']).'&SET[type]=redirects').'">'.
+							'<img'.t3lib_iconWorks::skinImg($this->pObj->doc->backPath,'gfx/napshot.gif','width="12" height="12"').' title="Set as redirect" alt="" />'.
+							'</a>'.
+							'</td>';
+				$tCells[]='<td>'.htmlspecialchars($rec['error']).'</td>';
+				$tCells[]='<td>'.
+								($rec['last_referer'] ? '<a href="'.htmlspecialchars($rec['last_referer']).'" target="_blank">'.htmlspecialchars($rec['last_referer']).'</a>' : '&nbsp;').
+								'</td>';
+				$tCells[]='<td>'.t3lib_BEfunc::datetime($rec['cr_date']).'</td>';
+
+					// Compile Row:
+				$output.= '
+					<tr class="bgColor'.($cc%2 ? '-20':'-10').'">
+						'.implode('
+						',$tCells).'
+					</tr>';
+				$cc++;
+			}
+				// Create header:
+			$tCells = array();
+			$tCells[]='<td>Counter:</td>';
+			$tCells[]='<td>Last time:</td>';
+			$tCells[]='<td>URL:</td>';
+			$tCells[]='<td>Error:</td>';
+			$tCells[]='<td>Last Referer:</td>';
+			$tCells[]='<td>First time:</td>';
+
+			$output = '
+				<tr class="bgColor5 tableheader">
+					'.implode('
+					',$tCells).'
+				</tr>'.$output;
+
+				// Compile final table and return:
+			$output = '
+			<br/>
+				<a href="'.$this->linkSelf('&cmd=deleteAll').'">'.
+				'<img'.t3lib_iconWorks::skinImg($this->pObj->doc->backPath,'gfx/garbage.gif','width="11" height="12"').' title="Delete All" alt="" />'.
+				' Flush log</a>
+				<br/>
+			<table border="0" cellspacing="1" cellpadding="0" id="tx-realurl-pathcacheTable" class="lrPadding c-list">'.$output.'
+			</table>';
+
+			return $output;
+		}
+	}
+
+
+
+
+
+
+
+
+
+
+
+	/*****************************
+	 *
+	 * Redirect view:
+	 *
+	 *****************************/
+
+	/**
+	 * Redirect view
+	 *
+	 * @return	string		HTML
+	 */
+	function redirectView()	{
+
+			// Init variables.
+		$output='';
+		$editControls='';
+
+		$cmd = t3lib_div::_GP('cmd');
+		$entry_id = t3lib_div::_GP('entry_id');
+
+			// Delete entry:
+		if ($cmd==='delete')	{
+			$GLOBALS['TYPO3_DB']->exec_DELETEquery(
+				'tx_realurl_redirects',
+				'url_hash='.intval($entry_id)
+			);
+		}
+
+			// Show form for new/edit:
+		if ($cmd==='new' || $cmd==='edit')	{
+			if ($cmd==='new')	{
+				$idValue = 'NEW';
+				$editControls.= 'New entry:<br/>';
+				$data = array(
+					'url' => t3lib_div::_GP('defUrl'),
+					'destination' => ''
+				);
+			} else {
+				$idValue = intval($entry_id);
+				$editControls.= 'Edit entry:<br/>';
+
+				list($data) = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows(
+					'*',
+					'tx_realurl_redirects',
+					'url_hash='.intval($idValue)
+				);
+			}
+			$editControls.= '
+				'.($cmd==='new' ? 'Url: <input type="text" name="edit['.$idValue.'][url]" value="'.htmlspecialchars($data['url']).'" size="40" /><br/>':'').'
+				Destination: <input type="text" name="edit['.$idValue.'][destination]" value="'.htmlspecialchars($data['destination']).'" size="40" /><br/>
+				Send "301 Moved permanently" header: <input type="checkbox" name="edit['.$idValue.'][has_moved]" value="1"'.($data['has_moved']?' checked="checked"':'').' /><br/>
+				<input type="hidden" name="id" value="'.htmlspecialchars($this->pObj->id).'" />
+				'.$this->saveCancelButtons().'<hr/>';
+		}
+
+			// If new/edit is submitted...:
+		if (t3lib_div::_GP('_edit_save'))	{
+			$data = t3lib_div::_POST('edit');
+			if (is_array($data))	{
+				reset($data);
+				$editId = key($data);
+				$editData = current($data);
+
+					// UPDATE
+				if ($editId!=='NEW')	{
+					$fields_values = array(
+						'destination' => trim($editData['destination']),
+						'has_moved' => trim($editData['has_moved'])
+					);
+					if ($fields_values['destination'])	{
+						$GLOBALS['TYPO3_DB']->exec_UPDATEquery('tx_realurl_redirects','url_hash='.intval($editId),$fields_values);
+					} else die('Didnt fill in all fields!');
+				} else {	// INSERT:
+					$fields_values = array(
+						'url_hash' => t3lib_div::md5int($editData['url']),
+						'url' => trim($editData['url']),
+						'destination' => trim($editData['destination']),
+						'has_moved' => trim($editData['has_moved']),
+						'counter' => 1,
+						'tstamp' => time(),
+					);
+					if ($fields_values['destination'] && $fields_values['url'])	{
+						$GLOBALS['TYPO3_DB']->exec_INSERTquery('tx_realurl_redirects',$fields_values);
+					} else die('Didnt fill in all fields!');
+				}
+			}
+		}
+
+
+			// SELECT ALL:
+		$list = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows(
+			'*',
+			'tx_realurl_redirects',
+			'',
+			'',
+			'url'
+		);
+
+		if (is_array($list))	{
+
+			foreach($list as $rec)	{
+
+					// Add data:
+				$tCells = array();
+				$tCells[]='<td>'.
+							'<a href="'.$this->linkSelf('&cmd=edit&entry_id='.$rec['url_hash']).'">'.
+							'<img'.t3lib_iconWorks::skinImg($this->pObj->doc->backPath,'gfx/edit2.gif','width="11" height="12"').' title="Edit entry" alt="" />'.
+							'</a>'.
+							'<a href="'.$this->linkSelf('&cmd=delete&entry_id='.$rec['url_hash']).'">'.
+							'<img'.t3lib_iconWorks::skinImg($this->pObj->doc->backPath,'gfx/garbage.gif','width="11" height="12"').' title="Delete entry" alt="" />'.
+							'</a>'.
+						'</td>';
+				$tCells[]='<td><a href="'.htmlspecialchars(t3lib_div::getIndpEnv('TYPO3_SITE_URL').$rec['url']).'" target="_blank">'.htmlspecialchars($rec['url']).'</a></td>';
+				$tCells[]='<td><a href="'.htmlspecialchars(t3lib_div::locationHeaderUrl($rec['destination'])).'" target="_blank">'.htmlspecialchars($rec['destination']).'</a></td>';
+				$tCells[]='<td>'.($rec['has_moved'] ? 'YES' : '&nbsp;').'</td>';
+				$tCells[]='<td>'.
+								($rec['last_referer'] ? '<a href="'.htmlspecialchars($rec['last_referer']).'" target="_blank">'.htmlspecialchars($rec['last_referer']).'</a>' : '&nbsp;').
+								'</td>';
+
+					// Error:
+				$eMsg = '';
+				if ($pagesWithUrl = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('page_id','tx_realurl_urlencodecache','content='.$GLOBALS['TYPO3_DB']->fullQuoteStr($rec['url'],'tx_realurl_urlencodecache')))	{
+					foreach($pagesWithUrl as $k => $temp)	$pagesWithUrl[$k] = $temp['page_id'];
+					$eMsg.= $this->pObj->doc->icons(3).'Also a page URL: '.implode(',',array_unique($pagesWithUrl));
+				}
+				$tCells[]='<td>'.$eMsg.'</td>';
+
+
+				$tCells[]='<td>'.$rec['counter'].'</td>';
+				$tCells[]='<td>'.t3lib_BEfunc::dateTimeAge($rec['tstamp']).'</td>';
+
+					// Compile Row:
+				$output.= '
+					<tr class="bgColor'.($cc%2 ? '-20':'-10').'">
+						'.implode('
+						',$tCells).'
+					</tr>';
+				$cc++;
+			}
+				// Create header:
+			$tCells = array();
+			$tCells[]='<td>&nbsp;</td>';
+			$tCells[]='<td>URL:</td>';
+			$tCells[]='<td>Redirect to:</td>';
+			$tCells[]='<td>303:</td>';
+			$tCells[]='<td>Last Referer:</td>';
+			$tCells[]='<td>Error:</td>';
+			$tCells[]='<td>Counter:</td>';
+			$tCells[]='<td>Last time:</td>';
+
+			$output = '
+				<tr class="bgColor5 tableheader">
+					'.implode('
+					',$tCells).'
+				</tr>'.$output;
+
+				// Compile final table and return:
+			$output = '<br/>'.$editControls.'
+				<a href="'.$this->linkSelf('&cmd=new').'">'.
+				'<img'.t3lib_iconWorks::skinImg($this->pObj->doc->backPath,'gfx/new_el.gif','width="11" height="12"').' title="New entry" alt="" />'.
+				' New entry</a>
+				<br/>
+			<table border="0" cellspacing="1" cellpadding="0" id="tx-realurl-pathcacheTable" class="lrPadding c-list">'.$output.'
+			</table>';
+
+			return $output;
+		}
 	}
 }
 

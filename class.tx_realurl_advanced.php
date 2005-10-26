@@ -73,8 +73,8 @@
  * Class for translating page ids to/from path strings (Speaking URLs)
  *
  * @author	Martin Poelstra <martin@beryllium.net>
- * @coauthor	Kasper Skaarhoj <kasper@typo3.com>
- * @package TYPO3
+ * @author	Kasper Skaarhoj <kasper@typo3.com>
+ * @package realurl
  * @subpackage tx_realurl
  */
 class tx_realurl_advanced {
@@ -216,7 +216,7 @@ class tx_realurl_advanced {
 						' AND mpvar='.$GLOBALS['TYPO3_DB']->fullQuoteStr($mpvar,'tx_realurl_pathcache').
 						' AND expire=0'
 				);
-			if ($GLOBALS['TYPO3_DB']->sql_num_rows($result) > 1) { // If there seems to be more than one page path cached for this combo, go fix it
+			if ($GLOBALS['TYPO3_DB']->sql_num_rows($result) > 1) { // More than one entry for a page with no expire time is wrong...!
 				$cachedPagePath = FALSE;
 			} else {
 				$cachedPagePath = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($result);
@@ -226,13 +226,13 @@ class tx_realurl_advanced {
 		}
 
 			// If a cached page path was found, get it now:
-		if (is_array($cachedPagePath)) {
+		if (is_array($cachedPagePath) && !$this->conf['autoUpdatePathCache']) {
 			if (TYPO3_DLOG)	t3lib_div::devLog("(cached: {$cachedPagePath['url']})", 'realurl');
 			$pagePath = $cachedPagePath['pagepath'];
 		} else {
-				// There's no page path cached yet, just call updateCache() to let it fix that
+				// There's no page path cached yet (or if autoUpdatePathCache is set), just call updateCache() to let it generate and possibly cache the path
 			if (TYPO3_DLOG)	t3lib_div::devLog("(create new)",'realurl');
-			$pagePath = $this->updateURLCache($pageid,$mpvar,$lang);
+			$pagePath = $this->updateURLCache($pageid,$mpvar,$lang,$cachedPagePath['pagepath']);
 		}
 
 			// Set error if applicable.
@@ -249,20 +249,15 @@ class tx_realurl_advanced {
     }
 
 	/**
-	 * Update the cache.
-	 * We don't check if it's a shortcut or something. We just cache it.
-	 * First find all current page paths that refer to this page (= all languages). Now first check if there actually IS a change
-	 * in the path. If not, just update the timestamp, otherwise set the expire-times of all page paths starting with one of the
-	 * old page paths we just found.
-	 * Save the new page path in the cache (this time only the requested language).
-	 * Optionally find cached page-content containing one of these page paths and delete it.
+	 * Insert into the pathcache, if enabled.
 	 *
 	 * @param	integer		Page id
 	 * @param	string		MP variable string
 	 * @param	integer		Language uid
+	 * @param	string		If set, then a new entry will be inserted ONLY if it is different from $cached_pagepath
 	 * @return	string		The page path
 	 */
-	function updateURLCache($id,$mpvar,$lang) {
+	function updateURLCache($id,$mpvar,$lang,$cached_pagepath='') {
 		if (TYPO3_DLOG)	t3lib_div::devLog('{ Update '.$id.','.$lang.' ','realurl');
 
 			// Build the new page path, in the correct language
@@ -276,7 +271,20 @@ class tx_realurl_advanced {
 		$pagepathHash = $pagepathRec['pagepathhash'];
 		$langID = $pagepathRec['langID'];
 
-		if (!$this->conf['disablePathCache'])	{
+		if (!$this->conf['disablePathCache'] && ((!$cached_pagepath && $pagepath) || (string)$pagepath!==(string)$cached_pagepath))	{
+
+				// First, set expiration on existing records:
+			$result = $GLOBALS['TYPO3_DB']->exec_UPDATEquery(
+					'tx_realurl_pathcache',
+					'page_id='.intval($id).
+						' AND language_id='.intval($langID).
+						' AND rootpage_id='.intval($this->conf['rootpage_id']).
+						' AND mpvar='.$GLOBALS['TYPO3_DB']->fullQuoteStr($mpvar,'tx_realurl_pathcache').
+						' AND expire=0',
+					array(
+						'expire' => time()+($this->conf['expireDays']?$this->conf['expireDays']:60)*24*3600
+					)
+				);
 
 				// Insert URL in cache:
 			$insertArray = array(
@@ -371,7 +379,7 @@ class tx_realurl_advanced {
 
 				// First, check for cached path of this page:
 			$cachedPagePath = FALSE;
-			if (!$this->conf['disablePathCache'])	{
+			if (!$this->conf['disablePathCache'] && !$this->conf['autoUpdatePathCache'])	{
 
 				$result = $GLOBALS['TYPO3_DB']->exec_SELECTquery(
 						'pagepath',
@@ -448,12 +456,18 @@ class tx_realurl_advanced {
 			$copy_pathParts = $pathParts;
 			while(1)	{
 				$result = $GLOBALS['TYPO3_DB']->exec_SELECTquery(
-							'*',
-							'tx_realurl_pathcache',
-							'hash="'.substr(md5(implode('/',$copy_pathParts)),0,10).'"'.
-								' AND rootpage_id='.intval($this->conf['rootpage_id'])
-						);
-							// This lookup does not include language and MP var since those are supposed to be fully reflected in the built url!
+					'tx_realurl_pathcache.*',
+					'tx_realurl_pathcache,pages',
+					'tx_realurl_pathcache.page_id=pages.uid
+						AND pages.deleted=0
+						AND hash='.$GLOBALS['TYPO3_DB']->fullQuoteStr(substr(md5(implode('/',$copy_pathParts)),0,10), 'tx_realurl_pathcache').'
+						AND rootpage_id='.intval($this->conf['rootpage_id']).'
+						AND (expire=0 OR expire>'.time().')',
+					'',
+					'expire'
+				);
+
+					// This lookup does not include language and MP var since those are supposed to be fully reflected in the built url!
 				if ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($result))	{
 					break;
 				} elseif ($this->conf['firstHitPathCache'])	{
@@ -469,7 +483,42 @@ class tx_realurl_advanced {
 
 			// Process row if found:
 		if ($row) { // We found it in the cache
+
 			if (TYPO3_DLOG)	t3lib_div::devLog("FOUND ",'realurl',1);
+
+				// If expired:
+			if ($row['expire']>0)	{
+				list($newEntry) = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows(
+					'pagepath',
+					'tx_realurl_pathcache',
+					'page_id='.intval($row['page_id']).'
+						AND language_id='.intval($row['language_id']).'
+						AND expire=0'
+				);
+
+				if ($newEntry)	{
+					$this->pObjRef->disableDecodeCache=TRUE;
+					header('HTTP/1.1 301 Moved Permanently');
+
+						// Replace path-segments with new ones:
+					$originalDirs = $this->pObjRef->dirParts;	// All original
+					$cp_pathParts = $pathParts;
+						// Popping of pages of original dirs (as many as are remaining in $pathParts)
+					for ($a=0;$a<count($pathParts);$a++)	{
+						array_pop($originalDirs);	// Finding all preVars here
+					}
+					for ($a=0;$a<count($copy_pathParts);$a++)	{
+						array_shift($cp_pathParts);	// Finding all postVars here
+					}
+					$newPathSegments = explode('/',$newEntry['pagepath']);	// Split new pagepath into segments.
+					$newUrlSegments = array_merge($originalDirs,$newPathSegments,$cp_pathParts);	// Merge those segments.
+					$newUrlSegments[] = $this->pObjRef->filePart;	// Add any filename as well
+					$redirectUrl = implode('/',$newUrlSegments);	// Create redirect URL:
+
+					header('Location: '.t3lib_div::locationHeaderUrl($redirectUrl));
+					exit;
+				}
+			}
 
 				// Unshift the number of segments that must have defined the page:
 			$cc = count($copy_pathParts);

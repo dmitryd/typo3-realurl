@@ -22,11 +22,13 @@ CREATE TABLE tx_realurl_pathcache (
 CREATE TABLE tx_realurl_uniqalias (
   uid int(11) DEFAULT '0' NOT NULL auto_increment,
   tstamp int(11) DEFAULT '0' NOT NULL,
-  tablename varchar(30) DEFAULT '' NOT NULL,
+  tablename varchar(50) DEFAULT '' NOT NULL,
   field_alias varchar(30) DEFAULT '' NOT NULL,
   field_id varchar(30) DEFAULT '' NOT NULL,
   value_alias tinytext NOT NULL,
   value_id int(11) DEFAULT '0' NOT NULL,
+  lang int(11) DEFAULT '0' NOT NULL,
+  expire int(11) DEFAULT '0' NOT NULL,
 
   PRIMARY KEY (uid),
   KEY tablename (tablename)
@@ -66,11 +68,35 @@ CREATE TABLE tx_realurl_urldecodecache (
 CREATE TABLE tx_realurl_urlencodecache (
   url_hash int(11) DEFAULT '0' NOT NULL,
   origparams tinytext NOT NULL,
+  internalExtras tinytext NOT NULL,
   content text NOT NULL,
   page_id int(11) DEFAULT '0' NOT NULL,
   tstamp int(11) DEFAULT '0' NOT NULL,
   PRIMARY KEY (url_hash),
   KEY page_id (page_id)
+);
+
+CREATE TABLE tx_realurl_errorlog (
+  url_hash int(11) DEFAULT '0' NOT NULL,
+  url text NOT NULL,
+  error text NOT NULL,
+  last_referer text NOT NULL,
+  counter int(11) DEFAULT '0' NOT NULL,
+  cr_date int(11) DEFAULT '0' NOT NULL,
+  tstamp int(11) DEFAULT '0' NOT NULL,
+  PRIMARY KEY (url_hash),
+  KEY counter (counter,tstamp)
+);
+
+CREATE TABLE tx_realurl_redirects (
+  url_hash int(11) DEFAULT '0' NOT NULL,
+  url text NOT NULL,
+  destination text NOT NULL,
+  last_referer text NOT NULL,
+  counter int(11) DEFAULT '0' NOT NULL,
+  tstamp int(11) DEFAULT '0' NOT NULL,
+  has_moved int(11) DEFAULT '0' NOT NULL,
+  PRIMARY KEY (url_hash)
 );
 
 #
