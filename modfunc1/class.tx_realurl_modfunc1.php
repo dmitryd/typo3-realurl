@@ -132,6 +132,7 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 					// Initialize starting point of page tree:
 				$treeStartingPoint = intval($this->pObj->id);
 				$treeStartingRecord = t3lib_BEfunc::getRecord('pages', $treeStartingPoint);
+				t3lib_BEfunc::workspaceOL('pages',$treeStartingRecord);
 				$depth = $this->pObj->MOD_SETTINGS['depth'];
 
 					// Initialize tree object:

@@ -12,7 +12,9 @@ if (TYPO3_MODE=="BE")	{
 		'web_info',
 		'tx_realurl_modfunc1',
 		t3lib_extMgm::extPath($_EXTKEY).'modfunc1/class.tx_realurl_modfunc1.php',
-		'LLL:EXT:realurl/locallang_db.php:moduleFunction.tx_realurl_modfunc1'
+		'LLL:EXT:realurl/locallang_db.php:moduleFunction.tx_realurl_modfunc1',
+		'function',
+		'online'
 	);
 }
 
