@@ -37,25 +37,25 @@
  *
  *
  *
- *   81: class tx_realurl_advanced
- *  105:     function main(&$params,$ref)
+ *   80: class tx_realurl_advanced
+ *  104:     function main(&$params,$ref)
  *
  *              SECTION: "path" ID-to-URL methods
- *  150:     function IDtoPagePath(&$paramKeyValues, &$pathParts)
- *  262:     function updateURLCache($id,$mpvar,$lang)
- *  359:     function IDtoPagePathSegments($id,$mpvar,$langID)
- *  409:     function rootLineToPath($rl)
+ *  149:     function IDtoPagePath(&$paramKeyValues, &$pathParts)
+ *  260:     function updateURLCache($id,$mpvar,$lang,$cached_pagepath='')
+ *  319:     function IDtoPagePathSegments($id,$mpvar,$langID)
+ *  373:     function rootLineToPath($rl,$lang)
  *
  *              SECTION: URL-to-ID methods
- *  456:     function pagePathtoID(&$pathParts)
- *  527:     function findIDByURL(&$urlParts)
- *  569:     function searchTitle($pid, $mpvar, &$urlParts, $currentIdMp='')
- *  621:     function searchTitle_searchPid($searchPid,$title)
+ *  455:     function pagePathtoID(&$pathParts)
+ *  569:     function findIDByURL(&$urlParts)
+ *  611:     function searchTitle($pid, $mpvar, &$urlParts, $currentIdMp='')
+ *  663:     function searchTitle_searchPid($searchPid,$title)
  *
  *              SECTION: Helper functions
- *  724:     function encodeTitle($title)
+ *  766:     function encodeTitle($title)
  *
- * TOTAL FUNCTIONS: 11
+ * TOTAL FUNCTIONS: 10
  * (This index is automatically created/updated by the extension "extdeveval")
  *
  */
@@ -108,14 +108,16 @@ class tx_realurl_advanced {
 		$this->conf = $params['conf'];
 
 			// Branching out based on type:
+		$result = false;
 		switch((string)$params['mode'])	{
 			case 'encode':
-				return $this->IDtoPagePath($params['paramKeyValues'],$params['pathParts']);
+				$result = $this->IDtoPagePath($params['paramKeyValues'],$params['pathParts']);
 			break;
 			case 'decode':
-				return $this->pagePathtoID($params['pathParts']);
+				$result = $this->pagePathtoID($params['pathParts']);
 			break;
 		}
+		return $result;
 	}
 
 
@@ -266,7 +268,6 @@ class tx_realurl_advanced {
 			return '__ERROR';
 		}
 
-
 		$pagepath = $pagepathRec['pagepath'];
 		$pagepathHash = $pagepathRec['pagepathhash'];
 		$langID = $pagepathRec['langID'];
@@ -367,6 +368,7 @@ class tx_realurl_advanced {
 	 * root of the website (which is 'handled' by the domainname).
 	 *
 	 * @param	array		Rootline array for the current website (rootLine from TSFE->tmpl->rootLine but with modified localization according to language of the URL)
+	 * @param	integer		Language identifier (as in sys_languages)
 	 * @return	string		Path for the page, eg.
 	 * @see IDtoPagePathSegments()
 	 */
@@ -374,12 +376,13 @@ class tx_realurl_advanced {
 		$paths = array();
 		array_shift($rl); // Ignore the first path, as this is the root of the website
 		$c = count($rl);
+		$path = ''; $stopUsingCache = false;
 		for ($i = 1; $i <= $c; $i++) {
 			$page = array_shift($rl);
 
 				// First, check for cached path of this page:
 			$cachedPagePath = FALSE;
-			if (!$this->conf['disablePathCache'] && !$this->conf['autoUpdatePathCache'])	{
+			if (!$stopUsingCache && !$this->conf['disablePathCache'] && !$this->conf['autoUpdatePathCache'])	{
 
 				$result = $GLOBALS['TYPO3_DB']->exec_SELECTquery(
 						'pagepath',
@@ -395,11 +398,18 @@ class tx_realurl_advanced {
 					$cachedPagePath = FALSE;
 				} else {
 					$cachedPagePath = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($result);
+					$lastPath = implode('/',$paths);
+					if ($cachedPagePath != false && substr($cachedPagePath['pagepath'], 0, strlen($lastPath)) != $lastPath) {
+						// Oops. Cached path does not start from already generated path.
+						// It means that path was mapped from a parallel mount point.
+						// We cannot not rely on cache any more. Stop using it.
+						$cachedPagePath = false; $stopUsingCache = true;
+					}
 				}
 			}
 
 				// If a cached path was found for the page it will be inserted as the base of the new path, overriding anything build prior to this:
-			if (is_array($cachedPagePath))	{
+			if ($cachedPagePath != false)	{
 				$paths = array();
 				$paths[$i] = $cachedPagePath['pagepath'];
 			} else {	// Building up the path from page title etc.
@@ -464,7 +474,8 @@ class tx_realurl_advanced {
 						AND rootpage_id='.intval($this->conf['rootpage_id']).'
 						AND (expire=0 OR expire>'.time().')',
 					'',
-					'expire'
+					'expire',
+					'1'
 				);
 
 					// This lookup does not include language and MP var since those are supposed to be fully reflected in the built url!
