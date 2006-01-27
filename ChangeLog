@@ -1,3 +1,12 @@
+2006-01-27  Dmitry Dulepov  <typo3@accio.lv>
+
+ * Fixed bug #2413: RealURL: wrong paths are generated if mount points are used 
+ * Fixed bug #2416: RealURL: wrong page is displayed
+ * Fixed bug #1814: RealURL = MySQL database optimisation
+ * Code cleanup (uninitialized vars, debuging messages, etc).
+ * Updated extension API data
+ * Changed XCLASS name of modfunc1 to match file name
+
 2005-10-14  Kasper Skårhøj  <kasper2005@typo3.com>
 
  * en/decode caches will expire after 24 hours
@@ -13,7 +22,6 @@
  * Improved the lookUp_cleanAlias function to respect charset - should fix clean up on non danish/german titles, just like it has been done for page titles some time ago.
  * Implemented that expired URLs will redirect to new ones, sending "301 Moved Permanently" headers
  * Improved many management functions in backend module.
-
 
 2005-10-11  Kasper Sk�hj,,,  <kasper@typo3.com>
 
