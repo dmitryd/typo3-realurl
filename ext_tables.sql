@@ -31,7 +31,9 @@ CREATE TABLE tx_realurl_uniqalias (
   expire int(11) DEFAULT '0' NOT NULL,
 
   PRIMARY KEY (uid),
-  KEY tablename (tablename)
+  KEY tablename (tablename),
+  KEY bk_realurl01 (field_alias,field_id,value_id,lang,expire),
+  KEY bk_realurl02 (tablename,field_alias,field_id,value_alias(255),expire)
 );
 
 #
@@ -55,6 +57,7 @@ CREATE TABLE tx_realurl_urldecodecache (
   spurl tinytext NOT NULL,
   content blob NOT NULL,
   page_id int(11) DEFAULT '0' NOT NULL,
+  rootpage_id int(11) DEFAULT '0' NOT NULL,
   tstamp int(11) DEFAULT '0' NOT NULL,
   PRIMARY KEY (url_hash),
   KEY page_id (page_id)
@@ -106,3 +109,9 @@ CREATE TABLE pages (
 	tx_realurl_pathsegment varchar(30) DEFAULT '' NOT NULL,
 );
 
+#
+# Modifying sys_domain table
+#
+CREATE TABLE sys_domain (
+	KEY tx_realurl (domainName,hidden)
+);
