@@ -1,6 +1,10 @@
-2006-01-27  Dmitry Dulepov  <typo3@accio.lv>
+2006-01-29  Dmitry Dulepov  <typo3@accio.lv>
 
- * Fixed bug #2413: RealURL: wrong paths are generated if mount points are used 
+ * Fixed repeat message in EM to drop/add bk_realurl02 index
+
+ 2006-01-27  Dmitry Dulepov  <typo3@accio.lv>
+
+ * Fixed bug #2413: RealURL: wrong paths are generated if mount points are used
  * Fixed bug #2416: RealURL: wrong page is displayed
  * Fixed bug #1814: RealURL = MySQL database optimisation
  * Code cleanup (uninitialized vars, debuging messages, etc).
@@ -15,7 +19,7 @@
  * Implemented "301 Moved Permanently" headers
  * Implemented a table where you can define permanent redirect URLs, for instance for keep backwards compatibility with specific old urls.
  * Implemented an error log that will track all URLs which resulted in a 404 - useful for checking most typical "lost links" and creating a redirect. Can be disabled with ['init']['disableErrorLog']
- * By default realurl will return 404 if the whole url is not used in the decoding. 
+ * By default realurl will return 404 if the whole url is not used in the decoding.
  * Can throw a 404 if the alias mapping to id didn't succed (configuration)
  * Supports localization for alias-id mapping, eg. when titles of news elements are used in realurl and the language is different than default it will take the localized title and use that (if configured for it). (lookUpTable feature)
  * Supports auto-update of aliases if titles of eg. news items changed. Must be configured. (lookUpTable feature)
