@@ -533,6 +533,11 @@ class tx_realurl {
 	 */
 	function encodeSpURL_encodeCache($urlToEncode, $internalExtras, $setEncodedURL='')	{
 
+        if ($this->isInFEEditing()) {
+                // No caching if FE editing is enabled!
+            return false;
+        }
+
 			// Create hash string:
 		$hash = t3lib_div::md5int($urlToEncode.'///'.serialize($internalExtras));
 
@@ -1204,6 +1209,11 @@ class tx_realurl {
 	 */
 	function decodeSpURL_decodeCache($speakingURIpath,$cachedInfo='')	{
 
+        if ($this->isInFEEditing()) {
+                // No caching if FE editing is enabled!
+            return false;
+        }
+
 		if ($this->extConf['init']['enableUrlDecodeCache'] && !$this->disableDecodeCache)	{
 
 				// Create hash string:
@@ -1706,13 +1716,14 @@ class tx_realurl {
 		return $return;
 	}
 
-
-
-
-
-
-
-
+    /**
+     * Checks if FE editing is enabled.
+     * 
+     * @return boolean <code>true</code> if FE editing is enabled
+     */
+    function isInFEEditing() {
+        return $this->pObj->beUserLogin;
+    }
 
 	/**********************************
 	 *

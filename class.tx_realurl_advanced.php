@@ -107,6 +107,11 @@ class tx_realurl_advanced {
 		$this->pObjRef = &$params['pObj'];
 		$this->conf = $params['conf'];
 
+            // See if cache should be disabled
+        if ($this->pObjRef->isInFEEditing()) {
+            $this->conf['disablePathCache'] = true;
+        }
+
 			// Branching out based on type:
 		$result = false;
 		switch((string)$params['mode'])	{
