@@ -1,3 +1,7 @@
+2006-08-17  Dmitry Dulepov  <typo3@accio.lv>
+
+ * Made a workaround for error in parse_url() when parsing multiple arrays
+
 2006-02-16  Dmitry Dulepov  <typo3@accio.lv>
 
  * Updated compatibility version

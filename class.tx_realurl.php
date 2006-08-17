@@ -974,7 +974,34 @@ class tx_realurl {
 			if ($GET_string)	{
 				$GET_VARS = false;
 				parse_str($GET_string,$GET_VARS);
+				$this->decodeSpURL_fixBrackets($GET_VARS);
 				return $GET_VARS;
+			}
+		}
+	}
+
+	/**
+	 * Fixes a problem with parse_url that returns `a[b[c]` instead of `a[b[c]]` when parsing `a%5Bb%5Bc%5D%5D`
+	 *
+	 * @param	array		Input array
+	 * @see decodeSpURL_settingPostVarSets()
+	 */
+	function decodeSpURL_fixBrackets(&$arr) {
+		$bad_keys = array();
+		foreach ($arr as $k => $v) {
+			if (is_array($v)) {
+				$this->decodeSpURL_fixBrackets($arr[$k]);
+			}
+			else {
+				if (strchr($k, '[') && !strchr($k, ']')) {
+					$bad_keys[] = $k;
+				}
+			}
+		}
+		if (count($bad_keys) > 0) {
+			foreach ($bad_keys as $key) {
+				$arr[$key . ']'] = $arr[$key];
+				unset($arr[$key]);
 			}
 		}
 	}
