@@ -174,7 +174,8 @@ class tx_realurl_advanced {
 		while (($pageid>0) && ($loopCount>0)) {
 			$loopCount--;
 
-			$page = $GLOBALS['TSFE']->sys_page->getPage($pageid);
+			$disableGroupAccessCheck = ($GLOBALS['TSFE']->config['config']['typolinkLinkAccessRestrictedPages'] ? true : false);
+			$page = $GLOBALS['TSFE']->sys_page->getPage($pageid,$disableGroupAccessCheck);
 			if (!$page) {
 				$pageid = -1;
 				break;

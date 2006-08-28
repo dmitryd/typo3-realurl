@@ -1,3 +1,11 @@
+2006-08-28  Dmitry Dulepov  <typo3@accio.lv>
+
+ * Fixed bug #3078: realurl doesn't take config.typolinkLinkAccessRestrictedPages into account
+
+2006-08-25  Dmitry Dulepov  <typo3@accio.lv>
+
+ * bk_realurl02 was too large
+
 2006-08-17  Dmitry Dulepov  <typo3@accio.lv>
 
  * Made a workaround for error in parse_url() when parsing multiple arrays
