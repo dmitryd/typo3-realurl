@@ -459,7 +459,7 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 	}
 
 	/**
-	 * Fetch patch caching information for page.
+	 * Fetch path caching information for page.
 	 *
 	 * @param	integer		Page ID
 	 * @return	array		Path Cache records
@@ -1298,7 +1298,7 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 		);
 
 		if (is_array($list))	{
-			$output='';
+			$output=''; $cc = 0;
 
 			foreach($list as $rec)	{
 
@@ -1411,8 +1411,9 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 					'url_hash='.intval($idValue)
 				);
 			}
+				// PATCH andreas.otto@dkd.de, make URL editable as well.
 			$editControls.= '
-				'.($cmd==='new' ? 'Url: <input type="text" name="edit['.$idValue.'][url]" value="'.htmlspecialchars($data['url']).'" size="40" /><br/>':'').'
+				'.($cmd==='new' ? 'Url: <input type="text" name="edit['.$idValue.'][url]" value="'.htmlspecialchars($data['url']).'" size="40" /><br/>':'Url: <input type="text" name="edit['.$idValue.'][url]" value="'.htmlspecialchars($data['url']).'" size="40" /><br/>').'
 				Destination: <input type="text" name="edit['.$idValue.'][destination]" value="'.htmlspecialchars($data['destination']).'" size="40" /><br/>
 				Send "301 Moved permanently" header: <input type="checkbox" name="edit['.$idValue.'][has_moved]" value="1"'.($data['has_moved']?' checked="checked"':'').' /><br/>
 				<input type="hidden" name="id" value="'.htmlspecialchars($this->pObj->id).'" />
@@ -1430,8 +1431,12 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 					// UPDATE
 				if ($editId!=='NEW')	{
 					$fields_values = array(
+							// PATCH andreas.otto@dkd.de, update URL as well.
+						'url_hash' => t3lib_div::md5int($editData['url']),
+						'url' => trim($editData['url']),
 						'destination' => trim($editData['destination']),
-						'has_moved' => trim($editData['has_moved'])
+						'has_moved' => trim($editData['has_moved']),
+						'tstamp' => time(),
 					);
 					if ($fields_values['destination'])	{
 						$GLOBALS['TYPO3_DB']->exec_UPDATEquery('tx_realurl_redirects','url_hash='.intval($editId),$fields_values);
@@ -1452,6 +1457,10 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 			}
 		}
 
+			// PATCH andreas.otto@dkd.de, Add vars to mod settings, to change select order.
+		$gpVars = t3lib_div::GPvar('SET');
+		( isset( $gpVars['ob'] ) ) ? $this->pObj->MOD_SETTINGS['ob'] = $gpVars['ob'] : $this->pObj->MOD_SETTINGS['ob'] = 'url';
+		( isset( $gpVars['obdir'] ) ) ? $this->pObj->MOD_SETTINGS['obdir'] = $gpVars['obdir'] : $this->pObj->MOD_SETTINGS['obdir'] = 'ASC';
 
 			// SELECT ALL:
 		$list = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows(
@@ -1459,16 +1468,18 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 			'tx_realurl_redirects',
 			'',
 			'',
-			'url'
+			$this->pObj->MOD_SETTINGS['ob'] . ' ' . $this->pObj->MOD_SETTINGS['obdir']
 		);
 
 		if (is_array($list))	{
+			$cc = 0;
 
 			foreach($list as $rec)	{
 
+					// PATCH andreas.otto@dkd.de, changed order of fields. Cropped display of links.
 					// Add data:
 				$tCells = array();
-				$tCells[]='<td>'.
+				$tCells[] = '<td>'.
 							'<a href="'.$this->linkSelf('&cmd=edit&entry_id='.$rec['url_hash']).'">'.
 							'<img'.t3lib_iconWorks::skinImg($this->pObj->doc->backPath,'gfx/edit2.gif','width="11" height="12"').' title="Edit entry" alt="" />'.
 							'</a>'.
@@ -1476,12 +1487,16 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 							'<img'.t3lib_iconWorks::skinImg($this->pObj->doc->backPath,'gfx/garbage.gif','width="11" height="12"').' title="Delete entry" alt="" />'.
 							'</a>'.
 						'</td>';
-				$tCells[]='<td><a href="'.htmlspecialchars(t3lib_div::getIndpEnv('TYPO3_SITE_URL').$rec['url']).'" target="_blank">'.htmlspecialchars($rec['url']).'</a></td>';
-				$tCells[]='<td><a href="'.htmlspecialchars(t3lib_div::locationHeaderUrl($rec['destination'])).'" target="_blank">'.htmlspecialchars($rec['destination']).'</a></td>';
-				$tCells[]='<td>'.($rec['has_moved'] ? 'YES' : '&nbsp;').'</td>';
-				$tCells[]='<td>'.
-								($rec['last_referer'] ? '<a href="'.htmlspecialchars($rec['last_referer']).'" target="_blank">'.htmlspecialchars($rec['last_referer']).'</a>' : '&nbsp;').
-								'</td>';
+				$tCells[]='<td>'.$rec['counter'].'</td>';
+				$tCells[] = sprintf( '<td><a href="%s" target="_blank">%s</a></td>', htmlspecialchars(t3lib_div::getIndpEnv('TYPO3_SITE_URL').$rec['url']), htmlspecialchars($rec['url']) );
+				$tCells[] = sprintf( '<td><a href="%s" target="_blank" title="%s">%s</a></td>', htmlspecialchars(t3lib_div::locationHeaderUrl($rec['destination'])), htmlspecialchars($rec['destination']), ( strlen( htmlspecialchars($rec['destination']) ) > 30 ) ? substr(htmlspecialchars($rec['destination']),0,30) . '...' : htmlspecialchars($rec['destination']) );
+				$tCells[] = '<td>'.($rec['has_moved'] ? 'YES' : '&nbsp;').'</td>';
+
+				if ($rec['last_referer']) {
+					$tCells[] = sprintf( '<td><a href="%s" target="_blank" title="%s">%s</a></td>', htmlspecialchars($rec['last_referer']), htmlspecialchars($rec['last_referer']), ( strlen( htmlspecialchars($rec['last_referer']) ) > 30 ) ? substr(htmlspecialchars($rec['last_referer']),0,30) . '...' : htmlspecialchars($rec['last_referer']) );
+				} else {
+					$tCells[] = '<td>&nbsp;</td>';
+				}
 
 					// Error:
 				$eMsg = '';
@@ -1492,7 +1507,6 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 				$tCells[]='<td>'.$eMsg.'</td>';
 
 
-				$tCells[]='<td>'.$rec['counter'].'</td>';
 				$tCells[]='<td>'.t3lib_BEfunc::dateTimeAge($rec['tstamp']).'</td>';
 
 					// Compile Row:
@@ -1503,15 +1517,22 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 					</tr>';
 				$cc++;
 			}
+
 				// Create header:
+				// PATCH andreas.otto@dkd.de, order by rules and making header linkable.
+			if ( $this->pObj->MOD_SETTINGS['obdir'] == 'ASC' ) {
+				$obdir = 'DESC';
+			} else {
+				$obdir = 'ASC';
+			}
 			$tCells = array();
 			$tCells[]='<td>&nbsp;</td>';
-			$tCells[]='<td>URL:</td>';
-			$tCells[]='<td>Redirect to:</td>';
-			$tCells[]='<td>303:</td>';
-			$tCells[]='<td>Last Referer:</td>';
+			$tCells[]=sprintf( '<td><a href="%s">Counter:</a></td>', sprintf( 'index.php?id=%d&SET[type]=%s&SET[ob]=counter&SET[obdir]=%s', $this->pObj->id, $this->pObj->MOD_SETTINGS['type'], $obdir ) );
+			$tCells[]=sprintf( '<td><a href="%s">URL:</a></td>', sprintf( 'index.php?id=%d&SET[type]=%s&SET[ob]=url&SET[obdir]=%s', $this->pObj->id, $this->pObj->MOD_SETTINGS['type'], $obdir ) );
+			$tCells[]=sprintf( '<td><a href="%s">Redirect to:</a></td>', sprintf( 'index.php?id=%d&SET[type]=%s&SET[ob]=destination&SET[obdir]=%s', $this->pObj->id, $this->pObj->MOD_SETTINGS['type'], $obdir ) );
+			$tCells[]=sprintf( '<td><a href="%s">303:</a></td>', sprintf( 'index.php?id=%d&SET[type]=%s&SET[ob]=has_moved&SET[obdir]=%s', $this->pObj->id, $this->pObj->MOD_SETTINGS['type'], $obdir ) );
+			$tCells[]=sprintf( '<td><a href="%s">Last referer:</a></td>', sprintf( 'index.php?id=%d&SET[type]=%s&SET[ob]=last_referer&SET[obdir]=%s', $this->pObj->id, $this->pObj->MOD_SETTINGS['type'], $obdir ) );
 			$tCells[]='<td>Error:</td>';
-			$tCells[]='<td>Counter:</td>';
 			$tCells[]='<td>Last time:</td>';
 
 			$output = '

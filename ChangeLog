@@ -1,5 +1,6 @@
 2006-10-05  Dmitry Dulepov  <dmitry@typo3.org>
 
+ * Added patch by Andreas Otto (field order and sorting in mod1 for Redirect view)
  * Fixed bug 3988: /start/Feedback gets not found because of uppercase; searchTitle_searchPid() return does not use "encoded" version in lookup
 
 2006-10-03  Dmitry Dulepov  <dmitry@typo3.org>
