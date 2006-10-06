@@ -87,6 +87,7 @@ CREATE TABLE tx_realurl_errorlog (
   counter int(11) DEFAULT '0' NOT NULL,
   cr_date int(11) DEFAULT '0' NOT NULL,
   tstamp int(11) DEFAULT '0' NOT NULL,
+  rootpage_id int(11) DEFAULT '0' NOT NULL,
   PRIMARY KEY (url_hash),
   KEY counter (counter,tstamp)
 );

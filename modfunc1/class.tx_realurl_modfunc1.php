@@ -1299,14 +1299,24 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 
 		if (is_array($list))	{
 			$output=''; $cc = 0;
+			$hostNameCache = array();
 
 			foreach($list as $rec)	{
+				$host = '';
+				if ($rec['rootpage_id'] != 0) {
+					if (isset($hostCacheName[$rec['rootpage_id']])) {
+						$host = $hostCacheName[$rec['rootpage_id']];
+					}
+					else {
+						$hostCacheName[$rec['rootpage_id']] = $host = $this->getHostName($rec['rootpage_id']);
+					}
+				}
 
 					// Add data:
 				$tCells = array();
 				$tCells[]='<td>'.$rec['counter'].'</td>';
 				$tCells[]='<td>'.t3lib_BEfunc::dateTimeAge($rec['tstamp']).'</td>';
-				$tCells[]='<td><a href="'.htmlspecialchars(t3lib_div::getIndpEnv('TYPO3_SITE_URL').$rec['url']).'" target="_blank">'.htmlspecialchars($rec['url']).'</a>'.
+				$tCells[]='<td><a href="'.htmlspecialchars($host.'/'.$rec['url']).'" target="_blank">'.($host ? $host . '/' : '') . htmlspecialchars($rec['url']).'</a>'.
 							' <a href="'.$this->linkSelf('&cmd=new&defUrl='.rawurlencode($rec['url']).'&SET[type]=redirects').'">'.
 							'<img'.t3lib_iconWorks::skinImg($this->pObj->doc->backPath,'gfx/napshot.gif','width="12" height="12"').' title="Set as redirect" alt="" />'.
 							'</a>'.
@@ -1354,14 +1364,21 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 		}
 	}
 
-
-
-
-
-
-
-
-
+	function getHostName($rootpage_id) {
+		foreach ($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl'] as $host => $config) {
+			if ($host != '_DEFAULT') {
+				$hostName = $host;
+				while ($config !== false && !is_array($config)) {
+					$host = $config;
+					$config = (isset($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl'][$host]) ? $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl'][$host] : false);
+				}
+				if (is_array($config) && isset($config['pagePath']) && isset($config['pagePath']['rootpage_id'])) {
+					return 'http://' . $hostName;
+				}
+			}
+		}
+		return '';
+	}
 
 
 	/*****************************
@@ -1493,7 +1510,8 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 				$tCells[] = '<td>'.($rec['has_moved'] ? 'YES' : '&nbsp;').'</td>';
 
 				if ($rec['last_referer']) {
-					$tCells[] = sprintf( '<td><a href="%s" target="_blank" title="%s">%s</a></td>', htmlspecialchars($rec['last_referer']), htmlspecialchars($rec['last_referer']), ( strlen( htmlspecialchars($rec['last_referer']) ) > 30 ) ? substr(htmlspecialchars($rec['last_referer']),0,30) . '...' : htmlspecialchars($rec['last_referer']) );
+					$lastRef = htmlspecialchars($rec['last_referer']);
+					$tCells[] = sprintf( '<td><a href="%s" target="_blank" title="%s">%s</a></td>', $lastRef, $lastRef, (strlen($rec['last_referer']) > 30) ? htmlspecialchars(substr($rec['last_referer'], 0, 30)) . '...' : $lastRef);
 				} else {
 					$tCells[] = '<td>&nbsp;</td>';
 				}
