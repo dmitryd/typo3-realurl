@@ -695,6 +695,14 @@ class tx_realurl {
 
 				// If the URL is a single script like "123.1.html" it might be an "old" simulateStaticDocument request. If this is the case and support for this is configured, do NOT try and resolve it as a Speaking URL
 			$fI = t3lib_div::split_fileref($speakingURIpath);
+			if (!t3lib_div::testInt($this->pObj->id) && $fI['path'] == '' && $this->extConf['fileName']['defaultToHTMLsuffixOnPrev'] && $this->extConf['init']['respectSimulateStaticURLs']) {
+				// If page ID does not exist yet and page is on the root level and both
+				// respectSimulateStaticURLs and defaultToHTMLsuffixOnPrev are set, than
+				// ignore respectSimulateStaticURLs and attempt to resolve page id.
+				// See http://bugs.typo3.org/view.php?id=1530
+				$GLOBALS['TT']->setTSlogMessage('decodeSpURL: ignoring respectSimulateStaticURLs due defaultToHTMLsuffixOnPrev for the root level page!)', 2);
+				$this->extConf['init']['respectSimulateStaticURLs'] = false;
+			}
 			if (!$this->extConf['init']['respectSimulateStaticURLs'] || $fI['path'])	{
 				if (TYPO3_DLOG) t3lib_div::devLog('RealURL powered decoding (TM) starting!','realurl');
 
@@ -856,14 +864,14 @@ class tx_realurl {
 			// Creating page path:
 		switch((string)$this->extConf['pagePath']['type'])	{
 			case 'user':
-					// Get root page id
-				$rootpage_id = 0;
+					// Get root page id if necessary
 				if ($this->multidomain) {
 					$rootpage_id = intval($this->extConf['pagePath']['rootpage_id']);
 					if ($rootpage_id == 0) {
 						$GLOBALS['TT']->setTSlogMessage('decodeSpURL_idFromPath: resolving root page through root line (performace warning!)', 2);
 						$pids = $GLOBALS['TSFE']->getStorageSiterootPids();
 						$rootpage_id = $pids['_SITEROOT'];
+						$this->extConf['pagePath']['rootpage_id'] = $rootpage_id;
 					}
 					$GLOBALS['TT']->setTSlogMessage('decodeSpURL_idFromPath: root page id is ' . $rootpage_id);
 				}
@@ -1159,10 +1167,12 @@ class tx_realurl {
 			// Log error:
 		if (!$this->extConf['init']['disableErrorLog'])	{
 			$hash = t3lib_div::md5int($this->speakingURIpath_procValue);
+			$rootpage_id = intval($this->extConf['pagePath']['rootpage_id']);
+			$cond = 'url_hash=' . intval($hash) . ' AND rootpage_id=' . $rootpage_id;
 			list($error_row) = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows(
 				'*',
 				'tx_realurl_errorlog',
-				'url_hash='.intval($hash)
+				$cond
 			);
 			if (count($error_row))	{
 				$fields_values = array(
@@ -1171,7 +1181,7 @@ class tx_realurl {
 					'tstamp' => time(),
 					'last_referer' => t3lib_div::getIndpEnv('HTTP_REFERER')
 				);
-				$GLOBALS['TYPO3_DB']->exec_UPDATEquery('tx_realurl_errorlog','url_hash='.intval($hash),$fields_values);
+				$GLOBALS['TYPO3_DB']->exec_UPDATEquery('tx_realurl_errorlog', $cond, $fields_values);
 			} else {
 				$fields_values = array(
 					'url_hash' => $hash,
@@ -1180,6 +1190,7 @@ class tx_realurl {
 					'counter' => 1,
 					'tstamp' => time(),
 					'cr_date' => time(),
+					'rootpage_id' => $rootpage_id,
 					'last_referer' => t3lib_div::getIndpEnv('HTTP_REFERER')
 				);
 				$GLOBALS['TYPO3_DB']->exec_INSERTquery('tx_realurl_errorlog',$fields_values);
