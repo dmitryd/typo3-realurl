@@ -668,7 +668,7 @@ class tx_realurl_advanced {
 	 * @access private
 	 * @see searchTitle()
 	 */
-	function searchTitle_searchPid($searchPid,$title)	{
+	function searchTitle_searchPid($searchPid, $title)	{
 
 			// List of "pages" fields to traverse for a "directory title" in the speaking URL (only from RootLine!!):
 		$segTitleFieldList = $this->conf['segTitleFieldList'] ? $this->conf['segTitleFieldList'] : 'tx_realurl_pathsegment,alias,nav_title,title';
@@ -739,8 +739,9 @@ class tx_realurl_advanced {
 		}
 
 			// Return:
-		if (isset($allTitles[$title]))	{
-			return array($allTitles[$title], $uidTrack[$allTitles[$title]]);
+		$encodedTitle = $this->encodeTitle($title);
+		if (isset($allTitles[$encodedTitle]))	{
+			return array($allTitles[$encodedTitle], $uidTrack[$allTitles[$encodedTitle]]);
 		}
 	}
 

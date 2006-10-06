@@ -1,3 +1,11 @@
+2006-10-05  Dmitry Dulepov  <dmitry@typo3.org>
+
+ * Fixed bug 3988: /start/Feedback gets not found because of uppercase; searchTitle_searchPid() return does not use "encoded" version in lookup
+
+2006-10-03  Dmitry Dulepov  <dmitry@typo3.org>
+
+ * Fixed bug #3517: Impossible to have same path on 2 domains
+
 2006-09-07  Dmitry Dulepov  <typo3@accio.lv>
 
  * Release of RealURL 1.1.1
@@ -22,7 +30,7 @@
 
  * Fixed repeated message in EM to drop/add bk_realurl02 index
 
- 2006-01-27  Dmitry Dulepov  <typo3@accio.lv>
+2006-01-27  Dmitry Dulepov  <typo3@accio.lv>
 
  * Fixed bug #2413: RealURL: wrong paths are generated if mount points are used
  * Fixed bug #2416: RealURL: wrong page is displayed
