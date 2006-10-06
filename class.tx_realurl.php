@@ -255,7 +255,8 @@ class tx_realurl {
 			// Add filename, if any:
 		$fileName = $this->encodeSpURL_fileName($paramKeyValues);
 		if (strlen($newUrl) && !strlen($fileName) && $this->extConf['fileName']['defaultToHTMLsuffixOnPrev'])	{
-			$newUrl = substr($newUrl,0,-1).'.html';
+			$newUrl = substr($newUrl,0,-1) .
+				(!is_string($this->extConf['fileName']['defaultToHTMLsuffixOnPrev']) ? '.html' : $this->extConf['fileName']['defaultToHTMLsuffixOnPrev']);
 		} else {
 			$newUrl.= rawurlencode($fileName);
 		}
@@ -803,8 +804,15 @@ class tx_realurl {
 		$this->filePart = array_pop($pathParts);
 
 			// Checking default HTML name:
-		if (strlen($this->filePart) && $this->extConf['fileName']['defaultToHTMLsuffixOnPrev'] && !isset($this->extConf['fileName']['index'][$this->filePart]))	{
-			$pathParts[] = ereg_replace('.html$','',$this->filePart);
+		if (strlen($this->filePart) &&
+				($this->extConf['fileName']['defaultToHTMLsuffixOnPrev'] || $this->extConf['fileName']['acceptHTMLsuffix']) &&
+				!isset($this->extConf['fileName']['index'][$this->filePart]))	{
+			$suffix = preg_quote(is_string($this->extConf['fileName']['defaultToHTMLsuffixOnPrev']) ?
+						$this->extConf['fileName']['defaultToHTMLsuffixOnPrev'] : '.html', '/');
+			if (is_string($this->extConf['fileName']['acceptHTMLsuffix'])) {
+				$suffix = '(' . $suffix . '|' .	preg_quote($this->extConf['fileName']['acceptHTMLsuffix'], '/') . ')';
+			}
+			$pathParts[] = preg_replace('/' . $suffix . '$/', '', $this->filePart);
 			$this->filePart = '';
 		}
 
