@@ -33,7 +33,7 @@ CREATE TABLE tx_realurl_uniqalias (
   PRIMARY KEY (uid),
   KEY tablename (tablename),
   KEY bk_realurl01 (field_alias,field_id,value_id,lang,expire),
-  KEY bk_realurl02 (tablename,field_alias,field_id,value_alias,expire)
+  KEY bk_realurl02 (tablename,field_alias,field_id,value_alias(230),expire)
 );
 
 #
@@ -87,6 +87,7 @@ CREATE TABLE tx_realurl_errorlog (
   counter int(11) DEFAULT '0' NOT NULL,
   cr_date int(11) DEFAULT '0' NOT NULL,
   tstamp int(11) DEFAULT '0' NOT NULL,
+  rootpage_id int(11) DEFAULT '0' NOT NULL,
   PRIMARY KEY (url_hash),
   KEY counter (counter,tstamp)
 );

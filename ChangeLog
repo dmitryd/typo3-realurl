@@ -1,3 +1,31 @@
+2006-10-05  Dmitry Dulepov  <dmitry@typo3.org>
+
+ * Release of RealURL 1.1.2
+
+2006-10-05  Dmitry Dulepov  <dmitry@typo3.org>
+
+ * Added patch by Andreas Otto (field order and sorting in mod1 for Redirect view)
+ * Fixed bug 1530: defaultToHTMLsuffixOnPrev has to be cleaned in decodeSpURL
+ * Fixed bug 2439: [RealURL] Prepend domain name before path in realurl modules
+ * Fixed bug 3441: Real url's with .html without using defaultToHTMLsuffixOnPrev
+ * Fixed bug 3988: /start/Feedback gets not found because of uppercase; searchTitle_searchPid() return does not use "encoded" version in lookup
+
+2006-10-03  Dmitry Dulepov  <dmitry@typo3.org>
+
+ * Fixed bug #3517: Impossible to have same path on 2 domains
+
+2006-09-07  Dmitry Dulepov  <typo3@accio.lv>
+
+ * Release of RealURL 1.1.1
+
+2006-08-28  Dmitry Dulepov  <typo3@accio.lv>
+
+ * Fixed bug #3078: realurl doesn't take config.typolinkLinkAccessRestrictedPages into account
+
+2006-08-25  Dmitry Dulepov  <typo3@accio.lv>
+
+ * bk_realurl02 was too large
+
 2006-08-17  Dmitry Dulepov  <typo3@accio.lv>
 
  * Made a workaround for error in parse_url() when parsing multiple arrays
@@ -10,7 +38,7 @@
 
  * Fixed repeated message in EM to drop/add bk_realurl02 index
 
- 2006-01-27  Dmitry Dulepov  <typo3@accio.lv>
+2006-01-27  Dmitry Dulepov  <typo3@accio.lv>
 
  * Fixed bug #2413: RealURL: wrong paths are generated if mount points are used
  * Fixed bug #2416: RealURL: wrong page is displayed

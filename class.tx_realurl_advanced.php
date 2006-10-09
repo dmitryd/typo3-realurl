@@ -174,7 +174,8 @@ class tx_realurl_advanced {
 		while (($pageid>0) && ($loopCount>0)) {
 			$loopCount--;
 
-			$page = $GLOBALS['TSFE']->sys_page->getPage($pageid);
+			$disableGroupAccessCheck = ($GLOBALS['TSFE']->config['config']['typolinkLinkAccessRestrictedPages'] ? true : false);
+			$page = $GLOBALS['TSFE']->sys_page->getPage($pageid,$disableGroupAccessCheck);
 			if (!$page) {
 				$pageid = -1;
 				break;
@@ -667,7 +668,7 @@ class tx_realurl_advanced {
 	 * @access private
 	 * @see searchTitle()
 	 */
-	function searchTitle_searchPid($searchPid,$title)	{
+	function searchTitle_searchPid($searchPid, $title)	{
 
 			// List of "pages" fields to traverse for a "directory title" in the speaking URL (only from RootLine!!):
 		$segTitleFieldList = $this->conf['segTitleFieldList'] ? $this->conf['segTitleFieldList'] : 'tx_realurl_pathsegment,alias,nav_title,title';
@@ -738,8 +739,9 @@ class tx_realurl_advanced {
 		}
 
 			// Return:
-		if (isset($allTitles[$title]))	{
-			return array($allTitles[$title], $uidTrack[$allTitles[$title]]);
+		$encodedTitle = $this->encodeTitle($title);
+		if (isset($allTitles[$encodedTitle]))	{
+			return array($allTitles[$encodedTitle], $uidTrack[$allTitles[$encodedTitle]]);
 		}
 	}
 
