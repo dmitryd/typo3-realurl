@@ -1,5 +1,9 @@
 2006-10-05  Dmitry Dulepov  <dmitry@typo3.org>
 
+ * Release of RealURL 1.1.2
+
+2006-10-05  Dmitry Dulepov  <dmitry@typo3.org>
+
  * Added patch by Andreas Otto (field order and sorting in mod1 for Redirect view)
  * Fixed bug 1530: defaultToHTMLsuffixOnPrev has to be cleaned in decodeSpURL
  * Fixed bug 2439: [RealURL] Prepend domain name before path in realurl modules
