@@ -1,5 +1,9 @@
 2006-10-06  Dmitry Dulepov  <dmitry@typo3.org>
 
+ * Release of RealURL 1.1.3
+
+2006-10-06  Dmitry Dulepov  <dmitry@typo3.org>
+
  * Fixed compatibility issue for wrong realurl configuration (see bug #4352)
  * Updated class/function index
 
