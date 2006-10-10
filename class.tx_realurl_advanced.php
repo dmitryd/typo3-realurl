@@ -41,19 +41,19 @@
  *  104:     function main(&$params,$ref)
  *
  *              SECTION: "path" ID-to-URL methods
- *  149:     function IDtoPagePath(&$paramKeyValues, &$pathParts)
- *  260:     function updateURLCache($id,$mpvar,$lang,$cached_pagepath='')
- *  319:     function IDtoPagePathSegments($id,$mpvar,$langID)
- *  373:     function rootLineToPath($rl,$lang)
+ *  156:     function IDtoPagePath(&$paramKeyValues, &$pathParts)
+ *  268:     function updateURLCache($id,$mpvar,$lang,$cached_pagepath='')
+ *  327:     function IDtoPagePathSegments($id,$mpvar,$langID)
+ *  381:     function rootLineToPath($rl,$lang)
  *
  *              SECTION: URL-to-ID methods
- *  455:     function pagePathtoID(&$pathParts)
- *  569:     function findIDByURL(&$urlParts)
- *  611:     function searchTitle($pid, $mpvar, &$urlParts, $currentIdMp='')
- *  663:     function searchTitle_searchPid($searchPid,$title)
+ *  463:     function pagePathtoID(&$pathParts)
+ *  577:     function findIDByURL(&$urlParts)
+ *  619:     function searchTitle($pid, $mpvar, &$urlParts, $currentIdMp='')
+ *  671:     function searchTitle_searchPid($searchPid, $title)
  *
  *              SECTION: Helper functions
- *  766:     function encodeTitle($title)
+ *  775:     function encodeTitle($title)
  *
  * TOTAL FUNCTIONS: 10
  * (This index is automatically created/updated by the extension "extdeveval")

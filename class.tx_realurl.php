@@ -36,53 +36,56 @@
  *
  *
  *
- *  107: class tx_realurl
+ *  110: class tx_realurl
  *
  *              SECTION: Translate parameters to a Speaking URL (t3lib_tstemplate::linkData)
- *  150:     function encodeSpURL(&$params, $ref)
- *  217:     function encodeSpURL_doEncode($inputQuery, $cHashCache=FALSE, $origUrl='')
- *  298:     function encodeSpURL_pathFromId(&$paramKeyValues, &$pathParts)
- *  333:     function encodeSpURL_gettingPostVarSets(&$paramKeyValues, &$pathParts, $postVarSetCfg)
- *  370:     function encodeSpURL_fileName(&$paramKeyValues)
- *  392:     function encodeSpURL_setSequence($varSetCfg, &$paramKeyValues, &$pathParts)
- *  500:     function encodeSpURL_setSingle($keyWord, $keyValues, &$paramKeyValues, &$pathParts)
- *  534:     function encodeSpURL_encodeCache($urlToEncode, $internalExtras, $setEncodedURL='')
- *  591:     function encodeSpURL_cHashCache($newUrl, &$paramKeyValues)
+ *  153:     function encodeSpURL(&$params, $ref)
+ *  220:     function encodeSpURL_doEncode($inputQuery, $cHashCache=FALSE, $origUrl='')
+ *  302:     function encodeSpURL_pathFromId(&$paramKeyValues, &$pathParts)
+ *  337:     function encodeSpURL_gettingPostVarSets(&$paramKeyValues, &$pathParts, $postVarSetCfg)
+ *  374:     function encodeSpURL_fileName(&$paramKeyValues)
+ *  396:     function encodeSpURL_setSequence($varSetCfg, &$paramKeyValues, &$pathParts)
+ *  504:     function encodeSpURL_setSingle($keyWord, $keyValues, &$paramKeyValues, &$pathParts)
+ *  538:     function encodeSpURL_encodeCache($urlToEncode, $internalExtras, $setEncodedURL='')
+ *  600:     function encodeSpURL_cHashCache($newUrl, &$paramKeyValues)
  *
  *              SECTION: Translate a Speaking URL to parameters (tslib_fe)
- *  656:     function decodeSpURL($params, $ref)
- *  733:     function decodeSpURL_checkRedirects($speakingURIpath)
- *  783:     function decodeSpURL_doDecode($speakingURIpath, $cHashCache=FALSE)
- *  850:     function decodeSpURL_idFromPath(&$pathParts)
- *  897:     function decodeSpURL_settingPreVars(&$pathParts, $config)
- *  920:     function decodeSpURL_settingPostVarSets(&$pathParts, $postVarSetCfg)
- *  984:     function decodeSpURL_fileName($fileName)
- * 1012:     function decodeSpURL_getSequence(&$pathParts,$setupArr)
- * 1109:     function decodeSpURL_getSingle($keyValues)
- * 1125:     function decodeSpURL_throw404($msg)
- * 1166:     function decodeSpURL_jumpAdmin()
- * 1190:     function decodeSpURL_jumpAdmin_goBackend($pageId)
- * 1205:     function decodeSpURL_decodeCache($speakingURIpath,$cachedInfo='')
- * 1272:     function decodeSpURL_cHashCache($speakingURIpath)
+ *  665:     function decodeSpURL($params, $ref)
+ *  750:     function decodeSpURL_checkRedirects($speakingURIpath)
+ *  800:     function decodeSpURL_doDecode($speakingURIpath, $cHashCache=FALSE)
+ *  874:     function decodeSpURL_idFromPath(&$pathParts)
+ *  921:     function decodeSpURL_settingPreVars(&$pathParts, $config)
+ *  944:     function decodeSpURL_settingPostVarSets(&$pathParts, $postVarSetCfg)
+ * 1009:     function decodeSpURL_fixBrackets(&$arr)
+ * 1036:     function decodeSpURL_fileName($fileName)
+ * 1064:     function decodeSpURL_getSequence(&$pathParts,$setupArr)
+ * 1161:     function decodeSpURL_getSingle($keyValues)
+ * 1177:     function decodeSpURL_throw404($msg)
+ * 1221:     function decodeSpURL_jumpAdmin()
+ * 1245:     function decodeSpURL_jumpAdmin_goBackend($pageId)
+ * 1260:     function decodeSpURL_decodeCache($speakingURIpath,$cachedInfo='')
+ * 1332:     function decodeSpURL_cHashCache($speakingURIpath)
  *
  *              SECTION: Alias-ID look up functions
- * 1305:     function lookUpTranslation($cfg,$value,$aliasToUid=FALSE)
- * 1417:     function lookUp_uniqAliasToId($cfg,$aliasValue,$onlyNonExpired=FALSE)
- * 1446:     function lookUp_idToUniqAlias($cfg,$idValue,$lang,$aliasValue='')
- * 1476:     function lookUp_newAlias($cfg,$newAliasValue,$idValue,$lang)
- * 1558:     function lookUp_cleanAlias($cfg,$newAliasValue)
+ * 1365:     function lookUpTranslation($cfg,$value,$aliasToUid=FALSE)
+ * 1477:     function lookUp_uniqAliasToId($cfg,$aliasValue,$onlyNonExpired=FALSE)
+ * 1506:     function lookUp_idToUniqAlias($cfg,$idValue,$lang,$aliasValue='')
+ * 1536:     function lookUp_newAlias($cfg,$newAliasValue,$idValue,$lang)
+ * 1618:     function lookUp_cleanAlias($cfg,$newAliasValue)
  *
  *              SECTION: General helper functions (both decode/encode)
- * 1617:     function setConfig()
- * 1641:     function getPostVarSetConfig($page_id, $mainCat='postVarSets')
- * 1663:     function pageAliasToID($alias)
- * 1683:     function rawurlencodeParam($str)
- * 1697:     function checkCondition($setup,$prevVal)
+ * 1677:     function setConfig()
+ * 1701:     function getPostVarSetConfig($page_id, $mainCat='postVarSets')
+ * 1723:     function pageAliasToID($alias)
+ * 1743:     function rawurlencodeParam($str)
+ * 1757:     function checkCondition($setup,$prevVal)
+ * 1774:     function isInFEEditing()
  *
  *              SECTION: External Hooks
- * 1730:     function clearPageCacheMgm($params, $ref)
+ * 1791:     function clearPageCacheMgm($params, $ref)
+ * 1806:     function isString(&$str, $paramName)
  *
- * TOTAL FUNCTIONS: 34
+ * TOTAL FUNCTIONS: 37
  * (This index is automatically created/updated by the extension "extdeveval")
  *
  */
@@ -256,7 +259,7 @@ class tx_realurl {
 		$fileName = $this->encodeSpURL_fileName($paramKeyValues);
 		if (strlen($newUrl) && !strlen($fileName) && $this->extConf['fileName']['defaultToHTMLsuffixOnPrev'])	{
 			$newUrl = substr($newUrl,0,-1) .
-				(!is_string($this->extConf['fileName']['defaultToHTMLsuffixOnPrev']) ? '.html' : $this->extConf['fileName']['defaultToHTMLsuffixOnPrev']);
+				(!$this->isString($this->extConf['fileName']['defaultToHTMLsuffixOnPrev'], 'defaultToHTMLsuffixOnPrev') ? '.html' : $this->extConf['fileName']['defaultToHTMLsuffixOnPrev']);
 		} else {
 			$newUrl.= rawurlencode($fileName);
 		}
@@ -807,9 +810,9 @@ class tx_realurl {
 		if (strlen($this->filePart) &&
 				($this->extConf['fileName']['defaultToHTMLsuffixOnPrev'] || $this->extConf['fileName']['acceptHTMLsuffix']) &&
 				!isset($this->extConf['fileName']['index'][$this->filePart]))	{
-			$suffix = preg_quote(is_string($this->extConf['fileName']['defaultToHTMLsuffixOnPrev']) ?
+			$suffix = preg_quote($this->isString($this->extConf['fileName']['defaultToHTMLsuffixOnPrev'], 'defaultToHTMLsuffixOnPrev') ?
 						$this->extConf['fileName']['defaultToHTMLsuffixOnPrev'] : '.html', '/');
-			if (is_string($this->extConf['fileName']['acceptHTMLsuffix'])) {
+			if ($this->isString($this->extConf['fileName']['acceptHTMLsuffix'], 'acceptHTMLsuffix')) {
 				$suffix = '(' . $suffix . '|' .	preg_quote($this->extConf['fileName']['acceptHTMLsuffix'], '/') . ')';
 			}
 			$pathParts[] = preg_replace('/' . $suffix . '$/', '', $this->filePart);
@@ -1000,6 +1003,7 @@ class tx_realurl {
 	 * Fixes a problem with parse_url that returns `a[b[c]` instead of `a[b[c]]` when parsing `a%5Bb%5Bc%5D%5D`
 	 *
 	 * @param	array		Input array
+	 * @return	[type]		...
 	 * @see decodeSpURL_settingPostVarSets()
 	 */
 	function decodeSpURL_fixBrackets(&$arr) {
@@ -1763,10 +1767,10 @@ class tx_realurl {
 	}
 
     /**
-     * Checks if FE editing is enabled.
-     * 
-     * @return boolean <code>true</code> if FE editing is enabled
-     */
+	 * Checks if FE editing is enabled.
+	 *
+	 * @return	boolean		<code>true</code> if FE editing is enabled
+	 */
     function isInFEEditing() {
         return $this->pObj->beUserLogin;
     }
@@ -1790,6 +1794,32 @@ class tx_realurl {
 			$GLOBALS['TYPO3_DB']->exec_DELETEquery('tx_realurl_urlencodecache','page_id IN ('.implode(',',$GLOBALS['TYPO3_DB']->cleanIntArray($pageIdList)).')');
 			$GLOBALS['TYPO3_DB']->exec_DELETEquery('tx_realurl_urldecodecache','page_id IN ('.implode(',',$GLOBALS['TYPO3_DB']->cleanIntArray($pageIdList)).')');
 		}
+	}
+
+	/**
+	 * Checks for wrong boolean values (like <code>'1'</code> or </code>'true'</code> instead of <code>1</code> and <code>true</code>.
+	 *
+	 * @param	mixed		$str Parameter to check
+	 * @param	string		$paramName Parameter name (for logging)
+	 * @return	<code>true</code>		if string (and not bad boolean)
+	 */
+	function isString(&$str, $paramName) {
+		if (!is_string($str)) {
+			return false;
+		}
+		if (preg_match('/^(1|0|true|false)$/i', $str)) {
+			$logMessage = sprintf('Wrong boolean value for parameter "%s": "%s". It is a string, not a boolean!', $paramName, $str);
+			if (TYPO3_DLOG)	t3lib_div::devLog($logMessage, 'realurl');
+			$GLOBALS['TT']->setTSlogMessage($logMessage, 2);
+			if ($str == intval($str)) {
+				$str = intval($str);
+			}
+			else {
+				$str = (strtolower($str) == 'true');
+			}
+			return false;
+		}
+		return true;
 	}
 }
 
