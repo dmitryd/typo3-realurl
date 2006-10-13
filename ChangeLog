@@ -1,6 +1,7 @@
 2006-10-13  Dmitry Dulepov  <dmitry@typo3.org>
 
  * enableDomainLookup and rootPageID is removed from manual.sxw because they do not exist
+ * Added TS log message in case if root page cannot be determined from configuration
 
 2006-10-06  Dmitry Dulepov  <dmitry@typo3.org>
 

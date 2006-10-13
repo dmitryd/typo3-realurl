@@ -584,7 +584,11 @@ class tx_realurl_advanced {
 			// Find the PID where to begin the resolve:
 		if ($this->conf['rootpage_id'])	{	// Take PID from rootpage_id if any:
 			$pid = intval($this->conf['rootpage_id']);
-		} else {	// Otherwise, take the FIRST page under root level!
+		} else {
+			// Otherwise, take the FIRST page under root level.
+			//
+			// This may cause problems if admin configured subdomain without
+			// www but forgot to configure domain with www.
 			$result = $GLOBALS['TYPO3_DB']->exec_SELECTquery(
 							'uid',
 							'pages',
@@ -594,6 +598,12 @@ class tx_realurl_advanced {
 							'1'
 						);
 			list($pid) = $GLOBALS['TYPO3_DB']->sql_fetch_row($result);
+			// Show warning message in admin panel
+			if (count($this->pObj->extConf) > 1) {
+				$GLOBALS['TT']->setTSlogMessage(sprintf(
+					'findIDByURL: rootpage_id is not found for domain %s, using first available root page, rootpage_id is now %d',
+					strtolower(t3lib_div::getIndpEnv('TYPO3_HOST_ONLY')), $pid), 2);
+			}
 		}
 
 			// Now, recursively search for the path from this root (if there are any elements in $urlParts)
