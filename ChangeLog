@@ -1,3 +1,7 @@
+2006-10-13  Dmitry Dulepov  <dmitry@typo3.org>
+
+ * enableDomainLookup and rootPageID is removed from manual.sxw because they do not exist
+
 2006-10-06  Dmitry Dulepov  <dmitry@typo3.org>
 
  * Release of RealURL 1.1.3
