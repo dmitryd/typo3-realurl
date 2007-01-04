@@ -1,6 +1,7 @@
 2007-01-04  Dmitry Dulepov  <dmitry@typo3.org>
 
  * Fixed bug 4395: Specified key was too long; max key length is 1000 bytes
+ * Fixed bug 4528: Deprecated function in documentation
 
 2006-10-13  Dmitry Dulepov  <dmitry@typo3.org>
 
