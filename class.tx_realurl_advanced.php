@@ -514,7 +514,7 @@ class tx_realurl_advanced {
 				);
 
 				if ($newEntry)	{
-					$this->pObjRef->disableDecodeCache=TRUE;
+					$this->pObjRef->disableDecodeCache = true;
 					header('HTTP/1.1 301 Moved Permanently');
 
 						// Replace path-segments with new ones:
