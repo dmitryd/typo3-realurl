@@ -1,7 +1,11 @@
 2007-01-04  Dmitry Dulepov  <dmitry@typo3.org>
 
+ * Fixed bug 4007: realurl path in workspace is kept when published
  * Fixed bug 4395: Specified key was too long; max key length is 1000 bytes
+ * Fixed bug 4485: RealURLs with no spaceCharacter
  * Fixed bug 4528: Deprecated function in documentation
+ * Renamed isInFEEditing() to IsBEUserLoggedIn()
+ * Added tx_realurl_pathcache to list of table for clearing when FE cache is cleared
 
 2006-10-13  Dmitry Dulepov  <dmitry@typo3.org>
 

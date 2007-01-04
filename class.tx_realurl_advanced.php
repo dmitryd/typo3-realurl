@@ -108,7 +108,7 @@ class tx_realurl_advanced {
 		$this->conf = $params['conf'];
 
             // See if cache should be disabled
-        if ($this->pObjRef->isInFEEditing()) {
+        if ($this->pObjRef->isBEUserLoggedIn()) {
             $this->conf['disablePathCache'] = true;
         }
 
@@ -791,11 +791,11 @@ class tx_realurl_advanced {
 		$processedTitle = $GLOBALS['TSFE']->csConvObj->conv_case($charset,$title,'toLower');
 
 			// Convert some special tokens to the space character:
-		$space = $this->conf['spaceCharacter'] ? $this->conf['spaceCharacter'] : '_';
-		$processedTitle = strtr($processedTitle,' -+_',$space.$space.$space.$space); // convert spaces
+		$space = isset($this->conf['spaceCharacter']) ? $this->conf['spaceCharacter'] : '_';
+		$processedTitle = preg_replace('/[ -+_]+/', $space, $processedTitle); // convert spaces
 
 			// Convert extended letters to ascii equivalents:
-		$processedTitle = $GLOBALS['TSFE']->csConvObj->specCharsToASCII($charset,$processedTitle);
+		$processedTitle = $GLOBALS['TSFE']->csConvObj->specCharsToASCII($charset, $processedTitle);
 
 			// Strip the rest...:
 		$processedTitle = ereg_replace('[^a-zA-Z0-9\\'.$space.']', '', $processedTitle); // strip the rest

@@ -79,7 +79,7 @@
  * 1723:     function pageAliasToID($alias)
  * 1743:     function rawurlencodeParam($str)
  * 1757:     function checkCondition($setup,$prevVal)
- * 1774:     function isInFEEditing()
+ * 1774:     function isBEUserLoggedIn()
  *
  *              SECTION: External Hooks
  * 1791:     function clearPageCacheMgm($params, $ref)
@@ -537,7 +537,7 @@ class tx_realurl {
 	 */
 	function encodeSpURL_encodeCache($urlToEncode, $internalExtras, $setEncodedURL='')	{
 
-        if ($this->isInFEEditing()) {
+        if ($this->isBEUserLoggedIn()) {
                 // No caching if FE editing is enabled!
             return false;
         }
@@ -1259,7 +1259,7 @@ class tx_realurl {
 	 */
 	function decodeSpURL_decodeCache($speakingURIpath,$cachedInfo='')	{
 
-        if ($this->isInFEEditing()) {
+        if ($this->isBEUserLoggedIn()) {
                 // No caching if FE editing is enabled!
             return false;
         }
@@ -1767,11 +1767,11 @@ class tx_realurl {
 	}
 
     /**
-	 * Checks if FE editing is enabled.
+	 * Checks if BE user is logged in.
 	 *
-	 * @return	boolean		<code>true</code> if FE editing is enabled
+	 * @return	boolean		<code>true</code> if BE user is logged in
 	 */
-    function isInFEEditing() {
+    function isBEUserLoggedIn() {
         return $this->pObj->beUserLogin;
     }
 
