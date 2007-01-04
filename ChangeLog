@@ -1,3 +1,7 @@
+2007-01-04  Dmitry Dulepov  <dmitry@typo3.org>
+
+ * Fixed bug 4395: Specified key was too long; max key length is 1000 bytes
+
 2006-10-13  Dmitry Dulepov  <dmitry@typo3.org>
 
  * enableDomainLookup and rootPageID is removed from manual.sxw because they do not exist
