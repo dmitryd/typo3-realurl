@@ -1,3 +1,7 @@
+2007-07-09  Dmitry Dulepov  <dmitry@typo3.org>
+
+ * Fixed error in regular expression
+
 2007-01-24  Dmitry Dulepov  <dmitry@typo3.org>
 
  * Removed enableDomainLookup and rootPageID from another place in the manual (thanks to Chris Paige for noticing it!)
