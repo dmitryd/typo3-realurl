@@ -1,5 +1,8 @@
-  # cat=basic/enable; type=string; label=Path to configuration file:You can include configuration file directly or specify path here
+  # cat=basic/enable; type=string; label=Path to configuration file:Optional. If you placed RealURL configuration in a separate file, RealURL can include it for you. Specify a file name related to web site root directory.
 configFile = fileadmin/realurl_conf.php
 
-  # cat=basic/enable; type=options[Serialized=0,PHP source (slow!)=1]; label=Autoconfiguration format:Defines how autoconfiguration file is stored
+  # cat=basic/enable; type=boolean; label=Enable automatic configuration:Enable this if you do not want to write configuration manually. It will generate configuration automatically and store it in typo3temp/. Automatically ignored if you wrote configuration yourself. See manual for more information.
+enableAutoConf = 1
+
+  # cat=basic/enable; type=options[Serialized=0,PHP source (slow!)=1]; label=Automatic configuration file format:Defines how autoconfiguration file is stored. Use "Serialized" because it is 10 times or more faster! Use "PHP source" if you are curious what is generated.
 autoConfFormat = 0
