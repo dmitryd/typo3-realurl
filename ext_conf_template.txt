@@ -1,0 +1,5 @@
+  # cat=basic/enable; type=string; label=Path to configuration file:You can include configuration file directly or specify path here
+configFile = fileadmin/realurl_conf.php
+
+  # cat=basic/enable; type=options[Serialized=0,PHP source (slow!)=1]; label=Autoconfiguration format:Defines how autoconfiguration file is stored
+autoConfFormat = 0
