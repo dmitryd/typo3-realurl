@@ -1,5 +1,9 @@
 2007-09-10  Dmitry Dulepov  <dmitry@typo3.org>
 
+ * Fixed bug 4994: tx_realurl_pathcache must not be flushed!
+
+2007-09-10  Dmitry Dulepov  <dmitry@typo3.org>
+
  * Added autoconfiguration feature
 
 2007-07-09  Dmitry Dulepov  <dmitry@typo3.org>
