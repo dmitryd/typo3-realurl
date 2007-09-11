@@ -876,15 +876,26 @@ class tx_realurl {
 		switch((string)$this->extConf['pagePath']['type'])	{
 			case 'user':
 					// Get root page id if necessary
-				if ($this->multidomain) {
+				if (1 || $this->multidomain) {
 					$rootpage_id = intval($this->extConf['pagePath']['rootpage_id']);
-					if ($rootpage_id == 0) {
-						$GLOBALS['TT']->setTSlogMessage('decodeSpURL_idFromPath: resolving root page through root line (performace warning!)', 2);
-						$pids = $GLOBALS['TSFE']->getStorageSiterootPids();
-						$rootpage_id = $pids['_SITEROOT'];
-						$this->extConf['pagePath']['rootpage_id'] = $rootpage_id;
+					if (1 || $rootpage_id == 0) {
+						ob_end_clean();
+						echo '			<div class="tx_templavoila_pi1-error" style="
+							border: 2px red solid;
+							background-color: yellow;
+							color: black;
+							text-align: center;
+							padding: 20px 20px 20px 20px;
+							margin: 20px 20px 20px 20px;
+							">
+							<strong>RealURL configuration error.</strong><br /><br />
+							rootpage_id must be set if there is more than one domain in page tree. Check manual for more information and fix this error in your configuration.
+							</div>';
+						exit;
 					}
-					$GLOBALS['TT']->setTSlogMessage('decodeSpURL_idFromPath: root page id is ' . $rootpage_id);
+					else {
+						$GLOBALS['TT']->setTSlogMessage('decodeSpURL_idFromPath: root page id is ' . $rootpage_id);
+					}
 				}
 				$params = array(
 					'pathParts' => &$pathParts,
