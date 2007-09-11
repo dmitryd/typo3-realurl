@@ -852,6 +852,9 @@ class tx_realurl {
 		if (is_array($post_GET_VARS)) $cachedInfo['GET_VARS'] = t3lib_div::array_merge_recursive_overrule($cachedInfo['GET_VARS'],$post_GET_VARS);
 		if (is_array($file_GET_VARS)) $cachedInfo['GET_VARS'] = t3lib_div::array_merge_recursive_overrule($cachedInfo['GET_VARS'],$file_GET_VARS);
 
+                // Re-create QUERY_STRING from Get vars for use with typoLink()
+        $_SERVER['QUERY_STRING'] = $this->decodeSpURL_createQueryString($cachedInfo['GET_VARS']);
+
 			// cHash handling:
 		if ($cHashCache)	{
 			$cHash_value = $this->decodeSpURL_cHashCache($speakingURIpath);
@@ -863,6 +866,53 @@ class tx_realurl {
 			// Return information found:
 		return $cachedInfo;
 	}
+
+	/**
+	 * Generates a parameter string from an array recursively
+	 *
+	 * @param       array           Array to generate strings from
+	 * @param       string          path to prepend to every parameter
+	 * @return      array           Array with parameter strings
+	 */
+	function decodeSpURL_createQueryStringParam($paramArr, $prependString = '') {
+		if (!is_array($paramArr)) {
+			return array($prependString.'='.$paramArr);
+		}
+
+		if (count($paramArr) == 0) {
+			return array();
+		}
+
+		$paramList = array();
+		foreach ($paramArr as $var => $value) {
+			$paramList = array_merge($paramList, $this->decodeSpURL_createQueryStringParam($value, $prependString.'['.$var.']'));
+		}
+
+		return $paramList;
+	}
+
+    /**
+     * Re-creates QUERY_STRING for use with typoLink()
+     *
+     * @param       array           List of Get vars
+     * @return      string          QUERY_STRING value
+     */
+    function decodeSpURL_createQueryString(&$getVars)   {
+        if (!is_array($getVars) || count($getVars) == 0) {
+            return $_SERVER['QUERY_STRING'];
+        }
+
+        $parameters = array();
+        foreach ($getVars as $var => $value) {
+            $parameters = array_merge($parameters, $this->decodeSpURL_createQueryStringParam($value, $var));
+        }
+
+        if (!empty($_SERVER['QUERY_STRING'])) {
+            array_push($parameters, $_SERVER['QUERY_STRING']);
+        }
+
+        return implode('&', $parameters);
+    }
 
 	/**
 	 * Extracts the page ID from URL.
