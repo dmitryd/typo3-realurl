@@ -926,9 +926,9 @@ class tx_realurl {
 		switch((string)$this->extConf['pagePath']['type'])	{
 			case 'user':
 					// Get root page id if necessary
-				if (1 || $this->multidomain) {
+				if ($this->multidomain) {
 					$rootpage_id = intval($this->extConf['pagePath']['rootpage_id']);
-					if (1 || $rootpage_id == 0) {
+					if ($rootpage_id == 0) {
 						ob_end_clean();
 						echo '			<div class="tx_templavoila_pi1-error" style="
 							border: 2px red solid;
