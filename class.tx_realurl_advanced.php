@@ -289,7 +289,7 @@ class tx_realurl_advanced {
 						' AND mpvar='.$GLOBALS['TYPO3_DB']->fullQuoteStr($mpvar,'tx_realurl_pathcache').
 						' AND expire=0',
 					array(
-						'expire' => time()+($this->conf['expireDays']?$this->conf['expireDays']:60)*24*3600
+						'expire' => $this->makeExpirationTime(($this->conf['expireDays']?$this->conf['expireDays']:60)*24*3600)
 					)
 				);
 
@@ -478,7 +478,7 @@ class tx_realurl_advanced {
 						AND pages.deleted=0
 						AND hash='.$GLOBALS['TYPO3_DB']->fullQuoteStr(substr(md5(implode('/',$copy_pathParts)),0,10), 'tx_realurl_pathcache').'
 						AND rootpage_id='.intval($this->conf['rootpage_id']).'
-						AND (expire=0 OR expire>'.time().')',
+						AND (expire=0 OR expire>'.$this->makeExpirationTime().')',
 					'',
 					'expire',
 					'1'
@@ -813,6 +813,22 @@ class tx_realurl_advanced {
 
 			// Return encoded URL:
 		return rawurlencode($processedTitle);
+	}
+
+	/**
+	 * Makes expiration timestamp for SQL queries
+	 *
+	 * @param	int	$offsetFromNow	Offset to expiration
+	 * @return	int	Expiration time stamp
+	 */
+	function makeExpirationTime($offsetFromNow = 0) {
+		if (!t3lib_extMgm::isLoaded('adodb') && (TYPO3_db_host == '127.0.0.1' || TYPO3_db_host == 'localhost')) {
+			// Same host, same time, optimize
+			return $offsetFromNow ? time() + $offsetFromNow : 'UNIX_TIMESTAMP()';
+		}
+		// External datbase or non-mysql -> round to next day
+		$date = getdate(time() + $offsetFromNow);
+		return mktime(0, 0, 0, $date['mon'], $date['mday'], $date['year']);
 	}
 }
 
