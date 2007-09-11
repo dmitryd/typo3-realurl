@@ -4,6 +4,7 @@
  * Fixed bug 5150: Remove tx_realurl_pathcache table from MySQL Query Cache
  * Fixed bug 6257: pointless rootline lookup in multi-domain enviroment
  * Fixed bug 6051: RealURL does not set GET vars for use with TypoLink
+ * Forced firstHitPathCache if no postVarSets or fixedPostVars defined
 
 2007-09-10  Dmitry Dulepov  <dmitry@typo3.org>
 

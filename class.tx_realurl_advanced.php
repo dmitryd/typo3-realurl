@@ -464,13 +464,27 @@ class tx_realurl_advanced {
 
 			// Init:
 		$GET_VARS = '';
+		if (!isset($this->conf['firstHitPathCache'])) {
+			$this->conf['firstHitPathCache'] = (
+				(
+				!isset($pObj->conf['postVarSets']) ||
+				count($pObj->conf['postVarSets']) == 0
+				)
+				&&
+				(
+				!isset($pObj->conf['fixedPostVars']) ||
+				count($pObj->conf['fixedPostVars']) == 0
+				)
+			);
+		}
+
 
 			// If pagePath cache is not disabled, look for entry:
 		if (!$this->conf['disablePathCache'])	{
 
 				// Work from outside-in to look up path in cache:
 			$copy_pathParts = $pathParts;
-			while(1)	{
+			while (true)	{
 				$result = $GLOBALS['TYPO3_DB']->exec_SELECTquery(
 					'tx_realurl_pathcache.*',
 					'tx_realurl_pathcache,pages',
