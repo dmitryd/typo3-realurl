@@ -929,19 +929,8 @@ class tx_realurl {
 				if ($this->multidomain) {
 					$rootpage_id = intval($this->extConf['pagePath']['rootpage_id']);
 					if ($rootpage_id == 0) {
-						ob_end_clean();
-						echo '			<div class="tx_templavoila_pi1-error" style="
-							border: 2px red solid;
-							background-color: yellow;
-							color: black;
-							text-align: center;
-							padding: 20px 20px 20px 20px;
-							margin: 20px 20px 20px 20px;
-							">
-							<strong>RealURL configuration error.</strong><br /><br />
-							rootpage_id must be set if there is more than one domain in page tree. Check manual for more information and fix this error in your configuration.
-							</div>';
-						exit;
+						$GLOBALS['TT']->setTSlogMessage('Decode cache: resolving root page through domain record (performace warning!)', 2);
+						$rootpage_id = $this->findRootPageIdByHost();
 					}
 					else {
 						$GLOBALS['TT']->setTSlogMessage('decodeSpURL_idFromPath: root page id is ' . $rootpage_id);
@@ -1354,14 +1343,7 @@ class tx_realurl {
 					if ($rootpage_id == 0) {
 							// Force: get root page for the domain
 						$GLOBALS['TT']->setTSlogMessage('Decode cache: resolving root page through domain record (performace warning!)', 2);
-						$domain = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows(
-									'pid',
-									'sys_domain',
-									'domainName='.$GLOBALS['TYPO3_DB']->fullQuoteStr($this->host, 'sys_domain').
-									' AND hidden=0');
-						if (count($domain) > 0) {
-							$rootpage_id = $domain[0]['pid'];
-						}
+						$rootpage_id = $this->findRootPageIdByHost();
 					}
 					$GLOBALS['TT']->setTSlogMessage('Decode cache: root page id is ' . $rootpage_id);
 				}
@@ -1881,6 +1863,34 @@ class tx_realurl {
 			return false;
 		}
 		return true;
+	}
+
+	/**
+	 * Attempts to find root page ID for the current host. Processes redirectes as well.
+	 *
+	 * @param	string	$host	Host (used only inside, when called recursively)
+	 * @return	mixed	Found root page UID or false if not found
+	 */
+	function findRootPageIdByHost($host = '') {
+		if ($host == '') {
+			$host = $this->host;
+		}
+		$domain = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows(
+					'pid,redirectTo',
+					'sys_domain',
+					'domainName='.$GLOBALS['TYPO3_DB']->fullQuoteStr($this->host, 'sys_domain').
+					' AND hidden=0');
+		$rootpage_id = false;
+		if (count($domain) > 0) {
+			if ($domain[0]['redirectTo']) {
+				$parts = parse_url($domain[0]['redirectTo']);
+				$rootpage_id = $this->findRootPageIdByHost($parts['host']);
+			}
+			if (!$rootpage_id) {
+				$rootpage_id = intval($domain[0]['pid']);
+			}
+		}
+		return $rootpage_id;
 	}
 }
 
