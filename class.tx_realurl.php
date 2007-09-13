@@ -1767,7 +1767,7 @@ class tx_realurl {
 
 			// Look in memory cache first, and if not there, look it up:
 		if (!isset($GLOBALS['TSFE']->applicationData['tx_realurl']['_CACHE_aliases'][$alias]))	{
-			$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('uid','pages','alias='.$GLOBALS['TYPO3_DB']->fullQuoteStr($alias, 'pages').' AND NOT pages.deleted');
+			$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('uid','pages','alias='.$GLOBALS['TYPO3_DB']->fullQuoteStr($alias, 'pages').t3lib_BEfunc::deleteClause('pages'));
 			$pageRec = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res);
 			$GLOBALS['TSFE']->applicationData['tx_realurl']['_CACHE_aliases'][$alias] = intval($pageRec['uid']);
 		}
