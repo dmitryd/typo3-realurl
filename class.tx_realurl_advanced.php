@@ -199,18 +199,7 @@ class tx_realurl_advanced {
 			return;
 		}
 
-
-			// Setting the language variable based on GETvar in URL which has been configured to carry the language uid:
-		if ($this->conf['languageGetVar'])	{
-			$lang = intval($this->pObjRef->orig_paramKeyValues[$this->conf['languageGetVar']]);
-
-				// Might be excepted (like you should for CJK cases which does not translate to ASCII equivalents)
-			if (t3lib_div::inList($this->conf['languageExceptionUids'], $lang))		{
-				$lang = 0;
-			}
-		} else {
-			$lang = 0;
-		}
+		$lang = $this->getLanguageVar();
 
 			// Fetch cached path
 		if (!$this->conf['disablePathCache'])	{
@@ -235,11 +224,9 @@ class tx_realurl_advanced {
 
 			// If a cached page path was found, get it now:
 		if (is_array($cachedPagePath) && !$this->conf['autoUpdatePathCache']) {
-			if (TYPO3_DLOG)	t3lib_div::devLog("(cached: {$cachedPagePath['url']})", 'realurl');
 			$pagePath = $cachedPagePath['pagepath'];
 		} else {
 				// There's no page path cached yet (or if autoUpdatePathCache is set), just call updateCache() to let it generate and possibly cache the path
-			if (TYPO3_DLOG)	t3lib_div::devLog("(create new)",'realurl');
 			$pagePath = $this->updateURLCache($pageid,$mpvar,$lang,$cachedPagePath['pagepath']);
 		}
 
@@ -266,9 +253,7 @@ class tx_realurl_advanced {
 	 * @return	string		The page path
 	 */
 	function updateURLCache($id,$mpvar,$lang,$cached_pagepath='') {
-		if (TYPO3_DLOG)	t3lib_div::devLog('{ Update '.$id.','.$lang.' ','realurl');
-
-			// Build the new page path, in the correct language
+		// Build the new page path, in the correct language
 		$pagepathRec = $this->IDtoPagePathSegments($id, $mpvar, $lang);
 		if (!$pagepathRec)	{
 			return '__ERROR';
@@ -464,27 +449,32 @@ class tx_realurl_advanced {
 
 			// Init:
 		$GET_VARS = '';
-		if (!isset($this->conf['firstHitPathCache'])) {
-			$this->conf['firstHitPathCache'] = (
-				(
-				!isset($pObj->conf['postVarSets']) ||
-				count($pObj->conf['postVarSets']) == 0
-				)
-				&&
-				(
-				!isset($pObj->conf['fixedPostVars']) ||
-				count($pObj->conf['fixedPostVars']) == 0
-				)
-			);
-		}
-
 
 			// If pagePath cache is not disabled, look for entry:
 		if (!$this->conf['disablePathCache'])	{
 
-				// Work from outside-in to look up path in cache:
+			if (!isset($this->conf['firstHitPathCache'])) {
+				$this->conf['firstHitPathCache'] = (
+					(
+					!isset($this->pObjRef->extConf['postVarSets']) ||
+					count($this->pObjRef->extConf['postVarSets']) == 0
+					)
+					&&
+					(
+					!isset($this->pObjRef->extConf['fixedPostVars']) ||
+					count($this->pObjRef->extConf['fixedPostVars']) == 0
+					)
+				);
+			}
+
+			// Work from outside-in to look up path in cache:
+			$postVar = false;
 			$copy_pathParts = $pathParts;
-			while (true)	{
+			$charset = $GLOBALS['TYPO3_CONF_VARS']['BE']['forceCharset'] ? $GLOBALS['TYPO3_CONF_VARS']['BE']['forceCharset'] : $GLOBALS['TSFE']->defaultCharSet;
+			foreach ($copy_pathParts as $key => $value) {
+				$copy_pathParts[$key] = $GLOBALS['TSFE']->csConvObj->conv_case($charset, $value, 'toLower');
+			}
+			while (count($copy_pathParts)) {
 				$result = $GLOBALS['TYPO3_DB']->exec_SELECTquery(
 					'tx_realurl_pathcache.*',
 					'tx_realurl_pathcache,pages',
@@ -499,23 +489,42 @@ class tx_realurl_advanced {
 				);
 
 					// This lookup does not include language and MP var since those are supposed to be fully reflected in the built url!
-				if ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($result))	{
+				if (false !== ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($result))) {
 					break;
-				} elseif ($this->conf['firstHitPathCache'])	{
+				}
+
+				if ($this->conf['firstHitPathCache'])	{
 					break;
-				} else {	// If no row was found, we simply pop off one element of the path and try again until there are no more elements in the array - which means we didn't find a match!
-					array_pop($copy_pathParts);
-					if (!count($copy_pathParts))	break;
+				}
+
+				// If no row was found, we simply pop off one element of the path and try again until there are no more elements in the array - which means we didn't find a match!
+				$postVar = array_pop($copy_pathParts);
+			}
+		}
+		else {
+			$row = false;
+		}
+
+		// It could be that entry point to a page but it is not in the cache. If we popped
+		// any items from path parts, we need to check if they are defined as postSetVars or
+		// fixedPostVars on this page. This does not guarantie 100% success. For example,
+		// if path to page is /hello/world/how/are/you and hello/world found in cache and
+		// there is a postVar 'how' on this page, the check below will not work. But it is still
+		// better than nothing.
+		if ($row && $postVar) {
+			$postVars = $this->pObjRef->getPostVarSetConfig($row['pid'], 'postVarSets');
+			if (is_array($postVars) && !isset($postVars[$postVar])) {
+				// Check fixed
+				$postVars = $this->pObjRef->getPostVarSetConfig($row['pid'], 'fixedPostVars');
+				if (is_array($postVars) && !isset($postVars[$postVar])) {
+					// Not a postVar, so page mostlikely in not in cache. Clear row.
+					$row = false;
 				}
 			}
-		} else {
-			$row = FALSE;
 		}
 
 			// Process row if found:
 		if ($row) { // We found it in the cache
-
-			if (TYPO3_DLOG)	t3lib_div::devLog("FOUND ",'realurl',1);
 
 				// If expired:
 			if ($row['expire']>0)	{
@@ -560,25 +569,22 @@ class tx_realurl_advanced {
 				// Assume we can use this info at first
 			$id = $row['page_id'];
 			$GET_VARS = $row['mpvar'] ? array('MP' => $row['mpvar']) : '';
-		} else { // Let's search for it
-			if (TYPO3_DLOG)	t3lib_div::devLog("NOT_FOUND_SEARCHING ",'realurl');
+		}
+		else {
 
-				// Find it
+			// Find it
 			list($info,$GET_VARS) = $this->findIDByURL($pathParts);
 
 				// Setting id:
 			if ($info['id']) {
-				if (TYPO3_DLOG)	t3lib_div::devLog("FOUND ",'realurl');
 				$id = $info['id'];
 			} else {
 					// No page found!
-				if (TYPO3_DLOG)	t3lib_div::devLog("NOT_FOUND ",'realurl');
 				$id = 0;	// no id resolved, root page will be reached.
 			}
 		}
 
 			// Return found ID:
-		if (TYPO3_DLOG)	t3lib_div::devLog("Path resolved to ID: ".$id,'realurl');
 		return array($id,$GET_VARS);
 	}
 
@@ -599,29 +605,12 @@ class tx_realurl_advanced {
 		if ($this->conf['rootpage_id'])	{	// Take PID from rootpage_id if any:
 			$pid = intval($this->conf['rootpage_id']);
 		} else {
-			// Otherwise, take the FIRST page under root level.
-			//
-			// This may cause problems if admin configured subdomain without
-			// www but forgot to configure domain with www.
-			$result = $GLOBALS['TYPO3_DB']->exec_SELECTquery(
-							'uid',
-							'pages',
-							'pid=0 AND deleted=0 AND doktype<200 AND hidden=0',
-							'',
-							'sorting',
-							'1'
-						);
-			list($pid) = $GLOBALS['TYPO3_DB']->sql_fetch_row($result);
-			// Show warning message in admin panel
-			if (count($this->pObj->extConf) > 1) {
-				$GLOBALS['TT']->setTSlogMessage(sprintf(
-					'findIDByURL: rootpage_id is not found for domain %s, using first available root page, rootpage_id is now %d',
-					strtolower(t3lib_div::getIndpEnv('TYPO3_HOST_ONLY')), $pid), 2);
-			}
+			$pid = $this->pObjRef->findRootPageIdByHost();
 		}
 
 			// Now, recursively search for the path from this root (if there are any elements in $urlParts)
 		if ($pid && count($urlParts))	{
+			$urlParts_copy = $urlParts;
    			list($info['id'],$mpvar) = $this->searchTitle($pid,'',$urlParts);
 			if ($mpvar)	{
 				$GET_VARS = array('MP' => $mpvar);
@@ -844,8 +833,21 @@ class tx_realurl_advanced {
 		$date = getdate(time() + $offsetFromNow);
 		return mktime(0, 0, 0, $date['mon'], $date['mday'], $date['year']);
 	}
-}
 
+	function getLanguageVar() {
+		$lang = 0;
+			// Setting the language variable based on GETvar in URL which has been configured to carry the language uid:
+		if ($this->conf['languageGetVar'])	{
+			$lang = intval($this->pObjRef->orig_paramKeyValues[$this->conf['languageGetVar']]);
+
+				// Might be excepted (like you should for CJK cases which does not translate to ASCII equivalents)
+			if (t3lib_div::inList($this->conf['languageExceptionUids'], $lang))		{
+				$lang = 0;
+			}
+		}
+		return $lang;
+	}
+}
 
 if (defined('TYPO3_MODE') && $TYPO3_CONF_VARS[TYPO3_MODE]['XCLASS']['ext/realurl/class.tx_realurl_advanced.php'])	{
 	include_once($TYPO3_CONF_VARS[TYPO3_MODE]['XCLASS']['ext/realurl/class.tx_realurl_advanced.php']);

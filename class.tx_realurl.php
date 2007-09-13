@@ -1741,7 +1741,7 @@ class tx_realurl {
 	 * @return	array		Configuration array
 	 * @see decodeSpURL_doDecode()
 	 */
-	function getPostVarSetConfig($page_id, $mainCat='postVarSets')	{
+	function getPostVarSetConfig($page_id, $mainCat='postVarSets') {
 
 			// If the page id is NOT an integer, it's an alias we have to look up:
 		if (!t3lib_div::testInt($page_id))	{
