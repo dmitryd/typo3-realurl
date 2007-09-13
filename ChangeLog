@@ -1,6 +1,7 @@
 2007-09-12  Dmitry Dulepov  <dmitry@typo3.org>
 
  * Fixed bug 2402: RealURL+tx_realurl_advanced: xxx was not a keyword for a postVarSet
+ * Fixed bug 4495: When logged in from BE, produces error: Segment "zzz" was not a keyword for a postVarSet as expected
 
 2007-09-11  Dmitry Dulepov  <dmitry@typo3.org>
 
