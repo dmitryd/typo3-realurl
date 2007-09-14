@@ -2,7 +2,7 @@
 /***************************************************************
 *  Copyright notice
 *
-*  (c) 2004 Martin Poelstra (martin@beryllium.net)
+*  (c) 2007 Dmitry Dulepov (dmitry@typo3.org)
 *  All rights reserved
 *
 *  This script is part of the Typo3 project. The Typo3 project is
@@ -29,8 +29,7 @@
  *
  * $Id: class.tx_realurl_advanced.php 5893 2007-07-09 13:41:07Z liels_bugs $
  *
- * @author	Martin Poelstra <martin@beryllium.net>
- * @coauthor	Kasper Skaarhoj <kasper@typo3.com>
+ * @author	Dmitry Dulepov <dmitry@typo3.org>
  */
 /**
  * [CLASS/FUNCTION INDEX of SCRIPT]
@@ -146,7 +145,8 @@ class tx_realurl_autoconfgen {
 		        'spaceCharacter' => '-',
 				'languageGetVar' => 'L',
 //				'expireDays' => 3,
-				'firstHitPathCache' => true,
+//				'firstHitPathCache' => true,
+				'autoUpdatePathCache' => true,
 		    ),
 			'defaultToHTMLsuffixOnPrev' => 0,
 			'acceptHTMLsuffix' => 1,
