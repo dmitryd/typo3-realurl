@@ -325,6 +325,9 @@ class tx_realurl_advanced {
 			$cc = count($rootLine);
 			$newRootLine = array();
 			$rootFound = FALSE;
+			if (!$GLOBALS['TSFE']->tmpl->rootLine) {
+				$GLOBALS['TSFE']->tmpl->start($GLOBALS['TSFE']->rootLine);
+			}
 			for($a=0;$a<$cc;$a++)	{
 				if ($GLOBALS['TSFE']->tmpl->rootLine[0]['uid'] == $rootLine[$a]['uid'])	{
 					$rootFound = TRUE;
@@ -578,6 +581,10 @@ class tx_realurl_advanced {
 				// Setting id:
 			if ($info['id']) {
 				$id = $info['id'];
+
+				// Schedule to put to cache
+				$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['tx_realurl_advanced'][$id] = $this->conf['rootpage_id'];
+				$GLOBALS['TSFE']->TYPO3_CONF_VARS['SC_OPTIONS']['tslib/class.tslib_fe.php']['contentPostProc-output']['tx_realurl_advanced'] = 'EXT:realurl/class.tx_realurl_advanced.php:tx_realurl_advanced->latePutToPathCache';
 			} else {
 					// No page found!
 				$id = 0;	// no id resolved, root page will be reached.
@@ -847,6 +854,23 @@ class tx_realurl_advanced {
 		}
 		return $lang;
 	}
+
+	/**
+	 * Adds entry to cache when TSFE is ready
+	 *
+	 * @param	array	$params	Parameters
+	 * @param	object	$pObj	Parent object (unused)
+	 */
+	function latePutToPathCache($params, &$pObj) {
+		if (isset($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['tx_realurl_advanced'][$GLOBALS['TSFE']->id])) {
+			$rootpage_id = $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['tx_realurl_advanced'][$GLOBALS['TSFE']->id];
+			if ($rootpage_id) {
+				$this->conf['rootpage_id'] = $rootpage_id;
+				$this->updateURLCache($GLOBALS['TSFE']->id, $GLOBALS['TSFE']->MP, $GLOBALS['TSFE']->sys_language_uid);
+			}
+		}
+	}
+
 }
 
 if (defined('TYPO3_MODE') && $TYPO3_CONF_VARS[TYPO3_MODE]['XCLASS']['ext/realurl/class.tx_realurl_advanced.php'])	{
