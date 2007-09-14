@@ -146,7 +146,7 @@ class tx_realurl_autoconfgen {
 				'languageGetVar' => 'L',
 //				'expireDays' => 3,
 //				'firstHitPathCache' => true,
-				'autoUpdatePathCache' => true,
+//				'autoUpdatePathCache' => true,
 		    ),
 			'defaultToHTMLsuffixOnPrev' => 0,
 			'acceptHTMLsuffix' => 1,
