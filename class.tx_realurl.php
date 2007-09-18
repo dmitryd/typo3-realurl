@@ -1232,11 +1232,11 @@ class tx_realurl {
 			$rootpage_id = intval($this->extConf['pagePath']['rootpage_id']);
 			$cond = 'url_hash=' . intval($hash) . ' AND rootpage_id=' . $rootpage_id;
 			list($error_row) = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows(
-				'*',
+				'counter',
 				'tx_realurl_errorlog',
 				$cond
 			);
-			if (count($error_row))	{
+			if (count($error_row)) {
 				$fields_values = array(
 					'error' => $msg,
 					'counter' => $error_row['counter']+1,

@@ -3,6 +3,7 @@
  * Removed "DEFAULT '0'" from "uid" column in tx_realurl_uniqalias
  * Fixed bug 5369: Converting to InnoDB
  * Changed primary key for tx_realurl_errorlog to prevent errors about duplicate entries
+ * Optimized query to tx_realurl_errorlog
 
 2007-09-14  Dmitry Dulepov  <dmitry@typo3.org>
 
