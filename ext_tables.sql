@@ -12,15 +12,16 @@ CREATE TABLE tx_realurl_pathcache (
   expire int(11) DEFAULT '0' NOT NULL,
 
   PRIMARY KEY (cache_id),
-  KEY page_id (page_id),
-  KEY hash (hash)
+#  KEY page_id (page_id),
+#  KEY hash (hash)
+  KEY pathq (hash,rootpage_id,expire)
 );
 
 #
 # Table structure for table 'tx_realurl_uniqalias'
 #
 CREATE TABLE tx_realurl_uniqalias (
-  uid int(11) DEFAULT '0' NOT NULL auto_increment,
+  uid int(11) NOT NULL auto_increment,
   tstamp int(11) DEFAULT '0' NOT NULL,
   tablename varchar(50) DEFAULT '' NOT NULL,
   field_alias varchar(30) DEFAULT '' NOT NULL,
@@ -59,6 +60,8 @@ CREATE TABLE tx_realurl_urldecodecache (
   page_id int(11) DEFAULT '0' NOT NULL,
   rootpage_id int(11) DEFAULT '0' NOT NULL,
   tstamp int(11) DEFAULT '0' NOT NULL,
+  expire int(11) DEFAULT '0' NOT NULL,
+
   PRIMARY KEY (url_hash),
   KEY page_id (page_id)
 );
@@ -75,6 +78,8 @@ CREATE TABLE tx_realurl_urlencodecache (
   content text NOT NULL,
   page_id int(11) DEFAULT '0' NOT NULL,
   tstamp int(11) DEFAULT '0' NOT NULL,
+  expire int(11) DEFAULT '0' NOT NULL,
+
   PRIMARY KEY (url_hash),
   KEY page_id (page_id)
 );
@@ -88,6 +93,7 @@ CREATE TABLE tx_realurl_errorlog (
   cr_date int(11) DEFAULT '0' NOT NULL,
   tstamp int(11) DEFAULT '0' NOT NULL,
   rootpage_id int(11) DEFAULT '0' NOT NULL,
+
   PRIMARY KEY (url_hash),
   KEY counter (counter,tstamp)
 );
@@ -100,6 +106,7 @@ CREATE TABLE tx_realurl_redirects (
   counter int(11) DEFAULT '0' NOT NULL,
   tstamp int(11) DEFAULT '0' NOT NULL,
   has_moved int(11) DEFAULT '0' NOT NULL,
+
   PRIMARY KEY (url_hash)
 );
 
