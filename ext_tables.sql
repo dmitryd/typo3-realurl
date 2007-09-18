@@ -15,7 +15,7 @@ CREATE TABLE tx_realurl_pathcache (
 #  KEY page_id (page_id),
 #  KEY hash (hash)
   KEY pathq (hash,rootpage_id,expire)
-);
+) ENGINE=InnoDB;
 
 #
 # Table structure for table 'tx_realurl_uniqalias'
@@ -46,7 +46,7 @@ CREATE TABLE tx_realurl_chashcache (
 
   PRIMARY KEY (spurl_hash),
   KEY tablename (chash_string)
-);
+) ENGINE=InnoDB;
 
 #
 # Table structure for table 'tx_realurl_urldecodecache'
@@ -64,7 +64,7 @@ CREATE TABLE tx_realurl_urldecodecache (
 
   PRIMARY KEY (url_hash),
   KEY page_id (page_id)
-);
+) ENGINE=InnoDB;
 
 #
 # Table structure for table 'tx_realurl_urlencodecache'
@@ -82,7 +82,7 @@ CREATE TABLE tx_realurl_urlencodecache (
 
   PRIMARY KEY (url_hash),
   KEY page_id (page_id)
-);
+) ENGINE=InnoDB;
 
 CREATE TABLE tx_realurl_errorlog (
   url_hash int(11) DEFAULT '0' NOT NULL,
@@ -94,7 +94,7 @@ CREATE TABLE tx_realurl_errorlog (
   tstamp int(11) DEFAULT '0' NOT NULL,
   rootpage_id int(11) DEFAULT '0' NOT NULL,
 
-  PRIMARY KEY (url_hash),
+  PRIMARY KEY (url_hash,rootpage_id),
   KEY counter (counter,tstamp)
 );
 

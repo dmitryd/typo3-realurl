@@ -1,6 +1,8 @@
 2007-09-18  Dmitry Dulepov  <dmitry@typo3.org>
 
  * Removed "DEFAULT '0'" from "uid" column in tx_realurl_uniqalias
+ * Fixed bug 5369: Converting to InnoDB
+ * Changed primary key for tx_realurl_errorlog to prevent errors about duplicate entries
 
 2007-09-14  Dmitry Dulepov  <dmitry@typo3.org>
 
