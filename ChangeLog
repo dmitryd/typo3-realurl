@@ -4,6 +4,7 @@
  * Fixed bug 5369: Converting to InnoDB
  * Changed primary key for tx_realurl_errorlog to prevent errors about duplicate entries
  * Optimized query to tx_realurl_errorlog
+ * 'suggest' static_info_tables instead of requiring it
 
 2007-09-14  Dmitry Dulepov  <dmitry@typo3.org>
 

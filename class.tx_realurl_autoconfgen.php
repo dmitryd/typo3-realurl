@@ -44,7 +44,9 @@
  */
 class tx_realurl_autoconfgen {
 
+	/* @var $db t3lib_DB */
 	var $db;
+	var $hasStaticInfoTables;
 
 	/**
 	 * Generates configuration. Locks configuration file for exclusive access to avoid collisions. Will not be stabe on Windows.
@@ -85,6 +87,8 @@ class tx_realurl_autoconfgen {
 		else {
 			$this->db = &$GLOBALS['TYPO3_DB'];
 		}
+
+		$this->hasStaticInfoTables = t3lib_extMgm::isLoaded('static_info_tables');
 
 		$template = $this->getTemplate();
 
@@ -174,7 +178,12 @@ class tx_realurl_autoconfgen {
 	}
 
 	function addLanguages(&$conf) {
-		$languages = $this->db->exec_SELECTgetRows('t1.uid AS uid,t2.lg_iso2 AS lg_iso2', 'sys_language t1, static_languages t2', 't2.uid=t1.static_lang_isocode AND t1.hidden=0');
+		if ($this->hasStaticInfoTables) {
+			$languages = $this->db->exec_SELECTgetRows('t1.uid AS uid,t2.lg_iso2 AS lg_iso2', 'sys_language t1, static_languages t2', 't2.uid=t1.static_lang_isocode AND t1.hidden=0');
+		}
+		else {
+			$languages = $this->db->exec_SELECTgetRows('t1.uid AS uid,t1.uid AS lg_iso2', 'sys_language t1', 't1.hidden=0');
+		}
 		if (count($languages) > 0) {
 			$conf['preVars'] = array(
 				array(

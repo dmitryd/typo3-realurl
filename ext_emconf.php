@@ -42,6 +42,7 @@ $EM_CONF[$_EXTKEY] = array(
 		'conflicts' => array(
 		),
 		'suggests' => array(
+			'static_info_tables' => '2.0.2-',
 		),
 	),
 	'suggests' => array(
