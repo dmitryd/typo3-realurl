@@ -27,9 +27,9 @@ $EM_CONF[$_EXTKEY] = array(
 	'modify_tables' => 'pages,sys_domain',
 	'clearCacheOnLoad' => 1,
 	'lockType' => '',
-	'author' => 'Martin Poelstra',
-	'author_email' => 'martin@beryllium.net',
-	'author_company' => 'Beryllium Engineering',
+	'author' => 'Martin Poelstra, Kasper Skaarhoj, Dmitry Dulepov',
+	'author_email' => 'dmitry@typo3.org',
+	'author_company' => '',
 	'CGLcompliance' => '',
 	'CGLcompliance_note' => '',
 	'version' => '1.1.4',
@@ -40,6 +40,7 @@ $EM_CONF[$_EXTKEY] = array(
 			'typo3' => '4.0.0-',
 		),
 		'conflicts' => array(
+			'cooluri' => '',
 		),
 		'suggests' => array(
 			'static_info_tables' => '2.0.2-',
