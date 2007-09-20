@@ -1411,7 +1411,7 @@ class tx_realurl {
 		$spUrlHash = hexdec(substr(md5($speakingURIpath),0,7));
 		$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('chash_string', 'tx_realurl_chashcache', 'spurl_hash='.$spUrlHash);
 		$row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res);
-		$GLOBALS['TYPO3_DB']->sql_freee_result($res);
+		$GLOBALS['TYPO3_DB']->sql_free_result($res);
 		if ($row) {
 			return $row['chash_string'];
 		}
@@ -1601,7 +1601,7 @@ class tx_realurl {
 		);
 
 		$row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res);
-		$GLOBALS['TYPO3_DB']->sql_free_result($row);
+		$GLOBALS['TYPO3_DB']->sql_free_result($res);
 		if ($row)	{
 			return $row['value_alias'];
 		}
@@ -1808,7 +1808,7 @@ class tx_realurl {
 
 			// Look in memory cache first, and if not there, look it up:
 		if (!isset($GLOBALS['TSFE']->applicationData['tx_realurl']['_CACHE_aliases'][$alias]))	{
-			$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('uid','pages','alias='.$GLOBALS['TYPO3_DB']->fullQuoteStr($alias, 'pages').t3lib_BEfunc::deleteClause('pages'));
+			$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('uid','pages','alias='.$GLOBALS['TYPO3_DB']->fullQuoteStr($alias, 'pages').' AND pages.deleted=0');
 			$pageRec = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res);
 			$GLOBALS['TYPO3_DB']->sql_free_result($res);
 			$GLOBALS['TSFE']->applicationData['tx_realurl']['_CACHE_aliases'][$alias] = intval($pageRec['uid']);

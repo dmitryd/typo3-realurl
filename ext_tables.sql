@@ -53,7 +53,7 @@ CREATE TABLE tx_realurl_chashcache (
 # Flushable
 #
 CREATE TABLE tx_realurl_urldecodecache (
-  url_hash char(32) NOT NULL,
+  url_hash varchar(32) DEFAULT '' NOT NULL,
   spurl tinytext NOT NULL,
   content blob NOT NULL,
   page_id int(11) DEFAULT '0' NOT NULL,
@@ -70,7 +70,7 @@ CREATE TABLE tx_realurl_urldecodecache (
 # Flushable
 #
 CREATE TABLE tx_realurl_urlencodecache (
-  url_hash char(32) NOT NULL,
+  url_hash varchar(32) DEFAULT '' NOT NULL,
   origparams tinytext NOT NULL,
   internalExtras tinytext NOT NULL,
   content text NOT NULL,
