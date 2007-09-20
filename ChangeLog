@@ -1,3 +1,8 @@
+2007-09-20  Dmitry Dulepov  <dmitry@typo3.org>
+
+ * Changed tx_realurl_urlencodecache and tx_realurl_urldecodecache to use full md5
+ * Added lots of calls to TYPO3_DB->sql_free_result to free PHP resources
+
 2007-09-18  Dmitry Dulepov  <dmitry@typo3.org>
 
  * Removed "DEFAULT '0'" from "uid" column in tx_realurl_uniqalias

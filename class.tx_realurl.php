@@ -537,49 +537,55 @@ class tx_realurl {
 	 */
 	function encodeSpURL_encodeCache($urlToEncode, $internalExtras, $setEncodedURL='')	{
 
-        if ($this->isBEUserLoggedIn()) {
-                // No caching if FE editing is enabled!
-            return false;
-        }
-
 			// Create hash string:
-		$hash = t3lib_div::md5int($urlToEncode.'///'.serialize($internalExtras));
+		$hash = md5($urlToEncode.'///'.serialize($internalExtras));
 
 		if (!$setEncodedURL)	{	// Asking for cached encoded URL:
 
 				// First, check memory, otherwise ask database:
 			if (!isset($GLOBALS['TSFE']->applicationData['tx_realurl']['_CACHE'][$hash]) && $this->extConf['init']['enableUrlEncodeCache'])	{
 				$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery(
-							'content',
+							'/*! SQL_NO_CACHE */ content',
 							'tx_realurl_urlencodecache',
-							'url_hash='.intval($hash).'
-								AND tstamp>'.intval(time()-24*3600*$this->encodeCacheTTL)
+							'url_hash=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($hash, 'tx_realurl_urlencodecache') .
+								' AND tstamp>' . (time()-24*3600*$this->encodeCacheTTL)
 						);
-				if ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res))	{
+				if ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res)) {
 					$GLOBALS['TSFE']->applicationData['tx_realurl']['_CACHE'][$hash] = $row['content'];
 				}
+				$GLOBALS['TYPO3_DB']->sql_free_result($res);
 			}
 			return $GLOBALS['TSFE']->applicationData['tx_realurl']['_CACHE'][$hash];
 		} else {	// Setting encoded URL in cache:
-			$GLOBALS['TSFE']->applicationData['tx_realurl']['_CACHE'][$hash] = $setEncodedURL;
+                // No caching if FE editing is enabled!
+	        if (!$this->isBEUserLoggedIn()) {
+				$GLOBALS['TSFE']->applicationData['tx_realurl']['_CACHE'][$hash] = $setEncodedURL;
 
-				// If the page id is NOT an integer, it's an alias we have to look up:
-			if (!t3lib_div::testInt($this->encodePageId))	{
-				$this->encodePageId = $this->pageAliasToID($this->encodePageId);
-			}
+					// If the page id is NOT an integer, it's an alias we have to look up:
+				if (!t3lib_div::testInt($this->encodePageId))	{
+					$this->encodePageId = $this->pageAliasToID($this->encodePageId);
+				}
 
-			if ($this->extConf['init']['enableUrlEncodeCache'])	{	// Otherwise ask database:
-				$insertFields = array(
-					'url_hash' => $hash,
-					'origparams' => $urlToEncode,
-					'internalExtras' => count($internalExtras) ? serialize($internalExtras) : '',
-					'content' => $setEncodedURL,
-					'page_id' => $this->encodePageId,
-					'tstamp' => time()
-				);
-				$GLOBALS['TYPO3_DB']->exec_DELETEquery('tx_realurl_urlencodecache', 'url_hash='.intval($hash));
-				$GLOBALS['TYPO3_DB']->exec_INSERTquery('tx_realurl_urlencodecache', $insertFields);
-			}
+				if ($this->extConf['init']['enableUrlEncodeCache'])	{	// Otherwise ask database:
+					$insertFields = array(
+						'url_hash' => $hash,
+						'origparams' => $urlToEncode,
+						'internalExtras' => count($internalExtras) ? serialize($internalExtras) : '',
+						'content' => $setEncodedURL,
+						'page_id' => $this->encodePageId,
+						'tstamp' => time(),
+					);
+					if (gettype($GLOBALS['TYPO3_DB']->link) == 'mysql link') {
+						$query = $GLOBALS['TYPO3_DB']->INSERTquery('tx_realurl_urlencodecache', $insertFields);
+						$query .= ' ON DUPLICATE KEY UPDATE tstamp=' . $insertFields['tstamp'];
+						$GLOBALS['TYPO3_DB']->sql_query($query);
+					}
+					else {
+						$GLOBALS['TYPO3_DB']->exec_DELETEquery('tx_realurl_urlencodecache', 'url_hash='.intval($hash));
+						$GLOBALS['TYPO3_DB']->exec_INSERTquery('tx_realurl_urlencodecache', $insertFields);
+					}
+				}
+	        }
 		}
 	}
 
@@ -627,6 +633,8 @@ class tx_realurl {
 					$GLOBALS['TYPO3_DB']->exec_UPDATEquery('tx_realurl_chashcache', 'spurl_hash='.$spUrlHash, $insertArray);
 				}
 			}
+			$GLOBALS['TYPO3_DB']->sql_free_result($res);
+
 				// Unset "cHash" (and array should now be empty!)
 			unset($paramKeyValues['cHash']);
 		}
@@ -929,11 +937,11 @@ class tx_realurl {
 				if ($this->multidomain) {
 					$rootpage_id = intval($this->extConf['pagePath']['rootpage_id']);
 					if ($rootpage_id == 0) {
-						$GLOBALS['TT']->setTSlogMessage('Decode cache: resolving root page through domain record (performace warning!)', 2);
+//						$GLOBALS['TT']->setTSlogMessage('Decode cache: resolving root page through domain record (performace warning!)', 2);
 						$rootpage_id = $this->findRootPageIdByHost();
 					}
 					else {
-						$GLOBALS['TT']->setTSlogMessage('decodeSpURL_idFromPath: root page id is ' . $rootpage_id);
+//						$GLOBALS['TT']->setTSlogMessage('decodeSpURL_idFromPath: root page id is ' . $rootpage_id);
 					}
 				}
 				$params = array(
@@ -1231,31 +1239,44 @@ class tx_realurl {
 			$hash = t3lib_div::md5int($this->speakingURIpath_procValue);
 			$rootpage_id = intval($this->extConf['pagePath']['rootpage_id']);
 			$cond = 'url_hash=' . intval($hash) . ' AND rootpage_id=' . $rootpage_id;
-			list($error_row) = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows(
-				'counter',
-				'tx_realurl_errorlog',
-				$cond
+			$fields_values = array(
+				'url_hash' => $hash,
+				'url' => $this->speakingURIpath_procValue,
+				'error' => $msg,
+				'counter' => 1,
+				'tstamp' => time(),
+				'cr_date' => time(),
+				'rootpage_id' => $rootpage_id,
+				'last_referer' => t3lib_div::getIndpEnv('HTTP_REFERER')
 			);
-			if (count($error_row)) {
-				$fields_values = array(
-					'error' => $msg,
-					'counter' => $error_row['counter']+1,
-					'tstamp' => time(),
-					'last_referer' => t3lib_div::getIndpEnv('HTTP_REFERER')
+			if (gettype($GLOBALS['TYPO3_DB']->link) == 'mysql link') {
+				$query = $GLOBALS['TYPO3_DB']->INSERTquery('tx_realurl_errorlog', $fields_values);
+				$query .= ' ON DUPLICATE KEY UPDATE ' .
+							'error=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($msg, 'tx_realurl_errorlog') . ',' .
+							'counter=counter+1,' .
+							'tstamp=' . $fields_values['tstamp'] . ',' .
+							'last_referer=' . $GLOBALS['TYPO3_DB']->fullQuoteStr(t3lib_div::getIndpEnv('HTTP_REFERER'), 'tx_realurl_errorlog');
+				$GLOBALS['TYPO3_DB']->sql_query($query);
+			}
+			else {
+				$GLOBALS['TYPO3_DB']->sql_query('BEGIN TRANSACTION');
+				list($error_row) = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows(
+					'counter',
+					'tx_realurl_errorlog',
+					$cond
 				);
-				$GLOBALS['TYPO3_DB']->exec_UPDATEquery('tx_realurl_errorlog', $cond, $fields_values);
-			} else {
-				$fields_values = array(
-					'url_hash' => $hash,
-					'url' => $this->speakingURIpath_procValue,
-					'error' => $msg,
-					'counter' => 1,
-					'tstamp' => time(),
-					'cr_date' => time(),
-					'rootpage_id' => $rootpage_id,
-					'last_referer' => t3lib_div::getIndpEnv('HTTP_REFERER')
-				);
-				$GLOBALS['TYPO3_DB']->exec_INSERTquery('tx_realurl_errorlog',$fields_values);
+				if (count($error_row)) {
+					$fields_values = array(
+						'error' => $msg,
+						'counter' => $error_row['counter']+1,
+						'tstamp' => time(),
+						'last_referer' => t3lib_div::getIndpEnv('HTTP_REFERER')
+					);
+					$GLOBALS['TYPO3_DB']->exec_UPDATEquery('tx_realurl_errorlog', $cond, $fields_values);
+				} else {
+					$GLOBALS['TYPO3_DB']->exec_INSERTquery('tx_realurl_errorlog', $fields_values);
+				}
+				$GLOBALS['TYPO3_DB']->sql_query('COMMIT');
 			}
 		}
 
@@ -1309,32 +1330,35 @@ class tx_realurl {
 	 */
 	function decodeSpURL_decodeCache($speakingURIpath,$cachedInfo='')	{
 
-        if ($this->isBEUserLoggedIn()) {
-                // No caching if FE editing is enabled!
-            return false;
-        }
-
 		if ($this->extConf['init']['enableUrlDecodeCache'] && !$this->disableDecodeCache)	{
 
 				// Create hash string:
 			if (is_array($cachedInfo))	{	// STORE cachedInfo
 
-				$rootpage_id = intval($cachedInfo['rootpage_id']);
-				$hash = t3lib_div::md5int($speakingURIpath . $rootpage_id);
+		        if (!$this->isBEUserLoggedIn()) {
+					$rootpage_id = intval($cachedInfo['rootpage_id']);
+					$hash = md5($speakingURIpath . $rootpage_id);
 
-				$insertFields = array(
-					'url_hash' => $hash,
-					'spurl' => $speakingURIpath,
-					'content' => serialize($cachedInfo),
-					'page_id' => $cachedInfo['id'],
-					'rootpage_id' => $rootpage_id,
-					'tstamp' => time()
-				);
+					$insertFields = array(
+						'url_hash' => $hash,
+						'spurl' => $speakingURIpath,
+						'content' => serialize($cachedInfo),
+						'page_id' => $cachedInfo['id'],
+						'rootpage_id' => $rootpage_id,
+						'tstamp' => time()
+					);
+					if (gettype($GLOBALS['TYPO3_DB']->link) == 'mysql link') {
+						$query = $GLOBALS['TYPO3_DB']->INSERTquery('tx_realurl_urldecodecache', $insertFields);
+						$query .= ' ON DUPLICATE KEY UPDATE tstamp=' . $insertFields['tstamp'];
+						$GLOBALS['TYPO3_DB']->sql_query($query);
+					}
+					else {
+						$GLOBALS['TYPO3_DB']->exec_DELETEquery('tx_realurl_urldecodecache', 'url_hash='.$GLOBALS['TYPO3_DB']->fullQuoteStr($hash, 'tx_realurl_urldecodecache'));
+						$GLOBALS['TYPO3_DB']->exec_INSERTquery('tx_realurl_urldecodecache', $insertFields);
+					}
 
-				$GLOBALS['TYPO3_DB']->exec_DELETEquery('tx_realurl_urldecodecache', 'url_hash='.intval($hash));
-				$GLOBALS['TYPO3_DB']->exec_INSERTquery('tx_realurl_urldecodecache', $insertFields);
-
-				$GLOBALS['TT']->setTSlogMessage('Decode cache: SpUrl stored in cache');
+//					$GLOBALS['TT']->setTSlogMessage('Decode cache: SpUrl stored in cache');
+		        }
 			} else {	// GET cachedInfo.
 
 				$rootpage_id = 0;
@@ -1342,25 +1366,29 @@ class tx_realurl {
 					$rootpage_id = intval($this->extConf['pagePath']['rootpage_id']);
 					if ($rootpage_id == 0) {
 							// Force: get root page for the domain
-						$GLOBALS['TT']->setTSlogMessage('Decode cache: resolving root page through domain record (performace warning!)', 2);
+//						$GLOBALS['TT']->setTSlogMessage('Decode cache: resolving root page through domain record (performace warning!)', 2);
 						$rootpage_id = $this->findRootPageIdByHost();
 					}
-					$GLOBALS['TT']->setTSlogMessage('Decode cache: root page id is ' . $rootpage_id);
+//					$GLOBALS['TT']->setTSlogMessage('Decode cache: root page id is ' . $rootpage_id);
 				}
-				$hash = t3lib_div::md5int($speakingURIpath . $rootpage_id);
+				$hash = md5($speakingURIpath . $rootpage_id);
 				$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery(
-							'content',
+							'/*! SQL_NO_CACHE */ content',
 							'tx_realurl_urldecodecache',
-							'url_hash='.intval($hash).' AND '.
-							'rootpage_id='.intval($rootpage_id).' AND '.
-							'tstamp>'.intval(time()-24*3600*$this->decodeCacheTTL)
+							'url_hash='.$GLOBALS['TYPO3_DB']->fullQuoteStr($hash, 'tx_realurl_urldecodecache') . ' AND ' .
+//No need for root page id if we use full md5!
+//							'rootpage_id='.intval($rootpage_id) . ' AND ' .
+							'tstamp>'.(time()-24*3600*$this->decodeCacheTTL)
 						);
-				if ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res))	{
-					$GLOBALS['TT']->setTSlogMessage('Decode cache: SpUrl found in cache');
+				$row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res);
+				$GLOBALS['TYPO3_DB']->sql_free_result($res);
+				if ($row) {
+//						$GLOBALS['TT']->setTSlogMessage('Decode cache: SpUrl found in cache');
 					return unserialize($row['content']);
-				} else {
-					$GLOBALS['TT']->setTSlogMessage('Decode cache: SpUrl NOT found in cache');
 				}
+//				else {
+//					$GLOBALS['TT']->setTSlogMessage('Decode cache: SpUrl NOT found in cache');
+//				}
 			}
 		}
 	}
@@ -1379,9 +1407,12 @@ class tx_realurl {
 				// - Return a WRONG value (eg. if URLs has been changed internally, there are dublets etc.). In this scenario the cHash value should not match the calculated one in the tslib_fe and the usual error of that problem be issued (whatever that is). This scenario could even mean that a cHash value is returned even if no cHash value applies at all.
 				// Bottomline is: the realurl extension makes it more likely that a wrong cHash value is passed to the frontend but as such it doesn't do anything which a fabricated URL couldn't contain.
 				// I still don't know how to handle wrong cHash values in this table. It will seldomly be a problem (when parameters are changed manually mostly) butwhen it is, we have no standard procedure to clean it up. Of course clearing it will mean it is built up again - but also that tons of URLs will not work reliably!
+		// TODO Dima: should be changed to normal md5 too?
 		$spUrlHash = hexdec(substr(md5($speakingURIpath),0,7));
 		$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('chash_string', 'tx_realurl_chashcache', 'spurl_hash='.$spUrlHash);
-		if ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res))	{
+		$row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res);
+		$GLOBALS['TYPO3_DB']->sql_freee_result($res);
+		if ($row) {
 			return $row['chash_string'];
 		}
 	}
@@ -1436,7 +1467,9 @@ class tx_realurl {
 					$cfg['alias_field'].'='.$GLOBALS['TYPO3_DB']->fullQuoteStr($value,$cfg['table']).' '.$cfg['addWhereClause']
 				);
 
-				if ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res))	{
+				$row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res);
+				$GLOBALS['TYPO3_DB']->sql_free_result($res);
+				if ($row)	{
 					$returnId = $row[$cfg['id_field']];
 
 						// If localization is enabled, check if this record is a localized version and if so, find uid of the original version.
@@ -1468,7 +1501,9 @@ class tx_realurl {
 					$cfg['id_field'].'='.$GLOBALS['TYPO3_DB']->fullQuoteStr($value,$cfg['table']).' '.$cfg['addWhereClause']
 				);
 
-				if ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res))	{
+				$row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res);
+				$GLOBALS['TYPO3_DB']->sql_free_result($res);
+				if ($row) {
 
 						// Looking for localized version of that:
 					if ($langEnabled && $lang)	{
@@ -1481,7 +1516,9 @@ class tx_realurl {
 								AND '.$cfg['languageField'].'='.intval($lang).'
 								'.$cfg['addWhereClause']
 						);
-						if ($lrow = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res))	{
+						$lrow = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res);
+						$GLOBALS['TYPO3_DB']->sql_free_result($res);
+						if ($lrow)	{
 							$row=$lrow;
 						}
 					}
@@ -1530,7 +1567,9 @@ class tx_realurl {
 				AND '.($onlyNonExpired ? 'expire=0' : '(expire=0 OR expire>'.time().')')
 		);
 
-		if ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res))	{
+		$row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res);
+		$GLOBALS['TYPO3_DB']->sql_free_result($res);
+		if ($row)	{
 			return $row['value_id'];
 		}
 	}
@@ -1561,7 +1600,9 @@ class tx_realurl {
 				($aliasValue ? ' AND value_alias='.$GLOBALS['TYPO3_DB']->fullQuoteStr($aliasValue,'tx_realurl_uniqalias') : '')
 		);
 
-		if ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res))	{
+		$row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res);
+		$GLOBALS['TYPO3_DB']->sql_free_result($row);
+		if ($row)	{
 			return $row['value_alias'];
 		}
 	}
@@ -1769,6 +1810,7 @@ class tx_realurl {
 		if (!isset($GLOBALS['TSFE']->applicationData['tx_realurl']['_CACHE_aliases'][$alias]))	{
 			$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('uid','pages','alias='.$GLOBALS['TYPO3_DB']->fullQuoteStr($alias, 'pages').t3lib_BEfunc::deleteClause('pages'));
 			$pageRec = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res);
+			$GLOBALS['TYPO3_DB']->sql_free_result($res);
 			$GLOBALS['TSFE']->applicationData['tx_realurl']['_CACHE_aliases'][$alias] = intval($pageRec['uid']);
 		}
 

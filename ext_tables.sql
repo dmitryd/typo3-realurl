@@ -13,7 +13,6 @@ CREATE TABLE tx_realurl_pathcache (
 
   PRIMARY KEY (cache_id),
 #  KEY page_id (page_id),
-#  KEY hash (hash)
   KEY pathq (hash,rootpage_id,expire)
 ) ENGINE=InnoDB;
 
@@ -54,16 +53,15 @@ CREATE TABLE tx_realurl_chashcache (
 # Flushable
 #
 CREATE TABLE tx_realurl_urldecodecache (
-  url_hash int(11) DEFAULT '0' NOT NULL,
+  url_hash char(32) NOT NULL,
   spurl tinytext NOT NULL,
   content blob NOT NULL,
   page_id int(11) DEFAULT '0' NOT NULL,
   rootpage_id int(11) DEFAULT '0' NOT NULL,
   tstamp int(11) DEFAULT '0' NOT NULL,
-  expire int(11) DEFAULT '0' NOT NULL,
 
   PRIMARY KEY (url_hash),
-  KEY page_id (page_id)
+  KEY page_id (page_id),
 ) ENGINE=InnoDB;
 
 #
@@ -72,13 +70,12 @@ CREATE TABLE tx_realurl_urldecodecache (
 # Flushable
 #
 CREATE TABLE tx_realurl_urlencodecache (
-  url_hash int(11) DEFAULT '0' NOT NULL,
+  url_hash char(32) NOT NULL,
   origparams tinytext NOT NULL,
   internalExtras tinytext NOT NULL,
   content text NOT NULL,
   page_id int(11) DEFAULT '0' NOT NULL,
   tstamp int(11) DEFAULT '0' NOT NULL,
-  expire int(11) DEFAULT '0' NOT NULL,
 
   PRIMARY KEY (url_hash),
   KEY page_id (page_id)
