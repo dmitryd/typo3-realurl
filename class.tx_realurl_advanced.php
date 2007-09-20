@@ -202,6 +202,7 @@ class tx_realurl_advanced {
 		$lang = $this->getLanguageVar();
 
 			// Fetch cached path
+		$cachedPagePath = false;
 		if (!$this->conf['disablePathCache'])	{
 
 			$result = $GLOBALS['TYPO3_DB']->exec_SELECTquery(
@@ -213,13 +214,10 @@ class tx_realurl_advanced {
 						' AND mpvar='.$GLOBALS['TYPO3_DB']->fullQuoteStr($mpvar,'tx_realurl_pathcache').
 						' AND expire=0'
 				);
-			if ($GLOBALS['TYPO3_DB']->sql_num_rows($result) > 1) { // More than one entry for a page with no expire time is wrong...!
-				$cachedPagePath = FALSE;
-			} else {
+			if ($GLOBALS['TYPO3_DB']->sql_num_rows($result) == 1) { // More than one entry for a page with no expire time is wrong...!
 				$cachedPagePath = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($result);
 			}
-		} else {
-			$cachedPagePath = FALSE;
+			$GLOBALS['TYPO3_DB']->sql_free_result($result);
 		}
 
 			// If a cached page path was found, get it now:
@@ -339,7 +337,7 @@ class tx_realurl_advanced {
 
 			if ($rootFound)	{
 					// Translate the rootline to a valid path (rootline contains localized titles at this point!):
-				$pagepath = $this->rootLineToPath($newRootLine,$langID);
+				$pagepath = $this->rootLineToPath($newRootLine, $langID);
 				$this->IDtoPagePathCache[$cacheKey] = array(
 					'pagepath' => $pagepath,
 					'langID' => $langID,
@@ -375,7 +373,7 @@ class tx_realurl_advanced {
 			$page = array_shift($rl);
 
 				// First, check for cached path of this page:
-			$cachedPagePath = FALSE;
+			$cachedPagePath = false;
 			if (!$stopUsingCache && !$this->conf['disablePathCache'] && !$this->conf['autoUpdatePathCache'])	{
 
 				$result = $GLOBALS['TYPO3_DB']->exec_SELECTquery(
@@ -388,9 +386,7 @@ class tx_realurl_advanced {
 							' AND expire=0'
 					);
 
-				if ($GLOBALS['TYPO3_DB']->sql_num_rows($result) > 1) { // If there seems to be more than one page path cached for this combo, go fix it
-					$cachedPagePath = FALSE;
-				} else {
+				if ($GLOBALS['TYPO3_DB']->sql_num_rows($result) == 1) { // If there seems to be more than one page path cached for this combo, we will fix it later
 					$cachedPagePath = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($result);
 					$lastPath = implode('/',$paths);
 					if ($cachedPagePath != false && substr($cachedPagePath['pagepath'], 0, strlen($lastPath)) != $lastPath) {
@@ -400,6 +396,7 @@ class tx_realurl_advanced {
 						$cachedPagePath = false; $stopUsingCache = true;
 					}
 				}
+				$GLOBALS['TYPO3_DB']->sql_free_result($result);
 			}
 
 				// If a cached path was found for the page it will be inserted as the base of the new path, overriding anything build prior to this:
@@ -421,7 +418,8 @@ class tx_realurl_advanced {
 			}
 		}
 
-		return implode('/',$paths); // Return path, ending in a slash, or empty string
+		$path = implode('/', $paths);
+		return ($path ? $path . '/' : ''); // Return path, ending in a slash, or empty string
 	}
 
 
@@ -484,8 +482,7 @@ class tx_realurl_advanced {
 					'tx_realurl_pathcache.page_id=pages.uid
 						AND pages.deleted=0
 						AND hash='.$GLOBALS['TYPO3_DB']->fullQuoteStr(substr(md5(implode('/',$copy_pathParts)),0,10), 'tx_realurl_pathcache').'
-						AND rootpage_id='.intval($this->conf['rootpage_id']).'
-						AND (expire=0 OR expire>'.$this->makeExpirationTime().')',
+						AND rootpage_id='.intval($this->conf['rootpage_id']),
 					'',
 					'expire',
 					'1'
@@ -495,6 +492,7 @@ class tx_realurl_advanced {
 				if (false !== ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($result))) {
 					break;
 				}
+				$GLOBALS['TYPO3_DB']->sql_free_result($result);
 
 				if ($this->conf['firstHitPathCache'])	{
 					break;
@@ -529,14 +527,21 @@ class tx_realurl_advanced {
 			// Process row if found:
 		if ($row) { // We found it in the cache
 
-				// If expired:
-			if ($row['expire']>0)	{
+			// Check for expiration. We can get one of three:
+			//   1. expire = 0
+			//   2. expire <= time()
+			//   3. expire > time()
+			// 1 is permanent, we do not process it. 2 is expired, we look for permanent or non-expired
+			// (in thos order!) entry for the same page od and redirect to corresponding path. 3 - same as
+			// 1 but means that entry is going to expire eventually, nothing to do for us yet.
+			if ($row['expire'] > 0 && $row['expire'] <= time()) {
 				list($newEntry) = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows(
 					'pagepath',
 					'tx_realurl_pathcache',
 					'page_id='.intval($row['page_id']).'
 						AND language_id='.intval($row['language_id']).'
-						AND expire=0'
+						AND (expire=0 OR expire>' . $this->makeExpirationTime() . ')',
+					'', 'expire', '1'
 				);
 
 				if ($newEntry)	{
@@ -732,6 +737,7 @@ class tx_realurl_advanced {
 				}
 			}
 		}
+		$GLOBALS['TYPO3_DB']->sql_free_result($result);
 
 			// We have to search the language overlay too, if: a) the language isn't the default (0), b) if it's not set (-1)
 		$uidTrackKeys = array_keys($uidTrack);
@@ -747,6 +753,7 @@ class tx_realurl_advanced {
 					}
 				}
 			}
+			$GLOBALS['TYPO3_DB']->sql_free_result($result);
 		}
 
 			// Merge titles:
@@ -834,13 +841,18 @@ class tx_realurl_advanced {
 	function makeExpirationTime($offsetFromNow = 0) {
 		if (!t3lib_extMgm::isLoaded('adodb') && (TYPO3_db_host == '127.0.0.1' || TYPO3_db_host == 'localhost')) {
 			// Same host, same time, optimize
-			return $offsetFromNow ? time() + $offsetFromNow : 'UNIX_TIMESTAMP()';
+			return $offsetFromNow ? '(UNIX_TIMESTAMP()+(' + $offsetFromNow + '))' : 'UNIX_TIMESTAMP()';
 		}
 		// External datbase or non-mysql -> round to next day
 		$date = getdate(time() + $offsetFromNow);
 		return mktime(0, 0, 0, $date['mon'], $date['mday'], $date['year']);
 	}
 
+	/**
+	 * Gets the value of current language
+	 *
+	 * @return integer	Current language or 0
+	 */
 	function getLanguageVar() {
 		$lang = 0;
 			// Setting the language variable based on GETvar in URL which has been configured to carry the language uid:
