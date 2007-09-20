@@ -2,6 +2,7 @@
 
  * Changed tx_realurl_urlencodecache and tx_realurl_urldecodecache to use full md5
  * Added lots of calls to TYPO3_DB->sql_free_result to free PHP resources
+ * Default autoconfiguration file location is now in typo3conf
 
 2007-09-18  Dmitry Dulepov  <dmitry@typo3.org>
 
