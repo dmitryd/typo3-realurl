@@ -575,13 +575,13 @@ class tx_realurl {
 						'page_id' => $this->encodePageId,
 						'tstamp' => time(),
 					);
-					if (gettype($GLOBALS['TYPO3_DB']->link) == 'mysql link') {
+					if (get_resource_type($GLOBALS['TYPO3_DB']->link) == 'mysql link') {
 						$query = $GLOBALS['TYPO3_DB']->INSERTquery('tx_realurl_urlencodecache', $insertFields);
 						$query .= ' ON DUPLICATE KEY UPDATE tstamp=' . $insertFields['tstamp'];
 						$GLOBALS['TYPO3_DB']->sql_query($query);
 					}
 					else {
-						$GLOBALS['TYPO3_DB']->exec_DELETEquery('tx_realurl_urlencodecache', 'url_hash='.intval($hash));
+						$GLOBALS['TYPO3_DB']->exec_DELETEquery('tx_realurl_urlencodecache', 'url_hash=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($hash, 'tx_realurl_urlencodecache'));
 						$GLOBALS['TYPO3_DB']->exec_INSERTquery('tx_realurl_urlencodecache', $insertFields);
 					}
 				}
@@ -1249,7 +1249,7 @@ class tx_realurl {
 				'rootpage_id' => $rootpage_id,
 				'last_referer' => t3lib_div::getIndpEnv('HTTP_REFERER')
 			);
-			if (gettype($GLOBALS['TYPO3_DB']->link) == 'mysql link') {
+			if (get_resource_type($GLOBALS['TYPO3_DB']->link) == 'mysql link') {
 				$query = $GLOBALS['TYPO3_DB']->INSERTquery('tx_realurl_errorlog', $fields_values);
 				$query .= ' ON DUPLICATE KEY UPDATE ' .
 							'error=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($msg, 'tx_realurl_errorlog') . ',' .
@@ -1259,7 +1259,7 @@ class tx_realurl {
 				$GLOBALS['TYPO3_DB']->sql_query($query);
 			}
 			else {
-				$GLOBALS['TYPO3_DB']->sql_query('BEGIN TRANSACTION');
+				$GLOBALS['TYPO3_DB']->sql_query('START TRANSACTION');
 				list($error_row) = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows(
 					'counter',
 					'tx_realurl_errorlog',
@@ -1347,7 +1347,7 @@ class tx_realurl {
 						'rootpage_id' => $rootpage_id,
 						'tstamp' => time()
 					);
-					if (gettype($GLOBALS['TYPO3_DB']->link) == 'mysql link') {
+					if (get_resource_type($GLOBALS['TYPO3_DB']->link) == 'mysql link') {
 						$query = $GLOBALS['TYPO3_DB']->INSERTquery('tx_realurl_urldecodecache', $insertFields);
 						$query .= ' ON DUPLICATE KEY UPDATE tstamp=' . $insertFields['tstamp'];
 						$GLOBALS['TYPO3_DB']->sql_query($query);

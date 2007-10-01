@@ -1,3 +1,7 @@
+2007-10-01  Dmitry Dulepov  <dmitry@typo3.org>
+
+ * Fixed wrong intval on string md5
+
 2007-09-20  Dmitry Dulepov  <dmitry@typo3.org>
 
  * Changed tx_realurl_urlencodecache and tx_realurl_urldecodecache to use full md5
