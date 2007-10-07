@@ -172,7 +172,7 @@ class tx_realurl_autoconfgen {
 		$this->addLanguages($confTemplate);
 
 		// Add popular extensions
-		$this->addMininews($confTemplate);
+//		$this->addMininews($confTemplate);
 
 		return $confTemplate;
 	}
