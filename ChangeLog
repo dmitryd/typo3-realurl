@@ -2,6 +2,7 @@
 
  * Added hooks for extensions to provide configuration
  * Autoconfiguration is moved to processing class
+ * Removed lateAddToCache because it had bad side effects
 
 2007-10-01  Dmitry Dulepov  <dmitry@typo3.org>
 
