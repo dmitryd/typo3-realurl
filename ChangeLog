@@ -1,3 +1,8 @@
+2007-10-07  Dmitry Dulepov  <dmitry@typo3.org>
+
+ * Added hooks for extensions to provide configuration
+ * Autoconfiguration is moved to processing class
+
 2007-10-01  Dmitry Dulepov  <dmitry@typo3.org>
 
  * Fixed wrong intval on string md5

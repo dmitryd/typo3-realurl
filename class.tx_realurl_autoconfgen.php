@@ -118,7 +118,7 @@ class tx_realurl_autoconfgen {
 		$_realurl_conf = @unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['realurl']);
 		if ($_realurl_conf['autoConfFormat'] == 0) {
 			fwrite($fd, '<' . '?php' . chr(10) . '$GLOBALS[\'TYPO3_CONF_VARS\'][\'EXTCONF\'][\'realurl\']=' .
-				'unserialize(\'' . addslashes(serialize($conf)) . '\');' . chr(10) . '?' . '>'
+				'unserialize(\'' . str_replace('\'', '\\\'', serialize($conf)) . '\');' . chr(10) . '?' . '>'
 			);
 		}
 		else {
@@ -148,9 +148,6 @@ class tx_realurl_autoconfgen {
 		        'userFunc' => 'EXT:realurl/class.tx_realurl_advanced.php:&tx_realurl_advanced->main',
 		        'spaceCharacter' => '-',
 				'languageGetVar' => 'L',
-//				'expireDays' => 3,
-//				'firstHitPathCache' => true,
-//				'autoUpdatePathCache' => true,
 		    ),
 			'defaultToHTMLsuffixOnPrev' => 0,
 			'acceptHTMLsuffix' => 1,
@@ -171,22 +168,35 @@ class tx_realurl_autoconfgen {
 
 		$this->addLanguages($confTemplate);
 
-		// Add popular extensions
-//		$this->addMininews($confTemplate);
+		// Add from extensions
+		if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/realurl/class.tx_realurl_autoconfgen.php']['extensionConfiguration'])) {
+			foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/realurl/class.tx_realurl_autoconfgen.php']['extensionConfiguration'] as $userFunc) {
+				$params = array('config' => $confTemplate);
+				$var = t3lib_div::callUserFunction($userFunc, $params, $this);
+				if ($var) {
+					$confTemplate = $var;
+				}
+			}
+		}
 
 		return $confTemplate;
 	}
 
+	/**
+	 * Adds languages to configuration
+	 *
+	 * @param	array	$conf	Configuration (passed as reference)
+	 */
 	function addLanguages(&$conf) {
 		if ($this->hasStaticInfoTables) {
-			$languages = $this->db->exec_SELECTgetRows('t1.uid AS uid,t2.lg_iso2 AS lg_iso2', 'sys_language t1, static_languages t2', 't2.uid=t1.static_lang_isocode AND t1.hidden=0');
+			$languages = $this->db->exec_SELECTgetRows('t1.uid AS uid,t2.lg_iso_2 AS lg_iso_2', 'sys_language t1, static_languages t2', 't2.uid=t1.static_lang_isocode AND t1.hidden=0');
 		}
 		else {
-			$languages = $this->db->exec_SELECTgetRows('t1.uid AS uid,t1.uid AS lg_iso2', 'sys_language t1', 't1.hidden=0');
+			$languages = $this->db->exec_SELECTgetRows('t1.uid AS uid,t1.uid AS lg_iso_2', 'sys_language t1', 't1.hidden=0');
 		}
 		if (count($languages) > 0) {
 			$conf['preVars'] = array(
-				array(
+				0 => array(
 					'GETvar' => 'L',
 					'valueMap' => array(
 					),
@@ -194,25 +204,8 @@ class tx_realurl_autoconfgen {
 				),
 			);
 			foreach ($languages as $lang) {
-				$conf['preVars']['valueMap'][strtolower($lang['lg_iso2'])] = $lang['uid'];
+				$conf['preVars'][0]['valueMap'][strtolower($lang['lg_iso_2'])] = $lang['uid'];
 			}
-		}
-	}
-
-	/**
-	 * Adds mininews part of found in file system
-	 *
-	 * @param	array	$conf	Configuration to add to
-	 */
-	function addMininews(&$conf) {
-		if (@file_exists(PATH_typo3conf . 'ext/mininews/ext_emconf.php')) {
-			$conf['postVarSets'][] = array(
-				'mininews' => array(
-					array(
-					    'GETvar' => 'tx_mininews_pi1[showUid]'
-					)
-				)
-			);
 		}
 	}
 }
@@ -220,5 +213,4 @@ class tx_realurl_autoconfgen {
 if (defined('TYPO3_MODE') && $TYPO3_CONF_VARS[TYPO3_MODE]['XCLASS']['ext/realurl/class.tx_realurl_autoconfgen.php'])	{
 	include_once($TYPO3_CONF_VARS[TYPO3_MODE]['XCLASS']['ext/realurl/class.tx_realurl_autoconfgen.php']);
 }
-
 ?>

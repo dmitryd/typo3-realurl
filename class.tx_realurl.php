@@ -1763,6 +1763,16 @@ class tx_realurl {
 			// Finding host-name / IP, always in lowercase:
 		$this->host = strtolower(t3lib_div::getIndpEnv('TYPO3_HOST_ONLY'));
 
+		$_realurl_conf = @unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['realurl']);
+		// Autoconfiguration
+		if ($_realurl_conf['enableAutoConf'] && !isset($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']) && !@include_once(PATH_site . TX_REALURL_AUTOCONF_FILE) && !isset($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl'])) {
+			require_once(t3lib_extMgm::extPath('realurl', 'class.tx_realurl_autoconfgen.php'));
+			$_realurl_gen = t3lib_div::makeInstance('tx_realurl_autoconfgen');
+			$_realurl_gen->generateConfiguration();
+			unset($_realurl_gen);
+			@include_once(PATH_site . TX_REALURL_AUTOCONF_FILE);
+		}
+
 			// First pass, finding configuration OR pointer string:
 		$this->extConf = isset($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl'][$this->host]) ? $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl'][$this->host] : $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['_DEFAULT'];
 
