@@ -418,8 +418,7 @@ class tx_realurl_advanced {
 			}
 		}
 
-		$path = implode('/', $paths);
-		return ($path ? $path . '/' : ''); // Return path, ending in a slash, or empty string
+		return implode('/', $paths);
 	}
 
 
