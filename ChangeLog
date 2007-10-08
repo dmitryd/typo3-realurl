@@ -1,5 +1,9 @@
 2007-10-07  Dmitry Dulepov  <dmitry@typo3.org>
 
+ * Fix: query string was reconstructed only when cache was not in use
+
+2007-10-07  Dmitry Dulepov  <dmitry@typo3.org>
+
  * Added hooks for extensions to provide configuration
  * Autoconfiguration is moved to processing class
  * Removed lateAddToCache because it had bad side effects

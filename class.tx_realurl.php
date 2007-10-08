@@ -38,52 +38,52 @@
  *
  *  110: class tx_realurl
  *
- *              SECTION: Translate parameters to a Speaking URL (t3lib_tstemplate::linkData)
- *  153:     function encodeSpURL(&$params, $ref)
- *  220:     function encodeSpURL_doEncode($inputQuery, $cHashCache=FALSE, $origUrl='')
- *  302:     function encodeSpURL_pathFromId(&$paramKeyValues, &$pathParts)
- *  337:     function encodeSpURL_gettingPostVarSets(&$paramKeyValues, &$pathParts, $postVarSetCfg)
- *  374:     function encodeSpURL_fileName(&$paramKeyValues)
- *  396:     function encodeSpURL_setSequence($varSetCfg, &$paramKeyValues, &$pathParts)
- *  504:     function encodeSpURL_setSingle($keyWord, $keyValues, &$paramKeyValues, &$pathParts)
- *  538:     function encodeSpURL_encodeCache($urlToEncode, $internalExtras, $setEncodedURL='')
- *  600:     function encodeSpURL_cHashCache($newUrl, &$paramKeyValues)
+ *			  SECTION: Translate parameters to a Speaking URL (t3lib_tstemplate::linkData)
+ *  153:	 function encodeSpURL(&$params, $ref)
+ *  220:	 function encodeSpURL_doEncode($inputQuery, $cHashCache=FALSE, $origUrl='')
+ *  302:	 function encodeSpURL_pathFromId(&$paramKeyValues, &$pathParts)
+ *  337:	 function encodeSpURL_gettingPostVarSets(&$paramKeyValues, &$pathParts, $postVarSetCfg)
+ *  374:	 function encodeSpURL_fileName(&$paramKeyValues)
+ *  396:	 function encodeSpURL_setSequence($varSetCfg, &$paramKeyValues, &$pathParts)
+ *  504:	 function encodeSpURL_setSingle($keyWord, $keyValues, &$paramKeyValues, &$pathParts)
+ *  538:	 function encodeSpURL_encodeCache($urlToEncode, $internalExtras, $setEncodedURL='')
+ *  600:	 function encodeSpURL_cHashCache($newUrl, &$paramKeyValues)
  *
- *              SECTION: Translate a Speaking URL to parameters (tslib_fe)
- *  665:     function decodeSpURL($params, $ref)
- *  750:     function decodeSpURL_checkRedirects($speakingURIpath)
- *  800:     function decodeSpURL_doDecode($speakingURIpath, $cHashCache=FALSE)
- *  874:     function decodeSpURL_idFromPath(&$pathParts)
- *  921:     function decodeSpURL_settingPreVars(&$pathParts, $config)
- *  944:     function decodeSpURL_settingPostVarSets(&$pathParts, $postVarSetCfg)
- * 1009:     function decodeSpURL_fixBrackets(&$arr)
- * 1036:     function decodeSpURL_fileName($fileName)
- * 1064:     function decodeSpURL_getSequence(&$pathParts,$setupArr)
- * 1161:     function decodeSpURL_getSingle($keyValues)
- * 1177:     function decodeSpURL_throw404($msg)
- * 1221:     function decodeSpURL_jumpAdmin()
- * 1245:     function decodeSpURL_jumpAdmin_goBackend($pageId)
- * 1260:     function decodeSpURL_decodeCache($speakingURIpath,$cachedInfo='')
- * 1332:     function decodeSpURL_cHashCache($speakingURIpath)
+ *			  SECTION: Translate a Speaking URL to parameters (tslib_fe)
+ *  665:	 function decodeSpURL($params, $ref)
+ *  750:	 function decodeSpURL_checkRedirects($speakingURIpath)
+ *  800:	 function decodeSpURL_doDecode($speakingURIpath, $cHashCache=FALSE)
+ *  874:	 function decodeSpURL_idFromPath(&$pathParts)
+ *  921:	 function decodeSpURL_settingPreVars(&$pathParts, $config)
+ *  944:	 function decodeSpURL_settingPostVarSets(&$pathParts, $postVarSetCfg)
+ * 1009:	 function decodeSpURL_fixBrackets(&$arr)
+ * 1036:	 function decodeSpURL_fileName($fileName)
+ * 1064:	 function decodeSpURL_getSequence(&$pathParts,$setupArr)
+ * 1161:	 function decodeSpURL_getSingle($keyValues)
+ * 1177:	 function decodeSpURL_throw404($msg)
+ * 1221:	 function decodeSpURL_jumpAdmin()
+ * 1245:	 function decodeSpURL_jumpAdmin_goBackend($pageId)
+ * 1260:	 function decodeSpURL_decodeCache($speakingURIpath,$cachedInfo='')
+ * 1332:	 function decodeSpURL_cHashCache($speakingURIpath)
  *
- *              SECTION: Alias-ID look up functions
- * 1365:     function lookUpTranslation($cfg,$value,$aliasToUid=FALSE)
- * 1477:     function lookUp_uniqAliasToId($cfg,$aliasValue,$onlyNonExpired=FALSE)
- * 1506:     function lookUp_idToUniqAlias($cfg,$idValue,$lang,$aliasValue='')
- * 1536:     function lookUp_newAlias($cfg,$newAliasValue,$idValue,$lang)
- * 1618:     function lookUp_cleanAlias($cfg,$newAliasValue)
+ *			  SECTION: Alias-ID look up functions
+ * 1365:	 function lookUpTranslation($cfg,$value,$aliasToUid=FALSE)
+ * 1477:	 function lookUp_uniqAliasToId($cfg,$aliasValue,$onlyNonExpired=FALSE)
+ * 1506:	 function lookUp_idToUniqAlias($cfg,$idValue,$lang,$aliasValue='')
+ * 1536:	 function lookUp_newAlias($cfg,$newAliasValue,$idValue,$lang)
+ * 1618:	 function lookUp_cleanAlias($cfg,$newAliasValue)
  *
- *              SECTION: General helper functions (both decode/encode)
- * 1677:     function setConfig()
- * 1701:     function getPostVarSetConfig($page_id, $mainCat='postVarSets')
- * 1723:     function pageAliasToID($alias)
- * 1743:     function rawurlencodeParam($str)
- * 1757:     function checkCondition($setup,$prevVal)
- * 1774:     function isBEUserLoggedIn()
+ *			  SECTION: General helper functions (both decode/encode)
+ * 1677:	 function setConfig()
+ * 1701:	 function getPostVarSetConfig($page_id, $mainCat='postVarSets')
+ * 1723:	 function pageAliasToID($alias)
+ * 1743:	 function rawurlencodeParam($str)
+ * 1757:	 function checkCondition($setup,$prevVal)
+ * 1774:	 function isBEUserLoggedIn()
  *
- *              SECTION: External Hooks
- * 1791:     function clearPageCacheMgm($params, $ref)
- * 1806:     function isString(&$str, $paramName)
+ *			  SECTION: External Hooks
+ * 1791:	 function clearPageCacheMgm($params, $ref)
+ * 1806:	 function isString(&$str, $paramName)
  *
  * TOTAL FUNCTIONS: 37
  * (This index is automatically created/updated by the extension "extdeveval")
@@ -117,6 +117,7 @@ class tx_realurl {
 	var $encodeCacheTTL=1;			// TTL for encode cache, default is 1 day.
 
 		// Internal:
+	/** @var tslib_fe */
 	var $pObj;						// tslib_fe / GLOBALS['TSFE'] (for ->decodeSpURL())
 	var $extConf;					// Configuration for extension, from $TYPO3_CONF_VARS['EXTCONF']['realurl']
 	var $adminJumpSet = FALSE;		// Is set true (->encodeSpURL) if AdminJump is active in some way. Is set false again when captured first time!
@@ -314,7 +315,7 @@ class tx_realurl {
 					'pathParts' => &$pathParts,
 					'pObj' => &$this,
 					'conf' => $this->extConf['pagePath'],
-     				'mode' => 'encode',
+	 				'mode' => 'encode',
 				);
 				t3lib_div::callUserFunction($this->extConf['pagePath']['userFunc'], $params, $this);
 			break;
@@ -557,8 +558,8 @@ class tx_realurl {
 			}
 			return $GLOBALS['TSFE']->applicationData['tx_realurl']['_CACHE'][$hash];
 		} else {	// Setting encoded URL in cache:
-                // No caching if FE editing is enabled!
-	        if (!$this->isBEUserLoggedIn()) {
+				// No caching if FE editing is enabled!
+			if (!$this->isBEUserLoggedIn()) {
 				$GLOBALS['TSFE']->applicationData['tx_realurl']['_CACHE'][$hash] = $setEncodedURL;
 
 					// If the page id is NOT an integer, it's an alias we have to look up:
@@ -585,7 +586,7 @@ class tx_realurl {
 						$GLOBALS['TYPO3_DB']->exec_INSERTquery('tx_realurl_urlencodecache', $insertFields);
 					}
 				}
-	        }
+			}
 		}
 	}
 
@@ -737,6 +738,9 @@ class tx_realurl {
 					$this->decodeSpURL_decodeCache($speakingURIpath, $cachedInfo);
 				}
 
+				// Re-create QUERY_STRING from Get vars for use with typoLink()
+				$_SERVER['QUERY_STRING'] = $this->decodeSpURL_createQueryString($cachedInfo['GET_VARS']);
+
 					// Jump-admin if configured:
 				$this->decodeSpURL_jumpAdmin_goBackend($cachedInfo['id']);
 
@@ -860,9 +864,6 @@ class tx_realurl {
 		if (is_array($post_GET_VARS)) $cachedInfo['GET_VARS'] = t3lib_div::array_merge_recursive_overrule($cachedInfo['GET_VARS'],$post_GET_VARS);
 		if (is_array($file_GET_VARS)) $cachedInfo['GET_VARS'] = t3lib_div::array_merge_recursive_overrule($cachedInfo['GET_VARS'],$file_GET_VARS);
 
-                // Re-create QUERY_STRING from Get vars for use with typoLink()
-        $_SERVER['QUERY_STRING'] = $this->decodeSpURL_createQueryString($cachedInfo['GET_VARS']);
-
 			// cHash handling:
 		if ($cHashCache)	{
 			$cHash_value = $this->decodeSpURL_cHashCache($speakingURIpath);
@@ -878,9 +879,9 @@ class tx_realurl {
 	/**
 	 * Generates a parameter string from an array recursively
 	 *
-	 * @param       array           Array to generate strings from
-	 * @param       string          path to prepend to every parameter
-	 * @return      array           Array with parameter strings
+	 * @param	   array		   Array to generate strings from
+	 * @param	   string		  path to prepend to every parameter
+	 * @return	  array		   Array with parameter strings
 	 */
 	function decodeSpURL_createQueryStringParam($paramArr, $prependString = '') {
 		if (!is_array($paramArr)) {
@@ -899,28 +900,29 @@ class tx_realurl {
 		return $paramList;
 	}
 
-    /**
-     * Re-creates QUERY_STRING for use with typoLink()
-     *
-     * @param       array           List of Get vars
-     * @return      string          QUERY_STRING value
-     */
-    function decodeSpURL_createQueryString(&$getVars)   {
-        if (!is_array($getVars) || count($getVars) == 0) {
-            return $_SERVER['QUERY_STRING'];
-        }
+	/**
+	 * Re-creates QUERY_STRING for use with typoLink()
+	 *
+	 * @param	   array		   List of Get vars
+	 * @return	  string		  QUERY_STRING value
+	 */
+	function decodeSpURL_createQueryString(&$getVars)   {
+		if (!is_array($getVars) || count($getVars) == 0) {
+			return $_SERVER['QUERY_STRING'];
+		}
 
-        $parameters = array();
-        foreach ($getVars as $var => $value) {
-            $parameters = array_merge($parameters, $this->decodeSpURL_createQueryStringParam($value, $var));
-        }
+		$parameters = array();
+		foreach ($getVars as $var => $value) {
+			$parameters = array_merge($parameters, $this->decodeSpURL_createQueryStringParam($value, $var));
+		}
 
-        if (!empty($_SERVER['QUERY_STRING'])) {
-            array_push($parameters, $_SERVER['QUERY_STRING']);
-        }
+		$queryString = t3lib_div::getIndpEnv('QUERY_STRING');
+		if ($queryString) {
+			array_push($parameters, $queryString);
+		}
 
-        return implode('&', $parameters);
-    }
+		return implode('&', $parameters);
+	}
 
 	/**
 	 * Extracts the page ID from URL.
@@ -1294,7 +1296,7 @@ class tx_realurl {
 			if ($this->extConf['init']['adminJumpToBackend'])	{
 				$this->decode_editInBackend = TRUE;
 			} elseif ($GLOBALS['BE_USER']->extAdmEnabled)	{
-    			$GLOBALS['TSFE']->displayFieldEditIcons = 1;
+				$GLOBALS['TSFE']->displayFieldEditIcons = 1;
 				$GLOBALS['BE_USER']->uc['TSFE_adminConfig']['edit_editNoPopup'] = 1;
 
 				$GLOBALS['TSFE']->applicationData['tx_realurl']['adminJumpActive'] = 1;
@@ -1335,7 +1337,7 @@ class tx_realurl {
 				// Create hash string:
 			if (is_array($cachedInfo))	{	// STORE cachedInfo
 
-		        if (!$this->isBEUserLoggedIn()) {
+				if (!$this->isBEUserLoggedIn()) {
 					$rootpage_id = intval($cachedInfo['rootpage_id']);
 					$hash = md5($speakingURIpath . $rootpage_id);
 
@@ -1358,7 +1360,7 @@ class tx_realurl {
 					}
 
 //					$GLOBALS['TT']->setTSlogMessage('Decode cache: SpUrl stored in cache');
-		        }
+				}
 			} else {	// GET cachedInfo.
 
 				$rootpage_id = 0;
@@ -1861,14 +1863,14 @@ class tx_realurl {
 		return $return;
 	}
 
-    /**
+	/**
 	 * Checks if BE user is logged in.
 	 *
 	 * @return	boolean		<code>true</code> if BE user is logged in
 	 */
-    function isBEUserLoggedIn() {
-        return $this->pObj->beUserLogin;
-    }
+	function isBEUserLoggedIn() {
+		return $this->pObj->beUserLogin;
+	}
 
 	/**********************************
 	 *
