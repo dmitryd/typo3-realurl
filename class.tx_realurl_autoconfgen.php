@@ -170,8 +170,11 @@ class tx_realurl_autoconfgen {
 
 		// Add from extensions
 		if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/realurl/class.tx_realurl_autoconfgen.php']['extensionConfiguration'])) {
-			foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/realurl/class.tx_realurl_autoconfgen.php']['extensionConfiguration'] as $userFunc) {
-				$params = array('config' => $confTemplate);
+			foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/realurl/class.tx_realurl_autoconfgen.php']['extensionConfiguration'] as $extKey => $userFunc) {
+				$params = array(
+					'config' => $confTemplate,
+					'extKey' => $extKey
+				);
 				$var = t3lib_div::callUserFunction($userFunc, $params, $this);
 				if ($var) {
 					$confTemplate = $var;
