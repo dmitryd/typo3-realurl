@@ -37,30 +37,6 @@
  * [CLASS/FUNCTION INDEX of SCRIPT]
  *
  *
- *
- *   75: class tx_realurl_advanced
- *   94:     function main(&$params, $ref)
- *
- *              SECTION: "path" ID-to-URL methods
- *  135:     function IDtoPagePath(&$paramKeyValues, &$pathParts)
- *  228:     function updateURLCache($id, $mpvar, $lang, $cached_pagepath = '')
- *  267:     function IDtoPagePathSegments($id, $mpvar, $langID)
- *  320:     function rootLineToPath($rl, $lang)
- *
- *              SECTION: URL-to-ID methods
- *  389:     function pagePathtoID(&$pathParts)
- *  517:     function findIDByURL(&$urlParts)
- *  552:     function searchTitle($pid, $mpvar, &$urlParts, $currentIdMp = '')
- *  604:     function searchTitle_searchPid($searchPid, $title)
- *
- *              SECTION: Helper functions
- *  706:     function encodeTitle($title)
- *  741:     function makeExpirationTime($offsetFromNow = 0)
- *  756:     function getLanguageVar()
- *
- * TOTAL FUNCTIONS: 12
- * (This index is automatically created/updated by the extension "extdeveval")
- *
  */
 
 /**
@@ -162,15 +138,17 @@ class tx_realurl_advanced {
 
 			if (!$this->conf['dontResolveShortcuts'] && ($page['doktype'] == 4) && ($page['shortcut_mode'] == 0)) { // Shortcut
 				$pageid = $page['shortcut'] ? $page['shortcut'] : $pageid;
-			} else { // done
+			}
+			else { // done
 				$pageid = $page['uid'];
 				break;
 			}
 		}
 
 		// The page wasn't found. Just return FALSE, so the calling function can revert to another way to build the link
-		if ($pageid == -1)
-			return FALSE;
+		if ($pageid == -1) {
+			return;
+		}
 
 		// Set error if applicable.
 		if ($this->conf['excludePageIds'] && t3lib_div::inList($this->conf['excludePageIds'], $pageid)) {
@@ -198,7 +176,8 @@ class tx_realurl_advanced {
 		// If a cached page path was found, get it now:
 		if (is_array($cachedPagePath) && !$this->conf['autoUpdatePathCache']) {
 			$pagePath = $cachedPagePath['pagepath'];
-		} else {
+		}
+		else {
 			// There's no page path cached yet (or if autoUpdatePathCache is set), just call updateCache() to let it generate and possibly cache the path
 			$pagePath = $this->updateURLCache($pageid, $mpvar, $lang, $cachedPagePath['pagepath']);
 		}
@@ -239,7 +218,15 @@ class tx_realurl_advanced {
 		if (!$this->conf['disablePathCache'] && ((!$cached_pagepath && $pagepath) || (string)$pagepath !== (string)$cached_pagepath)) {
 
 			// First, set expiration on existing records:
-			$result = $GLOBALS['TYPO3_DB']->exec_UPDATEquery('tx_realurl_pathcache', 'page_id=' . intval($id) . ' AND language_id=' . intval($langID) . ' AND rootpage_id=' . intval($this->conf['rootpage_id']) . ' AND mpvar=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($mpvar, 'tx_realurl_pathcache') . ' AND expire=0', array('expire' => $this->makeExpirationTime(($this->conf['expireDays'] ? $this->conf['expireDays'] : 60) * 24 * 3600)));
+			$GLOBALS['TYPO3_DB']->exec_UPDATEquery('tx_realurl_pathcache',
+						'page_id=' . intval($id) . ' AND language_id=' . intval($langID) .
+						' AND rootpage_id=' . intval($this->conf['rootpage_id']) .
+						' AND mpvar=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($mpvar, 'tx_realurl_pathcache') .
+						' AND expire=0',
+						array(
+							'expire' => $this->makeExpirationTime(($this->conf['expireDays'] ? $this->conf['expireDays'] : 60) * 24 * 3600)
+						)
+					);
 
 			// Insert URL in cache:
 			$insertArray = array('page_id' => $id, 'language_id' => $langID, 'pagepath' => $pagepath, 'hash' => $pagepathHash, 'expire' => 0, 'rootpage_id' => intval($this->conf['rootpage_id']), 'mpvar' => $mpvar);
@@ -295,8 +282,13 @@ class tx_realurl_advanced {
 			if ($rootFound) {
 				// Translate the rootline to a valid path (rootline contains localized titles at this point!):
 				$pagepath = $this->rootLineToPath($newRootLine, $langID);
-				$this->IDtoPagePathCache[$cacheKey] = array('pagepath' => $pagepath, 'langID' => $langID, 'pagepathhash' => substr(md5($pagepath), 0, 10));
-			} else { // Outside of root line:
+				$this->IDtoPagePathCache[$cacheKey] = array(
+						'pagepath' => $pagepath,
+						'langID' => $langID,
+						'pagepathhash' => substr(md5($pagepath), 0, 10)
+					);
+			}
+			else { // Outside of root line:
 				$this->IDtoPagePathCache[$cacheKey] = FALSE;
 			}
 		}
@@ -355,7 +347,8 @@ class tx_realurl_advanced {
 			if ($cachedPagePath != false) {
 				$paths = array();
 				$paths[$i] = $cachedPagePath['pagepath'];
-			} else { // Building up the path from page title etc.
+			}
+			else { // Building up the path from page title etc.
 				// List of "pages" fields to traverse for a "directory title" in the speaking URL (only from RootLine!!):
 				$segTitleFieldArray = t3lib_div::trimExplode(',', $this->conf['segTitleFieldList'] ? $this->conf['segTitleFieldList'] : 'tx_realurl_pathsegment,alias,nav_title,title', 1);
 				$theTitle = '';
@@ -524,7 +517,8 @@ class tx_realurl_advanced {
 		// Find the PID where to begin the resolve:
 		if ($this->conf['rootpage_id']) { // Take PID from rootpage_id if any:
 			$pid = intval($this->conf['rootpage_id']);
-		} else {
+		}
+		else {
 			$pid = $this->pObj->findRootPageIdByHost();
 		}
 
@@ -578,14 +572,16 @@ class tx_realurl_advanced {
 				$mpvar .= ($mpvar ? ',' : '') . $row['_IS_MOUNTPOINT']['MPvar'];
 				if ($row['_IS_MOUNTPOINT']['overlay']) {
 					$currentIdMp[1] = $mpvar; // Change mpvar for the currentIdMp variable.
-				} else {
+				}
+				else {
 					$uid = $row['_IS_MOUNTPOINT']['mount_pid'];
 				}
 			}
 
 			// Yep, go search for the next subpage
 			return $this->searchTitle($uid, $mpvar, $urlParts, $currentIdMp);
-		} else {
+		}
+		else {
 			// No title, so we reached the end of the id identifying part of the path and now put back the current non-matched title segment before we return the PID:
 			array_unshift($urlParts, $title);
 			return $currentIdMp;
@@ -619,7 +615,7 @@ class tx_realurl_advanced {
 		$result = $GLOBALS['TYPO3_DB']->exec_SELECTquery($selList, 'pages',
 						'pid = ' . intval($searchPid) .
 						' AND deleted = 0 AND doktype != 255', '', 'sorting');
-		while ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($result)) {
+		while (($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($result))) {
 
 			// Mount points:
 			$mount_info = $sys_page->getMountPointInfo($row['uid'], $row);
@@ -631,8 +627,10 @@ class tx_realurl_advanced {
 					$mp_row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($result2);
 					if (is_array($mp_row)) {
 						$row = $mp_row;
-					} else
+					}
+					else {
 						unset($row); // If the mount point could not be fetched, unset the row
+					}
 				}
 				$row['_IS_MOUNTPOINT'] = $mount_info;
 			}
@@ -656,7 +654,7 @@ class tx_realurl_advanced {
 		$uidTrackKeys = array_keys($uidTrack);
 		foreach ($uidTrackKeys as $l_id) {
 			$result = $GLOBALS['TYPO3_DB']->exec_SELECTquery('nav_title,title', 'pages_language_overlay', 'pid=' . intval($l_id));
-			while ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($result)) {
+			while (($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($result))) {
 				foreach ($segTitleFieldArray as $fieldName) {
 					if ($row[$fieldName]) {
 						$encodedTitle = $this->encodeTitle($row[$fieldName]);
