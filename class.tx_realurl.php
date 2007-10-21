@@ -30,6 +30,7 @@
  * $Id$
  *
  * @author	Kasper Skaarhoj <kasper@typo3.com>
+ * @author	Dmitry Dulepov <dmitry@typo3.org>
  */
 /**
  * [CLASS/FUNCTION INDEX of SCRIPT]
@@ -98,6 +99,7 @@
  * This class interfaces with hooks in TYPO3 inside tslib_fe (for parsing speaking URLs to GET parameters) and in t3lib_tstemplate (for parsing GET parameters into a speaking URL)
  *
  * @author	Kasper Skaarhoj <kasper@typo3.com>
+ * @author	Dmitry Dulepov <dmitry@typo3.org>
  * @package TYPO3
  * @subpackage tx_realurl
  */
@@ -225,8 +227,9 @@ class tx_realurl {
 		$GETparams = explode('&', $inputQuery);
 		foreach ($GETparams as $paramAndValue) {
 			list($p, $v) = explode('=', $paramAndValue, 2);
-			if (strlen($p))
+			if (strlen($p)) {
 				$paramKeyValues[rawurldecode($p)] = rawurldecode($v);
+			}
 		}
 		$this->orig_paramKeyValues = $paramKeyValues;
 
@@ -533,13 +536,12 @@ class tx_realurl {
 
 		if (!$setEncodedURL) { // Asking for cached encoded URL:
 
-
 			// First, check memory, otherwise ask database:
 			if (!isset($GLOBALS['TSFE']->applicationData['tx_realurl']['_CACHE'][$hash]) && $this->extConf['init']['enableUrlEncodeCache']) {
 				$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('/*! SQL_NO_CACHE */ content', 'tx_realurl_urlencodecache',
 								'url_hash=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($hash, 'tx_realurl_urlencodecache') .
 								' AND tstamp>' . (time() - 24 * 3600 * $this->encodeCacheTTL));
-				if ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res)) {
+				if (($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res))) {
 					$GLOBALS['TSFE']->applicationData['tx_realurl']['_CACHE'][$hash] = $row['content'];
 				}
 				$GLOBALS['TYPO3_DB']->sql_free_result($res);
@@ -556,7 +558,14 @@ class tx_realurl {
 				}
 
 				if ($this->extConf['init']['enableUrlEncodeCache']) { // Otherwise ask database:
-					$insertFields = array('url_hash' => $hash, 'origparams' => $urlToEncode, 'internalExtras' => count($internalExtras) ? serialize($internalExtras) : '', 'content' => $setEncodedURL, 'page_id' => $this->encodePageId, 'tstamp' => time());
+					$insertFields = array(
+							'url_hash' => $hash,
+							'origparams' => $urlToEncode,
+							'internalExtras' => count($internalExtras) ? serialize($internalExtras) : '',
+							'content' => $setEncodedURL,
+							'page_id' => $this->encodePageId,
+							'tstamp' => time()
+						);
 					if (get_resource_type($GLOBALS['TYPO3_DB']->link) == 'mysql link') {
 						$query = $GLOBALS['TYPO3_DB']->INSERTquery('tx_realurl_urlencodecache', $insertFields);
 						$query .= ' ON DUPLICATE KEY UPDATE tstamp=' . $insertFields['tstamp'];

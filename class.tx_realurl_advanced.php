@@ -37,6 +37,30 @@
  * [CLASS/FUNCTION INDEX of SCRIPT]
  *
  *
+ *
+ *   75: class tx_realurl_advanced
+ *   95:     function main(&$params, $ref)
+ *
+ *              SECTION: "path" ID-to-URL methods
+ *  136:     function IDtoPagePath(&$paramKeyValues, &$pathParts)
+ *  232:     function updateURLCache($id, $mpvar, $lang, $cached_pagepath = '')
+ *  279:     function IDtoPagePathSegments($id, $mpvar, $langID)
+ *  337:     function rootLineToPath($rl, $lang)
+ *
+ *              SECTION: URL-to-ID methods
+ *  406:     function pagePathtoID(&$pathParts)
+ *  534:     function findIDByURL(&$urlParts)
+ *  569:     function searchTitle($pid, $mpvar, &$urlParts, $currentIdMp = '')
+ *  623:     function searchTitle_searchPid($searchPid, $title)
+ *
+ *              SECTION: Helper functions
+ *  728:     function encodeTitle($title)
+ *  763:     function makeExpirationTime($offsetFromNow = 0)
+ *  778:     function getLanguageVar()
+ *
+ * TOTAL FUNCTIONS: 12
+ * (This index is automatically created/updated by the extension "extdeveval")
+ *
  */
 
 /**
@@ -50,6 +74,7 @@
  */
 class tx_realurl_advanced {
 
+	/** @var t3lib_pageSelect */
 	var $sys_page; // t3lib_page object for finding rootline on the fly.
 
 	// Internal, for "path" id resolver:
@@ -260,7 +285,7 @@ class tx_realurl_advanced {
 			if (!is_object($this->sys_page)) { // Create object if not found before:
 				// Initialize the page-select functions.
 				$this->sys_page = t3lib_div::makeInstance('t3lib_pageSelect');
-				$this->sys_page->init($GLOBALS['TSFE']->showHiddenPage);
+				$this->sys_page->init($GLOBALS['TSFE']->showHiddenPage || $this->pObj->isBEUserLoggedIn());
 			}
 			$this->sys_page->sys_language_uid = $langID;
 			$rootLine = $this->sys_page->getRootLine($id, $mpvar);
@@ -313,7 +338,6 @@ class tx_realurl_advanced {
 		$paths = array();
 		array_shift($rl); // Ignore the first path, as this is the root of the website
 		$c = count($rl);
-		$path = '';
 		$stopUsingCache = false;
 		for ($i = 1; $i <= $c; $i++) {
 			$page = array_shift($rl);
@@ -524,7 +548,6 @@ class tx_realurl_advanced {
 
 		// Now, recursively search for the path from this root (if there are any elements in $urlParts)
 		if ($pid && count($urlParts)) {
-			$urlParts_copy = $urlParts;
 			list($info['id'], $mpvar) = $this->searchTitle($pid, '', $urlParts);
 			if ($mpvar) {
 				$GET_VARS = array('MP' => $mpvar);
@@ -681,6 +704,7 @@ class tx_realurl_advanced {
 		if (isset($allTitles[$encodedTitle])) {
 			return array($allTitles[$encodedTitle], $uidTrack[$allTitles[$encodedTitle]]);
 		}
+		return false;
 	}
 
 	/*******************************
