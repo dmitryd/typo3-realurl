@@ -33,6 +33,18 @@
  */
 /**
  * [CLASS/FUNCTION INDEX of SCRIPT]
+ *
+ *
+ *
+ *   57: class tx_realurl_autoconfgen
+ *   68:     function generateConfiguration()
+ *   89:     function doGenerateConfiguration(&$fd)
+ *  151:     function getTemplate()
+ *  209:     function addLanguages(&$conf)
+ *
+ * TOTAL FUNCTIONS: 4
+ * (This index is automatically created/updated by the extension "extdeveval")
+ *
  */
 
 /**
@@ -50,6 +62,8 @@ class tx_realurl_autoconfgen {
 
 	/**
 	 * Generates configuration. Locks configuration file for exclusive access to avoid collisions. Will not be stabe on Windows.
+	 *
+	 * @return	void
 	 */
 	function generateConfiguration() {
 		$fileName = PATH_site . TX_REALURL_AUTOCONF_FILE;
@@ -69,7 +83,8 @@ class tx_realurl_autoconfgen {
 	/**
 	 * Performs actual generation.
 	 *
-	 * @param	resource	$fd	FIle descriptor to write to
+	 * @param	resource		$fd	FIle descriptor to write to
+	 * @return	void
 	 */
 	function doGenerateConfiguration(&$fd) {
 
@@ -131,7 +146,7 @@ class tx_realurl_autoconfgen {
 	/**
 	 * Creates common configuration template.
 	 *
-	 * @return array	Template
+	 * @return	array		Template
 	 */
 	function getTemplate() {
 		$confTemplate = array(
@@ -188,7 +203,8 @@ class tx_realurl_autoconfgen {
 	/**
 	 * Adds languages to configuration
 	 *
-	 * @param	array	$conf	Configuration (passed as reference)
+	 * @param	array		$conf	Configuration (passed as reference)
+	 * @return	void
 	 */
 	function addLanguages(&$conf) {
 		if ($this->hasStaticInfoTables) {
