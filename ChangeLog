@@ -1,3 +1,7 @@
+2007-10-21  Dmitry Dulepov  <dmitry@typo3.org>
+
+ * Updated documentation
+
 2007-10-07  Dmitry Dulepov  <dmitry@typo3.org>
 
  * Fix: query string was reconstructed only when cache was not in use
