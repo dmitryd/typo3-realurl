@@ -547,7 +547,8 @@ class tx_realurl {
 				$GLOBALS['TYPO3_DB']->sql_free_result($res);
 			}
 			return $GLOBALS['TSFE']->applicationData['tx_realurl']['_CACHE'][$hash];
-		} else { // Setting encoded URL in cache:
+		}
+		else { // Setting encoded URL in cache:
 			// No caching if FE editing is enabled!
 			if (!$this->isBEUserLoggedIn()) {
 				$GLOBALS['TSFE']->applicationData['tx_realurl']['_CACHE'][$hash] = $setEncodedURL;

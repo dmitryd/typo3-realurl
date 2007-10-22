@@ -1,3 +1,7 @@
+2007-10-22  Dmitry Dulepov  <dmitry@typo3.org>
+
+ * Removed svn:eol-style=native from all files because it caused problems with EM on *nix systems
+
 2007-10-21  Dmitry Dulepov  <dmitry@typo3.org>
 
  * Updated documentation
