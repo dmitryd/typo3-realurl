@@ -1,3 +1,7 @@
+2007-11-28  Dmitry Dulepov  <dmitry@typo3.org>
+
+ * Update information about config.baseURL in the documentation
+
 2007-10-22  Dmitry Dulepov  <dmitry@typo3.org>
 
  * Removed svn:eol-style=native from all files because it caused problems with EM on *nix systems
