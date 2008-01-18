@@ -1,6 +1,7 @@
 2008-01-18  Dmitry Dulepov  <dmitry@typo3.org>
 
  * Added eol-style property for all text files
+ * Fixed another incarnation of postVarSet issue
 
 2008-01-07  Dmitry Dulepov  <dmitry@typo3.org>
 

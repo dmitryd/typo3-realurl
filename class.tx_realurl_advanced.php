@@ -452,12 +452,14 @@ class tx_realurl_advanced {
 		// there is a postVar 'how' on this page, the check below will not work. But it is still
 		// better than nothing.
 		if ($row && $postVar) {
-			$postVars = $this->pObj->getPostVarSetConfig($row['pid'], 'postVarSets');
-			if (is_array($postVars) && !isset($postVars[$postVar])) {
+			$postVars = $this->pObjRef->getPostVarSetConfig($row['pid'], 'postVarSets');
+			if (!is_array($postVars) || !isset($postVars[$postVar])) {
 				// Check fixed
-				$postVars = $this->pObj->getPostVarSetConfig($row['pid'], 'fixedPostVars');
-				if (is_array($postVars) && !isset($postVars[$postVar])) {
-					// Not a postVar, so page mostlikely in not in cache. Clear row.
+				$postVars = $this->pObjRef->getPostVarSetConfig($row['pid'], 'fixedPostVars');
+				if (!is_array($postVars) || !isset($postVars[$postVar])) {
+					// Not a postVar, so page most likely in not in cache. Clear row.
+					// TODO It would be great to update cache in this case but usually TYPO3 is not
+					// complitely initialized at this place. So we do not do it...
 					$row = false;
 				}
 			}
