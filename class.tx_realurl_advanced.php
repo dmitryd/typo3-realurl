@@ -39,24 +39,24 @@
  *
  *
  *   75: class tx_realurl_advanced
- *   95:     function main(&$params, $ref)
+ *  105:     function main(&$params, $ref)
  *
  *              SECTION: "path" ID-to-URL methods
- *  136:     function IDtoPagePath(&$paramKeyValues, &$pathParts)
- *  232:     function updateURLCache($id, $mpvar, $lang, $cached_pagepath = '')
- *  279:     function IDtoPagePathSegments($id, $mpvar, $langID)
- *  337:     function rootLineToPath($rl, $lang)
+ *  146:     function IDtoPagePath(&$paramKeyValues, &$pathParts)
+ *  242:     function updateURLCache($id, $mpvar, $lang, $cached_pagepath = '')
+ *  289:     function IDtoPagePathSegments($id, $mpvar, $langID)
+ *  347:     function rootLineToPath($rl, $lang)
  *
  *              SECTION: URL-to-ID methods
- *  406:     function pagePathtoID(&$pathParts)
- *  534:     function findIDByURL(&$urlParts)
- *  569:     function searchTitle($pid, $mpvar, &$urlParts, $currentIdMp = '')
- *  623:     function searchTitle_searchPid($searchPid, $title)
+ *  416:     function pagePathtoID(&$pathParts)
+ *  546:     function findIDByURL(&$urlParts)
+ *  581:     function searchTitle($pid, $mpvar, &$urlParts, $currentIdMp = '')
+ *  635:     function searchTitle_searchPid($searchPid, $title)
  *
  *              SECTION: Helper functions
- *  728:     function encodeTitle($title)
- *  763:     function makeExpirationTime($offsetFromNow = 0)
- *  778:     function getLanguageVar()
+ *  740:     function encodeTitle($title)
+ *  775:     function makeExpirationTime($offsetFromNow = 0)
+ *  790:     function getLanguageVar()
  *
  * TOTAL FUNCTIONS: 12
  * (This index is automatically created/updated by the extension "extdeveval")
@@ -74,14 +74,24 @@
  */
 class tx_realurl_advanced {
 
-	/** @var t3lib_pageSelect */
-	var $sys_page; // t3lib_page object for finding rootline on the fly.
+	/**
+	 * t3lib_page object for finding rootline on the fly
+	 *
+	 * @var	t3lib_pageSelect
+	 */
+	var $sys_page;
 
 	// Internal, for "path" id resolver:
 	var $IDtoPagePathCache = array(); // Contains cached versions of page paths for id/language combinations.
 
 	// Internal, dynamic:
-	var $pObj; // Reference to the parent object of "tx_realurl"
+	/**
+	 * Reference to parent object
+	 *
+	 * @var	tx_realurl
+	 */
+	var $pObj;
+
 	var $conf; // Local configuration for the "pagePath"
 
 	/**
@@ -452,10 +462,10 @@ class tx_realurl_advanced {
 		// there is a postVar 'how' on this page, the check below will not work. But it is still
 		// better than nothing.
 		if ($row && $postVar) {
-			$postVars = $this->pObjRef->getPostVarSetConfig($row['pid'], 'postVarSets');
+			$postVars = $this->pObj->getPostVarSetConfig($row['pid'], 'postVarSets');
 			if (!is_array($postVars) || !isset($postVars[$postVar])) {
 				// Check fixed
-				$postVars = $this->pObjRef->getPostVarSetConfig($row['pid'], 'fixedPostVars');
+				$postVars = $this->pObj->getPostVarSetConfig($row['pid'], 'fixedPostVars');
 				if (!is_array($postVars) || !isset($postVars[$postVar])) {
 					// Not a postVar, so page most likely in not in cache. Clear row.
 					// TODO It would be great to update cache in this case but usually TYPO3 is not
