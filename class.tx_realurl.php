@@ -37,59 +37,60 @@
  *
  *
  *
- *  104: class tx_realurl
+ *  107: class tx_realurl
  *
  *              SECTION: Translate parameters to a Speaking URL (t3lib_tstemplate::linkData)
- *  150:     function encodeSpURL(&$params, $ref)
- *  221:     function encodeSpURL_doEncode($inputQuery, $cHashCache = FALSE, $origUrl = '')
- *  303:     function encodeSpURL_pathFromId(&$paramKeyValues, &$pathParts)
- *  332:     function encodeSpURL_gettingPostVarSets(&$paramKeyValues, &$pathParts, $postVarSetCfg)
- *  369:     function encodeSpURL_fileName(&$paramKeyValues)
- *  391:     function encodeSpURL_setSequence($varSetCfg, &$paramKeyValues, &$pathParts)
- *  495:     function encodeSpURL_setSingle($keyWord, $keyValues, &$paramKeyValues, &$pathParts)
- *  529:     function encodeSpURL_encodeCache($urlToEncode, $internalExtras, $setEncodedURL = '')
- *  587:     function encodeSpURL_cHashCache($newUrl, &$paramKeyValues)
+ *  152:     function tx_realurl()
+ *  170:     function encodeSpURL(&$params, $ref)
+ *  241:     function encodeSpURL_doEncode($inputQuery, $cHashCache = FALSE, $origUrl = '')
+ *  324:     function encodeSpURL_pathFromId(&$paramKeyValues, &$pathParts)
+ *  353:     function encodeSpURL_gettingPostVarSets(&$paramKeyValues, &$pathParts, $postVarSetCfg)
+ *  390:     function encodeSpURL_fileName(&$paramKeyValues)
+ *  412:     function encodeSpURL_setSequence($varSetCfg, &$paramKeyValues, &$pathParts)
+ *  516:     function encodeSpURL_setSingle($keyWord, $keyValues, &$paramKeyValues, &$pathParts)
+ *  550:     function encodeSpURL_encodeCache($urlToEncode, $internalExtras, $setEncodedURL = '')
+ *  617:     function encodeSpURL_cHashCache($newUrl, &$paramKeyValues)
  *
  *              SECTION: Translate a Speaking URL to parameters (tslib_fe)
- *  639:     function decodeSpURL($params, $ref)
- *  729:     function decodeSpURL_checkRedirects($speakingURIpath)
- *  771:     function decodeSpURL_doDecode($speakingURIpath, $cHashCache = FALSE)
- *  847:     function decodeSpURL_createQueryStringParam($paramArr, $prependString = '')
- *  870:     function decodeSpURL_createQueryString(&$getVars)
- *  895:     function decodeSpURL_idFromPath(&$pathParts)
- *  936:     function decodeSpURL_settingPreVars(&$pathParts, $config)
- *  959:     function decodeSpURL_settingPostVarSets(&$pathParts, $postVarSetCfg)
- * 1024:     function decodeSpURL_fixBrackets(&$arr)
- * 1050:     function decodeSpURL_fileName($fileName)
- * 1078:     function decodeSpURL_getSequence(&$pathParts, $setupArr)
- * 1171:     function decodeSpURL_getSingle($keyValues)
- * 1187:     function decodeSpURL_throw404($msg)
- * 1221:     function decodeSpURL_jumpAdmin()
- * 1245:     function decodeSpURL_jumpAdmin_goBackend($pageId)
- * 1260:     function decodeSpURL_decodeCache($speakingURIpath, $cachedInfo = '')
- * 1324:     function decodeSpURL_cHashCache($speakingURIpath)
+ *  669:     function decodeSpURL($params, $ref)
+ *  759:     function decodeSpURL_checkRedirects($speakingURIpath)
+ *  801:     function decodeSpURL_doDecode($speakingURIpath, $cHashCache = FALSE)
+ *  877:     function decodeSpURL_createQueryStringParam($paramArr, $prependString = '')
+ *  900:     function decodeSpURL_createQueryString(&$getVars)
+ *  925:     function decodeSpURL_idFromPath(&$pathParts)
+ *  966:     function decodeSpURL_settingPreVars(&$pathParts, $config)
+ *  989:     function decodeSpURL_settingPostVarSets(&$pathParts, $postVarSetCfg)
+ * 1054:     function decodeSpURL_fixBrackets(&$arr)
+ * 1080:     function decodeSpURL_fileName($fileName)
+ * 1108:     function decodeSpURL_getSequence(&$pathParts, $setupArr)
+ * 1201:     function decodeSpURL_getSingle($keyValues)
+ * 1217:     function decodeSpURL_throw404($msg)
+ * 1251:     function decodeSpURL_jumpAdmin()
+ * 1275:     function decodeSpURL_jumpAdmin_goBackend($pageId)
+ * 1290:     function decodeSpURL_decodeCache($speakingURIpath, $cachedInfo = '')
+ * 1354:     function decodeSpURL_cHashCache($speakingURIpath)
  *
  *              SECTION: Alias-ID look up functions
- * 1355:     function lookUpTranslation($cfg, $value, $aliasToUid = FALSE)
- * 1465:     function lookUp_uniqAliasToId($cfg, $aliasValue, $onlyNonExpired = FALSE)
- * 1492:     function lookUp_idToUniqAlias($cfg, $idValue, $lang, $aliasValue = '')
- * 1520:     function lookUp_newAlias($cfg, $newAliasValue, $idValue, $lang)
- * 1590:     function lookUp_cleanAlias($cfg, $newAliasValue)
+ * 1385:     function lookUpTranslation($cfg, $value, $aliasToUid = FALSE)
+ * 1495:     function lookUp_uniqAliasToId($cfg, $aliasValue, $onlyNonExpired = FALSE)
+ * 1522:     function lookUp_idToUniqAlias($cfg, $idValue, $lang, $aliasValue = '')
+ * 1550:     function lookUp_newAlias($cfg, $newAliasValue, $idValue, $lang)
+ * 1620:     function lookUp_cleanAlias($cfg, $newAliasValue)
  *
  *              SECTION: General helper functions (both decode/encode)
- * 1635:     function setConfig()
- * 1669:     function getPostVarSetConfig($page_id, $mainCat = 'postVarSets')
- * 1691:     function pageAliasToID($alias)
- * 1714:     function rawurlencodeParam($str)
- * 1729:     function checkCondition($setup, $prevVal)
- * 1747:     function isBEUserLoggedIn()
+ * 1665:     function setConfig()
+ * 1699:     function getPostVarSetConfig($page_id, $mainCat = 'postVarSets')
+ * 1721:     function pageAliasToID($alias)
+ * 1744:     function rawurlencodeParam($str)
+ * 1759:     function checkCondition($setup, $prevVal)
+ * 1777:     function isBEUserLoggedIn()
  *
  *              SECTION: External Hooks
- * 1764:     function clearPageCacheMgm($params, $ref)
- * 1779:     function isString(&$str, $paramName)
- * 1804:     function findRootPageIdByHost($host = '')
+ * 1794:     function clearPageCacheMgm($params, $ref)
+ * 1809:     function isString(&$str, $paramName)
+ * 1834:     function findRootPageIdByHost($host = '')
  *
- * TOTAL FUNCTIONS: 40
+ * TOTAL FUNCTIONS: 41
  * (This index is automatically created/updated by the extension "extdeveval")
  *
  */
@@ -135,11 +136,28 @@ class tx_realurl {
 	var $host = ''; // Current host name. Set in setConfig()
 	var $multidomain = false;
 
+	var $useMySQLExtendedSyntax = false;
+
 	/************************************
 	 *
 	 * Translate parameters to a Speaking URL (t3lib_tstemplate::linkData)
 	 *
 	 ************************************/
+
+	/**
+	 * Creates an instance of this class
+	 *
+	 * @return	void
+	 */
+	function tx_realurl() {
+		if (!t3lib_extMgm::isLoaded('dbal') && get_resource_type($GLOBALS['TYPO3_DB']->link) == 'mysql link') {
+			$res = $GLOBALS['TYPO3_DB']->sql_query('SELECT @@VERSION');
+			$rec = $GLOBALS['TYPO3_DB']->sql_fetch_row($res);
+			$GLOBALS['TYPO3_DB']->sql_free_result($res);
+			$this->useMySQLExtendedSyntax = version_compare($rec[0], '4.1.0', '>');
+		}
+	}
+
 
 	/**
 	 * Translates a URL with query string (GET parameters) into Speaking URL.
@@ -567,13 +585,15 @@ class tx_realurl {
 							'page_id' => $this->encodePageId,
 							'tstamp' => time()
 						);
-					if (get_resource_type($GLOBALS['TYPO3_DB']->link) == 'mysql link') {
+					if ($this->useMySQLExtendedSyntax) {
 						$query = $GLOBALS['TYPO3_DB']->INSERTquery('tx_realurl_urlencodecache', $insertFields);
 						$query .= ' ON DUPLICATE KEY UPDATE tstamp=' . $insertFields['tstamp'];
 						$GLOBALS['TYPO3_DB']->sql_query($query);
 					} else {
+						$GLOBALS['TYPO3_DB']->sql_query('START TRANSACTION');
 						$GLOBALS['TYPO3_DB']->exec_DELETEquery('tx_realurl_urlencodecache', 'url_hash=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($hash, 'tx_realurl_urlencodecache'));
 						$GLOBALS['TYPO3_DB']->exec_INSERTquery('tx_realurl_urlencodecache', $insertFields);
+						$GLOBALS['TYPO3_DB']->sql_query('COMMIT');
 					}
 				}
 			}
@@ -1202,7 +1222,7 @@ class tx_realurl {
 			$rootpage_id = intval($this->extConf['pagePath']['rootpage_id']);
 			$cond = 'url_hash=' . intval($hash) . ' AND rootpage_id=' . $rootpage_id;
 			$fields_values = array('url_hash' => $hash, 'url' => $this->speakingURIpath_procValue, 'error' => $msg, 'counter' => 1, 'tstamp' => time(), 'cr_date' => time(), 'rootpage_id' => $rootpage_id, 'last_referer' => t3lib_div::getIndpEnv('HTTP_REFERER'));
-			if (get_resource_type($GLOBALS['TYPO3_DB']->link) == 'mysql link') {
+			if ($this->useMySQLExtendedSyntax) {
 				$query = $GLOBALS['TYPO3_DB']->INSERTquery('tx_realurl_errorlog', $fields_values);
 				$query .= ' ON DUPLICATE KEY UPDATE ' . 'error=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($msg, 'tx_realurl_errorlog') . ',' . 'counter=counter+1,' . 'tstamp=' . $fields_values['tstamp'] . ',' . 'last_referer=' . $GLOBALS['TYPO3_DB']->fullQuoteStr(t3lib_div::getIndpEnv('HTTP_REFERER'), 'tx_realurl_errorlog');
 				$GLOBALS['TYPO3_DB']->sql_query($query);
@@ -1280,16 +1300,16 @@ class tx_realurl {
 					$hash = md5($speakingURIpath . $rootpage_id);
 
 					$insertFields = array('url_hash' => $hash, 'spurl' => $speakingURIpath, 'content' => serialize($cachedInfo), 'page_id' => $cachedInfo['id'], 'rootpage_id' => $rootpage_id, 'tstamp' => time());
-					if (get_resource_type($GLOBALS['TYPO3_DB']->link) == 'mysql link') {
+					if ($this->useMySQLExtendedSyntax) {
 						$query = $GLOBALS['TYPO3_DB']->INSERTquery('tx_realurl_urldecodecache', $insertFields);
 						$query .= ' ON DUPLICATE KEY UPDATE tstamp=' . $insertFields['tstamp'];
 						$GLOBALS['TYPO3_DB']->sql_query($query);
 					} else {
+						$GLOBALS['TYPO3_DB']->sql_query('START TRANSACTION');
 						$GLOBALS['TYPO3_DB']->exec_DELETEquery('tx_realurl_urldecodecache', 'url_hash=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($hash, 'tx_realurl_urldecodecache'));
 						$GLOBALS['TYPO3_DB']->exec_INSERTquery('tx_realurl_urldecodecache', $insertFields);
+						$GLOBALS['TYPO3_DB']->sql_query('COMMIT');
 					}
-
-				//					$GLOBALS['TT']->setTSlogMessage('Decode cache: SpUrl stored in cache');
 				}
 			} else { // GET cachedInfo.
 

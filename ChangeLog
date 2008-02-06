@@ -1,6 +1,7 @@
 2008-02-06  Dmitry Dulepov  <dmitry@typo3.org>
 
- * Updated function index with extdeveval
+	* Fixed error #6849: Error on 404/Page Not Found
+	* Updated function index with extdeveval
 
 2008-01-18  Dmitry Dulepov  <dmitry@typo3.org>
 
