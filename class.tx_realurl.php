@@ -167,20 +167,22 @@ class tx_realurl {
 	 * @param	object		Copy of parent caller. Not used.
 	 * @return	void
 	 */
-	function encodeSpURL(&$params, $ref) {
+	function encodeSpURL(&$params, &$ref) {
 		if (TYPO3_DLOG)
 			t3lib_div::devLog('Entering encodeSpURL for ' . $params['LD']['totalURL'], 'realurl');
 
-		// Return directly, if simulateStaticDocuments is set:
-		if ($GLOBALS['TSFE']->config['config']['simulateStaticDocuments']) {
-			$GLOBALS['TT']->setTSlogMessage('SimulateStaticDocuments is enabled. RealURL disables itself.', 2);
-			return;
-		}
+		if (!$params['TCEmainHook']) {
+			// Return directly, if simulateStaticDocuments is set:
+			if ($GLOBALS['TSFE']->config['config']['simulateStaticDocuments']) {
+				$GLOBALS['TT']->setTSlogMessage('SimulateStaticDocuments is enabled. RealURL disables itself.', 2);
+				return;
+			}
 
-		// Return directly, if realurl is not enabled:
-		if (!$GLOBALS['TSFE']->config['config']['tx_realurl_enable']) {
-			$GLOBALS['TT']->setTSlogMessage('RealURL is not enabled in TS setup. Finished.');
-			return;
+			// Return directly, if realurl is not enabled:
+			if (!$GLOBALS['TSFE']->config['config']['tx_realurl_enable']) {
+				$GLOBALS['TT']->setTSlogMessage('RealURL is not enabled in TS setup. Finished.');
+				return;
+			}
 		}
 
 		// Checking prefix:
@@ -195,16 +197,18 @@ class tx_realurl {
 		$internalExtras = array();
 
 		// Init "Admin Jump"; If frontend edit was enabled by the current URL of the page, set it again in the generated URL (and disable caching!)
-		if ($GLOBALS['TSFE']->applicationData['tx_realurl']['adminJumpActive']) {
-			$GLOBALS['TSFE']->set_no_cache();
-			$this->adminJumpSet = TRUE;
-			$internalExtras['adminJump'] = 1;
-		}
+		if (!$params['TCEmainHook']) {
+			if ($GLOBALS['TSFE']->applicationData['tx_realurl']['adminJumpActive']) {
+				$GLOBALS['TSFE']->set_no_cache();
+				$this->adminJumpSet = TRUE;
+				$internalExtras['adminJump'] = 1;
+			}
 
-		// If there is a frontend user logged in, set fe_user_prefix
-		if (is_array($GLOBALS['TSFE']->fe_user->user)) {
-			$this->fe_user_prefix_set = TRUE;
-			$internalExtras['feLogin'] = 1;
+			// If there is a frontend user logged in, set fe_user_prefix
+			if (is_array($GLOBALS['TSFE']->fe_user->user)) {
+				$this->fe_user_prefix_set = TRUE;
+				$internalExtras['feLogin'] = 1;
+			}
 		}
 
 		// Parse current URL into main parts:
@@ -666,7 +670,7 @@ class tx_realurl {
 	 * @param	object		Reference to parent object (copy)
 	 * @return	void		Setting internal variables.
 	 */
-	function decodeSpURL($params, $ref) {
+	function decodeSpURL($params, &$ref) {
 
 		if (TYPO3_DLOG)
 			t3lib_div::devLog('Entering decodeSpURL', 'realurl', -1);
