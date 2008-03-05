@@ -2,6 +2,7 @@
 
 	* Fixed bug #6952: expireDays is not set correctly
 	* Fixed bug #6416: if autoUpdatePathCache is true old urls are redirected not as 301
+	* Added TCEMain hook to update path cache if page is renamed
 
 2008-02-06  Dmitry Dulepov  <dmitry@typo3.org>
 
