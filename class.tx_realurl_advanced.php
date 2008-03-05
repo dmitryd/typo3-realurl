@@ -196,7 +196,6 @@ class tx_realurl_advanced {
 		// Fetch cached path
 		$cachedPagePath = false;
 		if (!$this->conf['disablePathCache']) {
-
 			$result = $GLOBALS['TYPO3_DB']->exec_SELECTquery('pagepath', 'tx_realurl_pathcache',
 							'page_id=' . intval($pageid) . ' AND language_id=' . intval($lang) .
 							//' AND rootpage_id='.intval($this->conf['rootpage_id']).
@@ -252,16 +251,22 @@ class tx_realurl_advanced {
 
 		if (!$this->conf['disablePathCache'] && ((!$cached_pagepath && $pagepath) || (string)$pagepath !== (string)$cached_pagepath)) {
 
+			$cond = 'page_id=' . intval($id) . ' AND language_id=' . intval($langID) .
+						' AND rootpage_id=' . intval($this->conf['rootpage_id']) .
+						' AND mpvar=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($mpvar, 'tx_realurl_pathcache');
+
 			// First, set expiration on existing records:
 			$GLOBALS['TYPO3_DB']->exec_UPDATEquery('tx_realurl_pathcache',
-						'page_id=' . intval($id) . ' AND language_id=' . intval($langID) .
-						' AND rootpage_id=' . intval($this->conf['rootpage_id']) .
-						' AND mpvar=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($mpvar, 'tx_realurl_pathcache') .
-						' AND expire=0',
+						$cond . ' AND expire=0',
 						array(
 							'expire' => $this->makeExpirationTime(($this->conf['expireDays'] ? $this->conf['expireDays'] : 60) * 24 * 3600)
-						)
+						),
+						'expire'	// No quote!
 					);
+
+			// Next delete all expired
+			$GLOBALS['TYPO3_DB']->exec_DELETEquery('tx_realurl_pathcache',
+						$cond . ' AND expire>0 AND expire<UNIX_TIMESTAMP()');
 
 			// Insert URL in cache:
 			$insertArray = array('page_id' => $id, 'language_id' => $langID, 'pagepath' => $pagepath, 'hash' => $pagepathHash, 'expire' => 0, 'rootpage_id' => intval($this->conf['rootpage_id']), 'mpvar' => $mpvar);
@@ -311,6 +316,16 @@ class tx_realurl_advanced {
 				}
 				if ($rootFound) {
 					$newRootLine[] = $rootLine[$a];
+				}
+			}
+			if (!$rootFound && $GLOBALS['TSFE']->config['config']['typolinkEnableLinksAcrossDomains']) {
+				for ($a = 0; $a < $cc; $a++) {
+					if ($rootLine[$a]['is_siteroot']) {
+						$rootFound = TRUE;
+					}
+					if ($rootFound) {
+						$newRootLine[] = $rootLine[$a];
+					}
 				}
 			}
 
@@ -384,7 +399,7 @@ class tx_realurl_advanced {
 			}
 			else { // Building up the path from page title etc.
 				// List of "pages" fields to traverse for a "directory title" in the speaking URL (only from RootLine!!):
-				$segTitleFieldArray = t3lib_div::trimExplode(',', $this->conf['segTitleFieldList'] ? $this->conf['segTitleFieldList'] : 'tx_realurl_pathsegment,alias,nav_title,title', 1);
+				$segTitleFieldArray = t3lib_div::trimExplode(',', $this->conf['segTitleFieldList'] ? $this->conf['segTitleFieldList'] : TX_REALURL_SEGTITLEFIELDLIST_DEFAULT, 1);
 				$theTitle = '';
 				foreach ($segTitleFieldArray as $fieldName) {
 					if ($page[$fieldName]) {
@@ -483,35 +498,38 @@ class tx_realurl_advanced {
 			//   2. expire <= time()
 			//   3. expire > time()
 			// 1 is permanent, we do not process it. 2 is expired, we look for permanent or non-expired
-			// (in thos order!) entry for the same page od and redirect to corresponding path. 3 - same as
+			// (in this order!) entry for the same page od and redirect to corresponding path. 3 - same as
 			// 1 but means that entry is going to expire eventually, nothing to do for us yet.
-			if ($row['expire'] > 0 && $row['expire'] <= time()) {
-				list($newEntry) = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('pagepath', 'tx_realurl_pathcache',
-						'page_id=' . intval($row['page_id']) . '
-						AND language_id=' . intval($row['language_id']) . '
-						AND (expire=0 OR expire>' . $this->makeExpirationTime() . ')', '', 'expire', '1');
+			if ($row['expire'] > 0) {
+				$this->pObj->disableDecodeCache = true;	// Do not cache this!
+				if ($row['expire'] <= time()) {
+					list($newEntry) = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('pagepath', 'tx_realurl_pathcache',
+							'page_id=' . intval($row['page_id']) . '
+							AND language_id=' . intval($row['language_id']) . '
+							AND (expire=0 OR expire>' . $this->makeExpirationTime() . ')', '', 'expire', '1');
 
-				if ($newEntry) {
-					$this->pObj->disableDecodeCache = true;
-					header('HTTP/1.1 301 Moved Permanently');
+					if ($newEntry) {
+						$this->pObj->disableDecodeCache = true;
 
-					// Replace path-segments with new ones:
-					$originalDirs = $this->pObj->dirParts; // All original
-					$cp_pathParts = $pathParts;
-					// Popping of pages of original dirs (as many as are remaining in $pathParts)
-					for ($a = 0; $a < count($pathParts); $a++) {
-						array_pop($originalDirs); // Finding all preVars here
+						// Replace path-segments with new ones:
+						$originalDirs = $this->pObj->dirParts; // All original
+						$cp_pathParts = $pathParts;
+						// Popping of pages of original dirs (as many as are remaining in $pathParts)
+						for ($a = 0; $a < count($pathParts); $a++) {
+							array_pop($originalDirs); // Finding all preVars here
+						}
+						for ($a = 0; $a < count($copy_pathParts); $a++) {
+							array_shift($cp_pathParts); // Finding all postVars here
+						}
+						$newPathSegments = explode('/', $newEntry['pagepath']); // Split new pagepath into segments.
+						$newUrlSegments = array_merge($originalDirs, $newPathSegments, $cp_pathParts); // Merge those segments.
+						$newUrlSegments[] = $this->pObj->filePart; // Add any filename as well
+						$redirectUrl = implode('/', $newUrlSegments); // Create redirect URL:
+
+						header('HTTP/1.1 301 Moved Permanently');
+						header('Location: ' . t3lib_div::locationHeaderUrl($redirectUrl));
+						exit();
 					}
-					for ($a = 0; $a < count($copy_pathParts); $a++) {
-						array_shift($cp_pathParts); // Finding all postVars here
-					}
-					$newPathSegments = explode('/', $newEntry['pagepath']); // Split new pagepath into segments.
-					$newUrlSegments = array_merge($originalDirs, $newPathSegments, $cp_pathParts); // Merge those segments.
-					$newUrlSegments[] = $this->pObj->filePart; // Add any filename as well
-					$redirectUrl = implode('/', $newUrlSegments); // Create redirect URL:
-
-					header('Location: ' . t3lib_div::locationHeaderUrl($redirectUrl));
-					exit();
 				}
 			}
 
@@ -524,7 +542,8 @@ class tx_realurl_advanced {
 			// Assume we can use this info at first
 			$id = $row['page_id'];
 			$GET_VARS = $row['mpvar'] ? array('MP' => $row['mpvar']) : '';
-		} else {
+		}
+		else {
 
 			// Find it
 			list($info, $GET_VARS) = $this->findIDByURL($pathParts);
@@ -635,7 +654,7 @@ class tx_realurl_advanced {
 	function searchTitle_searchPid($searchPid, $title) {
 
 		// List of "pages" fields to traverse for a "directory title" in the speaking URL (only from RootLine!!):
-		$segTitleFieldList = $this->conf['segTitleFieldList'] ? $this->conf['segTitleFieldList'] : 'tx_realurl_pathsegment,alias,nav_title,title';
+		$segTitleFieldList = $this->conf['segTitleFieldList'] ? $this->conf['segTitleFieldList'] : TX_REALURL_SEGTITLEFIELDLIST_DEFAULT;
 		$selList = t3lib_div::uniqueList('uid,pid,doktype,mount_pid,mount_pid_ol,' . $segTitleFieldList);
 		$segTitleFieldArray = t3lib_div::trimExplode(',', $segTitleFieldList, 1);
 
@@ -688,7 +707,7 @@ class tx_realurl_advanced {
 		// We have to search the language overlay too, if: a) the language isn't the default (0), b) if it's not set (-1)
 		$uidTrackKeys = array_keys($uidTrack);
 		foreach ($uidTrackKeys as $l_id) {
-			$result = $GLOBALS['TYPO3_DB']->exec_SELECTquery('nav_title,title', 'pages_language_overlay', 'pid=' . intval($l_id));
+			$result = $GLOBALS['TYPO3_DB']->exec_SELECTquery(TX_REALURL_SEGTITLEFIELDLIST_PLO, 'pages_language_overlay', 'pid=' . intval($l_id));
 			while (($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($result))) {
 				foreach ($segTitleFieldArray as $fieldName) {
 					if ($row[$fieldName]) {
@@ -775,9 +794,9 @@ class tx_realurl_advanced {
 	function makeExpirationTime($offsetFromNow = 0) {
 		if (!t3lib_extMgm::isLoaded('adodb') && (TYPO3_db_host == '127.0.0.1' || TYPO3_db_host == 'localhost')) {
 			// Same host, same time, optimize
-			return $offsetFromNow ? '(UNIX_TIMESTAMP()+(' + $offsetFromNow + '))' : 'UNIX_TIMESTAMP()';
+			return $offsetFromNow ? '(UNIX_TIMESTAMP()+(' . $offsetFromNow . '))' : 'UNIX_TIMESTAMP()';
 		}
-		// External datbase or non-mysql -> round to next day
+		// External database or non-mysql -> round to next day
 		$date = getdate(time() + $offsetFromNow);
 		return mktime(0, 0, 0, $date['mon'], $date['mday'], $date['year']);
 	}
