@@ -7,6 +7,9 @@ $TYPO3_CONF_VARS['SC_OPTIONS']['t3lib/class.t3lib_tcemain.php']['clearPageCacheE
 $TYPO3_CONF_VARS['SC_OPTIONS']['t3lib/class.t3lib_tcemain.php']['clearAllCache_additionalTables']['tx_realurl_urldecodecache'] = 'tx_realurl_urldecodecache';
 $TYPO3_CONF_VARS['SC_OPTIONS']['t3lib/class.t3lib_tcemain.php']['clearAllCache_additionalTables']['tx_realurl_urlencodecache'] = 'tx_realurl_urlencodecache';
 
+// Must use '&" with tcemain hook!!! Important for proper work of the hook.
+$TYPO3_CONF_VARS['SC_OPTIONS']['t3lib/class.t3lib_tcemain.php']['processDatamapClass']['tx_realurl'] = 'EXT:realurl/class.tx_realurl_tcemain.php:&tx_realurl_tcemain';
+
 $TYPO3_CONF_VARS['FE']['addRootLineFields'].= ',tx_realurl_pathsegment';
 
 // Include configuration file
@@ -23,7 +26,9 @@ define('TX_REALURL_AUTOCONF_FILE', 'typo3conf/realurl_autoconf.php');
 if (!isset($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl'])) {
 	@include_once(PATH_site . TX_REALURL_AUTOCONF_FILE);
 }
-
 unset($_realurl_conf);
+
+define('TX_REALURL_SEGTITLEFIELDLIST_DEFAULT', 'tx_realurl_pathsegment,alias,nav_title,title');
+define('TX_REALURL_SEGTITLEFIELDLIST_PLO', 'nav_title,title');
 
 ?>
