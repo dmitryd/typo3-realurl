@@ -88,7 +88,7 @@ class tx_realurl_tcemain {
 	 * @param	array		$incomingFieldArray	Fields to be modified
 	 * @param	string		$table	Table name (we are interested only in 'pages' or 'pages_language_overlay')
 	 * @param	mixed		$id	uid of the record. We are insterested only if it is integer
-	 * @param	t3lib_TCEman		$pObj	Reference to the calling object
+	 * @param	t3lib_TCEmain		$pObj	Reference to the calling object
 	 * @return	void
 	 */
 	function processDatamap_preProcessFieldArray($incomingFieldArray, $table, $id, &$pObj) {
@@ -239,7 +239,7 @@ class tx_realurl_tcemain {
 	}
 
 	/**
-	 * Creates TSFE for executing RealURL
+	 * Creates TSFE for executing RealURL. Code idea comes from vara_feurlfrombe extension.
 	 *
 	 * @param	int		$pid	Page uid
 	 * @return	void
@@ -283,16 +283,19 @@ class tx_realurl_tcemain {
 		// If the page is not found (if the page is a sysfolder, etc), then return no URL, preventing any further processing which would result in an error page.
 		$page = $GLOBALS['TSFE']->sys_page->getPage($pid);
 
-		if (count($page) == 0)
-			return '';
+		if (count($page) == 0) {
+			return;
+		}
 
 		// If the page is a shortcut, look up the page to which the shortcut references, and do the same check as above.
-		if ($page['doktype']==4 && count($GLOBALS['TSFE']->getPageShortcut($page['shortcut'],$page['shortcut_mode'],$page['uid'])) == 0)
-			return '';
+		if ($page['doktype']==4 && count($GLOBALS['TSFE']->getPageShortcut($page['shortcut'],$page['shortcut_mode'],$page['uid'])) == 0) {
+			return;
+		}
 
 		// Spacer pages and sysfolders result in a page not found page too...
-		if ($page['doktype'] == 199 || $page['doktype'] == 254)
-			return '';
+		if ($page['doktype'] == 199 || $page['doktype'] == 254) {
+			return;
+		}
 
 		$GLOBALS['TSFE']->getPageAndRootline();
 		$GLOBALS['TSFE']->initTemplate();
@@ -307,8 +310,9 @@ class tx_realurl_tcemain {
 
 		// If there is no root template found, there is no point in continuing which would result in a 'template not found' page and then call exit php. Then there would be no clickmenu at all.
 		// And the same applies if pSetup is empty, which would result in a "The page is not configured" message.
-		if (!$GLOBALS['TSFE']->tmpl->loaded || ($GLOBALS['TSFE']->tmpl->loaded && !$GLOBALS['TSFE']->pSetup))
-			return '';
+		if (!$GLOBALS['TSFE']->tmpl->loaded || ($GLOBALS['TSFE']->tmpl->loaded && !$GLOBALS['TSFE']->pSetup)) {
+			return;
+		}
 
 		$GLOBALS['TSFE']->getConfigArray();
 
