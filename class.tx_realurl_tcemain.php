@@ -5,7 +5,7 @@
 *  (c) 2008 Dmitry Dulepov (dmitry@typo3.org)
 *  All rights reserved
 *
-*  This script is part of the Typo3 project. The Typo3 project is
+*  This script is part of the TYPO3 project. The TYPO3 project is
 *  free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation; either version 2 of the License, or
@@ -25,14 +25,34 @@
 *  This copyright notice MUST APPEAR in all copies of the script!
 ***************************************************************/
 /**
- * Example class for simple management of page IDs in Speaking URLs
+ * TCEmain hook to update path cache if page is renamed
  *
- * $Id: class.tx_realurl_dummy.php 7972 2008-01-18 11:46:09Z liels_bugs $
+ * $Id$
  *
- * @author	Kasper Skaarhoj <kasper@typo3.com>
+ * @author	Dmitry Dulepov <dmitry@typo3.org>
  */
 /**
  * [CLASS/FUNCTION INDEX of SCRIPT]
+ *
+ *
+ *
+ *   57: class tx_realurl_tcemain
+ *   94:     function processDatamap_preProcessFieldArray($incomingFieldArray, $table, $id, &$pObj)
+ *  154:     function processDatamap_afterDatabaseOperations($status, $table, $id, $fieldArray, &$pObj)
+ *  202:     function getFieldList($table, &$config)
+ *  215:     function getConfigForPage($pid)
+ *  236:     function getInfoFromOverlayPid($pid)
+ *  247:     function createTSFE($pid)
+ *
+ * TOTAL FUNCTIONS: 6
+ * (This index is automatically created/updated by the extension "extdeveval")
+ *
+ */
+
+/**
+ * TCEmain hook to update path cache if page is renamed
+ *
+ * @author	Dmitry Dulepov <dmitry@typo3.org>
  */
 class tx_realurl_tcemain {
 
@@ -65,10 +85,11 @@ class tx_realurl_tcemain {
 	/**
 	 * Records old page information for future use.
 	 *
-	 * @param	array	$incomingFieldArray	Fields to be modified
-	 * @param	string	$table	Table name (we are interested only in 'pages' or 'pages_language_overlay')
-	 * @param	mixed	$id	uid of the record. We are insterested only if it is integer
-	 * @param	t3lib_TCEman	$pObj	Reference to the calling object
+	 * @param	array		$incomingFieldArray	Fields to be modified
+	 * @param	string		$table	Table name (we are interested only in 'pages' or 'pages_language_overlay')
+	 * @param	mixed		$id	uid of the record. We are insterested only if it is integer
+	 * @param	t3lib_TCEman		$pObj	Reference to the calling object
+	 * @return	void
 	 */
 	function processDatamap_preProcessFieldArray($incomingFieldArray, $table, $id, &$pObj) {
 		if (($table == 'pages' || $table == 'pages_language_overlay') && t3lib_div::testInt($id)) {
@@ -123,11 +144,12 @@ class tx_realurl_tcemain {
 	/**
 	 * TCEmain hook to expire old records and add new ones
 	 *
-	 * @param	string	$status	'new' (ignoring) or 'update'
-	 * @param	string	$table	Table name
-	 * @param	int	$id	ID of the record
-	 * @param	array	$fieldArray	Fields
-	 * @param	t3lib_TCEmain	$pObj	Parent object
+	 * @param	string		$status	'new' (ignoring) or 'update'
+	 * @param	string		$table	Table name
+	 * @param	int		$id	ID of the record
+	 * @param	array		$fieldArray	Fields
+	 * @param	t3lib_TCEmain		$pObj	Parent object
+	 * @return	void
 	 */
 	function processDatamap_afterDatabaseOperations($status, $table, $id, $fieldArray, &$pObj) {
 		$tceMainInst = array_search($pObj, $this->tceMainInstList);
@@ -173,9 +195,9 @@ class tx_realurl_tcemain {
 	/**
 	 * Retrieves field list to check for modification
 	 *
-	 * @param	string	$table	Table name
-	 * @param	array	$config	Configuration for this
-	 * @return	string	Comma-separated field list
+	 * @param	string		$table	Table name
+	 * @param	array		$config	Configuration for this
+	 * @return	string		Comma-separated field list
 	 */
 	function getFieldList($table, &$config) {
 		if ($table == 'pages_language_overlay') {
@@ -187,8 +209,8 @@ class tx_realurl_tcemain {
 	/**
 	 * Retrieves RealURL configuration for given pid
 	 *
-	 * @param	int	$pid	Page uid
-	 * @return	mixed	Configuration array or false
+	 * @param	int		$pid	Page uid
+	 * @return	mixed		Configuration array or false
 	 */
 	function getConfigForPage($pid) {
 		$rootline = t3lib_BEfunc::BEgetRootLine($pid);
@@ -208,14 +230,20 @@ class tx_realurl_tcemain {
 	/**
 	 * Retrieves real page id given its overlay id
 	 *
-	 * @param	int	$pid	Page id
-	 * @return	array	Array with two members: real page uid and sys_language_uid
+	 * @param	int		$pid	Page id
+	 * @return	array		Array with two members: real page uid and sys_language_uid
 	 */
 	function getInfoFromOverlayPid($pid) {
 		list($rec) = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('pid,sys_language_uid', 'pages_language_overlay', 'uid=' . intval($pid));
 		return (is_array($rec) ? array($rec['uid'], $rec['sys_language_overlay']) : false);
 	}
 
+	/**
+	 * Creates TSFE for executing RealURL
+	 *
+	 * @param	int		$pid	Page uid
+	 * @return	void
+	 */
 	function createTSFE($pid) {
 		require_once(PATH_site.'typo3/sysext/cms/tslib/class.tslib_fe.php');
 		require_once(PATH_site.'t3lib/class.t3lib_userauth.php');
@@ -287,13 +315,6 @@ class tx_realurl_tcemain {
 		$GLOBALS['TSFE']->inituserGroups();
 		$GLOBALS['TSFE']->connectToDB();
 		$GLOBALS['TSFE']->determineId();
-
-//		$tempcObj= t3lib_div::makeInstance('tslib_cObj');
-		/* @var $tempcObj tslib_cObj */
-//		$tempcObj->start(array(),'');
-//		return $GLOBALS['TSFE']->tmpl->setup['config.']['baseURL'] . $tempcObj->typoLink_URL(array(
-//			'parameter' => $pid
-//		));
 	}
 }
 
