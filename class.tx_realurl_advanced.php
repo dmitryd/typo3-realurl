@@ -110,9 +110,9 @@ class tx_realurl_advanced {
 		$this->conf = $params['conf'];
 
 		// See if cache should be disabled
-		if ($ref->isBEUserLoggedIn()) {
-			$this->conf['disablePathCache'] = true;
-		}
+//		if ($ref->isBEUserLoggedIn()) {
+//			$this->conf['disablePathCache'] = true;
+//		}
 
 		// Branching out based on type:
 		$result = false;
@@ -249,7 +249,7 @@ class tx_realurl_advanced {
 		$pagepathHash = $pagepathRec['pagepathhash'];
 		$langID = $pagepathRec['langID'];
 
-		if (!$this->conf['disablePathCache'] && ((!$cached_pagepath && $pagepath) || (string)$pagepath !== (string)$cached_pagepath)) {
+		if (!$this->conf['disablePathCache'] && !$this->pObj->isBEUserLoggedIn() && ((!$cached_pagepath && $pagepath) || (string)$pagepath !== (string)$cached_pagepath)) {
 
 			$cond = 'page_id=' . intval($id) . ' AND language_id=' . intval($langID) .
 						' AND rootpage_id=' . intval($this->conf['rootpage_id']) .
@@ -259,14 +259,14 @@ class tx_realurl_advanced {
 			$GLOBALS['TYPO3_DB']->exec_UPDATEquery('tx_realurl_pathcache',
 						$cond . ' AND expire=0',
 						array(
-							'expire' => $this->makeExpirationTime(($this->conf['expireDays'] ? $this->conf['expireDays'] : 60) * 24 * 3600)
+							'expire' => $this->makeExpirationTime((isset($this->conf['expireDays']) ? $this->conf['expireDays'] : 60) * 24 * 3600)
 						),
 						'expire'	// No quote!
 					);
 
 			// Next delete all expired
 			$GLOBALS['TYPO3_DB']->exec_DELETEquery('tx_realurl_pathcache',
-						$cond . ' AND expire>0 AND expire<UNIX_TIMESTAMP()');
+						$cond . ' AND expire>0 AND expire<' . $this->makeExpirationTime());
 
 			// Insert URL in cache:
 			$insertArray = array('page_id' => $id, 'language_id' => $langID, 'pagepath' => $pagepath, 'hash' => $pagepathHash, 'expire' => 0, 'rootpage_id' => intval($this->conf['rootpage_id']), 'mpvar' => $mpvar);
@@ -364,6 +364,7 @@ class tx_realurl_advanced {
 		array_shift($rl); // Ignore the first path, as this is the root of the website
 		$c = count($rl);
 		$stopUsingCache = false;
+		t3lib_div::devLog('rootLineToPath starts searching', 'realurl', 0, array('rootline size' => count($rl)));
 		for ($i = 1; $i <= $c; $i++) {
 			$page = array_shift($rl);
 
@@ -381,12 +382,14 @@ class tx_realurl_advanced {
 				if ($GLOBALS['TYPO3_DB']->sql_num_rows($result) == 1) { // If there seems to be more than one page path cached for this combo, we will fix it later
 					$cachedPagePath = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($result);
 					$lastPath = implode('/', $paths);
+					t3lib_div::devLog('rootLineToPath found path', 'realurl', 0, $lastPath);
 					if ($cachedPagePath != false && substr($cachedPagePath['pagepath'], 0, strlen($lastPath)) != $lastPath) {
 						// Oops. Cached path does not start from already generated path.
 						// It means that path was mapped from a parallel mount point.
 						// We cannot not rely on cache any more. Stop using it.
 						$cachedPagePath = false;
 						$stopUsingCache = true;
+						t3lib_div::devLog('rootLineToPath stops searching', 'realurl');
 					}
 				}
 				$GLOBALS['TYPO3_DB']->sql_free_result($result);
@@ -501,36 +504,47 @@ class tx_realurl_advanced {
 			// (in this order!) entry for the same page od and redirect to corresponding path. 3 - same as
 			// 1 but means that entry is going to expire eventually, nothing to do for us yet.
 			if ($row['expire'] > 0) {
-				$this->pObj->disableDecodeCache = true;	// Do not cache this!
-				if ($row['expire'] <= time()) {
-					list($newEntry) = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('pagepath', 'tx_realurl_pathcache',
-							'page_id=' . intval($row['page_id']) . '
-							AND language_id=' . intval($row['language_id']) . '
-							AND (expire=0 OR expire>' . $this->makeExpirationTime() . ')', '', 'expire', '1');
+				t3lib_div::devLog('pagePathToId found row', 'realurl', 0, $row);
+				// 'expire' in the query is only for logging
+				list($newEntry) = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('pagepath,expire', 'tx_realurl_pathcache',
+						'page_id=' . intval($row['page_id']) . '
+						AND language_id=' . intval($row['language_id']) . '
+						AND (expire=0 OR expire>' . $row['expire'] . ')', '', 'expire', '1');
+				t3lib_div::devLog('pagePathToId searched for new entry', 'realurl', 0, $newEntry);
 
-					if ($newEntry) {
-						$this->pObj->disableDecodeCache = true;
-
-						// Replace path-segments with new ones:
-						$originalDirs = $this->pObj->dirParts; // All original
-						$cp_pathParts = $pathParts;
-						// Popping of pages of original dirs (as many as are remaining in $pathParts)
-						for ($a = 0; $a < count($pathParts); $a++) {
-							array_pop($originalDirs); // Finding all preVars here
-						}
-						for ($a = 0; $a < count($copy_pathParts); $a++) {
-							array_shift($cp_pathParts); // Finding all postVars here
-						}
-						$newPathSegments = explode('/', $newEntry['pagepath']); // Split new pagepath into segments.
-						$newUrlSegments = array_merge($originalDirs, $newPathSegments, $cp_pathParts); // Merge those segments.
-						$newUrlSegments[] = $this->pObj->filePart; // Add any filename as well
-						$redirectUrl = implode('/', $newUrlSegments); // Create redirect URL:
-
-						header('HTTP/1.1 301 Moved Permanently');
-						header('Location: ' . t3lib_div::locationHeaderUrl($redirectUrl));
-						exit();
+				// Redirect to new path immediately if it is found
+				if ($newEntry) {
+					// Replace path-segments with new ones:
+					$originalDirs = $this->pObj->dirParts; // All original
+					$cp_pathParts = $pathParts;
+					// Popping of pages of original dirs (as many as are remaining in $pathParts)
+					for ($a = 0; $a < count($pathParts); $a++) {
+						array_pop($originalDirs); // Finding all preVars here
 					}
+					for ($a = 0; $a < count($copy_pathParts); $a++) {
+						array_shift($cp_pathParts); // Finding all postVars here
+					}
+					$newPathSegments = explode('/', $newEntry['pagepath']); // Split new pagepath into segments.
+					$newUrlSegments = array_merge($originalDirs, $newPathSegments, $cp_pathParts); // Merge those segments.
+					$newUrlSegments[] = $this->pObj->filePart; // Add any filename as well
+					$redirectUrl = implode('/', $newUrlSegments); // Create redirect URL:
+					if ($this->pObj->extConf['fileName']['defaultToHTMLsuffixOnPrev'] && strlen($redirectUrl) > 1) {
+						if (substr($redirectUrl, -1, 1) == '/') {
+							$redirectUrl = substr($redirectUrl, 0, -1);
+						}
+						if (!t3lib_div::testInt($this->pObj->extConf['fileName']['defaultToHTMLsuffixOnPrev'])) {
+							$redirectUrl .= $this->pObj->extConf['fileName']['defaultToHTMLsuffixOnPrev'];
+						}
+						else {
+							$redirectUrl .= '.html';
+						}
+					}
+
+					header('HTTP/1.1 301 Moved Permanently');
+					header('Location: ' . t3lib_div::locationHeaderUrl($redirectUrl));
+					exit();
 				}
+				$this->pObj->disableDecodeCache = true;	// Do not cache this!
 			}
 
 			// Unshift the number of segments that must have defined the page:
