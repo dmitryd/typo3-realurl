@@ -20,6 +20,7 @@ if (TYPO3_MODE=="BE")	{
 
 $TCA['pages']['columns']['tx_realurl_pathsegment'] = array(
 	'label' => 'LLL:EXT:realurl/locallang_db.php:pages.tx_realurl_pathsegment',
+	'exclude' => 1,
 	'config' => Array (
 		'type' => 'input',
 		'size' => '30',
