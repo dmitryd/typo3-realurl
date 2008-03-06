@@ -1,6 +1,7 @@
 2008-03-06  Dmitry Dulepov  <dmitry@typo3.org>
 
-	* tx_realurl_pathsegment is now exclude field
+	* Fixed bug #7486: tx_realurl_pathsegment is now exclude field
+	* Fixed: _DEFAULT was ignored in TCEmain hook
 
 2008-03-05  Dmitry Dulepov  <dmitry@typo3.org>
 

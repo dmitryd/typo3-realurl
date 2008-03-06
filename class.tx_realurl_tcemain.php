@@ -103,14 +103,17 @@ class tx_realurl_tcemain {
 					return;
 				}
 			}
+			t3lib_div::devLog('Found pids', 'realurl', 0, array('realUid' => $realUid, 'language' => $language));
 			// TODO Quit immediately if page in not available in FE
 			if (!($configAr = $this->getConfigForPage($realUid))) {
 				// Page is not configured for realurl
+				t3lib_div::devLog('Configuration is not found for pid=' . $realUid, 'realurl');
 				return;
 			}
 			list($domain, $config) = $configAr;
 			if ($config['pagePath']['type'] != 'user' || false === strpos($config['pagePath']['userFunc'], 'tx_realurl_advanced')) {
 				// Not tx_realurl_advanced, nothing to do
+				t3lib_div::devLog('Not tx_realurl_advanced', 'realurl');
 				return;
 			}
 			$field_list = t3lib_div::trimExplode(',', $this->getFieldList($table, $config), true);
@@ -121,6 +124,7 @@ class tx_realurl_tcemain {
 				}
 			}
 			if (count($fields)) {
+				t3lib_div::devLog('Found modified fields of interest', 'realurl', 0, $fields);
 				list($values) = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows(implode(',', $fields), $table, 'uid=' . $id);
 				$modified = false;
 				foreach ($fields as $field) {
@@ -128,6 +132,7 @@ class tx_realurl_tcemain {
 						break;
 					}
 				}
+				t3lib_div::devLog('$modified=' . intval($modified), 'realurl', 0, $fields);
 				if ($modified) {
 					$tceMainId = count($this->tceMainInstList);
 					$this->tceMainInstList[$tceMainId] = &$pObj;
@@ -153,6 +158,7 @@ class tx_realurl_tcemain {
 	 */
 	function processDatamap_afterDatabaseOperations($status, $table, $id, $fieldArray, &$pObj) {
 		$tceMainInst = array_search($pObj, $this->tceMainInstList);
+		t3lib_div::devLog('$processDatamap_afterDatabaseOperations', 'realurl', 0, array('status' => $status, 'tceMainInst' => $tceMainInst));
 		if ($status == 'update' && $tceMainInst !== false && isset($this->fieldCollection[$tceMainInst][$table][$id])) {
 			$configName = &$this->fieldCollection[$tceMainInst][$table][$id]['configName'];
 			$config = &$GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl'][$configName];
@@ -176,6 +182,7 @@ class tx_realurl_tcemain {
 			$tsfe = $GLOBALS['TSFE'];
 			$this->createTSFE($this->fieldCollection[$tceMainInst][$table][$id]['realUid']);
 			$parent = $GLOBALS['TSFE'];
+			t3lib_div::devLog('Calling FE', 'realurl');
 			t3lib_div::callUserFunction($userFunc, $params, $parent);	// Note: encodeSpUrl does not use parent object at all!
 			$config['pagePath']['autoUpdatePathCache'] = $savedAutoUpdatePathCache;
 			$GLOBALS['TSFE'] = $tsfe;
@@ -215,6 +222,7 @@ class tx_realurl_tcemain {
 	function getConfigForPage($pid) {
 		$rootline = t3lib_BEfunc::BEgetRootLine($pid);
 		if (($domain = t3lib_BEfunc::firstDomainRecord($rootline))) {
+			t3lib_div::devLog('Found domain record', 'realurl', 0, $domain);
 			if (isset($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl'][$domain])) {
 				$config = $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl'][$domain];
 				while (is_string($config)) {
@@ -224,7 +232,8 @@ class tx_realurl_tcemain {
 				return array($domain, $config);
 			}
 		}
-		return false;
+		t3lib_div::devLog('Checking default', 'realurl', 0, intval(isset($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['_DEFAULT'])));
+		return (isset($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['_DEFAULT']) ? array('_DEFAULT', $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['_DEFAULT']) : false);
 	}
 
 	/**
