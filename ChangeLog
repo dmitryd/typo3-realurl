@@ -1,6 +1,7 @@
 2008-03-10	Dmitry Dulepov	<dmitry@typo3.org>
 
 	* Fixed bug #6567: autoconfgeneration ceate wrong config for defaultToHTMLsuffixOnPrev and acceptHTMLsuffix
+	* Fixed problem: fatal error in BE when sysfolder/shortcut/MP is renamed
 
 2008-03-06  Dmitry Dulepov  <dmitry@typo3.org>
 

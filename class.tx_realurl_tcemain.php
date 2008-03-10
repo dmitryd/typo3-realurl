@@ -180,11 +180,13 @@ class tx_realurl_tcemain {
 			);
 
 			$tsfe = $GLOBALS['TSFE'];
-			$this->createTSFE($this->fieldCollection[$tceMainInst][$table][$id]['realUid']);
-			$parent = $GLOBALS['TSFE'];
-			t3lib_div::devLog('Calling FE', 'realurl');
-			t3lib_div::callUserFunction($userFunc, $params, $parent);	// Note: encodeSpUrl does not use parent object at all!
-			$config['pagePath']['autoUpdatePathCache'] = $savedAutoUpdatePathCache;
+			if ($this->createTSFE($this->fieldCollection[$tceMainInst][$table][$id]['realUid'])) {
+				// Here only if we can create speaking URL for the page (page is not sysfolder, etc)
+				$parent = $GLOBALS['TSFE'];
+				t3lib_div::devLog('Calling FE', 'realurl');
+				t3lib_div::callUserFunction($userFunc, $params, $parent);	// Note: encodeSpUrl does not use parent object at all!
+				$config['pagePath']['autoUpdatePathCache'] = $savedAutoUpdatePathCache;
+			}
 			$GLOBALS['TSFE'] = $tsfe;
 
 			// Clean up to help PHP free memory more efficiently
@@ -293,17 +295,17 @@ class tx_realurl_tcemain {
 		$page = $GLOBALS['TSFE']->sys_page->getPage($pid);
 
 		if (count($page) == 0) {
-			return;
+			return false;
 		}
 
 		// If the page is a shortcut, look up the page to which the shortcut references, and do the same check as above.
 		if ($page['doktype']==4 && count($GLOBALS['TSFE']->getPageShortcut($page['shortcut'],$page['shortcut_mode'],$page['uid'])) == 0) {
-			return;
+			return false;
 		}
 
 		// Spacer pages and sysfolders result in a page not found page too...
 		if ($page['doktype'] == 199 || $page['doktype'] == 254) {
-			return;
+			return false;
 		}
 
 		$GLOBALS['TSFE']->getPageAndRootline();
@@ -320,7 +322,7 @@ class tx_realurl_tcemain {
 		// If there is no root template found, there is no point in continuing which would result in a 'template not found' page and then call exit php. Then there would be no clickmenu at all.
 		// And the same applies if pSetup is empty, which would result in a "The page is not configured" message.
 		if (!$GLOBALS['TSFE']->tmpl->loaded || ($GLOBALS['TSFE']->tmpl->loaded && !$GLOBALS['TSFE']->pSetup)) {
-			return;
+			return false;
 		}
 
 		$GLOBALS['TSFE']->getConfigArray();
