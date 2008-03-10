@@ -3,7 +3,7 @@
 ########################################################################
 # Extension Manager/Repository config file for ext: "realurl"
 #
-# Auto generated 10-03-2008 16:54
+# Auto generated 10-03-2008 22:58
 #
 # Manual updates:
 # Only the data in the array - anything else is removed by next write.
@@ -32,8 +32,8 @@ $EM_CONF[$_EXTKEY] = array(
 	'author_company' => '',
 	'CGLcompliance' => '',
 	'CGLcompliance_note' => '',
-	'version' => '1.3.0',
-	'_md5_values_when_last_written' => 'a:20:{s:9:"ChangeLog";s:4:"f234";s:10:"_.htaccess";s:4:"a6b1";s:20:"class.tx_realurl.php";s:4:"f681";s:29:"class.tx_realurl_advanced.php";s:4:"db32";s:32:"class.tx_realurl_autoconfgen.php";s:4:"efca";s:26:"class.tx_realurl_dummy.php";s:4:"d1f5";s:28:"class.tx_realurl_tcemain.php";s:4:"9364";s:33:"class.tx_realurl_userfunctest.php";s:4:"750e";s:21:"ext_conf_template.txt";s:4:"3a85";s:12:"ext_icon.gif";s:4:"ea80";s:17:"ext_localconf.php";s:4:"11ca";s:14:"ext_tables.php";s:4:"8774";s:14:"ext_tables.sql";s:4:"3eea";s:16:"locallang_db.php";s:4:"6da6";s:12:"doc/TODO.txt";s:4:"b8cb";s:14:"doc/manual.sxw";s:4:"3ab0";s:38:"modfunc1/class.tx_realurl_modfunc1.php";s:4:"1968";s:22:"modfunc1/locallang.php";s:4:"984b";s:16:"testmod/conf.php";s:4:"309a";s:17:"testmod/index.php";s:4:"024e";}',
+	'version' => '1.3.1',
+	'_md5_values_when_last_written' => 'a:20:{s:9:"ChangeLog";s:4:"7416";s:10:"_.htaccess";s:4:"a6b1";s:20:"class.tx_realurl.php";s:4:"f681";s:29:"class.tx_realurl_advanced.php";s:4:"db32";s:32:"class.tx_realurl_autoconfgen.php";s:4:"efca";s:26:"class.tx_realurl_dummy.php";s:4:"d1f5";s:28:"class.tx_realurl_tcemain.php";s:4:"cc80";s:33:"class.tx_realurl_userfunctest.php";s:4:"750e";s:21:"ext_conf_template.txt";s:4:"3a85";s:12:"ext_icon.gif";s:4:"ea80";s:17:"ext_localconf.php";s:4:"11ca";s:14:"ext_tables.php";s:4:"8774";s:14:"ext_tables.sql";s:4:"3eea";s:16:"locallang_db.php";s:4:"6da6";s:12:"doc/TODO.txt";s:4:"b8cb";s:14:"doc/manual.sxw";s:4:"6fa5";s:38:"modfunc1/class.tx_realurl_modfunc1.php";s:4:"1968";s:22:"modfunc1/locallang.php";s:4:"984b";s:16:"testmod/conf.php";s:4:"309a";s:17:"testmod/index.php";s:4:"024e";}',
 	'constraints' => array(
 		'depends' => array(
 			'php' => '4.0.0-0.0.0',
