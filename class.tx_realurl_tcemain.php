@@ -92,6 +92,7 @@ class tx_realurl_tcemain {
 	 * @return	void
 	 */
 	function processDatamap_preProcessFieldArray($incomingFieldArray, $table, $id, &$pObj) {
+		/* @var $pObj t3lib_TCEmain */
 		if (($table == 'pages' || $table == 'pages_language_overlay') && t3lib_div::testInt($id)) {
 
 			if ($table != 'pages_language_overlay') {
@@ -135,7 +136,7 @@ class tx_realurl_tcemain {
 				t3lib_div::devLog('$modified=' . intval($modified), 'realurl', 0, $fields);
 				if ($modified) {
 					$tceMainId = count($this->tceMainInstList);
-					$this->tceMainInstList[$tceMainId] = &$pObj;
+					$this->tceMainInstList[$tceMainId] = $pObj->tx_realurl_tcemain_id = uniqid('');
 					$this->fieldCollection[$tceMainId][$table][$id] = array(
 						'configName' => $domain,
 						'realUid' => $realUid,
@@ -157,7 +158,11 @@ class tx_realurl_tcemain {
 	 * @return	void
 	 */
 	function processDatamap_afterDatabaseOperations($status, $table, $id, $fieldArray, &$pObj) {
-		$tceMainInst = array_search($pObj, $this->tceMainInstList);
+		/* @var $pObj t3lib_TCEmain */
+		if (!isset($pObj->tx_realurl_tcemain_id)) {
+			return;
+		}
+		$tceMainInst = array_search($pObj->tx_realurl_tcemain_id, $this->tceMainInstList);
 		t3lib_div::devLog('$processDatamap_afterDatabaseOperations', 'realurl', 0, array('status' => $status, 'tceMainInst' => $tceMainInst));
 		if ($status == 'update' && $tceMainInst !== false && isset($this->fieldCollection[$tceMainInst][$table][$id])) {
 			$configName = &$this->fieldCollection[$tceMainInst][$table][$id]['configName'];
@@ -282,6 +287,7 @@ class tx_realurl_tcemain {
 		$GLOBALS['TSFE']->connectToMySQL();
 
 		// Prevent mysql debug messages from messing up the output
+		$sqlDebug = $GLOBALS['TYPO3_DB']->debugOutput;
 		$GLOBALS['TYPO3_DB']->debugOutput = false;
 
 		$GLOBALS['TSFE']->initLLVars();
@@ -295,16 +301,19 @@ class tx_realurl_tcemain {
 		$page = $GLOBALS['TSFE']->sys_page->getPage($pid);
 
 		if (count($page) == 0) {
+			$GLOBALS['TYPO3_DB']->debugOutput = $sqlDebug;
 			return false;
 		}
 
 		// If the page is a shortcut, look up the page to which the shortcut references, and do the same check as above.
 		if ($page['doktype']==4 && count($GLOBALS['TSFE']->getPageShortcut($page['shortcut'],$page['shortcut_mode'],$page['uid'])) == 0) {
+			$GLOBALS['TYPO3_DB']->debugOutput = $sqlDebug;
 			return false;
 		}
 
 		// Spacer pages and sysfolders result in a page not found page too...
 		if ($page['doktype'] == 199 || $page['doktype'] == 254) {
+			$GLOBALS['TYPO3_DB']->debugOutput = $sqlDebug;
 			return false;
 		}
 
@@ -322,6 +331,7 @@ class tx_realurl_tcemain {
 		// If there is no root template found, there is no point in continuing which would result in a 'template not found' page and then call exit php. Then there would be no clickmenu at all.
 		// And the same applies if pSetup is empty, which would result in a "The page is not configured" message.
 		if (!$GLOBALS['TSFE']->tmpl->loaded || ($GLOBALS['TSFE']->tmpl->loaded && !$GLOBALS['TSFE']->pSetup)) {
+			$GLOBALS['TYPO3_DB']->debugOutput = $sqlDebug;
 			return false;
 		}
 
@@ -330,6 +340,9 @@ class tx_realurl_tcemain {
 		$GLOBALS['TSFE']->inituserGroups();
 		$GLOBALS['TSFE']->connectToDB();
 		$GLOBALS['TSFE']->determineId();
+
+		$GLOBALS['TYPO3_DB']->debugOutput = $sqlDebug;
+		return true;
 	}
 }
 
