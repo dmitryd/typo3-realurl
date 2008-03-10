@@ -1,3 +1,7 @@
+2008-03-10	Dmitry Dulepov	<dmitry@typo3.org>
+
+	* Fixed bug #6567: autoconfgeneration ceate wrong config for defaultToHTMLsuffixOnPrev and acceptHTMLsuffix
+
 2008-03-06  Dmitry Dulepov  <dmitry@typo3.org>
 
 	* Fixed bug #7486: tx_realurl_pathsegment is now exclude field

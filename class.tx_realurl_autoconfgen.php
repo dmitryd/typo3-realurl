@@ -150,35 +150,33 @@ class tx_realurl_autoconfgen {
 	 */
 	function getTemplate() {
 		$confTemplate = array(
-		    'init' => array(
+			'init' => array(
 				'enableCHashCache' => true,
 				'appendMissingSlash' => 'ifNotFile',
 				'adminJumpToBackend' => true,
 				'enableUrlDecodeCache' => true,
 				'enableUrlEncodeCache' => true,
 				'emptyUrlReturnValue' => '/',
-		    ),
-		    'pagePath' => array(
-		        'type' => 'user',
-		        'userFunc' => 'EXT:realurl/class.tx_realurl_advanced.php:&tx_realurl_advanced->main',
-		        'spaceCharacter' => '-',
+			),
+			'pagePath' => array(
+				'type' => 'user',
+				'userFunc' => 'EXT:realurl/class.tx_realurl_advanced.php:&tx_realurl_advanced->main',
+				'spaceCharacter' => '-',
 				'languageGetVar' => 'L',
-		    ),
-			'defaultToHTMLsuffixOnPrev' => 0,
-			'acceptHTMLsuffix' => 1,
+			),
+			'fileName' => array(
+				'defaultToHTMLsuffixOnPrev' => 0,
+				'acceptHTMLsuffix' => 1,
+			)
 		);
 
 		// Add print feature if TemplaVoila is not loaded
 		if (!t3lib_extMgm::isLoaded('templavoila')) {
-			$confTemplate['fileName'] = array(
-				'index' => array(
-		            'print' => array(
-		                'keyValues' => array(
-		                    'type' => 98,
-		                )
-		            ),
-				),
-			);
+			$confTemplate['fileName']['index']['print'] = array(
+					'keyValues' => array(
+						'type' => 98,
+					)
+				);
 		}
 
 		$this->addLanguages($confTemplate);
@@ -219,7 +217,7 @@ class tx_realurl_autoconfgen {
 					'GETvar' => 'L',
 					'valueMap' => array(
 					),
-				    'noMatch' => 'bypass'
+					'noMatch' => 'bypass'
 				),
 			);
 			foreach ($languages as $lang) {
