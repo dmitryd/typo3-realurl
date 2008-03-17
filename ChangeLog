@@ -1,3 +1,7 @@
+2008-03-17	Dmitry Dulepov	<dmitry@typo3.org>
+
+	* Fixed wrong spelling of RealURL everywhere in the manual
+
 2008-03-10	Dmitry Dulepov	<dmitry@typo3.org>
 
 	* Fixed bug #6567: autoconfgeneration ceate wrong config for defaultToHTMLsuffixOnPrev and acceptHTMLsuffix
