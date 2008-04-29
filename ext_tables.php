@@ -29,6 +29,6 @@ $TCA['pages']['columns']['tx_realurl_pathsegment'] = array(
 	)
 );
 
-t3lib_extMgm::addToAllTCAtypes('pages','tx_realurl_pathsegment','2','after:nav_title');
+t3lib_extMgm::addToAllTCAtypes('pages', 'tx_realurl_pathsegment', t3lib_div::compat_version('4.2') ? '2' : '1', 'after:nav_title');
 
 ?>
