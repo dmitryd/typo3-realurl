@@ -109,11 +109,6 @@ class tx_realurl_advanced {
 		$this->pObj = &$ref;
 		$this->conf = $params['conf'];
 
-		// See if cache should be disabled
-//		if ($ref->isBEUserLoggedIn()) {
-//			$this->conf['disablePathCache'] = true;
-//		}
-
 		// Branching out based on type:
 		$result = false;
 		switch ((string)$params['mode']) {
@@ -198,7 +193,7 @@ class tx_realurl_advanced {
 		if (!$this->conf['disablePathCache']) {
 			$result = $GLOBALS['TYPO3_DB']->exec_SELECTquery('pagepath', 'tx_realurl_pathcache',
 							'page_id=' . intval($pageid) . ' AND language_id=' . intval($lang) .
-							//' AND rootpage_id='.intval($this->conf['rootpage_id']).
+							' AND rootpage_id='.intval($this->conf['rootpage_id']).
 							' AND mpvar=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($mpvar, 'tx_realurl_pathcache') .
 							' AND expire=0');
 			if ($GLOBALS['TYPO3_DB']->sql_num_rows($result) == 1) { // More than one entry for a page with no expire time is wrong...!
@@ -269,7 +264,15 @@ class tx_realurl_advanced {
 						$cond . ' AND expire>0 AND expire<' . $this->makeExpirationTime());
 
 			// Insert URL in cache:
-			$insertArray = array('page_id' => $id, 'language_id' => $langID, 'pagepath' => $pagepath, 'hash' => $pagepathHash, 'expire' => 0, 'rootpage_id' => intval($this->conf['rootpage_id']), 'mpvar' => $mpvar);
+			$insertArray = array(
+				'page_id' => $id,
+				'language_id' => $langID,
+				'pagepath' => $pagepath,
+				'hash' => $pagepathHash,
+				'expire' => 0,
+				'rootpage_id' => intval($pagepathRec['rootpage_id']),
+				'mpvar' => $mpvar
+			);
 
 			$GLOBALS['TYPO3_DB']->exec_INSERTquery('tx_realurl_pathcache', $insertArray);
 		}
@@ -310,36 +313,62 @@ class tx_realurl_advanced {
 			if (!$GLOBALS['TSFE']->tmpl->rootLine) {
 				$GLOBALS['TSFE']->tmpl->start($GLOBALS['TSFE']->rootLine);
 			}
-			for ($a = 0; $a < $cc; $a++) {
-				if ($GLOBALS['TSFE']->tmpl->rootLine[0]['uid'] == $rootLine[$a]['uid']) {
-					$rootFound = TRUE;
-				}
-				if ($rootFound) {
-					$newRootLine[] = $rootLine[$a];
-				}
-			}
-			if (!$rootFound && $GLOBALS['TSFE']->config['config']['typolinkEnableLinksAcrossDomains']) {
-				for ($a = 0; $a < $cc; $a++) {
-					if ($rootLine[$a]['is_siteroot']) {
-						$rootFound = TRUE;
-					}
-					if ($rootFound) {
+			// Pass #1 -- check if linking a page in subdomain inside main domain
+			$innerSubDomain = false;
+			for ($a = $cc - 1; $a >= 0; $a--) {
+				if ($rootLine[$a]['is_siteroot']) {
+					t3lib_div::devLog('Found siteroot in the rootline for id=' . $id, 'realurl', 0);
+					$rootFound = true;
+					$innerSubDomain = true;
+					for ( ; $a < $cc; $a++) {
 						$newRootLine[] = $rootLine[$a];
 					}
+					break;
 				}
 			}
-
+			if (!$rootFound) {
+				// Pass #2 -- check normal page
+				t3lib_div::devLog('Starting to walk rootline for id=' . $id . ' from index=' . $a, 'realurl', 0, $rootLine);
+				for ($a = 0; $a < $cc; $a++) {
+					if ($GLOBALS['TSFE']->tmpl->rootLine[0]['uid'] == $rootLine[$a]['uid']) {
+						t3lib_div::devLog('Found rootline', 'realurl', 0, array('uid' => $id, 'rootline start pid' => $rootLine[$a]['uid']));
+						$rootFound = true;
+						for ( ; $a < $cc; $a++) {
+							$newRootLine[] = $rootLine[$a];
+						}
+						break;
+					}
+				}
+			}
 			if ($rootFound) {
 				// Translate the rootline to a valid path (rootline contains localized titles at this point!):
 				$pagepath = $this->rootLineToPath($newRootLine, $langID);
+				t3lib_div::devLog('Got page path', 'realurl', 0, array('uid' => $id, 'pagepath' => $pagepath));
+				$rootpage_id = $this->conf['rootpage_id'];
+				if ($innerSubDomain) {
+					$parts = parse_url($pagepath);
+					t3lib_div::devLog('$innerSubDomain=true, showing page path parts', 'realurl', 0, $parts);
+					if ($parts['host'] == '') {
+						$domain = '';
+						foreach ($newRootLine as $rl) {
+							$rows = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('domainName', 'sys_domain', 'pid=' . $rl['uid'] . ' AND redirectTo=\'\' AND hidden=0', '', 'sorting');
+							if (count($rows)) {
+								$domain = $rows[0]['domainName'];
+								t3lib_div::devLog('Found domain', 'realurl', 0, $domain);
+								$rootpage_id = $rl['uid'];
+							}
+						}
+					}
+				}
 				$this->IDtoPagePathCache[$cacheKey] = array(
 						'pagepath' => $pagepath,
 						'langID' => $langID,
-						'pagepathhash' => substr(md5($pagepath), 0, 10)
+						'pagepathhash' => substr(md5($pagepath), 0, 10),
+						'rootpage_id' => $rootpage_id,
 					);
 			}
 			else { // Outside of root line:
-				$this->IDtoPagePathCache[$cacheKey] = FALSE;
+				$this->IDtoPagePathCache[$cacheKey] = false;
 			}
 		}
 

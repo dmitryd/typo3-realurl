@@ -1,6 +1,7 @@
 2008-04-29	Dmitry Dulepov	<dmitry@typo3.org>
 
 	* Added compatibility with 4.2
+	* Added handling of nested domains
 
 2008-03-17	Dmitry Dulepov	<dmitry@typo3.org>
 
