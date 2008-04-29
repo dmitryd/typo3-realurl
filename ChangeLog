@@ -2,6 +2,7 @@
 
 	* Added compatibility with 4.2
 	* Added handling of nested domains
+	* Added an option to enable/disable devLog without using Install tool
 
 2008-03-17	Dmitry Dulepov	<dmitry@typo3.org>
 

@@ -317,7 +317,9 @@ class tx_realurl_advanced {
 			$innerSubDomain = false;
 			for ($a = $cc - 1; $a >= 0; $a--) {
 				if ($rootLine[$a]['is_siteroot']) {
-					t3lib_div::devLog('Found siteroot in the rootline for id=' . $id, 'realurl', 0);
+					if ($this->pObj->enableDevLog) {
+						t3lib_div::devLog('Found siteroot in the rootline for id=' . $id, 'realurl', 0);
+					}
 					$rootFound = true;
 					$innerSubDomain = true;
 					for ( ; $a < $cc; $a++) {
@@ -328,10 +330,14 @@ class tx_realurl_advanced {
 			}
 			if (!$rootFound) {
 				// Pass #2 -- check normal page
-				t3lib_div::devLog('Starting to walk rootline for id=' . $id . ' from index=' . $a, 'realurl', 0, $rootLine);
+				if ($this->pObj->enableDevLog) {
+					t3lib_div::devLog('Starting to walk rootline for id=' . $id . ' from index=' . $a, 'realurl', 0, $rootLine);
+				}
 				for ($a = 0; $a < $cc; $a++) {
 					if ($GLOBALS['TSFE']->tmpl->rootLine[0]['uid'] == $rootLine[$a]['uid']) {
-						t3lib_div::devLog('Found rootline', 'realurl', 0, array('uid' => $id, 'rootline start pid' => $rootLine[$a]['uid']));
+						if ($this->pObj->enableDevLog) {
+							t3lib_div::devLog('Found rootline', 'realurl', 0, array('uid' => $id, 'rootline start pid' => $rootLine[$a]['uid']));
+						}
 						$rootFound = true;
 						for ( ; $a < $cc; $a++) {
 							$newRootLine[] = $rootLine[$a];
@@ -343,18 +349,24 @@ class tx_realurl_advanced {
 			if ($rootFound) {
 				// Translate the rootline to a valid path (rootline contains localized titles at this point!):
 				$pagepath = $this->rootLineToPath($newRootLine, $langID);
-				t3lib_div::devLog('Got page path', 'realurl', 0, array('uid' => $id, 'pagepath' => $pagepath));
+				if ($this->pObj->enableDevLog) {
+					t3lib_div::devLog('Got page path', 'realurl', 0, array('uid' => $id, 'pagepath' => $pagepath));
+				}
 				$rootpage_id = $this->conf['rootpage_id'];
 				if ($innerSubDomain) {
 					$parts = parse_url($pagepath);
-					t3lib_div::devLog('$innerSubDomain=true, showing page path parts', 'realurl', 0, $parts);
+					if ($this->pObj->enableDevLog) {
+						t3lib_div::devLog('$innerSubDomain=true, showing page path parts', 'realurl', 0, $parts);
+					}
 					if ($parts['host'] == '') {
 						$domain = '';
 						foreach ($newRootLine as $rl) {
 							$rows = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('domainName', 'sys_domain', 'pid=' . $rl['uid'] . ' AND redirectTo=\'\' AND hidden=0', '', 'sorting');
 							if (count($rows)) {
 								$domain = $rows[0]['domainName'];
-								t3lib_div::devLog('Found domain', 'realurl', 0, $domain);
+								if ($this->pObj->enableDevLog) {
+									t3lib_div::devLog('Found domain', 'realurl', 0, $domain);
+								}
 								$rootpage_id = $rl['uid'];
 							}
 						}
@@ -393,7 +405,9 @@ class tx_realurl_advanced {
 		array_shift($rl); // Ignore the first path, as this is the root of the website
 		$c = count($rl);
 		$stopUsingCache = false;
-		t3lib_div::devLog('rootLineToPath starts searching', 'realurl', 0, array('rootline size' => count($rl)));
+		if ($this->pObj->enableDevLog) {
+			t3lib_div::devLog('rootLineToPath starts searching', 'realurl', 0, array('rootline size' => count($rl)));
+		}
 		for ($i = 1; $i <= $c; $i++) {
 			$page = array_shift($rl);
 
@@ -411,14 +425,18 @@ class tx_realurl_advanced {
 				if ($GLOBALS['TYPO3_DB']->sql_num_rows($result) == 1) { // If there seems to be more than one page path cached for this combo, we will fix it later
 					$cachedPagePath = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($result);
 					$lastPath = implode('/', $paths);
-					t3lib_div::devLog('rootLineToPath found path', 'realurl', 0, $lastPath);
+					if ($this->pObj->enableDevLog) {
+						t3lib_div::devLog('rootLineToPath found path', 'realurl', 0, $lastPath);
+					}
 					if ($cachedPagePath != false && substr($cachedPagePath['pagepath'], 0, strlen($lastPath)) != $lastPath) {
 						// Oops. Cached path does not start from already generated path.
 						// It means that path was mapped from a parallel mount point.
 						// We cannot not rely on cache any more. Stop using it.
 						$cachedPagePath = false;
 						$stopUsingCache = true;
-						t3lib_div::devLog('rootLineToPath stops searching', 'realurl');
+						if ($this->pObj->enableDevLog) {
+							t3lib_div::devLog('rootLineToPath stops searching', 'realurl');
+						}
 					}
 				}
 				$GLOBALS['TYPO3_DB']->sql_free_result($result);
@@ -533,13 +551,17 @@ class tx_realurl_advanced {
 			// (in this order!) entry for the same page od and redirect to corresponding path. 3 - same as
 			// 1 but means that entry is going to expire eventually, nothing to do for us yet.
 			if ($row['expire'] > 0) {
-				t3lib_div::devLog('pagePathToId found row', 'realurl', 0, $row);
+				if ($this->pObj->enableDevLog) {
+					t3lib_div::devLog('pagePathToId found row', 'realurl', 0, $row);
+				}
 				// 'expire' in the query is only for logging
 				list($newEntry) = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('pagepath,expire', 'tx_realurl_pathcache',
 						'page_id=' . intval($row['page_id']) . '
 						AND language_id=' . intval($row['language_id']) . '
 						AND (expire=0 OR expire>' . $row['expire'] . ')', '', 'expire', '1');
-				t3lib_div::devLog('pagePathToId searched for new entry', 'realurl', 0, $newEntry);
+				if ($this->pObj->enableDevLog) {
+					t3lib_div::devLog('pagePathToId searched for new entry', 'realurl', 0, $newEntry);
+				}
 
 				// Redirect to new path immediately if it is found
 				if ($newEntry) {

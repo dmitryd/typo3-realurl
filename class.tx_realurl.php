@@ -138,6 +138,8 @@ class tx_realurl {
 
 	var $useMySQLExtendedSyntax = false;
 
+	var $enableDevLog = false;
+
 	/************************************
 	 *
 	 * Translate parameters to a Speaking URL (t3lib_tstemplate::linkData)
@@ -156,8 +158,18 @@ class tx_realurl {
 			$GLOBALS['TYPO3_DB']->sql_free_result($res);
 			$this->useMySQLExtendedSyntax = version_compare($rec[0], '4.1.0', '>');
 		}
+		$sysconf = unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['realurl']);
+		$this->enableDevLog = $sysconf['enableDevLog'];
 	}
 
+	/**
+	 * PHP5-style constructor
+	 *
+	 * @return	void
+	 */
+	function __construct() {
+		$this->tx_realurl();
+	}
 
 	/**
 	 * Translates a URL with query string (GET parameters) into Speaking URL.
@@ -168,8 +180,9 @@ class tx_realurl {
 	 * @return	void
 	 */
 	function encodeSpURL(&$params, &$ref) {
-		if (TYPO3_DLOG)
+		if ($this->enableDevLog) {
 			t3lib_div::devLog('Entering encodeSpURL for ' . $params['LD']['totalURL'], 'realurl');
+		}
 
 		if (!$params['TCEmainHook']) {
 			// Return directly, if simulateStaticDocuments is set:
@@ -189,7 +202,7 @@ class tx_realurl {
 		if (substr($params['LD']['totalURL'], 0, strlen($this->prefixEnablingSpURL)) != $this->prefixEnablingSpURL)
 			return;
 
-		if (TYPO3_DLOG) {
+		if ($this->enableDevLog) {
 			t3lib_div::devLog('Starting URL encode', 'realurl', -1);
 		}
 
@@ -673,8 +686,9 @@ class tx_realurl {
 	 */
 	function decodeSpURL($params, &$ref) {
 
-		if (TYPO3_DLOG)
+		if ($this->enableDevLog) {
 			t3lib_div::devLog('Entering decodeSpURL', 'realurl', -1);
+		}
 
 		// Setting parent object reference (which is $GLOBALS['TSFE'])
 		$this->pObj = &$params['pObj'];
@@ -718,8 +732,9 @@ class tx_realurl {
 				$this->extConf['init']['respectSimulateStaticURLs'] = false;
 			}
 			if (!$this->extConf['init']['respectSimulateStaticURLs'] || $fI['path']) {
-				if (TYPO3_DLOG)
+				if ($this->enableDevLog) {
 					t3lib_div::devLog('RealURL powered decoding (TM) starting!', 'realurl');
+				}
 
 				// Parse path:
 				$uParts = parse_url($speakingURIpath);
@@ -1817,8 +1832,9 @@ class tx_realurl {
 		}
 		if (preg_match('/^(1|0|true|false)$/i', $str)) {
 			$logMessage = sprintf('Wrong boolean value for parameter "%s": "%s". It is a string, not a boolean!', $paramName, $str);
-			if (TYPO3_DLOG)
+			if ($this->enableDevLog) {
 				t3lib_div::devLog($logMessage, 'realurl');
+			}
 			$GLOBALS['TT']->setTSlogMessage($logMessage, 2);
 			if ($str == intval($str)) {
 				$str = intval($str);
