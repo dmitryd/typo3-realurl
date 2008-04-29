@@ -189,8 +189,9 @@ class tx_realurl {
 		if (substr($params['LD']['totalURL'], 0, strlen($this->prefixEnablingSpURL)) != $this->prefixEnablingSpURL)
 			return;
 
-		if (TYPO3_DLOG)
+		if (TYPO3_DLOG) {
 			t3lib_div::devLog('Starting URL encode', 'realurl', -1);
+		}
 
 		// Initializing config / request URL:
 		$this->setConfig();
