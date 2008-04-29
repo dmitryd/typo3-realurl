@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<T3locallang>
+    <meta type="array">
+        <description>mod1 labels</description>
+        <type>module</type>
+        <csh_table></csh_table>
+        <labelContext type="array">
+        </labelContext>
+    </meta>
+    <data type="array">
+        <languageKey index="default" type="array">
+            <label index="title">Speaking Url Management</label>
+        </languageKey>
+    </data>
+    <orig_hash type="array">
+        <languageKey index="default" type="array">
+            <label index="title" type="integer">142852360</label>
+        </languageKey>
+    </orig_hash>
+    <orig_text type="array">
+        <languageKey index="default" type="array">
+        </languageKey>
+    </orig_text>
+</T3locallang>

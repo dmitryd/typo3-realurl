@@ -1,8 +1,9 @@
 2008-04-29	Dmitry Dulepov	<dmitry@typo3.org>
 
-	* Added compatibility with 4.2
+	* Added compatibility with 4.2 (bugs #8026, #7941)
 	* Added handling of nested domains
-	* Added an option to enable/disable devLog without using Install tool
+	* Added an option to enable/disable devLog without using Install tool (see also bug #8125)
+	* Moved locallang*.php to locallang*.xml (see #6911)
 
 2008-03-17	Dmitry Dulepov	<dmitry@typo3.org>
 

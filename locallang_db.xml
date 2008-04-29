@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<T3locallang>
+    <meta type="array">
+        <description>Database labels</description>
+        <type>database</type>
+        <csh_table></csh_table>
+        <labelContext type="array">
+        </labelContext>
+    </meta>
+    <data type="array">
+        <languageKey index="default" type="array">
+            <label index="pages.tx_realurl_pathsegment">Speaking URL path segment:</label>
+            <label index="moduleFunction.tx_realurl_modfunc1">Speaking Url Management</label>
+        </languageKey>
+    </data>
+    <orig_hash type="array">
+        <languageKey index="default" type="array">
+            <label index="pages.tx_realurl_pathsegment" type="integer">115038942</label>
+            <label index="moduleFunction.tx_realurl_modfunc1" type="integer">142852360</label>
+        </languageKey>
+    </orig_hash>
+    <orig_text type="array">
+        <languageKey index="default" type="array">
+        </languageKey>
+    </orig_text>
+</T3locallang>

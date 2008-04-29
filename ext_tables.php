@@ -12,14 +12,14 @@ if (TYPO3_MODE=="BE")	{
 		'web_info',
 		'tx_realurl_modfunc1',
 		t3lib_extMgm::extPath($_EXTKEY).'modfunc1/class.tx_realurl_modfunc1.php',
-		'LLL:EXT:realurl/locallang_db.php:moduleFunction.tx_realurl_modfunc1',
+		'LLL:EXT:realurl/locallang_db.xml:moduleFunction.tx_realurl_modfunc1',
 		'function',
 		'online'
 	);
 }
 
 $TCA['pages']['columns']['tx_realurl_pathsegment'] = array(
-	'label' => 'LLL:EXT:realurl/locallang_db.php:pages.tx_realurl_pathsegment',
+	'label' => 'LLL:EXT:realurl/locallang_db.xml:pages.tx_realurl_pathsegment',
 	'exclude' => 1,
 	'config' => Array (
 		'type' => 'input',
