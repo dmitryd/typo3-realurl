@@ -105,7 +105,7 @@ class tx_realurl_tcemain {
 				}
 			}
 			t3lib_div::devLog('Found pids', 'realurl', 0, array('realUid' => $realUid, 'language' => $language));
-			// TODO Quit immediately if page in not available in FE
+			// Quit immediately if page in not available in FE
 			if (!($configAr = $this->getConfigForPage($realUid))) {
 				// Page is not configured for realurl
 				t3lib_div::devLog('Configuration is not found for pid=' . $realUid, 'realurl');
