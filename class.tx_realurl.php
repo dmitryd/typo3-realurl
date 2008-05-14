@@ -199,8 +199,10 @@ class tx_realurl {
 		}
 
 		// Checking prefix:
-		if (substr($params['LD']['totalURL'], 0, strlen($this->prefixEnablingSpURL)) != $this->prefixEnablingSpURL)
+		$prefix = $GLOBALS['TSFE']->absRefPrefix . $this->prefixEnablingSpURL;
+		if (substr($params['LD']['totalURL'], 0, strlen($prefix)) != $prefix) {
 			return;
+		}
 
 		if ($this->enableDevLog) {
 			t3lib_div::devLog('Starting URL encode', 'realurl', -1);
