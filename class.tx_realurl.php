@@ -390,7 +390,24 @@ class tx_realurl {
 						foreach ($cfg as $Gcfg) {
 							if (isset($paramKeyValues[$Gcfg['GETvar']])) {
 								$pathParts[] = rawurlencode($keyWord);
+								$pathPartsSize = count($pathParts);
 								$this->encodeSpURL_setSequence($cfg, $paramKeyValues, $pathParts);
+								// If (1) nothing was added or (2) only empty segments added, remove this part completely
+								if (count($pathParts) == $pathPartsSize) {
+									array_pop($pathParts);
+								}
+								else {
+									$dropSegment = true;
+									for ($i = $pathPartsSize; $i < count($pathParts); $i++) {
+										if ($pathParts[$i] != '') {
+											$dropSegment = false;
+											break;
+										}
+									}
+									if ($dropSegment) {
+										$pathParts = array_slice($pathParts, 0, $pathPartsSize - 1);
+									}
+								}
 								break;
 							}
 						}
@@ -492,13 +509,13 @@ class tx_realurl {
 								$prevVal = $GETvarVal;
 								$pathParts[] = rawurlencode($revMap[$GETvarVal]);
 							} elseif ($setup['noMatch'] == 'bypass') { // If no match in reverse value map and "bypass" is set, then return the value to $pathParts and break
-							// Do nothing...
+								// Do nothing...
 							} elseif ($setup['noMatch'] == 'null') { // If no match and "null" is set, then set "dummy" value
 								// Set "dummy" value (?)
 								$prevVal = '';
 								$pathParts[] = '';
 							} elseif ($setup['userFunc']) {
-								$params = array('pObj' => &$this, 'value' => $GETvarVal, 'decodeAlias' => FALSE);
+								$params = array('pObj' => &$this, 'value' => $GETvarVal, 'decodeAlias' => false);
 								$prevVal = $GETvarVal;
 								$GETvarVal = t3lib_div::callUserFunction($setup['userFunc'], $params, $this);
 								$pathParts[] = rawurlencode($GETvarVal);
