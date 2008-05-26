@@ -242,8 +242,14 @@ class tx_realurl {
 		}
 
 		// Adding any anchor there might be:
-		if ($uParts['fragment'])
+		if ($uParts['fragment']) {
 			$newUrl .= '#' . $uParts['fragment'];
+		}
+
+		// Reapply config.absRefPrefix if necessary
+		if ($this->extConf['init']['reapplyAbsRefPrefix'] && $GLOBALS['TSFE']->absRefPrefix) {
+			$newUrl = $GLOBALS['TSFE']->absRefPrefix . $newUrl;
+		}
 
 		// Setting the encoded URL in the LD key of the params array - that value is passed by reference and thus returned to the linkData function!
 		$params['LD']['totalURL'] = $newUrl;

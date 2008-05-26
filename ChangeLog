@@ -1,3 +1,7 @@
+2008-05-26	Dmitry Dulepov	<dmitry@typo3.org>
+
+	* New feature: reapply config.absRefPrefix to URL if configured so
+
 2008-05-23	Dmitry Dulepov	<dmitry@typo3.org>
 
 	* New feature: remove postVar segment completely if it it produces only empty values
