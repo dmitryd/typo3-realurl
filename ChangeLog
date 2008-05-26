@@ -1,6 +1,7 @@
 2008-05-26	Dmitry Dulepov	<dmitry@typo3.org>
 
 	* New feature: reapply config.absRefPrefix to URL if configured so
+	* Added information to the manual about removing empty segments
 
 2008-05-23	Dmitry Dulepov	<dmitry@typo3.org>
 
