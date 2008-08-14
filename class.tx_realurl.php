@@ -88,7 +88,7 @@
  *              SECTION: External Hooks
  * 1794:     function clearPageCacheMgm($params, $ref)
  * 1809:     function isString(&$str, $paramName)
- * 1834:     function findRootPageIdByHost($host = '')
+ * 1834:     function findRootPageId($host = '')
  *
  * TOTAL FUNCTIONS: 41
  * (This index is automatically created/updated by the extension "extdeveval")
@@ -971,16 +971,6 @@ class tx_realurl {
 		// Creating page path:
 		switch ((string)$this->extConf['pagePath']['type']) {
 			case 'user':
-				// Get root page id if necessary
-				if ($this->multidomain) {
-					$rootpage_id = intval($this->extConf['pagePath']['rootpage_id']);
-					if ($rootpage_id == 0) {
-						//						$GLOBALS['TT']->setTSlogMessage('Decode cache: resolving root page through domain record (performace warning!)', 2);
-						$rootpage_id = $this->findRootPageIdByHost();
-					} else {
-						//						$GLOBALS['TT']->setTSlogMessage('decodeSpURL_idFromPath: root page id is ' . $rootpage_id);
-					}
-				}
 				$params = array('pathParts' => &$pathParts, 'pObj' => &$this, 'conf' => $this->extConf['pagePath'], 'mode' => 'decode');
 
 				$result = t3lib_div::callUserFunction($this->extConf['pagePath']['userFunc'], $params, $this);
@@ -1359,16 +1349,7 @@ class tx_realurl {
 			} else { // GET cachedInfo.
 
 
-				$rootpage_id = 0;
-				if ($this->multidomain && $this->extConf['pagePath']['type'] == 'user') {
-					$rootpage_id = intval($this->extConf['pagePath']['rootpage_id']);
-					if ($rootpage_id == 0) {
-						// Force: get root page for the domain
-						//						$GLOBALS['TT']->setTSlogMessage('Decode cache: resolving root page through domain record (performace warning!)', 2);
-						$rootpage_id = $this->findRootPageIdByHost();
-					}
-					//					$GLOBALS['TT']->setTSlogMessage('Decode cache: root page id is ' . $rootpage_id);
-				}
+				$rootpage_id = (!$this->multidomain ? 0 : intval($this->extConf['pagePath']['rootpage_id']));
 				$hash = md5($speakingURIpath . $rootpage_id);
 				$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('/*! SQL_NO_CACHE */ content', 'tx_realurl_urldecodecache',
 								'url_hash=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($hash, 'tx_realurl_urldecodecache') .
@@ -1731,6 +1712,13 @@ class tx_realurl {
 		}
 
 		$this->multidomain = (count($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']) > 1);
+		if (!$this->extConf['pagePath']['rootpage_id']) {
+			$this->extConf['pagePath']['rootpage_id'] = $this->findRootPageId();
+			$GLOBALS['TT']->setTSlogMessage('RealURL warning: rootpage_id was not configured!');
+		}
+		if ($this->multidomain && !$this->extConf['pagePath']['rootpage_id']) {
+			$this->pObj->pageNotFoundAndExit('RealURL error: multidomain configuration without rootpage_id!');
+		}
 	}
 
 	/**
@@ -1874,26 +1862,59 @@ class tx_realurl {
 	/**
 	 * Attempts to find root page ID for the current host. Processes redirectes as well.
 	 *
-	 * @param	string		$host	Host (used only inside, when called recursively)
 	 * @return	mixed		Found root page UID or false if not found
 	 */
-	function findRootPageIdByHost($host = '') {
-		if ($host == '') {
-			$host = $this->host;
+	function findRootPageId() {
+		// Check rootline (if available)
+		if (is_object($GLOBALS['TSFE']->tmpl) && is_array($GLOBALS['TSFE']->tmpl->rootLine) && count($GLOBALS['TSFE']->tmpl->rootLine) > 0) {
+			return $GLOBALS['TSFE']->tmpl->rootLine[0]['uid'];
 		}
-		$domain = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('pid,redirectTo', 'sys_domain',
-						'domainName=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($this->host, 'sys_domain') .
-						' AND hidden=0');
-		$rootpage_id = false;
-		if (count($domain) > 0) {
-			if ($domain[0]['redirectTo']) {
-				$parts = parse_url($domain[0]['redirectTo']);
-				$rootpage_id = $this->findRootPageIdByHost($parts['host']);
+
+		// Try searching by host
+		$rootpage_id = false; $host = $this->host;
+		do {
+			$domain = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('pid,redirectTo,domainName', 'sys_domain',
+							'domainName=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($host, 'sys_domain') .
+							' AND hidden=0');
+			if (count($domain) > 0) {
+				if (!$domain[0]['redirectTo']) {
+					$rootpage_id = intval($domain[0]['pid']);
+					if ($this->enableDevLog) {
+						t3lib_div::devLog('Found rootpage_id by domain lookup', 'realurl', 0, array('domain' => $domain[0]['domainName'], 'rootpage_id' => $rootpage_id));
+					}
+					break;
+				}
+				else {
+					$parts = parse_url($domain[0]['redirectTo']);
+					$host = $parts['host'];
+				}
 			}
-			if (!$rootpage_id) {
-				$rootpage_id = intval($domain[0]['pid']);
+		} while (count($domain) > 0);
+
+		// Try is_siteroot
+		if (!$rootpage_id) {
+			$rows = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('uid',
+						'pages', 'is_siteroot=1 AND deleted=0 AND hidden=0');
+			if (count($rows) == 1) {
+				$rootpage_id = $rows[0]['uid'];
+				if ($this->enableDevLog) {
+					t3lib_div::devLog('Found rootpage_id by searching pages', 'realurl', 0, array('rootpage_id' => $rootpage_id));
+				}
 			}
 		}
+
+		// Try by TS template
+		if (!$rootpage_id) {
+			$rows = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('pid',
+						'sys_template', 'root=1 AND hidden=0');
+			if (count($rows) == 1) {
+				$rootpage_id = $rows[0]['pid'];
+				if ($this->enableDevLog) {
+					t3lib_div::devLog('Found rootpage_id by searching sys_template', 'realurl', 0, array('rootpage_id' => $rootpage_id));
+				}
+			}
+		}
+
 		return $rootpage_id;
 	}
 }
