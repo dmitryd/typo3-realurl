@@ -712,7 +712,7 @@ class tx_realurl_advanced {
 	 *
 	 * @param	integer		Page id in which to search subpages matching title
 	 * @param	string		Title to search for
-	 * @return	array		First entry is uid , second entry is the row selected, including information about the page as a mount point.
+	 * @return	array		First entry is uid, second entry is the row selected, including information about the page as a mount point.
 	 * @access private
 	 * @see searchTitle()
 	 */
@@ -847,7 +847,7 @@ class tx_realurl_advanced {
 		}
 
 		// Return encoded URL:
-		return rawurlencode($processedTitle);
+		return rawurlencode(strtolower($processedTitle));
 	}
 
 	/**

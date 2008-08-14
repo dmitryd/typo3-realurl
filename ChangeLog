@@ -3,6 +3,7 @@
 	* Added more methods to determine root page id
 	* Fixed bug #7111: noMatch = bypass makes prevents realurl to decode fileName on root page
 	* Added search for site root in autoconf
+	* Fixed bug #9042: Pagetitle with ® sign not working (sometimes)
 
 2008-05-26	Dmitry Dulepov	<dmitry@typo3.org>
 
