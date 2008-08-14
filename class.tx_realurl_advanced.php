@@ -733,7 +733,8 @@ class tx_realurl_advanced {
 		$uidTrack = array();
 		$result = $GLOBALS['TYPO3_DB']->exec_SELECTquery($selList, 'pages',
 						'pid = ' . intval($searchPid) .
-						' AND deleted = 0 AND doktype != 255', '', 'sorting');
+						' AND deleted=0 AND doktype != 255', '',
+						'sorting');
 		while (($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($result))) {
 
 			// Mount points:
@@ -742,7 +743,7 @@ class tx_realurl_advanced {
 				if ($mount_info['overlay']) { // Overlay mode: Substitute WHOLE record:
 					$result2 = $GLOBALS['TYPO3_DB']->exec_SELECTquery($selList, 'pages',
 									'uid = ' . intval($mount_info['mount_pid']) .
-									' AND deleted = 0 AND doktype != 255');
+									' AND deleted=0 AND doktype != 255');
 					$mp_row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($result2);
 					if (is_array($mp_row)) {
 						$row = $mp_row;
@@ -772,7 +773,8 @@ class tx_realurl_advanced {
 		// We have to search the language overlay too, if: a) the language isn't the default (0), b) if it's not set (-1)
 		$uidTrackKeys = array_keys($uidTrack);
 		foreach ($uidTrackKeys as $l_id) {
-			$result = $GLOBALS['TYPO3_DB']->exec_SELECTquery(TX_REALURL_SEGTITLEFIELDLIST_PLO, 'pages_language_overlay', 'pid=' . intval($l_id));
+			$result = $GLOBALS['TYPO3_DB']->exec_SELECTquery(TX_REALURL_SEGTITLEFIELDLIST_PLO,
+					'pages_language_overlay', 'pid=' . intval($l_id) . ' AND deleted=0');
 			while (($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($result))) {
 				foreach ($segTitleFieldArray as $fieldName) {
 					if ($row[$fieldName]) {

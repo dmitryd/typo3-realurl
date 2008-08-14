@@ -4,6 +4,7 @@
 	* Fixed bug #7111: noMatch = bypass makes prevents realurl to decode fileName on root page
 	* Added search for site root in autoconf
 	* Fixed bug #9042: Pagetitle with ® sign not working (sometimes)
+	* Fixed bug #9013: tx_realurl_advanced ignores deleted and hidden flag of table pages_language_overlay
 
 2008-05-26	Dmitry Dulepov	<dmitry@typo3.org>
 
