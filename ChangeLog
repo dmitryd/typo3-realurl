@@ -1,6 +1,7 @@
 2008-08-14	Dmitry Dulepov	<dmitry@typo3.org>
 
 	* Added more methods to determine root page id
+	* Fixed bug #7111: noMatch = bypass makes prevents realurl to decode fileName on root page
 
 2008-05-26	Dmitry Dulepov	<dmitry@typo3.org>
 

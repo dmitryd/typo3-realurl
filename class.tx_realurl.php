@@ -1143,83 +1143,86 @@ class tx_realurl {
 	function decodeSpURL_getSequence(&$pathParts, $setupArr) {
 
 		$GET_string = '';
-		$prevVal = '';
-		foreach ($setupArr as $setup) {
+		if (count($pathParts) > 0) {
+			$prevVal = '';
+			foreach ($setupArr as $setup) {
 
-			// Get value and remove from path parts:
-			$value = $origValue = array_shift($pathParts);
-			$value = rawurldecode($value);
+				// Get value and remove from path parts:
+				$value = $origValue = array_shift($pathParts);
+				$value = rawurldecode($value);
 
-			switch ($setup['type']) {
-				case 'action':
-					// Find index key:
-					$idx = isset($setup['index'][$value]) ? $value : '_DEFAULT';
+				switch ($setup['type']) {
+					case 'action':
+						// Find index key:
+						$idx = isset($setup['index'][$value]) ? $value : '_DEFAULT';
 
-					// Look up type:
-					switch ((string)$setup['index'][$idx]['type']) {
-						case 'redirect':
-							$url = (string)$setup['index'][$idx]['url'];
-							$url = str_replace('###INDEX###', rawurlencode($value), $url);
-							$pathParts[] = $this->filePart;
-							$remainPath = implode('/', $pathParts);
-							if ($this->appendedSlash) {
-								$remainPath = substr($remainPath, 0, -1);
-							}
-							$url = str_replace('###REMAIN_PATH###', rawurlencode(rawurldecode($remainPath)), $url);
+						// Look up type:
+						switch ((string)$setup['index'][$idx]['type']) {
+							case 'redirect':
+								$url = (string)$setup['index'][$idx]['url'];
+								$url = str_replace('###INDEX###', rawurlencode($value), $url);
+								$pathParts[] = $this->filePart;
+								$remainPath = implode('/', $pathParts);
+								if ($this->appendedSlash) {
+									$remainPath = substr($remainPath, 0, -1);
+								}
+								$url = str_replace('###REMAIN_PATH###', rawurlencode(rawurldecode($remainPath)), $url);
 
-							header('Location: ' . t3lib_div::locationHeaderUrl($url));
-							exit();
-							break;
-						case 'admin':
-							$this->decodeSpURL_jumpAdmin();
-							break;
-						case 'notfound':
-							$this->decodeSpURL_throw404('A required value from "' . @implode(',', @array_keys($setup['match'])) . '" of path was not matching "' . $value . '" which was actually found.');
-							break;
-						case 'bypass':
-							array_unshift($pathParts, $origValue);
-							break;
-						case 'feLogin':
-							// Do nothing.
-							break;
-					}
-					break;
-				default:
-					if (!is_array($setup['cond']) || $this->checkCondition($setup['cond'], $prevVal)) {
-
-						// Map value if applicable:
-						if (isset($setup['valueMap'][$value])) {
-							$value = $setup['valueMap'][$value];
-						} elseif ($setup['noMatch'] == 'bypass') { // If no match and "bypass" is set, then return the value to $pathParts and break
-							array_unshift($pathParts, $origValue);
-							break;
-						} elseif ($setup['noMatch'] == 'null') { // If no match and "null" is set, then break (without setting any value!)
-							break;
-						} elseif ($setup['userFunc']) {
-							$params = array('pObj' => &$this, 'value' => $value, 'decodeAlias' => TRUE);
-							$value = t3lib_div::callUserFunction($setup['userFunc'], $params, $this);
-						} elseif (is_array($setup['lookUpTable'])) {
-							$temp = $value;
-							$value = $this->lookUpTranslation($setup['lookUpTable'], $value, TRUE);
-							if ($setup['lookUpTable']['enable404forInvalidAlias'] && !t3lib_div::testInt($value) && !strcmp($value, $temp)) {
-								$this->decodeSpURL_throw404('Couldn\'t map alias "' . $value . '" to an ID');
-							}
-						} elseif (isset($setup['valueDefault'])) { // If no matching value and a default value is given, set that:
-							$value = $setup['valueDefault'];
+								header('Location: ' . t3lib_div::locationHeaderUrl($url));
+								exit();
+								break;
+							case 'admin':
+								$this->decodeSpURL_jumpAdmin();
+								break;
+							case 'notfound':
+								$this->decodeSpURL_throw404('A required value from "' . @implode(',', @array_keys($setup['match'])) . '" of path was not matching "' . $value . '" which was actually found.');
+								break;
+							case 'bypass':
+								array_unshift($pathParts, $origValue);
+								break;
+							case 'feLogin':
+								// Do nothing.
+								break;
 						}
-
-						// Set previous value:
-						$prevVal = $value;
-
-						// Add to GET string:
-						if ($setup['GETvar'] && strlen($value)) { // Checking length of value; normally a *blank* parameter is not found in the URL! And if we don't do this we may disturb "cHash" calculations!
-							$GET_string .= '&' . rawurlencode($setup['GETvar']) . '=' . rawurlencode($value);
-						}
-					} else {
-						array_unshift($pathParts, $origValue);
 						break;
-					}
-					break;
+					default:
+						if (!is_array($setup['cond']) || $this->checkCondition($setup['cond'], $prevVal)) {
+
+							// Map value if applicable:
+							if (isset($setup['valueMap'][$value])) {
+								$value = $setup['valueMap'][$value];
+							} elseif ($setup['noMatch'] == 'bypass') {
+								// If no match and "bypass" is set, then return the value to $pathParts and break
+								array_unshift($pathParts, $origValue);
+								break;
+							} elseif ($setup['noMatch'] == 'null') { // If no match and "null" is set, then break (without setting any value!)
+								break;
+							} elseif ($setup['userFunc']) {
+								$params = array('pObj' => &$this, 'value' => $value, 'decodeAlias' => TRUE);
+								$value = t3lib_div::callUserFunction($setup['userFunc'], $params, $this);
+							} elseif (is_array($setup['lookUpTable'])) {
+								$temp = $value;
+								$value = $this->lookUpTranslation($setup['lookUpTable'], $value, TRUE);
+								if ($setup['lookUpTable']['enable404forInvalidAlias'] && !t3lib_div::testInt($value) && !strcmp($value, $temp)) {
+									$this->decodeSpURL_throw404('Couldn\'t map alias "' . $value . '" to an ID');
+								}
+							} elseif (isset($setup['valueDefault'])) { // If no matching value and a default value is given, set that:
+								$value = $setup['valueDefault'];
+							}
+
+							// Set previous value:
+							$prevVal = $value;
+
+							// Add to GET string:
+							if ($setup['GETvar'] && strlen($value)) { // Checking length of value; normally a *blank* parameter is not found in the URL! And if we don't do this we may disturb "cHash" calculations!
+								$GET_string .= '&' . rawurlencode($setup['GETvar']) . '=' . rawurlencode($value);
+							}
+						} else {
+							array_unshift($pathParts, $origValue);
+							break;
+						}
+						break;
+				}
 			}
 		}
 
