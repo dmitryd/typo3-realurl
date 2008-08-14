@@ -112,6 +112,11 @@ class tx_realurl_autoconfgen {
 				'', '', '', 'domainName');
 		if (count($domains) == 0) {
 			$conf['_DEFAULT'] = $template;
+			$rows = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('uid', 'pages',
+						'deleted=0 AND hidden=0 AND is_siteroot=1', '', '', '1');
+			if (count($rows) > 0) {
+				$conf['_DEFAULT']['pagePath']['rootpage_id'] = $rows[0]['uid'];
+			}
 		}
 		else {
 			foreach ($domains as $domain) {
