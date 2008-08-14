@@ -159,50 +159,74 @@ class tx_realurl_tcemain {
 	 */
 	function processDatamap_afterDatabaseOperations($status, $table, $id, $fieldArray, &$pObj) {
 		/* @var $pObj t3lib_TCEmain */
-		if (!isset($pObj->tx_realurl_tcemain_id)) {
-			return;
-		}
-		$tceMainInst = array_search($pObj->tx_realurl_tcemain_id, $this->tceMainInstList);
-		t3lib_div::devLog('$processDatamap_afterDatabaseOperations', 'realurl', 0, array('status' => $status, 'tceMainInst' => $tceMainInst));
-		if ($status == 'update' && $tceMainInst !== false && isset($this->fieldCollection[$tceMainInst][$table][$id])) {
-			$configName = &$this->fieldCollection[$tceMainInst][$table][$id]['configName'];
-			$config = &$GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl'][$configName];
-			// Now we need to call the whole realurl to process the ID. We cannot just
-			// call tx_realurl_advanced because tx_realurl_advanced needs
-			// tx_realurl as parent object
-			$userFunc = $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tstemplate.php']['linkData-PostProc']['tx_realurl'];
-			$savedAutoUpdatePathCache = $config['pagePath']['autoUpdatePathCache'];
-			$config['pagePath']['autoUpdatePathCache'] = true;
-			$url = 'index.php?id=' . $this->fieldCollection[$tceMainInst][$table][$id]['realUid'];
-			if ($table == 'pages_language_overlay') {
-				$url .= '&' . ($config['pagePath']['languageGetVar'] ? $config['pagePath']['languageGetVar'] : 'L') . '=' . $config['language'];
-			}
-			$params = array(
-				'LD' => array(
-					'totalURL' => $url
-				),
-				'TCEmainHook' => true
-			);
+		if (isset($pObj->tx_realurl_tcemain_id)) {
+			$tceMainInst = array_search($pObj->tx_realurl_tcemain_id, $this->tceMainInstList);
+			t3lib_div::devLog('$processDatamap_afterDatabaseOperations', 'realurl', 0, array('status' => $status, 'tceMainInst' => $tceMainInst));
+			if ($status == 'update' && $tceMainInst !== false && isset($this->fieldCollection[$tceMainInst][$table][$id])) {
+				$configName = &$this->fieldCollection[$tceMainInst][$table][$id]['configName'];
+				$config = &$GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl'][$configName];
+				// Now we need to call the whole realurl to process the ID. We cannot just
+				// call tx_realurl_advanced because tx_realurl_advanced needs
+				// tx_realurl as parent object
+				$userFunc = $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tstemplate.php']['linkData-PostProc']['tx_realurl'];
+				$savedAutoUpdatePathCache = $config['pagePath']['autoUpdatePathCache'];
+				$config['pagePath']['autoUpdatePathCache'] = true;
+				$url = 'index.php?id=' . $this->fieldCollection[$tceMainInst][$table][$id]['realUid'];
+				if ($table == 'pages_language_overlay') {
+					$url .= '&' . ($config['pagePath']['languageGetVar'] ? $config['pagePath']['languageGetVar'] : 'L') . '=' . $config['language'];
+				}
+				$params = array(
+					'LD' => array(
+						'totalURL' => $url
+					),
+					'TCEmainHook' => true
+				);
 
-			$tsfe = $GLOBALS['TSFE'];
-			if ($this->createTSFE($this->fieldCollection[$tceMainInst][$table][$id]['realUid'])) {
-				// Here only if we can create speaking URL for the page (page is not sysfolder, etc)
-				$parent = $GLOBALS['TSFE'];
-				t3lib_div::devLog('Calling FE', 'realurl');
-				t3lib_div::callUserFunction($userFunc, $params, $parent);	// Note: encodeSpUrl does not use parent object at all!
-				$config['pagePath']['autoUpdatePathCache'] = $savedAutoUpdatePathCache;
-			}
-			$GLOBALS['TSFE'] = $tsfe;
+				$tsfe = $GLOBALS['TSFE'];
+				if ($this->createTSFE($this->fieldCollection[$tceMainInst][$table][$id]['realUid'])) {
+					// Here only if we can create speaking URL for the page (page is not sysfolder, etc)
+					$parent = $GLOBALS['TSFE'];
+					t3lib_div::devLog('Calling FE', 'realurl');
+					t3lib_div::callUserFunction($userFunc, $params, $parent);	// Note: encodeSpUrl does not use parent object at all!
+					$config['pagePath']['autoUpdatePathCache'] = $savedAutoUpdatePathCache;
+				}
+				$GLOBALS['TSFE'] = $tsfe;
 
-			// Clean up to help PHP free memory more efficiently
-			unset($this->fieldCollection[$tceMainInst][$table][$id]);
-			if (count($this->fieldCollection[$tceMainInst][$table]) == 0) {
-				unset($this->fieldCollection[$tceMainInst][$table]);
-				if (count($this->fieldCollection[$tceMainInst]) == 0) {
-					unset($this->fieldCollection[$tceMainInst]);
-					unset($this->tceMainInstList[$tceMainInst]);
+				// Clean up to help PHP free memory more efficiently
+				unset($this->fieldCollection[$tceMainInst][$table][$id]);
+				if (count($this->fieldCollection[$tceMainInst][$table]) == 0) {
+					unset($this->fieldCollection[$tceMainInst][$table]);
+					if (count($this->fieldCollection[$tceMainInst]) == 0) {
+						unset($this->fieldCollection[$tceMainInst]);
+						unset($this->tceMainInstList[$tceMainInst]);
+					}
 				}
 			}
+		}
+		// Clear caches if exclude flag was changed
+		if ($status == 'update' && $table == 'pages' && isset($fieldArray['tx_realurl_exclude'])) {
+			$this->clearBranchCache(intval($id));
+		}
+	}
+
+	/**
+	 * Clears branch cache for the given page
+	 *
+	 * @param	int	$id	Page id
+	 * @return	void
+	 */
+	function clearBranchCache($id) {
+		$GLOBALS['TYPO3_DB']->exec_DELETEquery('tx_realurl_urldecodecache',
+				'page_id=' . $id);
+		$GLOBALS['TYPO3_DB']->exec_DELETEquery('tx_realurl_urlencodecache',
+				'page_id=' . $id);
+		$GLOBALS['TYPO3_DB']->exec_DELETEquery('tx_realurl_pathcache',
+				'page_id=' . $id . ' AND expire=0');
+		// Recurse to pages
+		$rows = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('uid', 'pages',
+				'deleted=0 AND pid=' . $id);
+		foreach ($rows as $row) {
+			$this->clearBranchCache($row['uid']);
 		}
 	}
 

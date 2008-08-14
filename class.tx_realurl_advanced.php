@@ -447,18 +447,21 @@ class tx_realurl_advanced {
 				$paths = array();
 				$paths[$i] = $cachedPagePath['pagepath'];
 			}
-			else { // Building up the path from page title etc.
-				// List of "pages" fields to traverse for a "directory title" in the speaking URL (only from RootLine!!):
-				$segTitleFieldArray = t3lib_div::trimExplode(',', $this->conf['segTitleFieldList'] ? $this->conf['segTitleFieldList'] : TX_REALURL_SEGTITLEFIELDLIST_DEFAULT, 1);
-				$theTitle = '';
-				foreach ($segTitleFieldArray as $fieldName) {
-					if ($page[$fieldName]) {
-						$theTitle = $page[$fieldName];
-						break;
+			else {
+				// Building up the path from page title etc.
+				if (!$page['tx_realurl_exclude']) {
+					// List of "pages" fields to traverse for a "directory title" in the speaking URL (only from RootLine!!):
+					$segTitleFieldArray = t3lib_div::trimExplode(',', $this->conf['segTitleFieldList'] ? $this->conf['segTitleFieldList'] : TX_REALURL_SEGTITLEFIELDLIST_DEFAULT, 1);
+					$theTitle = '';
+					foreach ($segTitleFieldArray as $fieldName) {
+						if ($page[$fieldName]) {
+							$theTitle = $page[$fieldName];
+							break;
+						}
 					}
-				}
 
-				$paths[$i] = $this->encodeTitle($theTitle);
+					$paths[$i] = $this->encodeTitle($theTitle);
+				}
 			}
 		}
 
@@ -678,33 +681,56 @@ class tx_realurl_advanced {
 		$title = array_shift($urlParts);
 
 		// Perform search:
-		list($uid, $row) = $this->searchTitle_searchPid($pid, $title);
+		list($uid, $row, $exclude) = $this->searchTitle_searchPid($pid, $title);
 
 		// If a title was found...
 		if ($uid) {
-
-			// Set base currentIdMp for next level:
-			$currentIdMp = array($uid, $mpvar);
-
-			// Modify values if it was a mount point:
-			if (is_array($row['_IS_MOUNTPOINT'])) {
-				$mpvar .= ($mpvar ? ',' : '') . $row['_IS_MOUNTPOINT']['MPvar'];
-				if ($row['_IS_MOUNTPOINT']['overlay']) {
-					$currentIdMp[1] = $mpvar; // Change mpvar for the currentIdMp variable.
-				}
-				else {
-					$uid = $row['_IS_MOUNTPOINT']['mount_pid'];
+			return $this->searchTitle_processResult($row, $mpvar, $urlParts);
+		}
+		elseif (count($exclude)) {
+			// There were excluded pages, we have to process those!
+			foreach ($exclude as $row) {
+				$urlParts_copy = $urlParts;
+				array_unshift($urlParts_copy, $title);
+				$result = $this->searchTitle_processResult($row, $mpvar, $urlParts_copy);
+				if ($result[0]) {
+					$urlParts = $urlParts_copy;
+					return $result;
 				}
 			}
+		}
+		// No title, so we reached the end of the id identifying part of the path and now put back the current non-matched title segment before we return the PID:
+		array_unshift($urlParts, $title);
+		return $currentIdMp;
+	}
 
-			// Yep, go search for the next subpage
-			return $this->searchTitle($uid, $mpvar, $urlParts, $currentIdMp);
+	/**
+	 * Process title search result. This is executed both when title is found and
+	 * when excluded segment is found
+	 *
+	 * @param	array	$row	Row to process
+	 * @param	array	$mpvar	MP var
+	 * @param	array	$urlParts	URL segments
+	 * @return	array	Resolved id and mpvar
+	 */
+	function searchTitle_processResult($row, $mpvar, &$urlParts) {
+		$uid = $row['uid'];
+		// Set base currentIdMp for next level:
+		$currentIdMp = array($uid, $mpvar);
+
+		// Modify values if it was a mount point:
+		if (is_array($row['_IS_MOUNTPOINT'])) {
+			$mpvar .= ($mpvar ? ',' : '') . $row['_IS_MOUNTPOINT']['MPvar'];
+			if ($row['_IS_MOUNTPOINT']['overlay']) {
+				$currentIdMp[1] = $mpvar; // Change mpvar for the currentIdMp variable.
+			}
+			else {
+				$uid = $row['_IS_MOUNTPOINT']['mount_pid'];
+			}
 		}
-		else {
-			// No title, so we reached the end of the id identifying part of the path and now put back the current non-matched title segment before we return the PID:
-			array_unshift($urlParts, $title);
-			return $currentIdMp;
-		}
+
+		// Yep, go search for the next subpage
+		return $this->searchTitle($uid, $mpvar, $urlParts, $currentIdMp);
 	}
 
 	/**
@@ -720,7 +746,7 @@ class tx_realurl_advanced {
 
 		// List of "pages" fields to traverse for a "directory title" in the speaking URL (only from RootLine!!):
 		$segTitleFieldList = $this->conf['segTitleFieldList'] ? $this->conf['segTitleFieldList'] : TX_REALURL_SEGTITLEFIELDLIST_DEFAULT;
-		$selList = t3lib_div::uniqueList('uid,pid,doktype,mount_pid,mount_pid_ol,' . $segTitleFieldList);
+		$selList = t3lib_div::uniqueList('uid,pid,doktype,mount_pid,mount_pid_ol,tx_realurl_exclude,' . $segTitleFieldList);
 		$segTitleFieldArray = t3lib_div::trimExplode(',', $segTitleFieldList, 1);
 
 		// page select object - used to analyse mount points.
@@ -730,20 +756,22 @@ class tx_realurl_advanced {
 		// First we find field values from the default language
 		// Pages are selected in menu order and if duplicate titles are found the first takes precedence!
 		$titles = array(); // array(title => uid);
+		$exclude = array();
 		$uidTrack = array();
 		$result = $GLOBALS['TYPO3_DB']->exec_SELECTquery($selList, 'pages',
-						'pid = ' . intval($searchPid) .
-						' AND deleted=0 AND doktype != 255', '',
-						'sorting');
+						'pid=' . intval($searchPid) .
+						' AND deleted=0 AND doktype!=255', '', 'sorting');
 		while (($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($result))) {
 
 			// Mount points:
 			$mount_info = $sys_page->getMountPointInfo($row['uid'], $row);
-			if (is_array($mount_info)) { // There is a valid mount point.
-				if ($mount_info['overlay']) { // Overlay mode: Substitute WHOLE record:
+			if (is_array($mount_info)) {
+				// There is a valid mount point.
+				if ($mount_info['overlay']) {
+					// Overlay mode: Substitute WHOLE record:
 					$result2 = $GLOBALS['TYPO3_DB']->exec_SELECTquery($selList, 'pages',
-									'uid = ' . intval($mount_info['mount_pid']) .
-									' AND deleted=0 AND doktype != 255');
+									'uid=' . intval($mount_info['mount_pid']) .
+									' AND deleted=0 AND doktype!=255');
 					$mp_row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($result2);
 					if (is_array($mp_row)) {
 						$row = $mp_row;
@@ -757,12 +785,19 @@ class tx_realurl_advanced {
 
 			// Collect titles from selected row:
 			if (is_array($row)) {
-				$uidTrack[$row['uid']] = $row;
-				foreach ($segTitleFieldArray as $fieldName) {
-					if ($row[$fieldName]) {
-						$encodedTitle = $this->encodeTitle($row[$fieldName]);
-						if (!isset($titles[$fieldName][$encodedTitle])) {
-							$titles[$fieldName][$encodedTitle] = $row['uid'];
+				if ($row['tx_realurl_exclude']) {
+					// segment is excluded
+					$exclude[] = $row;
+				}
+				else {
+					// segment is not excluded
+					$uidTrack[$row['uid']] = $row;
+					foreach ($segTitleFieldArray as $fieldName) {
+						if ($row[$fieldName]) {
+							$encodedTitle = $this->encodeTitle($row[$fieldName]);
+							if (!isset($titles[$fieldName][$encodedTitle])) {
+								$titles[$fieldName][$encodedTitle] = $row['uid'];
+							}
 						}
 					}
 				}
@@ -800,9 +835,9 @@ class tx_realurl_advanced {
 		// Return:
 		$encodedTitle = $this->encodeTitle($title);
 		if (isset($allTitles[$encodedTitle])) {
-			return array($allTitles[$encodedTitle], $uidTrack[$allTitles[$encodedTitle]]);
+			return array($allTitles[$encodedTitle], $uidTrack[$allTitles[$encodedTitle]], false);
 		}
-		return false;
+		return array(false, false, $exclude);
 	}
 
 	/*******************************
