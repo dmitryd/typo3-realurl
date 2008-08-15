@@ -1,3 +1,7 @@
+2008-08-15	Dmitry Dulepov	<dmitry@typo3.org>
+
+	* Fixed bug #6513: Small improvements (multi-language, URL length, page type)
+
 2008-08-14	Dmitry Dulepov	<dmitry@typo3.org>
 
 	* Added more methods to determine root page id
