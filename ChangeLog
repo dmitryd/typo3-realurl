@@ -4,6 +4,7 @@
 	* Fixed bug #7444: Wrong resolving of shortcut pages leading to double content
 	* Fixed bug #8683: Improve domain handling in dependency to query parameters (patch by Oliver Hader)
 	* Fixed bug #5506: Redirects set in BE doesn't work
+	* Released version 1.5.0
 
 2008-08-14	Dmitry Dulepov	<dmitry@typo3.org>
 
