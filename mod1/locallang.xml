@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<T3locallang>
+	<meta type="array">
+		<type>module</type>
+		<description>Language labels for module &quot;tools_txrealurlM1&quot;</description>
+	</meta>
+	<data type="array">
+		<languageKey index="default" type="array">
+			<label index="title">RealURL management</label>
+			<label index="description">This module manages RealURL configuration. Tabs below are placed in the order you should use them when creating RealURL configuration.</label>
+			<label index="menuitem_init">Init</label>
+			<label index="menuitem_preVars">Pre-vars</label>
+			<label index="menuitem_fixedPostVars">Fixed Post-vars</label>
+			<label index="menuitem_postVarSets">Post var sets</label>
+			<label index="menuitem_pagePath">Path path</label>
+			<label index="menuitem_fileName">File names</label>
+		</languageKey>
+	</data>
+</T3locallang>
