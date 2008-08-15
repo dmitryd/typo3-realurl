@@ -39,7 +39,7 @@ $TCA['pages']['columns'] += array(
 	),
 );
 
-t3lib_extMgm::addToAllTCAtypes('pages', 'tx_realurl_pathsegment,tx_realurl_exclude', t3lib_div::compat_version('4.2') ? '1' : '2', 'after:nav_title');
+t3lib_extMgm::addToAllTCAtypes('pages', 'tx_realurl_pathsegment,tx_realurl_exclude', t3lib_div::compat_version('4.2') ? '1,4' : '2,4', 'after:nav_title');
 
 $TCA['pages_language_overlay']['columns'] += array(
 	'tx_realurl_pathsegment' => array(
@@ -53,6 +53,6 @@ $TCA['pages_language_overlay']['columns'] += array(
 	),
 );
 
-t3lib_extMgm::addToAllTCAtypes('pages_language_overlay', 'tx_realurl_pathsegment', t3lib_div::compat_version('4.2') ? '1' : '2', 'after:nav_title');
+t3lib_extMgm::addToAllTCAtypes('pages_language_overlay', 'tx_realurl_pathsegment', t3lib_div::compat_version('4.2') ? '1,4' : '2,4', 'after:nav_title');
 
 ?>

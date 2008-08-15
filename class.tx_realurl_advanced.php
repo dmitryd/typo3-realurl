@@ -166,8 +166,9 @@ class tx_realurl_advanced {
 				break;
 			}
 
-			if (!$this->conf['dontResolveShortcuts'] && ($page['doktype'] == 4) && ($page['shortcut_mode'] == 0)) { // Shortcut
-				$pageid = $page['shortcut'] ? $page['shortcut'] : $pageid;
+			if (!$this->conf['dontResolveShortcuts'] && $page['doktype'] == 4) {
+				// Shortcut
+				$pageid = $this->resolveShortcut($page, $disableGroupAccessCheck);
 			}
 			else { // done
 				$pageid = $page['uid'];
@@ -920,6 +921,43 @@ class tx_realurl_advanced {
 			}
 		}
 		return $lang;
+	}
+
+	/**
+	 * Resolves shortcut to the page
+	 *
+	 * @param	array	$page	Page record
+	 * @param	array	$disableGroupAccessCheck	Flag for getPage()
+	 * @param	array	$log	Internal log
+	 * @return	int	Found page id
+	 */
+	function resolveShortcut($page, $disableGroupAccessCheck, $log = array()) {
+		if (isset($log[$page['uid']])) {
+			// loop detected!
+			return $page['uid'];
+		}
+		$log[$page['uid']] = '';
+		$pageid = $page['uid'];
+		if ($page['shortcut_mode'] == 0) {
+			// Jumps to defined page
+			if ($page['shortcut']) {
+				$pageid = intval($page['shortcut']);
+				$page = $GLOBALS['TSFE']->sys_page->getPage($pageid, $disableGroupAccessCheck);
+				if ($page && $page['doktype'] == 4) {
+					$pageid = $this->resolveShortcut($page, $disableGroupAccessCheck, $log);
+				}
+			}
+		}
+		elseif ($page['shortcut_mode'] == 1) {
+			// Jumps to first subpage
+			$rows = $GLOBALS['TSFE']->sys_page->getMenu($page['uid']);
+			if (count($rows) > 0) {
+				reset($rows);
+				$row = current($rows);
+				$pageid = ($row['doktype'] == 4 ? $this->resolveShortcut($row, $disableGroupAccessCheck, $log) : $row['uid']);
+			}
+		}
+		return $pageid;
 	}
 }
 

@@ -204,8 +204,11 @@ class tx_realurl_tcemain {
 			}
 		}
 		// Clear caches if exclude flag was changed
-		if ($status == 'update' && $table == 'pages' && isset($fieldArray['tx_realurl_exclude'])) {
-			$this->clearBranchCache(intval($id));
+		if ($status == 'update' && $table == 'pages' &&
+				(isset($fieldArray['tx_realurl_exclude']) ||
+				isset($fieldArray['shortcut_mode']) ||
+				isset($fieldArray['doktype']))) {
+			$this->clearBranchCache(intval($id), isset($fieldArray['tx_realurl_exclude']));
 		}
 	}
 
@@ -213,20 +216,23 @@ class tx_realurl_tcemain {
 	 * Clears branch cache for the given page
 	 *
 	 * @param	int	$id	Page id
+	 * @param	boolean	$recurse	true if should clear cache for subpages
 	 * @return	void
 	 */
-	function clearBranchCache($id) {
+	function clearBranchCache($id, $recurse) {
 		$GLOBALS['TYPO3_DB']->exec_DELETEquery('tx_realurl_urldecodecache',
 				'page_id=' . $id);
 		$GLOBALS['TYPO3_DB']->exec_DELETEquery('tx_realurl_urlencodecache',
 				'page_id=' . $id);
 		$GLOBALS['TYPO3_DB']->exec_DELETEquery('tx_realurl_pathcache',
 				'page_id=' . $id . ' AND expire=0');
-		// Recurse to pages
-		$rows = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('uid', 'pages',
-				'deleted=0 AND pid=' . $id);
-		foreach ($rows as $row) {
-			$this->clearBranchCache($row['uid']);
+		if ($recurse) {
+			// Recurse to sub pages
+			$rows = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('uid', 'pages',
+					'deleted=0 AND pid=' . $id);
+			foreach ($rows as $row) {
+				$this->clearBranchCache($row['uid']);
+			}
 		}
 	}
 

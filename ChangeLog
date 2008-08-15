@@ -1,6 +1,7 @@
 2008-08-15	Dmitry Dulepov	<dmitry@typo3.org>
 
 	* Fixed bug #6513: Small improvements (multi-language, URL length, page type)
+	* Fixed bug #7444: Wrong resolving of shortcut pages leading to double content
 
 2008-08-14	Dmitry Dulepov	<dmitry@typo3.org>
 
