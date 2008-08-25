@@ -1,3 +1,7 @@
+2008-08-25	Dmitry Dulepov	<dmitry@typo3.org>
+
+	* Fixed bug #9190: Missing argument 2 for tx_realurl_tcemain::clearBranchCache()
+
 2008-08-15	Dmitry Dulepov	<dmitry@typo3.org>
 
 	* Fixed bug #6513: Small improvements (multi-language, URL length, page type)

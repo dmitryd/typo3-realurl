@@ -231,7 +231,7 @@ class tx_realurl_tcemain {
 			$rows = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('uid', 'pages',
 					'deleted=0 AND pid=' . $id);
 			foreach ($rows as $row) {
-				$this->clearBranchCache($row['uid']);
+				$this->clearBranchCache($row['uid'], $recurse);
 			}
 		}
 	}
