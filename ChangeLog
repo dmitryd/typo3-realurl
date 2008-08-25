@@ -1,6 +1,7 @@
 2008-08-25	Dmitry Dulepov	<dmitry@typo3.org>
 
 	* Fixed bug #9190: Missing argument 2 for tx_realurl_tcemain::clearBranchCache()
+	* reapplyAbsRefPrefix is not on if not set explicitely
 
 2008-08-15	Dmitry Dulepov	<dmitry@typo3.org>
 

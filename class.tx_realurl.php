@@ -249,7 +249,7 @@ class tx_realurl {
 		}
 
 		// Reapply config.absRefPrefix if necessary
-		if ($this->extConf['init']['reapplyAbsRefPrefix'] && $GLOBALS['TSFE']->absRefPrefix) {
+		if ((!isset($this->extConf['init']['reapplyAbsRefPrefix']) || $this->extConf['init']['reapplyAbsRefPrefix']) && $GLOBALS['TSFE']->absRefPrefix) {
 			$newUrl = $GLOBALS['TSFE']->absRefPrefix . $newUrl;
 		}
 
