@@ -781,7 +781,7 @@ class tx_realurl {
 					if ($this->appendedSlash && count($options) > 0) {
 						foreach ($options as $option) {
 							$matches = array();
-							if (preg_match('/^redirect(\[(30[12347])\])?$/', $option, $matches)) {
+							if (preg_match('/^redirect(\[(30[1237])\])?$/', $option, $matches)) {
 								$code = count($matches) > 1 ? $matches[2] : 301;
 								if (version_compare(TYPO3_version, '4.3.0') >= 0) {
 									$status = constant('t3lib_div::HTTP_STATUS_' . $code);
