@@ -5,7 +5,7 @@
 2008-08-25	Dmitry Dulepov	<dmitry@typo3.org>
 
 	* Fixed bug #9190: Missing argument 2 for tx_realurl_tcemain::clearBranchCache()
-	* reapplyAbsRefPrefix is not on if not set explicitely
+	* reapplyAbsRefPrefix is now on if not set explicitely
 	* add page exclusion from path also to "not in menu" and sysfolders
 	* Released version 1.5.1
 
