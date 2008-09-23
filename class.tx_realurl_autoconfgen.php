@@ -157,7 +157,7 @@ class tx_realurl_autoconfgen {
 		$confTemplate = array(
 			'init' => array(
 				'enableCHashCache' => true,
-				'appendMissingSlash' => 'ifNotFile',
+				'appendMissingSlash' => 'ifNotFile,redirect',
 				'adminJumpToBackend' => true,
 				'enableUrlDecodeCache' => true,
 				'enableUrlEncodeCache' => true,

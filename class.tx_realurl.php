@@ -123,7 +123,7 @@ class tx_realurl {
 	var $filePart; // Contains the filename when a Speaking URL is decoded.
 	var $dirParts; // All directory parts of the string
 	var $orig_paramKeyValues = array(); // Contains the index of GETvars that the URL had when the encoding began.
-	var $appendedSlash = FALSE; // Set true if slash is appended
+	var $appendedSlash = false; // Set true if slash is appended
 	var $encodePageId = 0; // Set with the page id during encoding. for internal use only.
 	var $speakingURIpath_procValue = ''; // For decoding, the path we are processing.
 	var $disableDecodeCache = FALSE; // If set internally, decode caching is disabled. Used when a 303 header is set in tx_realurl_advanced.
@@ -766,18 +766,35 @@ class tx_realurl {
 
 			// Append missing slash if configured for:
 			if ($this->extConf['init']['appendMissingSlash']) {
-				if (!ereg('\/$', $speakingURIpath)) { // Only process if a slash is missing:
-					switch ((string)$this->extConf['init']['appendMissingSlash']) {
-						case 'ifNotFile':
-							if (!ereg('\/[^\/]+\.[^\/]+$', '/' . $speakingURIpath)) {
-								$speakingURIpath .= '/';
-								$this->appendedSlash = TRUE;
-							}
-							break;
-						default:
+				if (!preg_match('/\/$/', $speakingURIpath)) { // Only process if a slash is missing:
+					$options = t3lib_div::trimExplode(',', $this->extConf['init']['appendMissingSlash'], true);
+					if (in_array('ifNotFile', $options)) {
+						if (!preg_match('/\/[^\/]+\.[^\/]+$/', '/' . $speakingURIpath)) {
 							$speakingURIpath .= '/';
-							$this->appendedSlash = TRUE;
-							break;
+							$this->appendedSlash = true;
+						}
+					}
+					else {
+						$speakingURIpath .= '/';
+						$this->appendedSlash = true;
+					}
+					if ($this->appendedSlash && count($options) > 0) {
+						foreach ($options as $option) {
+							$matches = array();
+							if (preg_match('/^redirect(\[(30[12347])\])?$/', $option, $matches)) {
+								$code = count($matches) > 1 ? $matches[2] : 301;
+								if (version_compare(TYPO3_version, '4.3.0') >= 0) {
+									$status = constant('t3lib_div::HTTP_STATUS_' . $code);
+								}
+								else {
+									$status = 'HTTP/1.0 ' . $code . ' TYPO3 RealURL redirect';
+								}
+								@ob_end_clean();
+								header($status);
+								header('Location: ' . t3lib_div::locationHeaderUrl($speakingURIpath));
+								exit;
+							}
+						}
 					}
 				}
 			}
