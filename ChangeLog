@@ -2,6 +2,7 @@
 
 	* Fixed bug #9265: findRootPageIdByHost is used in class.tx_realurl_advanced.php but never defined
 	* Fixed bug: appendMissingSlash does not work properly if query string present
+	* Fixed bug #9288: Typewriting error in ext_localconf.php
 
 2008-09-23	Dmitry Dulepov	<dmitry@typo3.org>
 
