@@ -1,3 +1,7 @@
+2008-09-27	Dmitry Dulepov	<dmitry@typo3.org>
+
+	* Fixed bug #9265: findRootPageIdByHost is used in class.tx_realurl_advanced.php but never defined
+
 2008-09-23	Dmitry Dulepov	<dmitry@typo3.org>
 
 	* Added "redirect" keyword for "appendMissingSlash" option
@@ -298,5 +302,3 @@
 2004-03-23  Kasper Sk�hj,,,  <kasper@typo3.com>
 
 	* Added the possibility of specifying more than just the "nav_title,title" fields from the rootline in the generation/resolve of the speaking URL. Documentation updated accordingly.
-
-

@@ -643,7 +643,7 @@ class tx_realurl_advanced {
 			$pid = intval($this->conf['rootpage_id']);
 		}
 		else {
-			$pid = $this->pObj->findRootPageIdByHost();
+			$pid = $this->pObj->findRootPageId();
 		}
 
 		// Now, recursively search for the path from this root (if there are any elements in $urlParts)
