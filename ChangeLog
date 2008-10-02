@@ -3,6 +3,7 @@
 	* Fixed bug #9376: ['_DOMAINS'] requires preVars definition
 	* Fixed bug #9405: devLog() calls without debug test in class.tx_realurl_tcemain.php
 	* Require PHP5 for RealURL from now on
+	* Released version 1.5.2
 
 2008-09-27	Dmitry Dulepov	<dmitry@typo3.org>
 
