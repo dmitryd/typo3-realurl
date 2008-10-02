@@ -1,3 +1,7 @@
+2008-10-02	Dmitry Dulepov	<dmitry@typo3.org>
+
+	* Fixed bug #9376: ['_DOMAINS'] requires preVars definition
+
 2008-09-27	Dmitry Dulepov	<dmitry@typo3.org>
 
 	* Fixed bug #9265: findRootPageIdByHost is used in class.tx_realurl_advanced.php but never defined

@@ -141,6 +141,17 @@ class tx_realurl {
 
 	var $enableDevLog = false;
 
+	/**
+	 * If non-mepty, corresponding URL query parameter will be ignored in preVars
+	 * (note: preVars only!). This is necessary for _DOMAINS feature. This value
+	 * is set to empty in adjustConfigurationByHostEncode().
+	 *
+	 * @see tx_realurl::adjustConfigurationByHostEncode()
+	 * @see tx_realurl::encodeSpURL_doEncode()
+	 * @var	string
+	 */
+	protected $ignoreGETvar;
+
 	/************************************
 	 *
 	 * Translate parameters to a Speaking URL (t3lib_tstemplate::linkData)
@@ -276,8 +287,15 @@ class tx_realurl {
 	 */
 	function encodeSpURL_urlPrepend(&$parameters, &$pObj) {
 		if (isset($parameters['finalTagParts']['url']) && isset($this->urlPrepend[$parameters['finalTagParts']['url']])) {
-			$url = $parameters['finalTagParts']['url'];
-			$url = $this->urlPrepend[$url] . ($url{0} != '/' ? '/' : '') . $url;
+			$urlKey = $url = $parameters['finalTagParts']['url'];
+
+			// Remove absRefPrefix if necessary
+			$absRefPrefixLength = strlen($GLOBALS['TSFE']->absRefPrefix);
+			if ($absRefPrefixLength != 0 && substr($url, 0, $absRefPrefixLength) == $GLOBALS['TSFE']->absRefPrefix) {
+				$url = substr($url, $absRefPrefixLength);
+			}
+
+			$url = $this->urlPrepend[$urlKey] . ($url{0} != '/' ? '/' : '') . $url;
 
 			// Adjust the URL:
 			$parameters['finalTag'] = str_replace(
@@ -306,8 +324,9 @@ class tx_realurl {
 		$GETparams = explode('&', $inputQuery);
 		foreach ($GETparams as $paramAndValue) {
 			list($p, $v) = explode('=', $paramAndValue, 2);
-			if (strlen($p)) {
-				$paramKeyValues[rawurldecode($p)] = rawurldecode($v);
+			$p = rawurldecode($p);
+			if ($p != '' && $p != $this->ignoreGETvar) {
+				$paramKeyValues[$p] = rawurldecode($v);
 			}
 		}
 		$this->orig_paramKeyValues = $paramKeyValues;
@@ -537,7 +556,7 @@ class tx_realurl {
 						}
 						break;
 					default:
-						if (!is_array($setup['cond']) || $this->checkCondition($setup['cond'], $prevVal)) {
+							if (!is_array($setup['cond']) || $this->checkCondition($setup['cond'], $prevVal)) {
 
 							// Looking if the GET var is found in parameter index:
 							$GETvarVal = isset($paramKeyValues[$setup['GETvar']]) ? $paramKeyValues[$setup['GETvar']] : '';
@@ -545,7 +564,6 @@ class tx_realurl {
 							// Set reverse map:
 							$revMap = is_array($setup['valueMap']) ? array_flip($setup['valueMap']) : array();
 
-							// Looking for value in value map
 							if (isset($revMap[$GETvarVal])) {
 								$prevVal = $GETvarVal;
 								$pathParts[] = rawurlencode($revMap[$GETvarVal]);
@@ -1902,6 +1920,7 @@ class tx_realurl {
 	 * @return	mixed		Information required for further processing or false if something went wrong
 	 */
 	function adjustConfigurationByHostEncode($configuration, $params) {
+		$this->ignoreGETvar = '';
 		if (is_array($params) && isset($params['LD']['totalURL']) && is_array($configuration)) {
 			$urlParts = parse_url($params['LD']['totalURL']);
 			parse_str($urlParts['query'], $urlParams);
@@ -1914,6 +1933,7 @@ class tx_realurl {
 					if ($expectedValue !== false && $disposal['value'] == $expectedValue) {
 						if (!isset($disposal['ifDifferentToCurrent']) || $disposal['value'] != $currentValue) {
 							if (isset($disposal['useConfiguration'])) {
+								$this->ignoreGETvar = $GETvar;
 								$this->setConfigurationByReference($disposal['useConfiguration']);
 							}
 							return $disposal;
