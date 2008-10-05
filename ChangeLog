@@ -1,3 +1,7 @@
+2008-10-05	Dmitry Dulepov	<dmitry@typo3.org>
+
+	* Fixed more issues with _DOMAINS (empty home page URL caused problems)
+
 2008-10-02	Dmitry Dulepov	<dmitry@typo3.org>
 
 	* Fixed bug #9376: ['_DOMAINS'] requires preVars definition

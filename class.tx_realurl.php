@@ -297,6 +297,8 @@ class tx_realurl {
 
 			$url = $this->urlPrepend[$urlKey] . ($url{0} != '/' ? '/' : '') . $url;
 
+			unset($this->urlPrepend[$parameters['finalTagParts']['url']]);
+
 			// Adjust the URL:
 			$parameters['finalTag'] = str_replace(
 				'"' . $parameters['finalTagParts']['url'] . '"',
@@ -1937,6 +1939,10 @@ class tx_realurl {
 								$this->setConfigurationByReference($disposal['useConfiguration']);
 							}
 							return $disposal;
+						}
+						else {
+							$this->ignoreGETvar = $GETvar;
+							break;
 						}
 					}
 				}
