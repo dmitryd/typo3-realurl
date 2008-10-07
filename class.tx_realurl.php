@@ -273,6 +273,18 @@ class tx_realurl {
 			$this->urlPrepend[$newUrl] = $urlPrepend;
 		}
 
+		// Call hooks
+		if (is_array($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['encodeSpURL_postProc'])) {
+			foreach($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['encodeSpURL_postProc'] as $userFunc) {
+				$params = array(
+					'pObj' => &$this,
+					'params' => $params,
+					'URL' => &$newUrl,
+				);
+				t3lib_div::callUserFunction($userFunc, $params, $this);
+			}
+		}
+
 		// Setting the encoded URL in the LD key of the params array - that value is passed by reference and thus returned to the linkData function!
 		$params['LD']['totalURL'] = $newUrl;
 	}
@@ -783,6 +795,18 @@ class tx_realurl {
 			// Getting the path which is above the current site url:
 			// For instance "first/second/third/index.html?&param1=value1&param2=value2" should be the result of the URL "http://localhost/typo3/dev/dummy_1/first/second/third/index.html?&param1=value1&param2=value2"
 			$speakingURIpath = $this->pObj->siteScript;
+
+			// Call hooks
+			if (is_array($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['decodeSpURL_preProc'])) {
+				foreach($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['decodeSpURL_preProc'] as $userFunc) {
+					$params = array(
+						'pObj' => &$this,
+						'params' => $params,
+						'URL' => &$speakingURIpath,
+					);
+					t3lib_div::callUserFunction($userFunc, $params, $this);
+				}
+			}
 
 			// Append missing slash if configured for:
 			if ($this->extConf['init']['appendMissingSlash']) {

@@ -1,3 +1,7 @@
+2008-10-07	Dmitry Dulepov	<dmitry@typo3.org>
+
+	* Added hooks to pre-/post-process URLs
+
 2008-10-05	Dmitry Dulepov	<dmitry@typo3.org>
 
 	* Fixed more issues with _DOMAINS (empty home page URL caused problems)
