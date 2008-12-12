@@ -261,6 +261,10 @@ class tx_realurl {
 
 		// Reapply config.absRefPrefix if necessary
 		if ((!isset($this->extConf['init']['reapplyAbsRefPrefix']) || $this->extConf['init']['reapplyAbsRefPrefix']) && $GLOBALS['TSFE']->absRefPrefix) {
+			// Prevent // in case of absRefPrefix ending with / and emptyUrlReturnValue=/
+			if (substr($GLOBALS['TSFE']->absRefPrefix, -1, 1) == '/' && substr($newUrl, 0, 1) == '/') {
+				$newUrl = substr($newUrl, 1);
+			}
 			$newUrl = $GLOBALS['TSFE']->absRefPrefix . $newUrl;
 		}
 
