@@ -330,15 +330,15 @@ class tx_realurl_tcemain {
 		require_once(PATH_site.'t3lib/class.t3lib_page.php');
 		require_once(PATH_site.'t3lib/class.t3lib_timetrack.php');
 
+		$temp_TTclassName = t3lib_div::makeInstanceClassName('t3lib_timeTrack');
+		$GLOBALS['TT'] = new $temp_TTclassName();
+		$GLOBALS['TT']->start();
+
 		// Finds the TSFE classname
 		$TSFEclassName = t3lib_div::makeInstanceClassName('tslib_fe');
 
 		// Create the TSFE class.
 		$GLOBALS['TSFE'] = new $TSFEclassName($GLOBALS['TYPO3_CONF_VARS'], $pid, '0', 0, '','','','');
-
-		$temp_TTclassName = t3lib_div::makeInstanceClassName('t3lib_timeTrack');
-		$GLOBALS['TT'] = new $temp_TTclassName();
-		$GLOBALS['TT']->start();
 
 		$GLOBALS['TSFE']->config['config']['language']='default';
 
