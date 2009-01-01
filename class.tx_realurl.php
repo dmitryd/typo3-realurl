@@ -863,7 +863,10 @@ class tx_realurl {
 				}
 
 				// Parse path:
-				$uParts = parse_url($speakingURIpath);
+				$uParts = @parse_url($speakingURIpath);
+				if (!is_array($uParts)) {
+					$this->decodeSpURL_throw404('Current URL is invalid');
+				}
 				$speakingURIpath = $this->speakingURIpath_procValue = $uParts['path'];
 
 				// Redirecting if needed (exits if so).

@@ -1,3 +1,7 @@
+2009-01-01  Dmitry Dulepov  <dmitry@typo3.org>
+
+	* Added a call to pageNotFound and exit if incoming URL cannot be parsed
+
 2008-12-16  Dmitry Dulepov  <dmitry@typo3.org>
 
 	* Released version 1.5.3
