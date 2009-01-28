@@ -140,6 +140,7 @@ class tx_realurl {
 	var $useMySQLExtendedSyntax = false;
 
 	var $enableDevLog = false;
+	var $enableStrictMode = false;
 
 	/**
 	 * If non-mepty, corresponding URL query parameter will be ignored in preVars
@@ -172,6 +173,7 @@ class tx_realurl {
 		}
 		$sysconf = unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['realurl']);
 		$this->enableDevLog = $sysconf['enableDevLog'];
+		$this->enableStrictMode = (boolean)$sysconf['enableStrictMode'];
 	}
 
 	/**
@@ -1812,21 +1814,46 @@ class tx_realurl {
 
 		$extConf = &$GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl'];
 
-		// First pass, finding configuration OR pointer string:
-		$this->extConf = isset($extConf[$this->host]) ? $extConf[$this->host] : $extConf['_DEFAULT'];
+		$this->multidomain = $this->isMultidomain();
+		// $findRootPageId will force finding proper root page id if _DEFAULT
+		// configuration is used in the multidomain environment.
+		$findRootPageId = false;
 
-		// If it turned out to be a string pointer, then look up the real config:
-		if (is_string($this->extConf)) {
-			$this->extConf = is_array($extConf[$this->extConf]) ? $extConf[$this->extConf] : $extConf['_DEFAULT'];
+		// First pass, finding configuration OR pointer string:
+		if (isset($extConf[$this->host])) {
+			$this->extConf = $extConf[$this->host];
+
+			// If it turned out to be a string pointer, then look up the real config:
+			while (!is_null($this->extConf) && is_string($this->extConf)) {
+				$this->extConf = $extConf[$this->extConf];
+			}
+			if (!is_array($this->extConf)) {
+				$this->extConf = $extConf['_DEFAULT'];
+				$findRootPageId = $this->multidomain;
+			}
+		}
+		else {
+			if ($this->enableStrictMode && $this->multidomain) {
+				$this->pObj->pageNotFoundAndExit('RealURL strict mode error: ' .
+					'multidomain configuration detected and domain \'' . $this->host .
+					'\' is not configured for RealURL. Please, fix your RealURL configuration!');
+			}
+			$this->extConf = (array)$extConf['_DEFAULT'];
+			$findRootPageId = $this->multidomain;
 		}
 
-		$this->multidomain = (count($extConf) - (int)isset($extConf['_DOMAINS']) > 1);
-		if (!$this->extConf['pagePath']['rootpage_id']) {
+		if (!$this->extConf['pagePath']['rootpage_id'] && $this->enableStrictMode) {
+			$this->pObj->pageNotFoundAndExit('RealURL strict mode error: ' .
+				'multidomain configuration without rootpage_id. ' .
+				'Please, fix your RealURL configuration!');
+		}
+		if (!$this->extConf['pagePath']['rootpage_id'] || $findRootPageId) {
 			$this->extConf['pagePath']['rootpage_id'] = $this->findRootPageId();
 			$GLOBALS['TT']->setTSlogMessage('RealURL warning: rootpage_id was not configured!');
 		}
 		if ($this->multidomain && !$this->extConf['pagePath']['rootpage_id']) {
-			$this->pObj->pageNotFoundAndExit('RealURL error: multidomain configuration without rootpage_id!');
+			$this->pObj->pageNotFoundAndExit('RealURL error: ' .
+				'unable to determine rootpage_id for the current domain.');
 		}
 	}
 
@@ -2124,31 +2151,43 @@ class tx_realurl {
 			}
 		} while (count($domain) > 0);
 
-		// Try is_siteroot
-		if (!$rootpage_id) {
-			$rows = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('uid',
-						'pages', 'is_siteroot=1 AND deleted=0 AND hidden=0');
-			if (count($rows) == 1) {
-				$rootpage_id = $rows[0]['uid'];
-				if ($this->enableDevLog) {
-					t3lib_div::devLog('Found rootpage_id by searching pages', 'realurl', 0, array('rootpage_id' => $rootpage_id));
+		if (!$this->enableStrictMode) {
+			// Try is_siteroot
+			if (!$rootpage_id) {
+				$rows = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('uid',
+							'pages', 'is_siteroot=1 AND deleted=0 AND hidden=0');
+				if (count($rows) == 1) {
+					$rootpage_id = $rows[0]['uid'];
+					if ($this->enableDevLog) {
+						t3lib_div::devLog('Found rootpage_id by searching pages', 'realurl', 0, array('rootpage_id' => $rootpage_id));
+					}
+				}
+			}
+
+			// Try by TS template
+			if (!$rootpage_id) {
+				$rows = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('pid',
+							'sys_template', 'root=1 AND hidden=0');
+				if (count($rows) == 1) {
+					$rootpage_id = $rows[0]['pid'];
+					if ($this->enableDevLog) {
+						t3lib_div::devLog('Found rootpage_id by searching sys_template', 'realurl', 0, array('rootpage_id' => $rootpage_id));
+					}
 				}
 			}
 		}
-
-		// Try by TS template
-		if (!$rootpage_id) {
-			$rows = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('pid',
-						'sys_template', 'root=1 AND hidden=0');
-			if (count($rows) == 1) {
-				$rootpage_id = $rows[0]['pid'];
-				if ($this->enableDevLog) {
-					t3lib_div::devLog('Found rootpage_id by searching sys_template', 'realurl', 0, array('rootpage_id' => $rootpage_id));
-				}
-			}
-		}
-
 		return $rootpage_id;
+	}
+
+	/**
+	 * Checks if TYPO3 runs in the multidomain environment with different page ids
+	 *
+	 * @return	boolean
+	 */
+	function isMultidomain() {
+		list($row) = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('COUNT(distinct(pid)) AS t',
+			'sys_domain', 'redirectTo=\'\' AND hidden=0');
+		return ($row['t'] > 1);
 	}
 }
 
