@@ -1,6 +1,7 @@
 2009-01-28  Dmitry Dulepov  <dmitry@typo3.org>
 
 	* Added pages_language_overlay to modified_tables to make EM happy
+	* Removed hash from tx_realurl_pathcache and optimized the whole handling of this cache with additional indexes
 
 2009-01-01  Dmitry Dulepov  <dmitry@typo3.org>
 

@@ -209,7 +209,7 @@ class tx_realurl_advanced {
 		}
 		else {
 			// There's no page path cached yet (or if autoUpdatePathCache is set), just call updateCache() to let it generate and possibly cache the path
-			$pagePath = $this->updateURLCache($pageid, $mpvar, $lang, $cachedPagePath['pagepath']);
+			$pagePath = $this->updateURLCache($pageid, $mpvar, $lang, is_array($cachedPagePath) ? $cachedPagePath['pagepath'] : '');
 		}
 
 		// Set error if applicable.
@@ -242,7 +242,6 @@ class tx_realurl_advanced {
 		}
 
 		$pagepath = $pagepathRec['pagepath'];
-		$pagepathHash = $pagepathRec['pagepathhash'];
 		$langID = $pagepathRec['langID'];
 
 		if (!$this->conf['disablePathCache'] && !$this->pObj->isBEUserLoggedIn() && ((!$cached_pagepath && $pagepath) || (string)$pagepath !== (string)$cached_pagepath)) {
@@ -251,7 +250,25 @@ class tx_realurl_advanced {
 						' AND rootpage_id=' . intval($this->conf['rootpage_id']) .
 						' AND mpvar=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($mpvar, 'tx_realurl_pathcache');
 
-			// First, set expiration on existing records:
+			$GLOBALS['TYPO3_DB']->sql_query('START TRANSACTION');
+
+			// Make sure we have only one active record
+			// Using pathq2 index!
+			list($row) = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('COUNT(*) AS t',
+				'tx_realurl_pathcache', $cond . ' AND expire=0');
+			if ($row['t'] > 1) {
+				// Using pathq2 index!
+				$GLOBALS['TYPO3_DB']->sql_query('DELETE FROM tx_realurl_pathcache ' .
+					'WHERE ' . $cond . ' AND expires=0 LIMIT ' . ($row['t'] - 1));
+			}
+
+			// Next delete all expired
+			// Using pathq2 index!
+			$GLOBALS['TYPO3_DB']->exec_DELETEquery('tx_realurl_pathcache',
+						$cond . ' AND expire>0 AND expire<' . $this->makeExpirationTime());
+
+			// Set expiration on existing records:
+			// Using pathq2 index!
 			$GLOBALS['TYPO3_DB']->exec_UPDATEquery('tx_realurl_pathcache',
 						$cond . ' AND expire=0',
 						array(
@@ -260,22 +277,19 @@ class tx_realurl_advanced {
 						'expire'	// No quote!
 					);
 
-			// Next delete all expired
-			$GLOBALS['TYPO3_DB']->exec_DELETEquery('tx_realurl_pathcache',
-						$cond . ' AND expire>0 AND expire<' . $this->makeExpirationTime());
-
 			// Insert URL in cache:
 			$insertArray = array(
 				'page_id' => $id,
 				'language_id' => $langID,
 				'pagepath' => $pagepath,
-				'hash' => $pagepathHash,
 				'expire' => 0,
 				'rootpage_id' => intval($pagepathRec['rootpage_id']),
 				'mpvar' => $mpvar
 			);
 
 			$GLOBALS['TYPO3_DB']->exec_INSERTquery('tx_realurl_pathcache', $insertArray);
+
+			$GLOBALS['TYPO3_DB']->sql_query('COMMIT');
 		}
 
 		return $pagepathRec['pagepath'];
@@ -286,7 +300,6 @@ class tx_realurl_advanced {
 	 * Return it in an array like:
 	 *   array(
 	 *     'pagepath' => 'product_omschrijving/another_page_title/',
-	 *     'pagepathhash' => 'd0646c1c88',
 	 *     'langID' => '2',
 	 *   );
 	 *
@@ -376,7 +389,6 @@ class tx_realurl_advanced {
 				$this->IDtoPagePathCache[$cacheKey] = array(
 						'pagepath' => $pagepath,
 						'langID' => $langID,
-						'pagepathhash' => substr(md5($pagepath), 0, 10),
 						'rootpage_id' => $rootpage_id,
 					);
 			}
@@ -416,6 +428,7 @@ class tx_realurl_advanced {
 			$cachedPagePath = false;
 			if (!$stopUsingCache && !$this->conf['disablePathCache'] && !$this->conf['autoUpdatePathCache']) {
 
+				// Using pathq2 index!
 				$result = $GLOBALS['TYPO3_DB']->exec_SELECTquery('pagepath', 'tx_realurl_pathcache',
 								'page_id=' . intval($page['uid']) .
 								' AND language_id=' . intval($lang) .
@@ -502,10 +515,12 @@ class tx_realurl_advanced {
 				$copy_pathParts[$key] = $GLOBALS['TSFE']->csConvObj->conv_case($charset, $value, 'toLower');
 			}
 			while (count($copy_pathParts)) {
+				// Using pathq1 index!
 				$result = $GLOBALS['TYPO3_DB']->exec_SELECTquery('tx_realurl_pathcache.*', 'tx_realurl_pathcache,pages',
 						'tx_realurl_pathcache.page_id=pages.uid AND pages.deleted=0' .
-						' AND hash=' . $GLOBALS['TYPO3_DB']->fullQuoteStr(substr(md5(implode('/', $copy_pathParts)), 0, 10), 'tx_realurl_pathcache') .
-						' AND rootpage_id=' . intval($this->conf['rootpage_id']), '', 'expire', '1');
+						' AND rootpage_id=' . intval($this->conf['rootpage_id']) .
+						' AND pagepath=' . $GLOBALS['TYPO3_DB']->fullQuoteStr(implode('/', $copy_pathParts), 'tx_realurl_pathcache'),
+						'', 'expire', '1');
 
 				// This lookup does not include language and MP var since those are supposed to be fully reflected in the built url!
 				if (false !== ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($result))) {
@@ -559,6 +574,7 @@ class tx_realurl_advanced {
 					t3lib_div::devLog('pagePathToId found row', 'realurl', 0, $row);
 				}
 				// 'expire' in the query is only for logging
+				// Using pathq2 index!
 				list($newEntry) = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('pagepath,expire', 'tx_realurl_pathcache',
 						'page_id=' . intval($row['page_id']) . '
 						AND language_id=' . intval($row['language_id']) . '
