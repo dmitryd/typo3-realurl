@@ -649,7 +649,7 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 	 * @return	string		Form elements
 	 */
 	function saveCancelButtons($extra='')	{
-		$output.= '<input type="submit" name="_edit_save" value="Save" />';
+		$output.= '<input type="submit" name="_edit_save" value="Save" /> ';
 		$output.= '<input type="submit" name="_edit_cancel" value="Cancel" />';
 		$output.= $extra;
 
@@ -1413,14 +1413,15 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 		if ($cmd==='new' || $cmd==='edit')	{
 			if ($cmd==='new')	{
 				$idValue = 'NEW';
-				$editControls.= 'New entry:<br/>';
+				$editControls.= '<h2>New entry</h2>';
 				$data = array(
 					'url' => t3lib_div::_GP('defUrl'),
-					'destination' => ''
+					'destination' => '',
+					'has_moved' => 1
 				);
 			} else {
 				$idValue = intval($entry_id);
-				$editControls.= 'Edit entry:<br/>';
+				$editControls.= '<h2>Edit entry</h2>';
 
 				list($data) = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows(
 					'*',
@@ -1429,12 +1430,15 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 				);
 			}
 				// PATCH andreas.otto@dkd.de, make URL editable as well.
-			$editControls.= '
-				'.($cmd==='new' ? 'Url: /<input type="text" name="edit['.$idValue.'][url]" value="'.($data['url'] ? htmlspecialchars($data['url']) : 'mypage.htm').'" size="40" /><br/>':'Url: <input type="text" name="edit['.$idValue.'][url]" value="'.htmlspecialchars($data['url']).'" size="40" /><br/>').'
-				Destination: <input type="text" name="edit['.$idValue.'][destination]" value="'.htmlspecialchars($data['destination']).'" size="40" /><br/>
-				Send "301 Moved permanently" header: <input type="checkbox" name="edit['.$idValue.'][has_moved]" value="1"'.($data['has_moved']?' checked="checked"':'').' /><br/>
-				<input type="hidden" name="id" value="'.htmlspecialchars($this->pObj->id).'" />
-				'.$this->saveCancelButtons().'<hr/>';
+			$editControls .=
+				'<input type="hidden" name="id" value="'.htmlspecialchars($this->pObj->id).'" />' .
+				'<table border="0" cellspacing="3" cellpadding="0">' .
+				'<tr><td>Redirect from:</td><td>/<input type="text" name="edit['.$idValue.'][url]" value="'.($data['url'] ? htmlspecialchars($data['url']) : 'mypage.htm').'" size="40" /></td></tr>' .
+				'<tr><td>Redirect to:</td><td><span style="visibility:hidden">/</span><input type="text" name="edit['.$idValue.'][destination]" value="'.htmlspecialchars($data['destination']).'" size="40" /></td></tr>' .
+				'<tr><td></td><td><span style="visibility:hidden">/</span><input type="checkbox" name="edit['.$idValue.'][has_moved]" value="1"'.($data['has_moved']?' checked="checked"':'').' /> Send "301 Moved permanently" header</td></tr>' .
+				'<tr><td></td><td><span style="visibility:hidden">/</span>'.$this->saveCancelButtons().'</td></tr>' .
+				'</table>' .
+				'<hr style="margin:1em 0;height:1px"/>';
 		}
 
 			// If new/edit is submitted...:
@@ -1445,7 +1449,7 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 				$editId = key($data);
 				$editData = current($data);
 
-					// UPDATE
+				// Update existing data
 				if ($editId!=='NEW')	{
 					$fields_values = array(
 							// PATCH andreas.otto@dkd.de, update URL as well.
@@ -1453,31 +1457,39 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 						'url' => trim($editData['url']),
 						'destination' => trim($editData['destination']),
 						'has_moved' => trim($editData['has_moved']),
-						'tstamp' => time(),
+						'tstamp' => time()
 					);
-					if ($fields_values['destination'])	{
+					if ($fields_values['destination']) {
 						$GLOBALS['TYPO3_DB']->exec_UPDATEquery('tx_realurl_redirects','url_hash='.intval($editId),$fields_values);
-					} else die('Didn\'t fill in all fields!');
-				} else {	// INSERT:
+					}
+					else {
+						die('All fields must be filled in!');
+					}
+				} 
+				else {	
+					// Insert new data
 					$fields_values = array(
 						'url_hash' => t3lib_div::md5int($editData['url']),
 						'url' => trim($editData['url']),
 						'destination' => trim($editData['destination']),
 						'has_moved' => trim($editData['has_moved']),
-						'counter' => 1,
-						'tstamp' => time(),
+						'counter' => 0,
+						'tstamp' => time()
 					);
 					if ($fields_values['destination'] && $fields_values['url'])	{
-						$GLOBALS['TYPO3_DB']->exec_INSERTquery('tx_realurl_redirects',$fields_values);
-					} else die('Didn\'t fill in all fields!');
+						$GLOBALS['TYPO3_DB']->exec_INSERTquery('tx_realurl_redirects', $fields_values);
+					}
+					else {
+						die('All fields must be filled in!');
+					}
 				}
 			}
 		}
 
 			// PATCH andreas.otto@dkd.de, Add vars to mod settings, to change select order.
-		$gpVars = t3lib_div::GPvar('SET');
-		( isset( $gpVars['ob'] ) ) ? $this->pObj->MOD_SETTINGS['ob'] = $gpVars['ob'] : $this->pObj->MOD_SETTINGS['ob'] = 'url';
-		( isset( $gpVars['obdir'] ) ) ? $this->pObj->MOD_SETTINGS['obdir'] = $gpVars['obdir'] : $this->pObj->MOD_SETTINGS['obdir'] = 'ASC';
+		$gpVars = t3lib_div::_GP('SET');
+		$this->pObj->MOD_SETTINGS['ob'] = isset($gpVars['ob']) ? $gpVars['ob'] : 'url';
+		$this->pObj->MOD_SETTINGS['obdir'] = isset($gpVars['obdir']) ? $gpVars['obdir'] : 'ASC';
 
 			// SELECT ALL:
 		$list = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows(
@@ -1493,7 +1505,6 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 
 			foreach($list as $rec)	{
 
-					// PATCH andreas.otto@dkd.de, changed order of fields. Cropped display of links.
 					// Add data:
 				$tCells = array();
 				$tCells[] = '<td>'.
@@ -1504,11 +1515,11 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 							'<img'.t3lib_iconWorks::skinImg($this->pObj->doc->backPath,'gfx/garbage.gif','width="11" height="12"').' title="Delete entry" alt="" />'.
 							'</a>'.
 						'</td>';
-				$tCells[]='<td>'.$rec['counter'].'</td>';
-				$tCells[] = sprintf( '<td><a href="%s" target="_blank">%s</a></td>', htmlspecialchars(t3lib_div::getIndpEnv('TYPO3_SITE_URL').$rec['url']), htmlspecialchars($rec['url']) );
-				$tCells[] = sprintf( '<td><a href="%s" target="_blank" title="%s">%s</a></td>', htmlspecialchars(t3lib_div::locationHeaderUrl($rec['destination'])), htmlspecialchars($rec['destination']), ( strlen( htmlspecialchars($rec['destination']) ) > 30 ) ? substr(htmlspecialchars($rec['destination']),0,30) . '...' : htmlspecialchars($rec['destination']) );
-				$tCells[] = '<td>'.($rec['has_moved'] ? 'YES' : '&nbsp;').'</td>';
-
+				$tCells[] = sprintf( '<td><a href="%s" target="_blank">/%s</a></td>', htmlspecialchars(t3lib_div::getIndpEnv('TYPO3_SITE_URL').$rec['url']), htmlspecialchars($rec['url']) );
+				$tCells[] = sprintf( '<td><a href="%s" target="_blank" title="%s">%s</a></td>', htmlspecialchars(t3lib_div::locationHeaderUrl($rec['destination']{0} == '/' ? $rec['destination'] : '/' . $rec['destination'])), htmlspecialchars($rec['destination']), ( strlen( htmlspecialchars($rec['destination']) ) > 30 ) ? substr(htmlspecialchars($rec['destination']),0,30) . '...' : htmlspecialchars($rec['destination']) );
+				$tCells[] = '<td align="center">'.($rec['has_moved'] ? '+' : '&nbsp;').'</td>';
+				$tCells[] = '<td align="center">'.$rec['counter'].'</td>';
+				
 				if ($rec['last_referer']) {
 					$lastRef = htmlspecialchars($rec['last_referer']);
 					$tCells[] = sprintf( '<td><a href="%s" target="_blank" title="%s">%s</a></td>', $lastRef, $lastRef, (strlen($rec['last_referer']) > 30) ? htmlspecialchars(substr($rec['last_referer'], 0, 30)) . '...' : $lastRef);
@@ -1516,7 +1527,9 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 					$tCells[] = '<td>&nbsp;</td>';
 				}
 
-					// Error:
+				$tCells[] = '<td>' . t3lib_BEfunc::dateTimeAge($rec['tstamp']) . '</td>';
+				
+				// Error:
 				$eMsg = '';
 				if (($pagesWithUrl = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('page_id','tx_realurl_urlencodecache','content='.$GLOBALS['TYPO3_DB']->fullQuoteStr($rec['url'],'tx_realurl_urlencodecache'))))	{
 					foreach($pagesWithUrl as $k => $temp)	$pagesWithUrl[$k] = $temp['page_id'];
@@ -1524,15 +1537,9 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 				}
 				$tCells[]='<td>'.$eMsg.'</td>';
 
-
-				$tCells[]='<td>'.t3lib_BEfunc::dateTimeAge($rec['tstamp']).'</td>';
-
-					// Compile Row:
-				$output.= '
-					<tr class="bgColor'.($cc%2 ? '-20':'-10').'">
-						'.implode('
-						',$tCells).'
-					</tr>';
+				// Compile Row:
+				$output .= '<tr class="bgColor'.($cc%2 ? '-20':'-10').'">' .
+						implode('',$tCells).'</tr>';
 				$cc++;
 			}
 
@@ -1545,13 +1552,13 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 			}
 			$tCells = array();
 			$tCells[]='<td>&nbsp;</td>';
-			$tCells[]=sprintf( '<td><a href="%s">Counter:</a></td>', sprintf( 'index.php?id=%d&SET[type]=%s&SET[ob]=counter&SET[obdir]=%s', $this->pObj->id, $this->pObj->MOD_SETTINGS['type'], $obdir ) );
-			$tCells[]=sprintf( '<td><a href="%s">URL:</a></td>', sprintf( 'index.php?id=%d&SET[type]=%s&SET[ob]=url&SET[obdir]=%s', $this->pObj->id, $this->pObj->MOD_SETTINGS['type'], $obdir ) );
-			$tCells[]=sprintf( '<td><a href="%s">Redirect to:</a></td>', sprintf( 'index.php?id=%d&SET[type]=%s&SET[ob]=destination&SET[obdir]=%s', $this->pObj->id, $this->pObj->MOD_SETTINGS['type'], $obdir ) );
-			$tCells[]=sprintf( '<td><a href="%s">301:</a></td>', sprintf( 'index.php?id=%d&SET[type]=%s&SET[ob]=has_moved&SET[obdir]=%s', $this->pObj->id, $this->pObj->MOD_SETTINGS['type'], $obdir ) );
-			$tCells[]=sprintf( '<td><a href="%s">Last referer:</a></td>', sprintf( 'index.php?id=%d&SET[type]=%s&SET[ob]=last_referer&SET[obdir]=%s', $this->pObj->id, $this->pObj->MOD_SETTINGS['type'], $obdir ) );
-			$tCells[]='<td>Error:</td>';
-			$tCells[]='<td>Last time:</td>';
+			$tCells[]=sprintf( '<td><a href="%s">URL</a></td>', sprintf( 'index.php?id=%d&SET[type]=%s&SET[ob]=url&SET[obdir]=%s', $this->pObj->id, $this->pObj->MOD_SETTINGS['type'], $obdir ) );
+			$tCells[]=sprintf( '<td><a href="%s">Redirect to</a></td>', sprintf( 'index.php?id=%d&SET[type]=%s&SET[ob]=destination&SET[obdir]=%s', $this->pObj->id, $this->pObj->MOD_SETTINGS['type'], $obdir ) );
+			$tCells[]=sprintf( '<td><a href="%s">301</a></td>', sprintf( 'index.php?id=%d&SET[type]=%s&SET[ob]=has_moved&SET[obdir]=%s', $this->pObj->id, $this->pObj->MOD_SETTINGS['type'], $obdir ) );
+			$tCells[]=sprintf( '<td><a href="%s">Counter</a></td>', sprintf( 'index.php?id=%d&SET[type]=%s&SET[ob]=counter&SET[obdir]=%s', $this->pObj->id, $this->pObj->MOD_SETTINGS['type'], $obdir ) );
+			$tCells[]=sprintf( '<td><a href="%s">Last referer</a></td>', sprintf( 'index.php?id=%d&SET[type]=%s&SET[ob]=last_referer&SET[obdir]=%s', $this->pObj->id, $this->pObj->MOD_SETTINGS['type'], $obdir ) );
+			$tCells[]='<td>Last time</td>';
+			$tCells[]='<td>Error</td>';
 
 			$output = '
 				<tr class="bgColor5 tableheader">
@@ -1560,12 +1567,14 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 				</tr>'.$output;
 
 				// Compile final table and return:
-			$output = '<br/>'.$editControls.'
-				<a href="'.$this->linkSelf('&cmd=new').'">'.
+			$newButton = '';
+			if ($cmd != 'new') {
+				$newButton = '<div style="margin:0 0 0.5em 3px"><a href="'.$this->linkSelf('&cmd=new').'">'.
 				'<img'.t3lib_iconWorks::skinImg($this->pObj->doc->backPath,'gfx/new_el.gif','width="11" height="12"').' title="New entry" alt="" />'.
-				' New entry</a>
-				<br/>
-			<table border="0" cellspacing="1" cellpadding="0" id="tx-realurl-pathcacheTable" class="lrPadding c-list">'.$output.'
+				' New entry</a></div>';
+			}
+			$output = '<br/>'.$editControls . $newButton . '
+			<table border="0" cellspacing="2" cellpadding="2" id="tx-realurl-pathcacheTable" class="lrPadding c-list">'.$output.'
 			</table>';
 
 			return $output;

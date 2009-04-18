@@ -1,3 +1,7 @@
+2009-04-18  Dmitry Dulepov  <dmitry@typo3.org>
+
+	* Changed layout and fields in the 'Redirects' function
+
 2009-01-28  Dmitry Dulepov  <dmitry@typo3.org>
 
 	* Added pages_language_overlay to modified_tables to make EM happy
