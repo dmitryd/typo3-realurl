@@ -944,11 +944,22 @@ class tx_realurl {
 
 		// DB defined redirects:
 		$hash = t3lib_div::md5int($speakingURIpath);
-		list($redirect_row) = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('counter,destination,has_moved', 'tx_realurl_redirects', 'url_hash=' . intval($hash));
-		if (count($redirect_row)) {
-			$fields_values = array('counter' => $redirect_row['counter'] + 1, 'tstamp' => time(), 'last_referer' => t3lib_div::getIndpEnv('HTTP_REFERER'));
-			$GLOBALS['TYPO3_DB']->exec_UPDATEquery('tx_realurl_redirects', 'url_hash=' . intval($hash), $fields_values);
+		$url = $GLOBALS['TYPO3_DB']->fullQuoteStr($speakingURIpath, 'tx_realurl_redirects'); 
+		list($redirect_row) = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows(
+			'destination,has_moved', 'tx_realurl_redirects',
+			'url_hash=' . $hash . ' AND url=' . $url);
+		if (is_array($redirect_row)) {
+			// Update statistics
+			$fields_values = array(
+				'counter' => 'counter+1',
+				'tstamp' => time(),
+				'last_referer' => t3lib_div::getIndpEnv('HTTP_REFERER')
+			);
+			$GLOBALS['TYPO3_DB']->exec_UPDATEquery('tx_realurl_redirects',
+				'url_hash=' . $hash . ' AND url=' . $url,
+				$fields_values, array('counter'));
 
+			// Redirect
 			if ($redirect_row['has_moved']) {
 				header('HTTP/1.1 301 Moved Permanently');
 			}

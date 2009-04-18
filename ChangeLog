@@ -3,6 +3,7 @@
 	* Changed layout and fields in the 'Redirects' function
 	* Removed 'Clear cache' on extension update
 	* Changed cHash table to use a full md5 string as URL hash. This makes less possible to create wrong cHashes.
+	* Use full URL in redirects to prevent wrong redirects
 
 2009-01-28  Dmitry Dulepov  <dmitry@typo3.org>
 
