@@ -35,11 +35,11 @@ $BE_USER->modAccess($MCONF,1);	// This checks permissions and exits if the users
 	// DEFAULT initialization of a module [END]
 
 /**
- * Module 'CoolURI' for the 'cooluri' extension.
+ * Module 'RealURL' for the 'realurl' extension.
  *
- * @author	Jan Bednarik <info@bednarik.org>
+ * @author	Dmitry Dulepov <dmitry@typo3.org>
  * @package	TYPO3
- * @subpackage	tx_cooluri
+ * @subpackage	tx_realurl
  */
 class tx_realurl_module1 extends t3lib_SCbase {
 
