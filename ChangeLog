@@ -4,6 +4,7 @@
 	* Removed 'Clear cache' on extension update
 	* Changed cHash table to use a full md5 string as URL hash. This makes less possible to create wrong cHashes.
 	* Use full URL in redirects to prevent wrong redirects
+	* Removed a method to find root page id by is_siteroot check
 
 2009-01-28  Dmitry Dulepov  <dmitry@typo3.org>
 

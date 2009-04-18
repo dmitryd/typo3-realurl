@@ -2161,47 +2161,35 @@ class tx_realurl {
 	 * @return	mixed		Found root page UID or false if not found
 	 */
 	function findRootPageId() {
-		// Check rootline (if available)
-		if (is_object($GLOBALS['TSFE']->tmpl) && is_array($GLOBALS['TSFE']->tmpl->rootLine) && count($GLOBALS['TSFE']->tmpl->rootLine) > 0) {
-			return $GLOBALS['TSFE']->tmpl->rootLine[0]['uid'];
-		}
-
-		// Try searching by host
 		$rootpage_id = false; $host = $this->host;
-		do {
-			$domain = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('pid,redirectTo,domainName', 'sys_domain',
-							'domainName=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($host, 'sys_domain') .
-							' AND hidden=0');
-			if (count($domain) > 0) {
-				if (!$domain[0]['redirectTo']) {
-					$rootpage_id = intval($domain[0]['pid']);
-					if ($this->enableDevLog) {
-						t3lib_div::devLog('Found rootpage_id by domain lookup', 'realurl', 0, array('domain' => $domain[0]['domainName'], 'rootpage_id' => $rootpage_id));
-					}
-					break;
-				}
-				else {
-					$parts = parse_url($domain[0]['redirectTo']);
-					$host = $parts['host'];
-				}
-			}
-		} while (count($domain) > 0);
 
 		if (!$this->enableStrictMode) {
-			// Try is_siteroot
-			if (!$rootpage_id) {
-				$rows = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('uid',
-							'pages', 'is_siteroot=1 AND deleted=0 AND hidden=0');
-				if (count($rows) == 1) {
-					$rootpage_id = $rows[0]['uid'];
-					if ($this->enableDevLog) {
-						t3lib_div::devLog('Found rootpage_id by searching pages', 'realurl', 0, array('rootpage_id' => $rootpage_id));
+
+			// Search by host
+			do {
+				$domain = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('pid,redirectTo,domainName', 'sys_domain',
+								'domainName=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($host, 'sys_domain') .
+								' AND hidden=0');
+				if (count($domain) > 0) {
+					if (!$domain[0]['redirectTo']) {
+						$rootpage_id = intval($domain[0]['pid']);
+						if ($this->enableDevLog) {
+							t3lib_div::devLog('Found rootpage_id by domain lookup', 'realurl', 0, array('domain' => $domain[0]['domainName'], 'rootpage_id' => $rootpage_id));
+						}
+						break;
+					}
+					else {
+						$parts = @parse_url($domain[0]['redirectTo']);
+						$host = $parts['host'];
 					}
 				}
-			}
+			} while (count($domain) > 0);
 
-			// Try by TS template
-			if (!$rootpage_id) {
+			// If root page id is not found, try other ways. We can do it only
+			// and only if there are no multiple domains. Otherwise we would
+			// get a lot of wrong page ids from old root pages, etc.
+			if (!$rootpage_id && !$this->multidomain) {
+				// Try by TS template
 				$rows = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('pid',
 							'sys_template', 'root=1 AND hidden=0');
 				if (count($rows) == 1) {
