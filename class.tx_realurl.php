@@ -164,7 +164,7 @@ class tx_realurl {
 	 *
 	 * @return	void
 	 */
-	function tx_realurl() {
+	public function __construct() {
 		if (!t3lib_extMgm::isLoaded('dbal') && get_resource_type($GLOBALS['TYPO3_DB']->link) == 'mysql link') {
 			$res = $GLOBALS['TYPO3_DB']->sql_query('SELECT @@VERSION');
 			$rec = $GLOBALS['TYPO3_DB']->sql_fetch_row($res);
@@ -177,23 +177,13 @@ class tx_realurl {
 	}
 
 	/**
-	 * PHP5-style constructor
-	 *
-	 * @return	void
-	 */
-	function __construct() {
-		$this->tx_realurl();
-	}
-
-	/**
 	 * Translates a URL with query string (GET parameters) into Speaking URL.
 	 * Called from t3lib_tstemplate::linkData
 	 *
 	 * @param	array		Array of parameters from t3lib_tstemplate::linkData - the function creating all links inside TYPO3
-	 * @param	object		Copy of parent caller. Not used.
 	 * @return	void
 	 */
-	function encodeSpURL(&$params, &$ref) {
+	function encodeSpURL(&$params) {
 		if ($this->enableDevLog) {
 			t3lib_div::devLog('Entering encodeSpURL for ' . $params['LD']['totalURL'], 'realurl');
 		}
@@ -516,6 +506,7 @@ class tx_realurl {
 				}
 			}
 		}
+		return '';
 	}
 
 	/**
@@ -673,9 +664,9 @@ class tx_realurl {
 
 			// First, check memory, otherwise ask database:
 			if (!isset($GLOBALS['TSFE']->applicationData['tx_realurl']['_CACHE'][$hash]) && $this->extConf['init']['enableUrlEncodeCache']) {
-				$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('/*! SQL_NO_CACHE */ content', 'tx_realurl_urlencodecache',
+				$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('content', 'tx_realurl_urlencodecache',
 								'url_hash=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($hash, 'tx_realurl_urlencodecache') .
-								' AND tstamp>' . (time() - 24 * 3600 * $this->encodeCacheTTL));
+								' AND tstamp>' . strtotime('midnight', time() - 24 * 3600 * $this->encodeCacheTTL));
 				if (($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res))) {
 					$GLOBALS['TSFE']->applicationData['tx_realurl']['_CACHE'][$hash] = $row['content'];
 				}
@@ -715,6 +706,7 @@ class tx_realurl {
 				}
 			}
 		}
+		return '';
 	}
 
 	/**
@@ -791,10 +783,9 @@ class tx_realurl {
 	 * - "file.ext" is any filename that might apply
 	 *
 	 * @param	array		Params for hook
-	 * @param	object		Reference to parent object (copy)
 	 * @return	void		Setting internal variables.
 	 */
-	function decodeSpURL($params, &$ref) {
+	function decodeSpURL($params) {
 
 		if ($this->enableDevLog) {
 			t3lib_div::devLog('Entering decodeSpURL', 'realurl', -1);
@@ -1146,6 +1137,7 @@ class tx_realurl {
 				return $GET_VARS;
 			}
 		}
+		return null;
 	}
 
 	/**
@@ -1161,7 +1153,7 @@ class tx_realurl {
 			$GET_string = '';
 
 			// Getting first value, the key (and keep stripping of sets of segments until the end is reached!)
-			while ($key = array_shift($pathParts)) {
+			while (($key = array_shift($pathParts))) {
 				$key = rawurldecode($key);
 				if (is_array($postVarSetCfg[$key])) {
 					switch ((string)$postVarSetCfg[$key]['type']) {
@@ -1212,6 +1204,7 @@ class tx_realurl {
 				return $GET_VARS;
 			}
 		}
+		return null;
 	}
 
 	/**
@@ -1265,6 +1258,7 @@ class tx_realurl {
 			parse_str($GET_string, $GET_VARS);
 			return $GET_VARS;
 		}
+		return null;
 	}
 
 	/**
@@ -1484,28 +1478,25 @@ class tx_realurl {
 						$GLOBALS['TYPO3_DB']->sql_query('COMMIT');
 					}
 				}
-			} else { // GET cachedInfo.
-
-
-				$rootpage_id = (!$this->multidomain ? 0 : intval($this->extConf['pagePath']['rootpage_id']));
+			}
+			else {
+				// GET cachedInfo.
+				$rootpage_id = intval($this->extConf['pagePath']['rootpage_id']);
 				$hash = md5($speakingURIpath . $rootpage_id);
-				$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('/*! SQL_NO_CACHE */ content', 'tx_realurl_urldecodecache',
+				$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('content', 'tx_realurl_urldecodecache',
 								'url_hash=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($hash, 'tx_realurl_urldecodecache') .
 								' AND ' .
 								//No need for root page id if we use full md5!
 								//'rootpage_id='.intval($rootpage_id) . ' AND ' .
-								'tstamp>' . (time() - 24 * 3600 * $this->decodeCacheTTL));
+								'tstamp>' . strtotime('midnight', time() - 24 * 3600 * $this->decodeCacheTTL));
 				$row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res);
 				$GLOBALS['TYPO3_DB']->sql_free_result($res);
 				if ($row) {
-					//						$GLOBALS['TT']->setTSlogMessage('Decode cache: SpUrl found in cache');
 					return unserialize($row['content']);
 				}
-				//				else {
-			//					$GLOBALS['TT']->setTSlogMessage('Decode cache: SpUrl NOT found in cache');
-			//				}
 			}
 		}
+		return null;
 	}
 
 	/**
@@ -1556,8 +1547,6 @@ class tx_realurl {
 	 * @return	string		Result value of lookup. If no value was found the $value is returned.
 	 */
 	function lookUpTranslation($cfg, $value, $aliasToUid = FALSE) {
-		global $TCA;
-
 		// Assemble list of fields to look up. This includes localization related fields:
 		$langEnabled = FALSE;
 		$fieldList = array();
@@ -1679,6 +1668,7 @@ class tx_realurl {
 		if ($row) {
 			return $row['value_id'];
 		}
+		return null;
 	}
 
 	/**
@@ -1708,6 +1698,7 @@ class tx_realurl {
 		if ($row) {
 			return $row['value_alias'];
 		}
+		return null;
 	}
 
 	/**
@@ -1760,13 +1751,13 @@ class tx_realurl {
 		$insertArray = array('tstamp' => time(), 'tablename' => $cfg['table'], 'field_alias' => $cfg['alias_field'], 'field_id' => $cfg['id_field'], 'value_alias' => $uniqueAlias, 'value_id' => $idValue, 'lang' => $lang);
 
 		// Checking that this alias hasn't been stored since we looked last time:
-		if ($returnAlias = $this->lookUp_idToUniqAlias($cfg, $idValue, $lang, $uniqueAlias)) {
+		if (($returnAlias = $this->lookUp_idToUniqAlias($cfg, $idValue, $lang, $uniqueAlias))) {
 			// If we are here it is because another process managed to create this alias in the time between we looked the first time and now when we want to put it in database.
 			$uniqueAlias = $returnAlias;
 		} else {
 			// Expire all other aliases:
 			// Look for an alias based on ID:
-			$res = $GLOBALS['TYPO3_DB']->exec_UPDATEquery('tx_realurl_uniqalias', 'value_id=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($idValue, 'tx_realurl_uniqalias') . '
+			$GLOBALS['TYPO3_DB']->exec_UPDATEquery('tx_realurl_uniqalias', 'value_id=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($idValue, 'tx_realurl_uniqalias') . '
 					AND field_alias=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($cfg['alias_field'], 'tx_realurl_uniqalias') . '
 					AND field_id=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($cfg['id_field'], 'tx_realurl_uniqalias') . '
 					AND tablename=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($cfg['table'], 'tx_realurl_uniqalias') . '
@@ -2010,6 +2001,7 @@ class tx_realurl {
 		$this->ignoreGETvar = '';
 		if (is_array($params) && isset($params['LD']['totalURL']) && is_array($configuration)) {
 			$urlParts = parse_url($params['LD']['totalURL']);
+			$urlParams = array();
 			parse_str($urlParts['query'], $urlParams);
 
 			foreach ($configuration as $disposal) {
@@ -2108,10 +2100,9 @@ class tx_realurl {
 	 * Hook function for clearing page cache
 	 *
 	 * @param	array		Params for hook
-	 * @param	object		Reference to parent object (copy)
 	 * @return	void
 	 */
-	function clearPageCacheMgm($params, $ref) {
+	function clearPageCacheMgm($params) {
 		$pageIdList = $params['table'] == 'pages' ? array(intval($params['uid'])) : $params['pageIdArray'];
 		if (is_array($pageIdList)) {
 			$GLOBALS['TYPO3_DB']->exec_DELETEquery('tx_realurl_urlencodecache', 'page_id IN (' . implode(',', $GLOBALS['TYPO3_DB']->cleanIntArray($pageIdList)) . ')');
