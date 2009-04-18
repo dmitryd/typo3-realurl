@@ -39,11 +39,11 @@ CREATE TABLE tx_realurl_uniqalias (
 # Table structure for table 'tx_realurl_chashcache'
 #
 CREATE TABLE tx_realurl_chashcache (
-	spurl_hash int(11) DEFAULT '0' NOT NULL,
-	chash_string varchar(10) DEFAULT '' NOT NULL,
+	spurl_hash char(32) DEFAULT '' NOT NULL,
+	chash_string varchar(32) DEFAULT '' NOT NULL,
 
 	PRIMARY KEY (spurl_hash),
-	KEY tablename (chash_string)
+	KEY chash_string (chash_string)
 ) ENGINE=InnoDB;
 
 #
@@ -52,7 +52,7 @@ CREATE TABLE tx_realurl_chashcache (
 # Flushable
 #
 CREATE TABLE tx_realurl_urldecodecache (
-	url_hash varchar(32) DEFAULT '' NOT NULL,
+	url_hash char(32) DEFAULT '' NOT NULL,
 	spurl tinytext NOT NULL,
 	content blob NOT NULL,
 	page_id int(11) DEFAULT '0' NOT NULL,
@@ -69,7 +69,7 @@ CREATE TABLE tx_realurl_urldecodecache (
 # Flushable
 #
 CREATE TABLE tx_realurl_urlencodecache (
-	url_hash varchar(32) DEFAULT '' NOT NULL,
+	url_hash char(32) DEFAULT '' NOT NULL,
 	origparams tinytext NOT NULL,
 	internalExtras tinytext NOT NULL,
 	content text NOT NULL,

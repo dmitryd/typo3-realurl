@@ -733,26 +733,37 @@ class tx_realurl {
 	function encodeSpURL_cHashCache($newUrl, &$paramKeyValues) {
 
 		// If "cHash" is the ONLY parameter left...
-		// (if there are others our problem is that the cHash probably covers those as well and if we include the cHash anyways we might get duplicates for the same speaking URL in the cache table!)
+		// (if there are others our problem is that the cHash probably covers those
+		// as well and if we include the cHash anyways we might get duplicates for
+		// the same speaking URL in the cache table!)
 		if (isset($paramKeyValues['cHash']) && count($paramKeyValues) == 1) {
 
+			$spUrlHash = md5($newUrl);
+			$spUrlHashQuoted = $GLOBALS['TYPO3_DB']->fullQuoteStr($spUrlHash, 'tx_realurl_chashcache');
+
 			// first, look if a cHash is already there for this SpURL
-			$spUrlHash = hexdec(substr(md5($newUrl), 0, 7));
-			$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('chash_string', 'tx_realurl_chashcache', 'spurl_hash=' . $spUrlHash);
+			$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('chash_string',
+				'tx_realurl_chashcache', 'spurl_hash=' . $spUrlHashQuoted);
 
 			// If nothing found, lets insert:
 			if (!$GLOBALS['TYPO3_DB']->sql_num_rows($res)) {
-
-				// Insert the new id<->alias relation:
-				$insertArray = array('spurl_hash' => $spUrlHash, 'chash_string' => $paramKeyValues['cHash']);
+				$insertArray = array(
+					'spurl_hash' => $spUrlHash,
+					'chash_string' => $paramKeyValues['cHash']
+				);
 				$GLOBALS['TYPO3_DB']->exec_INSERTquery('tx_realurl_chashcache', $insertArray);
-			} else { // If one found, check if it is different, and if so update:
+			}
+			else {
+				// If one found, check if it is different, and if so update:
 				$row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res);
 				if ($row['chash_string'] != $paramKeyValues['cHash']) {
-					// If that chash_string is different from the one we want to insert, that might be a bug or mean that encryptionKey was changed so cHash values will be different now
+					// If that chash_string is different from the one we want to
+					// insert, that might be a bug or mean that encryptionKey was
+					// changed so cHash values will be different now
 					// In any case we will just silently update the value:
 					$insertArray = array('chash_string' => $paramKeyValues['cHash']);
-					$GLOBALS['TYPO3_DB']->exec_UPDATEquery('tx_realurl_chashcache', 'spurl_hash=' . $spUrlHash, $insertArray);
+					$GLOBALS['TYPO3_DB']->exec_UPDATEquery('tx_realurl_chashcache',
+						'spurl_hash=' . $spUrlHashQuoted, $insertArray);
 				}
 			}
 			$GLOBALS['TYPO3_DB']->sql_free_result($res);
@@ -1489,18 +1500,27 @@ class tx_realurl {
 	function decodeSpURL_cHashCache($speakingURIpath) {
 		// Look up cHash for this spURL
 		// Apart from returning the right cHash value it can also:
-		// - Return no value (eg. if table has been cleared) even if there should be one! In this scenario it will look to the outside as if all parameters except cHash has been set.
-		// - Return a WRONG value (eg. if URLs has been changed internally, there are dublets etc.). In this scenario the cHash value should not match the calculated one in the tslib_fe and the usual error of that problem be issued (whatever that is). This scenario could even mean that a cHash value is returned even if no cHash value applies at all.
-		// Bottomline is: the realurl extension makes it more likely that a wrong cHash value is passed to the frontend but as such it doesn't do anything which a fabricated URL couldn't contain.
-		// I still don't know how to handle wrong cHash values in this table. It will seldomly be a problem (when parameters are changed manually mostly) butwhen it is, we have no standard procedure to clean it up. Of course clearing it will mean it is built up again - but also that tons of URLs will not work reliably!
-		// TODO Dima: should be changed to normal md5 too?
-		$spUrlHash = hexdec(substr(md5($speakingURIpath), 0, 7));
-		$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('chash_string', 'tx_realurl_chashcache', 'spurl_hash=' . $spUrlHash);
-		$row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res);
-		$GLOBALS['TYPO3_DB']->sql_free_result($res);
-		if ($row) {
-			return $row['chash_string'];
-		}
+		// - Return no value (eg. if table has been cleared) even if there should
+		//   be one! In this scenario it will look to the outside as if all
+		//   parameters except cHash has been set.
+		// - Return a WRONG value (eg. if URLs has been changed internally, there
+		//   are dublets etc.). In this scenario the cHash value should not match
+		//   the calculated one in the tslib_fe and the usual error of that problem
+		//   be issued (whatever that is). This scenario could even mean that a
+		//   cHash value is returned even if no cHash value applies at all.
+		// Bottomline is: the realurl extension makes it more likely that a wrong
+		// cHash value is passed to the frontend but as such it doesn't do anything
+		// which a fabricated URL couldn't contain.
+		// I still don't know how to handle wrong cHash values in this table. It
+		// will seldomly be a problem (when parameters are changed manually mostly)
+		// but when it is, we have no standard procedure to clean it up. Of course
+		// clearing it will mean it is built up again - but also that tons of URLs
+		// will not work reliably!
+		list($row) = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('chash_string',
+			'tx_realurl_chashcache', 'spurl_hash=' .
+			$GLOBALS['TYPO3_DB']->fullQuoteStr(md5($speakingURIpath),
+				'tx_realurl_chashcache'));
+		return is_array($row) ? $row['chash_string'] : false;
 	}
 
 	/*******************************
