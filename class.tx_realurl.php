@@ -225,6 +225,7 @@ class tx_realurl {
 		// Initializing config / request URL:
 		$this->setConfig();
 		$adjustedConfiguration = $this->adjustConfigurationByHost('encode', $params);
+		$this->adjustRootPageId();
 		$internalExtras = array();
 
 		// Init "Admin Jump"; If frontend edit was enabled by the current URL of the page, set it again in the generated URL (and disable caching!)
@@ -805,7 +806,8 @@ class tx_realurl {
 		// Initializing config / request URL:
 		$this->setConfig();
 		$this->adjustConfigurationByHost('decode');
-
+		$this->adjustRootPageId();
+		
 		// If there has been a redirect (basically; we arrived here otherwise than via "index.php" in the URL) this can happend either due to a CGI-script or because of reWrite rule. Earlier we used $GLOBALS['HTTP_SERVER_VARS']['REDIRECT_URL'] to check but...
 		if ($this->pObj->siteScript && substr($this->pObj->siteScript, 0, 9) != 'index.php' && substr($this->pObj->siteScript, 0, 1) != '?') {
 
@@ -1851,9 +1853,6 @@ class tx_realurl {
 		$extConf = &$GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl'];
 
 		$this->multidomain = $this->isMultidomain();
-		// $findRootPageId will force finding proper root page id if _DEFAULT
-		// configuration is used in the multidomain environment.
-		$findRootPageId = false;
 
 		// First pass, finding configuration OR pointer string:
 		if (isset($extConf[$this->host])) {
@@ -1865,7 +1864,10 @@ class tx_realurl {
 			}
 			if (!is_array($this->extConf)) {
 				$this->extConf = $extConf['_DEFAULT'];
-				$findRootPageId = $this->multidomain;
+				if ($this->multidomain && isset($this->extConf['pagePath']['rootpage_id'])) {
+					// This can't be right!
+					unset($this->extConf['pagePath']['rootpage_id']);
+				}
 			}
 		}
 		else {
@@ -1875,21 +1877,10 @@ class tx_realurl {
 					'\' is not configured for RealURL. Please, fix your RealURL configuration!');
 			}
 			$this->extConf = (array)$extConf['_DEFAULT'];
-			$findRootPageId = $this->multidomain;
-		}
-
-		if (!$this->extConf['pagePath']['rootpage_id'] && $this->enableStrictMode) {
-			$this->pObj->pageNotFoundAndExit('RealURL strict mode error: ' .
-				'multidomain configuration without rootpage_id. ' .
-				'Please, fix your RealURL configuration!');
-		}
-		if (!$this->extConf['pagePath']['rootpage_id'] || $findRootPageId) {
-			$this->extConf['pagePath']['rootpage_id'] = $this->findRootPageId();
-			$GLOBALS['TT']->setTSlogMessage('RealURL warning: rootpage_id was not configured!');
-		}
-		if ($this->multidomain && !$this->extConf['pagePath']['rootpage_id']) {
-			$this->pObj->pageNotFoundAndExit('RealURL error: ' .
-				'unable to determine rootpage_id for the current domain.');
+			if ($this->multidomain && isset($this->extConf['pagePath']['rootpage_id'])) {
+				// This can't be right!
+				unset($this->extConf['pagePath']['rootpage_id']);
+			}
 		}
 	}
 
@@ -2168,8 +2159,8 @@ class tx_realurl {
 			// Search by host
 			do {
 				$domain = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('pid,redirectTo,domainName', 'sys_domain',
-								'domainName=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($host, 'sys_domain') .
-								' AND hidden=0');
+					'domainName=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($host, 'sys_domain') .
+					' AND hidden=0');
 				if (count($domain) > 0) {
 					if (!$domain[0]['redirectTo']) {
 						$rootpage_id = intval($domain[0]['pid']);
@@ -2213,9 +2204,35 @@ class tx_realurl {
 			'sys_domain', 'redirectTo=\'\' AND hidden=0');
 		return ($row['t'] > 1);
 	}
+
+	/**
+	 * Checks if rootpage_id is set and if not, sets it
+	 *
+	 * @return	void
+	 */
+	protected function adjustRootPageId() {
+		if (!$this->extConf['pagePath']['rootpage_id']) {
+
+			if ($this->enableStrictMode) {
+				$this->pObj->pageNotFoundAndExit('RealURL strict mode error: ' .
+					'multidomain configuration without rootpage_id. ' .
+					'Please, fix your RealURL configuration!');
+			}			
+
+			$GLOBALS['TT']->setTSlogMessage('RealURL warning: rootpage_id was not configured!');
+
+			$this->extConf['pagePath']['rootpage_id'] = $this->findRootPageId();
+
+			if ($this->multidomain && !$this->extConf['pagePath']['rootpage_id']) {
+				$this->pObj->pageNotFoundAndExit('RealURL error: ' .
+					'unable to determine rootpage_id for the current domain.');
+			}
+		}
+	}
 }
 
 if (defined('TYPO3_MODE') && $TYPO3_CONF_VARS[TYPO3_MODE]['XCLASS']['ext/realurl/class.tx_realurl.php']) {
 	include_once ($TYPO3_CONF_VARS[TYPO3_MODE]['XCLASS']['ext/realurl/class.tx_realurl.php']);
 }
+
 ?>
