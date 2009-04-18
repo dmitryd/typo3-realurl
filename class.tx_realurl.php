@@ -850,10 +850,15 @@ class tx_realurl {
 								else {
 									$status = 'HTTP/1.0 ' . $code . ' TYPO3 RealURL redirect';
 								}
-								@ob_end_clean();
-								header($status);
-								header('Location: ' . t3lib_div::locationHeaderUrl($speakingURIpath));
-								exit;
+
+								// Check path segment to be relative for the current site.
+								// parse_url() does not work with relative URLs, so we use it to test
+								if (!@parse_url($speakingURIpath, PHP_URL_HOST)) {
+									@ob_end_clean();
+									header($status);
+									header('Location: ' . t3lib_div::locationHeaderUrl($speakingURIpath));
+									exit;
+								}
 							}
 						}
 					}
