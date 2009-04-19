@@ -928,7 +928,7 @@ class tx_realurl_advanced {
 	function getLanguageVar() {
 		$lang = 0;
 		// Setting the language variable based on GETvar in URL which has been configured to carry the language uid:
-		if ($this->conf['languageGetVar']) {
+		if ($this->conf['languageGetVar'] && isset($this->pObj->orig_paramKeyValues[$this->conf['languageGetVar']])) {
 			$lang = intval($this->pObj->orig_paramKeyValues[$this->conf['languageGetVar']]);
 
 			// Might be excepted (like you should for CJK cases which does not translate to ASCII equivalents)
@@ -936,6 +936,11 @@ class tx_realurl_advanced {
 				$lang = 0;
 			}
 		}
+		else {
+			// No language in URL, get default from TSFE
+			$lang = intval($GLOBALS['TSFE']->config['config']['sys_language_uid']);
+		}
+		//debug(array('lang' => $lang, 'languageGetVar' => $this->conf['languageGetVar'], 'opkv' => $this->$this->pObj->orig_paramKeyValues[$this->conf['languageGetVar']]), 'realurl');
 		return $lang;
 	}
 

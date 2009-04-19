@@ -1,6 +1,7 @@
 2009-04-19  Dmitry Dulepov  <dmitry@typo3.org>
 
 	* Reworked redirects module
+	* Fixed problem: if default language uid is not 0 and language is not set in the URL, RealURL still used 0
 
 2009-04-18  Dmitry Dulepov  <dmitry@typo3.org>
 
