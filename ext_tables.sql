@@ -127,3 +127,10 @@ CREATE TABLE pages_language_overlay (
 CREATE TABLE sys_domain (
 	KEY tx_realurl (domainName,hidden)
 );
+
+#
+# Modifying sys_template table
+#
+CREATE TABLE sys_template (
+	KEY tx_realurl (root,hidden)
+);
