@@ -1,3 +1,7 @@
+2009-04-19  Dmitry Dulepov  <dmitry@typo3.org>
+
+	* Reworked redirects module
+
 2009-04-18  Dmitry Dulepov  <dmitry@typo3.org>
 
 	* Changed layout and fields in the 'Redirects' function

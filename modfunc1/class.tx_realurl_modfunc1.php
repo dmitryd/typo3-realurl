@@ -649,9 +649,9 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 	 * @return	string		Form elements
 	 */
 	function saveCancelButtons($extra='')	{
-		$output.= '<input type="submit" name="_edit_save" value="Save" /> ';
-		$output.= '<input type="submit" name="_edit_cancel" value="Cancel" />';
-		$output.= $extra;
+		$output .= '<input type="submit" name="_edit_save" value="Save" /> ';
+		$output .= '<input type="submit" name="_edit_cancel" value="Cancel" />';
+		$output .= $extra;
 
 		return $output;
 	}
@@ -1394,104 +1394,41 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 	 */
 	function redirectView()	{
 
-			// Init variables.
-		$output='';
-		$editControls='';
-
-		$cmd = t3lib_div::_GP('cmd');
-		$entry_id = t3lib_div::_GP('entry_id');
-
-			// Delete entry:
-		if ($cmd==='delete')	{
-			$GLOBALS['TYPO3_DB']->exec_DELETEquery(
-				'tx_realurl_redirects',
-				'url_hash='.intval($entry_id)
-			);
+		$output = $this->pObj->doc->spacer(12);
+		
+		// Dispatch actions
+		switch (t3lib_div::_GP('cmd')) {
+			case 'new':
+			case 'edit':
+				$output .= $this->getProcessForm();
+				break;
+			case 'delete':
+				$this->deleteRedirectEntry();
+				// Fall through
+			default:
+				$output .= $this->getNewButton();
+				break;
 		}
 
-			// Show form for new/edit:
-		if ($cmd==='new' || $cmd==='edit')	{
-			if ($cmd==='new')	{
-				$idValue = 'NEW';
-				$editControls.= '<h2>New entry</h2>';
-				$data = array(
-					'url' => t3lib_div::_GP('defUrl'),
-					'destination' => '',
-					'has_moved' => 1
-				);
-			} else {
-				$idValue = intval($entry_id);
-				$editControls.= '<h2>Edit entry</h2>';
-
-				list($data) = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows(
-					'*',
-					'tx_realurl_redirects',
-					'url_hash='.intval($idValue)
-				);
-			}
-				// PATCH andreas.otto@dkd.de, make URL editable as well.
-			$editControls .=
-				'<input type="hidden" name="id" value="'.htmlspecialchars($this->pObj->id).'" />' .
-				'<table border="0" cellspacing="3" cellpadding="0">' .
-				'<tr><td>Redirect from:</td><td>/<input type="text" name="edit['.$idValue.'][url]" value="'.($data['url'] ? htmlspecialchars($data['url']) : 'mypage.htm').'" size="40" /></td></tr>' .
-				'<tr><td>Redirect to:</td><td><span style="visibility:hidden">/</span><input type="text" name="edit['.$idValue.'][destination]" value="'.htmlspecialchars($data['destination']).'" size="40" /></td></tr>' .
-				'<tr><td></td><td><span style="visibility:hidden">/</span><input type="checkbox" name="edit['.$idValue.'][has_moved]" value="1"'.($data['has_moved']?' checked="checked"':'').' /> Send "301 Moved permanently" header</td></tr>' .
-				'<tr><td></td><td><span style="visibility:hidden">/</span>'.$this->saveCancelButtons().'</td></tr>' .
-				'</table>' .
-				'<hr style="margin:1em 0;height:1px"/>';
-		}
-
-			// If new/edit is submitted...:
-		if (t3lib_div::_GP('_edit_save'))	{
-			$data = t3lib_div::_POST('edit');
-			if (is_array($data))	{
-				reset($data);
-				$editId = key($data);
-				$editData = current($data);
-
-				// Update existing data
-				if ($editId!=='NEW')	{
-					$fields_values = array(
-							// PATCH andreas.otto@dkd.de, update URL as well.
-						'url_hash' => t3lib_div::md5int($editData['url']),
-						'url' => trim($editData['url']),
-						'destination' => trim($editData['destination']),
-						'has_moved' => trim($editData['has_moved']),
-						'tstamp' => time()
-					);
-					if ($fields_values['destination']) {
-						$GLOBALS['TYPO3_DB']->exec_UPDATEquery('tx_realurl_redirects','url_hash='.intval($editId),$fields_values);
-					}
-					else {
-						die('All fields must be filled in!');
-					}
-				} 
-				else {	
-					// Insert new data
-					$fields_values = array(
-						'url_hash' => t3lib_div::md5int($editData['url']),
-						'url' => trim($editData['url']),
-						'destination' => trim($editData['destination']),
-						'has_moved' => trim($editData['has_moved']),
-						'counter' => 0,
-						'tstamp' => time()
-					);
-					if ($fields_values['destination'] && $fields_values['url'])	{
-						$GLOBALS['TYPO3_DB']->exec_INSERTquery('tx_realurl_redirects', $fields_values);
-					}
-					else {
-						die('All fields must be filled in!');
-					}
-				}
-			}
-		}
-
-			// PATCH andreas.otto@dkd.de, Add vars to mod settings, to change select order.
+		// Sorting
 		$gpVars = t3lib_div::_GP('SET');
 		$this->pObj->MOD_SETTINGS['ob'] = isset($gpVars['ob']) ? $gpVars['ob'] : 'url';
-		$this->pObj->MOD_SETTINGS['obdir'] = isset($gpVars['obdir']) ? $gpVars['obdir'] : 'ASC';
+		$obdir = $this->pObj->MOD_SETTINGS['obdir'] = isset($gpVars['obdir']) ? $gpVars['obdir'] : 'ASC';
 
-			// SELECT ALL:
+		// Create header:
+		$output .= '<h2>Redirects</h2>' .
+			'<table border="0" cellspacing="2" cellpadding="2" id="tx-realurl-pathcacheTable" class="lrPadding c-list">'.
+			'<tr class="bgColor5 tableheader">' .
+			'<td>&nbsp;</td>' .
+			sprintf('<td><a href="%s">Source:</a></td>', sprintf('index.php?id=%d&SET[type]=%s&SET[ob]=url&SET[obdir]=%s', $this->pObj->id, $this->pObj->MOD_SETTINGS['type'], $obdir)) .
+			sprintf('<td><a href="%s">Redirect to:</a></td>', sprintf('index.php?id=%d&SET[type]=%s&SET[ob]=destination&SET[obdir]=%s', $this->pObj->id, $this->pObj->MOD_SETTINGS['type'], $obdir)) .
+			sprintf('<td><a href="%s">301:</a></td>', sprintf('index.php?id=%d&SET[type]=%s&SET[ob]=has_moved&SET[obdir]=%s', $this->pObj->id, $this->pObj->MOD_SETTINGS['type'], $obdir)) .
+			sprintf('<td><a href="%s">Hits:</a></td>', sprintf('index.php?id=%d&SET[type]=%s&SET[ob]=counter&SET[obdir]=%s', $this->pObj->id, $this->pObj->MOD_SETTINGS['type'], $obdir)) .
+			'<td>Last hit time:</td>' .
+			sprintf('<td><a href="%s">Last referer:</a></td>', sprintf('index.php?id=%d&SET[type]=%s&SET[ob]=last_referer&SET[obdir]=%s', $this->pObj->id, $this->pObj->MOD_SETTINGS['type'], $obdir)) .
+			'<td>Errors:</td></tr>';
+
+		// Select all entries
 		$list = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows(
 			'*',
 			'tx_realurl_redirects',
@@ -1508,10 +1445,10 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 					// Add data:
 				$tCells = array();
 				$tCells[] = '<td>'.
-							'<a href="'.$this->linkSelf('&cmd=edit&entry_id='.$rec['url_hash']).'">'.
+							'<a href="'.$this->linkSelf('&cmd=edit&url=' . rawurlencode($rec['url'])) .'">'.
 							'<img'.t3lib_iconWorks::skinImg($this->pObj->doc->backPath,'gfx/edit2.gif','width="11" height="12"').' title="Edit entry" alt="" />'.
 							'</a>'.
-							'<a href="'.$this->linkSelf('&cmd=delete&entry_id='.$rec['url_hash']).'">'.
+							'<a href="'.$this->linkSelf('&cmd=delete&url=' . rawurlencode($rec['url'])) . '">'.
 							'<img'.t3lib_iconWorks::skinImg($this->pObj->doc->backPath,'gfx/garbage.gif','width="11" height="12"').' title="Delete entry" alt="" />'.
 							'</a>'.
 						'</td>';
@@ -1519,6 +1456,13 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 				$tCells[] = sprintf( '<td><a href="%s" target="_blank" title="%s">%s</a></td>', htmlspecialchars(t3lib_div::locationHeaderUrl($rec['destination']{0} == '/' ? $rec['destination'] : '/' . $rec['destination'])), htmlspecialchars($rec['destination']), ( strlen( htmlspecialchars($rec['destination']) ) > 30 ) ? substr(htmlspecialchars($rec['destination']),0,30) . '...' : htmlspecialchars($rec['destination']) );
 				$tCells[] = '<td align="center">'.($rec['has_moved'] ? '+' : '&nbsp;').'</td>';
 				$tCells[] = '<td align="center">'.$rec['counter'].'</td>';
+
+				if ($rec['tstamp']) {
+					$tCells[] = '<td>' . t3lib_BEfunc::dateTimeAge($rec['tstamp']) . '</td>';
+				}
+				else {
+					$tCells[] = '<td align="center">&mdash;</td>';
+				}
 				
 				if ($rec['last_referer']) {
 					$lastRef = htmlspecialchars($rec['last_referer']);
@@ -1527,8 +1471,6 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 					$tCells[] = '<td>&nbsp;</td>';
 				}
 
-				$tCells[] = '<td>' . t3lib_BEfunc::dateTimeAge($rec['tstamp']) . '</td>';
-				
 				// Error:
 				$eMsg = '';
 				if (($pagesWithUrl = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('page_id','tx_realurl_urlencodecache','content='.$GLOBALS['TYPO3_DB']->fullQuoteStr($rec['url'],'tx_realurl_urlencodecache'))))	{
@@ -1542,43 +1484,203 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 						implode('',$tCells).'</tr>';
 				$cc++;
 			}
-
-				// Create header:
-				// PATCH andreas.otto@dkd.de, order by rules and making header linkable.
-			if ( $this->pObj->MOD_SETTINGS['obdir'] == 'ASC' ) {
-				$obdir = 'DESC';
-			} else {
-				$obdir = 'ASC';
-			}
-			$tCells = array();
-			$tCells[]='<td>&nbsp;</td>';
-			$tCells[]=sprintf( '<td><a href="%s">URL</a></td>', sprintf( 'index.php?id=%d&SET[type]=%s&SET[ob]=url&SET[obdir]=%s', $this->pObj->id, $this->pObj->MOD_SETTINGS['type'], $obdir ) );
-			$tCells[]=sprintf( '<td><a href="%s">Redirect to</a></td>', sprintf( 'index.php?id=%d&SET[type]=%s&SET[ob]=destination&SET[obdir]=%s', $this->pObj->id, $this->pObj->MOD_SETTINGS['type'], $obdir ) );
-			$tCells[]=sprintf( '<td><a href="%s">301</a></td>', sprintf( 'index.php?id=%d&SET[type]=%s&SET[ob]=has_moved&SET[obdir]=%s', $this->pObj->id, $this->pObj->MOD_SETTINGS['type'], $obdir ) );
-			$tCells[]=sprintf( '<td><a href="%s">Counter</a></td>', sprintf( 'index.php?id=%d&SET[type]=%s&SET[ob]=counter&SET[obdir]=%s', $this->pObj->id, $this->pObj->MOD_SETTINGS['type'], $obdir ) );
-			$tCells[]=sprintf( '<td><a href="%s">Last referer</a></td>', sprintf( 'index.php?id=%d&SET[type]=%s&SET[ob]=last_referer&SET[obdir]=%s', $this->pObj->id, $this->pObj->MOD_SETTINGS['type'], $obdir ) );
-			$tCells[]='<td>Last time</td>';
-			$tCells[]='<td>Error</td>';
-
-			$output = '
-				<tr class="bgColor5 tableheader">
-					'.implode('
-					',$tCells).'
-				</tr>'.$output;
-
-				// Compile final table and return:
-			$newButton = '';
-			if ($cmd != 'new') {
-				$newButton = '<div style="margin:0 0 0.5em 3px"><a href="'.$this->linkSelf('&cmd=new').'">'.
-				'<img'.t3lib_iconWorks::skinImg($this->pObj->doc->backPath,'gfx/new_el.gif','width="11" height="12"').' title="New entry" alt="" />'.
-				' New entry</a></div>';
-			}
-			$output = '<br/>'.$editControls . $newButton . '
-			<table border="0" cellspacing="2" cellpadding="2" id="tx-realurl-pathcacheTable" class="lrPadding c-list">'.$output.'
-			</table>';
+		
+			$output .= '</table>';
 
 			return $output;
 		}
+	}
+	
+	/**
+	 * Deletes a redirect entry.
+	 *
+	 * @return	void
+	 */
+	protected function deleteRedirectEntry() {
+		$url = t3lib_div::_GP('url');
+		if ($url) {
+			$GLOBALS['TYPO3_DB']->exec_DELETEquery('tx_realurl_redirects',
+				'url=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($url, 'tx_realurl_redirects')
+			);
+		}
+	}
+	
+	/**
+	 * Creates a code for 'Add new entries' button
+	 * 
+	 * @return	void
+	 */
+	protected function getNewButton() {
+		$content = '<div style="margin:0 0 0.5em 3px"><a href="'.$this->linkSelf('&cmd=new').'">'.
+			'<img'.t3lib_iconWorks::skinImg($this->pObj->doc->backPath,'gfx/new_el.gif','width="11" height="12"').' title="New entry" alt="" />'.
+			' Add new redirects</a></div>';
+		return $content;
+	}
+	
+	/**
+	 * Checks form submission for 'new' and 'edit' actions and performs whatever
+	 * is necessary to add or edit data. Returns the form if necessary.
+	 *
+	 * @return	string	HTML
+	 */
+	protected function getProcessForm() {
+		$content = $error = '';
+		if ($this->processRedirectSubmission($error)) {
+			// Submission successful -- show "New" button
+			$content = $this->getNewButton();
+		}
+		else {
+			// Submission error or no submission
+			if ($error) {
+				$error = '<div style="color:red;margin-bottom:.5em">' . $error . '</div>';
+			}
+			if (!t3lib_div::_GP('url_hash')) {
+				$content .= '<h2>Add new redirects</h2>' . $error .
+					$this->getRedirectNewForm();
+			}
+			else {
+				$content .= '<h2>Edit a redirect</h2>' . $error . $this->getRedirectEditForm();
+			}
+			$content .= '<input type="hidden" name="id" value="'.htmlspecialchars($this->pObj->id).'" />';
+			$content .= '<input type="hidden" name="cmd" value="'.htmlspecialchars(t3lib_div::_GP('cmd')).'" />';
+		}
+		return $content;
+	}
+
+
+	/**
+	 * Creates a form to edit an entry
+	 *
+	 * @return	string	Generated HTML
+	 */
+	protected function getRedirectEditForm() {
+		$url = t3lib_div::_GP('url');
+		list($row) = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows(
+			'url_hash,destination,has_moved', 'tx_realurl_redirects',
+			'url=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($url, 'tx_realurl_redirects'));
+		if (is_array($row)) {
+			$content = '<table border="0" cellspacing="3" cellpadding="0" style="margin-bottom:1em">' .
+				'<tr><td>Redirect from:</td>' .
+				'<td>/<input type="text" name="data[][source]" value="' . htmlspecialchars($url) . '" size="40" /></td></tr>' .
+				'<tr><td>Redirect to:</td>' .
+				'<td><span style="visibility:hidden">/</span><input type="text" name="data[][target]" value="' . htmlspecialchars($row['destination']).'" size="40" /></td></tr>' .
+				'<tr><td></td><td><span style="visibility:hidden">/</span><input type="checkbox" name="data[][permanent]" ' . ($row['has_moved'] ? ' checked="checked"':'').' /> Send "301 Moved permanently" header</td></tr>' .
+				'<tr><td></td><td><span style="visibility:hidden">/</span>' . $this->saveCancelButtons() . '</td></tr>' .
+				'</table>' .
+				'<input type="hidden" name="data[][old_url]" value="' . htmlspecialchars($url) . '" />' .
+				'<input type="hidden" name="data[][url_hash]" value="' . $row['url_hash'] . '" />'
+				;
+		}
+		return $content;
+	}
+
+	/**
+	 * Creates a form for the new entries
+	 *
+	 * @return	string	Generated HTML
+	 */
+	protected function getRedirectNewForm() {
+		$content = '<table style="margin-bottom:1em">';
+
+		// Show the form header
+		$content .= '<tr class="bgColor5 tableheader"><td>Source URL</td><td>Destination URL:</td><td>Permanent:</td></tr>';
+
+		// Show fields
+		$data = t3lib_div::_GP('data');
+		if (!is_array($data)) {
+			$data = array();
+		}
+		for ($i = 0; $i < 10; $i++) {
+			$content .= '<tr><td>' .
+				'/<input type="text" size="30" name="data[' . $i . '][source]" value="' .
+				(isset($data[$i]['source']) ? htmlspecialchars($data[$i]['source']) : '') . '" /></td><td>' .
+				'<input type="text" size="30" name="data[' . $i . '][target]" value="' .
+				(isset($data[$i]['target']) ? htmlspecialchars($data[$i]['target']) : '') . '" /></td><td align="center">' .
+				'<input type="checkbox" name="data[' . $i . '][permanent]" ' .
+				(isset($data[$i]['target']) ? ($data[$i]['target'] ? ' checked="checked"' : '') : '') . '" /></td>' .
+				'</tr>';
+		}
+		$content .= '<tr><td colspan="3">' . $this->saveCancelButtons() . '</td></tr>' .
+			'</table>';
+		
+		return $content;
+	}
+	
+	/**
+	 * Processes submission
+	 *
+	 * @param	string	$error	Error message
+	 * @return	boolean	true if successful
+	 */
+	protected function processRedirectSubmission(&$error) {
+		$result = false; $error = '';
+		if (t3lib_div::_GP('_edit_save')) {
+			$data = t3lib_div::_GP('data');
+			$databaseUpdateData = array();
+			$databaseInsertData = array();
+			foreach ($data as $fields) {
+				//
+				// Validate
+				//
+				$fields['source'] = trim($fields['source']);
+				$fields['target'] = trim($fields['target']);
+				// Check empty or same
+				if ($fields['source'] == $fields['target']) {
+					// Either equal or empty, ignore the input
+					continue;
+				}
+				// Check one field empty
+				if (trim($fields['source']) == '' || trim($fields['target'] == '')) {
+					$error = 'Please, fill in both source and destination';
+					return false;
+				}
+				// Check for duplicate source URLs
+				$andWhere = ($fields['url_hash'] != '' ? ' AND url_hash<>' . intval($fields['url_hash']) : '');
+				list($row) = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('COUNT(*) AS t',
+					'tx_realurl_redirects',
+					'url=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($fields['source'], 'tx_realurl_redirects') . $andWhere);
+				if ($row['t'] > 0) {
+					$error = 'Source URL \'/' . htmlspecialchars($fields['source']) . '\' already exists in the redirect list.';
+					return false;
+				}
+				// Check for missing slash in destination
+				//$parse = @parse_url($fields['target']);
+				if ($fields['target']{0} != '/'/* && ($parse === false || !isset($parse['scheme']))*/) {
+					$fields['target'] = '/' . $fields['target'];
+				}
+
+				// Process
+				if ($fields['url_hash'] == '') {
+					// New entry
+					$databaseInsertData[] = array(
+						'url_hash' => t3lib_div::md5int($fields['source']),
+						'url' => $fields['source'],
+						'destination' => $fields['target'],
+						'has_moved' => $fields['permanent'] ? 1 : 0
+					);
+				}
+				else {
+					// Existing entry
+					$databaseInsertData[$fields['old_url']] = array(
+						'url_hash' => t3lib_div::md5int($fields['source']),
+						'url' => $fields['source'],
+						'destination' => $fields['target'],
+						'has_moved' => $fields['permanent'] ? 1 : 0
+					);
+				}
+			}
+			// Add/update data
+			foreach ($databaseInsertData as $data) {
+				$GLOBALS['TYPO3_DB']->exec_INSERTquery('tx_realurl_redirects', $data);
+			}
+			foreach ($databaseUpdateData as $oldUrl => $data) {
+				$GLOBALS['TYPO3_DB']->exec_UPDATEquery('tx_realurl_redirects', $data, 
+					'url=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($oldUrl, 'tx_realurl_redirects'));
+			}
+			// Make sure we return success if the form is totally empty
+			$result = true; 
+		}
+		return $result;
 	}
 }
 
