@@ -1078,6 +1078,12 @@ class tx_realurl {
 			$parameters = array_merge($parameters, $this->decodeSpURL_createQueryStringParam($value, $var));
 		}
 
+		// If cHash is provided in the query string, replace it in $getVars
+		$cHash_override = t3lib_div::_GET('cHash');
+		if ($cHash_override) {
+			$getVars['cHash'] = $cHash_override;
+		}
+
 		$queryString = t3lib_div::getIndpEnv('QUERY_STRING');
 		if ($queryString) {
 			array_push($parameters, $queryString);
