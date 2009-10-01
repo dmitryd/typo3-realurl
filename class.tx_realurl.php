@@ -367,7 +367,7 @@ class tx_realurl {
 		$this->encodeSpURL_gettingPostVarSets($paramKeyValues, $pathParts, $postVarSetCfg);
 
 		// Compile Speaking URL path
-		$newUrl = count($pathParts) ? ereg_replace('\/*$', '', implode('/', $pathParts)) . '/' : '';
+		$newUrl = count($pathParts) ? preg_replace('/\/*$/', '', implode('/', $pathParts)) . '/' : '';
 
 		// Add filename, if any:
 		$fileName = $this->encodeSpURL_fileName($paramKeyValues);
@@ -798,7 +798,7 @@ class tx_realurl {
 		$this->setConfig();
 		$this->adjustConfigurationByHost('decode');
 		$this->adjustRootPageId();
-		
+
 		// If there has been a redirect (basically; we arrived here otherwise than via "index.php" in the URL) this can happend either due to a CGI-script or because of reWrite rule. Earlier we used $GLOBALS['HTTP_SERVER_VARS']['REDIRECT_URL'] to check but...
 		if ($this->pObj->siteScript && substr($this->pObj->siteScript, 0, 9) != 'index.php' && substr($this->pObj->siteScript, 0, 1) != '?') {
 
@@ -927,8 +927,8 @@ class tx_realurl {
 		// Regex redirects:
 		if (is_array($this->extConf['redirects_regex'])) {
 			foreach ($this->extConf['redirects_regex'] as $regex => $substString) {
-				if (ereg($regex, $speakingURIpath)) {
-					$speakingURIpath = ereg_replace($regex, $substString, $speakingURIpath);
+				if (preg_match('/' . $regex . '/', $speakingURIpath)) {
+					$speakingURIpath = preg_replace('/' . $regex . '/', $substString, $speakingURIpath);
 					header('Location: ' . t3lib_div::locationHeaderUrl($speakingURIpath));
 					exit();
 				}
@@ -937,7 +937,7 @@ class tx_realurl {
 
 		// DB defined redirects:
 		$hash = t3lib_div::md5int($speakingURIpath);
-		$url = $GLOBALS['TYPO3_DB']->fullQuoteStr($speakingURIpath, 'tx_realurl_redirects'); 
+		$url = $GLOBALS['TYPO3_DB']->fullQuoteStr($speakingURIpath, 'tx_realurl_redirects');
 		list($redirect_row) = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows(
 			'destination,has_moved', 'tx_realurl_redirects',
 			'url_hash=' . $hash . ' AND url=' . $url);
@@ -1801,8 +1801,8 @@ class tx_realurl {
 		$processedTitle = $GLOBALS['TSFE']->csConvObj->specCharsToASCII($charset, $processedTitle);
 
 		// Strip the rest...:
-		$processedTitle = ereg_replace('[^a-zA-Z0-9\\' . $space . ']', '', $processedTitle); // strip the rest
-		$processedTitle = ereg_replace('\\' . $space . '+', $space, $processedTitle); // Convert multiple 'spaces' to a single one
+		$processedTitle = preg_replace('/[^a-zA-Z0-9\\' . $space . ']/', '', $processedTitle); // strip the rest
+		$processedTitle = preg_replace('/\\' . $space . '+/', $space, $processedTitle); // Convert multiple 'spaces' to a single one
 		$processedTitle = trim($processedTitle, $space);
 
 		if ($cfg['useUniqueCache_conf']['encodeTitle_userProc']) {
@@ -2208,7 +2208,7 @@ class tx_realurl {
 				$this->pObj->pageNotFoundAndExit('RealURL strict mode error: ' .
 					'multidomain configuration without rootpage_id. ' .
 					'Please, fix your RealURL configuration!');
-			}			
+			}
 
 			$GLOBALS['TT']->setTSlogMessage('RealURL warning: rootpage_id was not configured!');
 

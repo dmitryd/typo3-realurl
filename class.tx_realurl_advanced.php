@@ -891,8 +891,8 @@ class tx_realurl_advanced {
 		$processedTitle = $GLOBALS['TSFE']->csConvObj->specCharsToASCII($charset, $processedTitle);
 
 		// Strip the rest...:
-		$processedTitle = ereg_replace('[^a-zA-Z0-9\\' . $space . ']', '', $processedTitle); // strip the rest
-		$processedTitle = ereg_replace('\\' . $space . '+', $space, $processedTitle); // Convert multiple 'spaces' to a single one
+		$processedTitle = preg_replace('/[^a-zA-Z0-9\\' . $space . ']/', '', $processedTitle); // strip the rest
+		$processedTitle = preg_replace('/\\' . $space . '+/', $space, $processedTitle); // Convert multiple 'spaces' to a single one
 		$processedTitle = trim($processedTitle, $space);
 
 		if ($this->conf['encodeTitle_userProc']) {
