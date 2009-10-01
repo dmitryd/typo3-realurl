@@ -1,6 +1,7 @@
 2009-10-01  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
 	* Removed ereg_* functions (deprecated in PHP 5.3)
+	* Small fixes in the redirect module
 
 2009-04-19  Dmitry Dulepov  <dmitry@typo3.org>
 

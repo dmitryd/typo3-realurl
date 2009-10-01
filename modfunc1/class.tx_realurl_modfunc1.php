@@ -1422,7 +1422,7 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 			'<td>&nbsp;</td>' .
 			sprintf('<td><a href="%s">Source:</a></td>', sprintf('index.php?id=%d&SET[type]=%s&SET[ob]=url&SET[obdir]=%s', $this->pObj->id, $this->pObj->MOD_SETTINGS['type'], $obdir)) .
 			sprintf('<td><a href="%s">Redirect to:</a></td>', sprintf('index.php?id=%d&SET[type]=%s&SET[ob]=destination&SET[obdir]=%s', $this->pObj->id, $this->pObj->MOD_SETTINGS['type'], $obdir)) .
-			sprintf('<td><a href="%s">301:</a></td>', sprintf('index.php?id=%d&SET[type]=%s&SET[ob]=has_moved&SET[obdir]=%s', $this->pObj->id, $this->pObj->MOD_SETTINGS['type'], $obdir)) .
+			sprintf('<td><a href="%s">Permanent:</a></td>', sprintf('index.php?id=%d&SET[type]=%s&SET[ob]=has_moved&SET[obdir]=%s', $this->pObj->id, $this->pObj->MOD_SETTINGS['type'], $obdir)) .
 			sprintf('<td><a href="%s">Hits:</a></td>', sprintf('index.php?id=%d&SET[type]=%s&SET[ob]=counter&SET[obdir]=%s', $this->pObj->id, $this->pObj->MOD_SETTINGS['type'], $obdir)) .
 			'<td>Last hit time:</td>' .
 			sprintf('<td><a href="%s">Last referer:</a></td>', sprintf('index.php?id=%d&SET[type]=%s&SET[ob]=last_referer&SET[obdir]=%s', $this->pObj->id, $this->pObj->MOD_SETTINGS['type'], $obdir)) .
@@ -1532,14 +1532,17 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 		else {
 			// Submission error or no submission
 			if ($error) {
-				$error = '<div style="color:red;margin-bottom:.5em">' . $error . '</div>';
+				$error = '<div style="color:red;margin-bottom:.5em;font-weight:bold">Problem found! ' . $error . '</div>';
 			}
-			if (!t3lib_div::_GP('url_hash')) {
-				$content .= '<h2>Add new redirects</h2>' . $error .
+			$hint = '<div style="margin:.5em 0">' .
+				'Note: the exact source URL will match! Add a slash to the end ' .
+				'of the URL if necessary!</div>';
+			if (!t3lib_div::_GP('url')) {
+				$content .= '<h2>Add new redirects</h2>' . $error . $hint .
 					$this->getRedirectNewForm();
 			}
 			else {
-				$content .= '<h2>Edit a redirect</h2>' . $error . $this->getRedirectEditForm();
+				$content .= '<h2>Edit a redirect</h2>' . $error . $hint . $this->getRedirectEditForm();
 			}
 			$content .= '<input type="hidden" name="id" value="'.htmlspecialchars($this->pObj->id).'" />';
 			$content .= '<input type="hidden" name="cmd" value="'.htmlspecialchars(t3lib_div::_GP('cmd')).'" />';
@@ -1561,14 +1564,14 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 		if (is_array($row)) {
 			$content = '<table border="0" cellspacing="3" cellpadding="0" style="margin-bottom:1em">' .
 				'<tr><td>Redirect from:</td>' .
-				'<td>/<input type="text" name="data[][source]" value="' . htmlspecialchars($url) . '" size="40" /></td></tr>' .
+				'<td>/<input type="text" name="data[0][source]" value="' . htmlspecialchars($url) . '" size="40" /></td></tr>' .
 				'<tr><td>Redirect to:</td>' .
-				'<td><span style="visibility:hidden">/</span><input type="text" name="data[][target]" value="' . htmlspecialchars($row['destination']).'" size="40" /></td></tr>' .
-				'<tr><td></td><td><span style="visibility:hidden">/</span><input type="checkbox" name="data[][permanent]" ' . ($row['has_moved'] ? ' checked="checked"':'').' /> Send "301 Moved permanently" header</td></tr>' .
+				'<td><span style="visibility:hidden">/</span><input type="text" name="data[0][target]" value="' . htmlspecialchars($row['destination']).'" size="40" /></td></tr>' .
+				'<tr><td></td><td><span style="visibility:hidden">/</span><input type="checkbox" name="data[0][permanent]" ' . ($row['has_moved'] ? ' checked="checked"':'').' /> Permanent redirect (send "301 Moved permanently" header)</td></tr>' .
 				'<tr><td></td><td><span style="visibility:hidden">/</span>' . $this->saveCancelButtons() . '</td></tr>' .
 				'</table>' .
-				'<input type="hidden" name="data[][old_url]" value="' . htmlspecialchars($url) . '" />' .
-				'<input type="hidden" name="data[][url_hash]" value="' . $row['url_hash'] . '" />'
+				'<input type="hidden" name="data[0][old_url]" value="' . htmlspecialchars($url) . '" />' .
+				'<input type="hidden" name="data[0][url_hash]" value="' . $row['url_hash'] . '" />'
 				;
 		}
 		return $content;
@@ -1631,7 +1634,7 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 				}
 				// Check one field empty
 				if (trim($fields['source']) == '' || trim($fields['target'] == '')) {
-					$error = 'Please, fill in both source and destination';
+					$error = 'Please, fill in both source and destination URLs';
 					return false;
 				}
 				// Check for duplicate source URLs
@@ -1661,7 +1664,7 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 				}
 				else {
 					// Existing entry
-					$databaseInsertData[$fields['old_url']] = array(
+					$databaseUpdateData[$fields['old_url']] = array(
 						'url_hash' => t3lib_div::md5int($fields['source']),
 						'url' => $fields['source'],
 						'destination' => $fields['target'],
@@ -1674,8 +1677,9 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 				$GLOBALS['TYPO3_DB']->exec_INSERTquery('tx_realurl_redirects', $data);
 			}
 			foreach ($databaseUpdateData as $oldUrl => $data) {
-				$GLOBALS['TYPO3_DB']->exec_UPDATEquery('tx_realurl_redirects', $data, 
-					'url=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($oldUrl, 'tx_realurl_redirects'));
+				$GLOBALS['TYPO3_DB']->exec_UPDATEquery('tx_realurl_redirects', 
+					'url=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($oldUrl, 'tx_realurl_redirects'),
+					$data);
 			}
 			// Make sure we return success if the form is totally empty
 			$result = true; 
