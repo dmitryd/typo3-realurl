@@ -273,12 +273,12 @@ class tx_realurl {
 		// Call hooks
 		if (is_array($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['encodeSpURL_postProc'])) {
 			foreach($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['encodeSpURL_postProc'] as $userFunc) {
-				$params = array(
+				$hookParams = array(
 					'pObj' => &$this,
 					'params' => $params,
 					'URL' => &$newUrl,
 				);
-				t3lib_div::callUserFunction($userFunc, $params, $this);
+				t3lib_div::callUserFunction($userFunc, $hookParams, $this);
 			}
 		}
 
@@ -809,12 +809,12 @@ class tx_realurl {
 			// Call hooks
 			if (is_array($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['decodeSpURL_preProc'])) {
 				foreach($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['decodeSpURL_preProc'] as $userFunc) {
-					$params = array(
+					$hookParams = array(
 						'pObj' => &$this,
 						'params' => $params,
 						'URL' => &$speakingURIpath,
 					);
-					t3lib_div::callUserFunction($userFunc, $params, $this);
+					t3lib_div::callUserFunction($userFunc, $hookParams, $this);
 				}
 			}
 
