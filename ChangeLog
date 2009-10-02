@@ -3,6 +3,7 @@
 	* Changed index bk_realurl02 (shorter key)
 	* Commented TCEmain hook: it needs a better way of handling page renames
 	* Fixed bug #9976: realurl stops working when encodeSpURL_postProc hook is used
+	* Fixed bug #11873: Error in dokumentation decodeSpURL_postProc does not exist
 
 2009-10-01  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
