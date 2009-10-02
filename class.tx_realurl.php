@@ -141,6 +141,7 @@ class tx_realurl {
 
 	var $enableDevLog = false;
 	var $enableStrictMode = false;
+	var $enableChashDebug = false;
 
 	/**
 	 * If non-mepty, corresponding URL query parameter will be ignored in preVars
@@ -174,6 +175,7 @@ class tx_realurl {
 		$sysconf = unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['realurl']);
 		$this->enableDevLog = $sysconf['enableDevLog'];
 		$this->enableStrictMode = (boolean)$sysconf['enableStrictMode'];
+		$this->enableChashUrlDebug = (boolean)$sysconf['enableChashUrlDebug'];
 	}
 
 	/**
@@ -742,6 +744,7 @@ class tx_realurl {
 			if (!$GLOBALS['TYPO3_DB']->sql_num_rows($res)) {
 				$insertArray = array(
 					'spurl_hash' => $spUrlHash,
+					'spurl_string' => $this->enableChashUrlDebug ? $newUrl : null,
 					'chash_string' => $paramKeyValues['cHash']
 				);
 				$GLOBALS['TYPO3_DB']->exec_INSERTquery('tx_realurl_chashcache', $insertArray);

@@ -12,3 +12,6 @@ enableDevLog = 0
 
 # cat=basic/enable; type=boolean; label=Enable strict mode:In strict mode RealURL will not do workarounds for configuration errors but will abort with the "404 Not found" error. It is recommended to enable this setting because it makes sure that the configuration is correct. Turning this mode off will force RealURL to recover from errors but will badly affect the performance if the configuration contains errors.
 #enableStrictMode = 1
+
+# cat=basic/enable; type=boolean; label=Store URL for cHash cache:Allows to store full URL in the cHash cache table for debugging purposes. Normally should be off.
+enableChashUrlDebug = 0

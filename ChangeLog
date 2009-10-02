@@ -5,6 +5,7 @@
 	* Fixed bug #9976: realurl stops working when encodeSpURL_postProc hook is used
 	* Fixed bug #11873: Error in dokumentation decodeSpURL_postProc does not exist
 	* Fixed bug #11347: Strip Tags in Titles
+	* Fixed bug #11777: Add new field "spurl_string" to tx_realurl_chashcache that makes it easier to debug the contents of this table
 
 2009-10-01  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
