@@ -1,6 +1,7 @@
 2009-10-02  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
 	* Changed index bk_realurl02 (shorter key)
+	* Commented TCEmain hook: it needs a better way of handling page renames
 
 2009-10-01  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
