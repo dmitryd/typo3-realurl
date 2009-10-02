@@ -1,3 +1,7 @@
+2009-10-02  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
+
+	* Changed index bk_realurl02 (shorter key)
+
 2009-10-01  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
 	* Removed ereg_* functions (deprecated in PHP 5.3)
