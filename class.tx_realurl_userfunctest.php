@@ -52,9 +52,11 @@ class tx_realurl_userfunctest  {
 		return '--'.$value.'--';
 	}
 	function alias2id($value)	{
-		if (ereg('^--([0-9]+)--$',$value,$reg))	{
+		$reg = array();
+		if (preg_match('/^--([0-9]+)--$/',$value,$reg))	{
 			return $reg[1];
 		}
+		return null;
 	}
 }
 
