@@ -883,6 +883,9 @@ class tx_realurl_advanced {
 		// Convert to lowercase:
 		$processedTitle = $GLOBALS['TSFE']->csConvObj->conv_case($charset, $title, 'toLower');
 
+		// Strip tags
+		$processedTitle = strip_tags($processedTitle);
+
 		// Convert some special tokens to the space character:
 		$space = isset($this->conf['spaceCharacter']) ? $this->conf['spaceCharacter'] : '_';
 		$processedTitle = preg_replace('/[ \-+_]+/', $space, $processedTitle); // convert spaces
