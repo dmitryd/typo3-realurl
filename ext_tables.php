@@ -39,8 +39,16 @@ $TCA['pages']['columns'] += array(
 	),
 );
 
-t3lib_extMgm::addToAllTCAtypes('pages', 'tx_realurl_pathsegment,tx_realurl_exclude', (t3lib_div::compat_version('4.2') ? '1' : '2'), 'after:nav_title');
-t3lib_extMgm::addToAllTCAtypes('pages', 'tx_realurl_pathsegment,tx_realurl_exclude', (t3lib_div::compat_version('4.2') ? '' : '1,5,') . '4,254', 'after:title');
+if (t3lib_div::compat_version('4.2')) {
+	// For 4.2 or new add fields to advanced page only
+	t3lib_extMgm::addToAllTCAtypes('pages', 'tx_realurl_pathsegment,tx_realurl_exclude', '1', 'after:nav_title');
+	t3lib_extMgm::addToAllTCAtypes('pages', 'tx_realurl_pathsegment,tx_realurl_exclude', '4,254', 'after:title');
+}
+else {
+	// Put it for standard page
+	t3lib_extMgm::addToAllTCAtypes('pages', 'tx_realurl_pathsegment,tx_realurl_exclude', '2', 'after:nav_title');
+	t3lib_extMgm::addToAllTCAtypes('pages', 'tx_realurl_pathsegment,tx_realurl_exclude', '1,5,4,254', 'after:title');
+}
 
 $TCA['pages_language_overlay']['columns'] += array(
 	'tx_realurl_pathsegment' => array(
@@ -54,6 +62,6 @@ $TCA['pages_language_overlay']['columns'] += array(
 	),
 );
 
-t3lib_extMgm::addToAllTCAtypes('pages_language_overlay', 'tx_realurl_pathsegment', t3lib_div::compat_version('4.2') ? '1,4' : '2,4,254', 'after:nav_title');
+t3lib_extMgm::addToAllTCAtypes('pages_language_overlay', 'tx_realurl_pathsegment', '', 'after:nav_title');
 
 ?>

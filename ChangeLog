@@ -1,3 +1,7 @@
+2009-10-06  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
+
+	* Fixed bug #10329: Speaking URL path segment disappered from page overlay
+
 2009-10-02  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
 	* Changed index bk_realurl02 (shorter key)
