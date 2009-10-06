@@ -41,6 +41,7 @@ CREATE TABLE tx_realurl_uniqalias (
 CREATE TABLE tx_realurl_chashcache (
 	spurl_hash char(32) DEFAULT '' NOT NULL,
 	chash_string varchar(32) DEFAULT '' NOT NULL,
+	spurl_string text,
 
 	PRIMARY KEY (spurl_hash),
 	KEY chash_string (chash_string)
