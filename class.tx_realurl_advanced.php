@@ -682,11 +682,11 @@ class tx_realurl_advanced {
 	 * @param	array		Array with the current pid/mpvar to return if no processing is done.
 	 * @return	array		With resolved id and $mpvar
 	 */
-	function searchTitle($pid, $mpvar, &$urlParts, $currentIdMp = '') {
+	function searchTitle ( $pid, $mpvar, &$urlParts, $currentIdMp = '', $foundUID = false) {
 
 		// Creating currentIdMp variable if not set:
 		if (!is_array($currentIdMp)) {
-			$currentIdMp = array($pid, $mpvar);
+			$currentIdMp = array( $pid, $mpvar, $foundUID);			
 		}
 
 		// No more urlparts? Return what we have.
@@ -702,15 +702,15 @@ class tx_realurl_advanced {
 
 		// If a title was found...
 		if ($uid) {
-			return $this->searchTitle_processResult($row, $mpvar, $urlParts);
+			return $this->searchTitle_processResult( $row, $mpvar, $urlParts, true);
 		}
 		elseif (count($exclude)) {
 			// There were excluded pages, we have to process those!
 			foreach ($exclude as $row) {
 				$urlParts_copy = $urlParts;
 				array_unshift($urlParts_copy, $title);
-				$result = $this->searchTitle_processResult($row, $mpvar, $urlParts_copy);
-				if ($result[0]) {
+				$result = $this->searchTitle_processResult( $row, $mpvar, $urlParts_copy, false);
+				if ( $result[2] ) {
 					$urlParts = $urlParts_copy;
 					return $result;
 				}
@@ -730,10 +730,10 @@ class tx_realurl_advanced {
 	 * @param	array	$urlParts	URL segments
 	 * @return	array	Resolved id and mpvar
 	 */
-	function searchTitle_processResult($row, $mpvar, &$urlParts) {
+	function searchTitle_processResult($row, $mpvar, &$urlParts, $foundUID) {
 		$uid = $row['uid'];
 		// Set base currentIdMp for next level:
-		$currentIdMp = array($uid, $mpvar);
+		$currentIdMp = array( $uid, $mpvar, $foundUID);
 
 		// Modify values if it was a mount point:
 		if (is_array($row['_IS_MOUNTPOINT'])) {
@@ -747,7 +747,7 @@ class tx_realurl_advanced {
 		}
 
 		// Yep, go search for the next subpage
-		return $this->searchTitle($uid, $mpvar, $urlParts, $currentIdMp);
+		return $this->searchTitle($uid, $mpvar, $urlParts, $currentIdMp, $foundUID);
 	}
 
 	/**
