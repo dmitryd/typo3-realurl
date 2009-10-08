@@ -463,7 +463,7 @@ class tx_realurl_advanced {
 			}
 			else {
 				// Building up the path from page title etc.
-				if (!$page['tx_realurl_exclude']) {
+				if (!$page['tx_realurl_exclude'] || count($rl) == 0) {
 					// List of "pages" fields to traverse for a "directory title" in the speaking URL (only from RootLine!!):
 					$segTitleFieldArray = t3lib_div::trimExplode(',', $this->conf['segTitleFieldList'] ? $this->conf['segTitleFieldList'] : TX_REALURL_SEGTITLEFIELDLIST_DEFAULT, 1);
 					$theTitle = '';
@@ -806,15 +806,14 @@ class tx_realurl_advanced {
 					// segment is excluded
 					$exclude[] = $row;
 				}
-				else {
-					// segment is not excluded
-					$uidTrack[$row['uid']] = $row;
-					foreach ($segTitleFieldArray as $fieldName) {
-						if ($row[$fieldName]) {
-							$encodedTitle = $this->encodeTitle($row[$fieldName]);
-							if (!isset($titles[$fieldName][$encodedTitle])) {
-								$titles[$fieldName][$encodedTitle] = $row['uid'];
-							}
+				// Process titles. Note that excluded segments are also searched
+				// otherwise they will never be found
+				$uidTrack[$row['uid']] = $row;
+				foreach ($segTitleFieldArray as $fieldName) {
+					if ($row[$fieldName]) {
+						$encodedTitle = $this->encodeTitle($row[$fieldName]);
+						if (!isset($titles[$fieldName][$encodedTitle])) {
+							$titles[$fieldName][$encodedTitle] = $row['uid'];
 						}
 					}
 				}
