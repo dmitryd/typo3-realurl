@@ -1,6 +1,6 @@
 2009-10-08  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
-	* Fixed bug #1011393: 2 folder with "exclude from speaking URL" - 404Error
+	* Fixed bug #11393: 2 folder with "exclude from speaking URL" - 404Error
 	* Fixed bug #9545: "exclude from speaking url segment" doesn't work if there are two or more pages with the flag in the same directory
 	* Fixed bug #12137: Field field_alias in table tx_realurl_uniqalias too small when using CONCAT_WS('-',verylongfieldname,other...) in alias_field
 	* Fixed bug #11042: Wrong behaviuor of exclude from speaking url parameter
