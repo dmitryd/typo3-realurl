@@ -806,8 +806,12 @@ class tx_realurl {
 		if ($this->pObj->siteScript && substr($this->pObj->siteScript, 0, 9) != 'index.php' && substr($this->pObj->siteScript, 0, 1) != '?') {
 
 			// Getting the path which is above the current site url:
-			// For instance "first/second/third/index.html?&param1=value1&param2=value2" should be the result of the URL "http://localhost/typo3/dev/dummy_1/first/second/third/index.html?&param1=value1&param2=value2"
-			$speakingURIpath = $this->pObj->siteScript;
+			// For instance "first/second/third/index.html?&param1=value1&param2=value2"
+			// should be the result of the URL
+			// "http://localhost/typo3/dev/dummy_1/first/second/third/index.html?&param1=value1&param2=value2"
+			// Note: sometimes in fcgi installations it is absolute, so we have to make it
+			// relative to work properly.
+			$speakingURIpath = $this->pObj->siteScript{0} == '/' ? substr($this->pObj->siteScript, 1) : $this->pObj->siteScript;
 
 			// Call hooks
 			if (is_array($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['decodeSpURL_preProc'])) {

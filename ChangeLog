@@ -4,6 +4,7 @@
 	* Fixed bug #9545: "exclude from speaking url segment" doesn't work if there are two or more pages with the flag in the same directory
 	* Fixed bug #12137: Field field_alias in table tx_realurl_uniqalias too small when using CONCAT_WS('-',verylongfieldname,other...) in alias_field
 	* Fixed bug #11042: Wrong behaviuor of exclude from speaking url parameter
+	* Fixed bug #9877: Problems with PD-Admin
 
 2009-10-06  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
