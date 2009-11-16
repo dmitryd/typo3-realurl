@@ -87,8 +87,8 @@ This module checks RealURL caches, removes duplicate/expired entries and optimiz
 	}
 }
 
-if (defined('TYPO3_MODE') && $TYPO3_CONF_VARS[TYPO3_MODE]['XCLASS']['ext/realurl/class.tx_realurl_cleanuphandler.php'])	{
-	include_once($TYPO3_CONF_VARS[TYPO3_MODE]['XCLASS']['ext/realurl/class.tx_realurl_cleanuphandler.php']);
+if (defined('TYPO3_MODE') && $TYPO3_CONF_VARS[TYPO3_MODE]['XCLASS']['ext/realurl/cleanup/class.tx_realurl_cleanuphandler.php'])	{
+	include_once($TYPO3_CONF_VARS[TYPO3_MODE]['XCLASS']['ext/realurl/cleanup/class.tx_realurl_cleanuphandler.php']);
 }
 
 
