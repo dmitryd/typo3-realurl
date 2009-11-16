@@ -2,6 +2,7 @@
 
 	* Fixed bug #12529: tx_realurl->isMultidomain called multiple times
 	* Fixed bug #12445: Redirects are prepended by a slash
+	* Fixed bug #12414: Add to manual that checking the is_sitroot flag is mandatory in multidomain environments
 
 2009-10-08  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
