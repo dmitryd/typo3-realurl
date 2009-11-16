@@ -1,3 +1,7 @@
+2009-11-16  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
+
+	* Fixed bug #12529: tx_realurl->isMultidomain called multiple times
+
 2009-10-08  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
 	* Fixed bug #11393: 2 folder with "exclude from speaking URL" - 404Error

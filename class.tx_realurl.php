@@ -2204,9 +2204,14 @@ class tx_realurl {
 	 * @return	boolean
 	 */
 	function isMultidomain() {
-		list($row) = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('COUNT(distinct(pid)) AS t',
-			'sys_domain', 'redirectTo=\'\' AND hidden=0');
-		return ($row['t'] > 1);
+		static $multidomain = null;
+
+		if ($multidomain === null) {
+			list($row) = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('COUNT(distinct(pid)) AS t',
+				'sys_domain', 'redirectTo=\'\' AND hidden=0');
+			$multidomain = ($row['t'] > 1);
+		}
+		return $multidomain;
 	}
 
 	/**
