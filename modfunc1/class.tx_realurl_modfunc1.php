@@ -1395,7 +1395,7 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 	function redirectView()	{
 
 		$output = $this->pObj->doc->spacer(12);
-		
+
 		// Dispatch actions
 		switch (t3lib_div::_GP('cmd')) {
 			case 'new':
@@ -1453,7 +1453,8 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 							'</a>'.
 						'</td>';
 				$tCells[] = sprintf( '<td><a href="%s" target="_blank">/%s</a></td>', htmlspecialchars(t3lib_div::getIndpEnv('TYPO3_SITE_URL').$rec['url']), htmlspecialchars($rec['url']) );
-				$tCells[] = sprintf( '<td><a href="%s" target="_blank" title="%s">%s</a></td>', htmlspecialchars(t3lib_div::locationHeaderUrl($rec['destination']{0} == '/' ? $rec['destination'] : '/' . $rec['destination'])), htmlspecialchars($rec['destination']), ( strlen( htmlspecialchars($rec['destination']) ) > 30 ) ? substr(htmlspecialchars($rec['destination']),0,30) . '...' : htmlspecialchars($rec['destination']) );
+				$destinationURL = $this->getDestinationRedirectURL($rec['destination']);
+				$tCells[] = sprintf( '<td><a href="%1$s" target="_blank" title="%1$s">%2$s</a></td>', htmlspecialchars($destinationURL), htmlspecialchars(t3lib_div::fixed_lgd_cs($destinationURL, 30)));
 				$tCells[] = '<td align="center">'.($rec['has_moved'] ? '+' : '&nbsp;').'</td>';
 				$tCells[] = '<td align="center">'.$rec['counter'].'</td>';
 
@@ -1463,7 +1464,7 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 				else {
 					$tCells[] = '<td align="center">&mdash;</td>';
 				}
-				
+
 				if ($rec['last_referer']) {
 					$lastRef = htmlspecialchars($rec['last_referer']);
 					$tCells[] = sprintf( '<td><a href="%s" target="_blank" title="%s">%s</a></td>', $lastRef, $lastRef, (strlen($rec['last_referer']) > 30) ? htmlspecialchars(substr($rec['last_referer'], 0, 30)) . '...' : $lastRef);
@@ -1484,13 +1485,13 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 						implode('',$tCells).'</tr>';
 				$cc++;
 			}
-		
+
 			$output .= '</table>';
 
 			return $output;
 		}
 	}
-	
+
 	/**
 	 * Deletes a redirect entry.
 	 *
@@ -1504,10 +1505,10 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 			);
 		}
 	}
-	
+
 	/**
 	 * Creates a code for 'Add new entries' button
-	 * 
+	 *
 	 * @return	void
 	 */
 	protected function getNewButton() {
@@ -1516,7 +1517,7 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 			' Add new redirects</a></div>';
 		return $content;
 	}
-	
+
 	/**
 	 * Checks form submission for 'new' and 'edit' actions and performs whatever
 	 * is necessary to add or edit data. Returns the form if necessary.
@@ -1605,10 +1606,10 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 		}
 		$content .= '<tr><td colspan="3">' . $this->saveCancelButtons() . '</td></tr>' .
 			'</table>';
-		
+
 		return $content;
 	}
-	
+
 	/**
 	 * Processes submission
 	 *
@@ -1647,8 +1648,8 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 					return false;
 				}
 				// Check for missing slash in destination
-				//$parse = @parse_url($fields['target']);
-				if ($fields['target']{0} != '/'/* && ($parse === false || !isset($parse['scheme']))*/) {
+				$parse = @parse_url($fields['target']);
+				if ($fields['target']{0} != '/' && ($parse === false || !isset($parse['scheme']))) {
 					$fields['target'] = '/' . $fields['target'];
 				}
 
@@ -1677,14 +1678,30 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 				$GLOBALS['TYPO3_DB']->exec_INSERTquery('tx_realurl_redirects', $data);
 			}
 			foreach ($databaseUpdateData as $oldUrl => $data) {
-				$GLOBALS['TYPO3_DB']->exec_UPDATEquery('tx_realurl_redirects', 
+				$GLOBALS['TYPO3_DB']->exec_UPDATEquery('tx_realurl_redirects',
 					'url=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($oldUrl, 'tx_realurl_redirects'),
 					$data);
 			}
 			// Make sure we return success if the form is totally empty
-			$result = true; 
+			$result = true;
 		}
 		return $result;
+	}
+
+	/**
+	 * Obtains destination URL for the redirect.
+	 *
+	 * @param string $url
+	 * @return string
+	 */
+	protected function getDestinationRedirectURL($url) {
+		$parts = @parse_url($url);
+		if (!is_array($parts) || empty($parts['scheme'])) {
+			if ($url{0} != '/') {
+				$url = '/' . $url;
+			}
+		}
+		return $url;
 	}
 }
 

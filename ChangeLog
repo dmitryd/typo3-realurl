@@ -1,6 +1,7 @@
 2009-11-16  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
 	* Fixed bug #12529: tx_realurl->isMultidomain called multiple times
+	* Fixed bug #12445: Redirects are prepended by a slash
 
 2009-10-08  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
