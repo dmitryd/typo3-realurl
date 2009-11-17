@@ -1,6 +1,7 @@
 2009-11-17  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
 	* Fixed bug #12158: KEY bk_realurl02 of table tx_realurl_uniqalias is too long
+	* Released version 1.7.0
 
 2009-11-16  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
