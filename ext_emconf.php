@@ -3,7 +3,7 @@
 ########################################################################
 # Extension Manager/Repository config file for ext: "realurl"
 #
-# Auto generated 16-12-2008 13:04
+# Auto generated 17-11-2009 13:34
 #
 # Manual updates:
 # Only the data in the array - anything else is removed by next write.
@@ -11,8 +11,8 @@
 ########################################################################
 
 $EM_CONF[$_EXTKEY] = array(
-	'title' => 'RealURL: URLs like normal websites',
-	'description' => 'Creates nice looking URLs for TYPO3 pages. Converts http://example.com/index.phpid=12345&L=2 to http://example.com/path/to/your/page/.',
+	'title' => 'RealURL: speaking paths for TYPO3',
+	'description' => 'Creates nice looking URLs for TYPO3 pages: converts http://example.com/index.phpid=12345&L=2 to http://example.com/path/to/your/page/. Please, ask for free support in TYPO3 mailing lists or contact the maintainer for paid support.',
 	'category' => 'fe',
 	'shy' => 0,
 	'dependencies' => '',
@@ -28,12 +28,12 @@ $EM_CONF[$_EXTKEY] = array(
 	'clearCacheOnLoad' => 0,
 	'lockType' => '',
 	'author' => 'Dmitry Dulepov',
-	'author_email' => 'dmitry@typo3.org',
+	'author_email' => 'dmitry.dulepov@gmail.com',
 	'author_company' => '',
 	'CGLcompliance' => '',
 	'CGLcompliance_note' => '',
-	'version' => '1.5.3B',
-	'_md5_values_when_last_written' => 'a:25:{s:9:"ChangeLog";s:4:"c806";s:10:"_.htaccess";s:4:"a6b1";s:20:"class.tx_realurl.php";s:4:"512b";s:29:"class.tx_realurl_advanced.php";s:4:"2188";s:32:"class.tx_realurl_autoconfgen.php";s:4:"9e88";s:26:"class.tx_realurl_dummy.php";s:4:"6e1b";s:28:"class.tx_realurl_tcemain.php";s:4:"ea96";s:33:"class.tx_realurl_userfunctest.php";s:4:"750e";s:21:"ext_conf_template.txt";s:4:"5b1a";s:12:"ext_icon.gif";s:4:"ea80";s:17:"ext_localconf.php";s:4:"70f6";s:14:"ext_tables.php";s:4:"4e14";s:14:"ext_tables.sql";s:4:"772c";s:16:"locallang_db.xml";s:4:"fe70";s:12:"doc/TODO.txt";s:4:"b8cb";s:14:"doc/manual.sxw";s:4:"c213";s:13:"mod1/conf.php";s:4:"f960";s:14:"mod1/index.php";s:4:"c2b6";s:18:"mod1/locallang.xml";s:4:"23df";s:22:"mod1/locallang_mod.xml";s:4:"9fd8";s:19:"mod1/moduleicon.png";s:4:"6b5a";s:38:"modfunc1/class.tx_realurl_modfunc1.php";s:4:"8fe8";s:22:"modfunc1/locallang.xml";s:4:"0593";s:16:"testmod/conf.php";s:4:"309a";s:17:"testmod/index.php";s:4:"d33b";}',
+	'version' => '1.7.0',
+	'_md5_values_when_last_written' => 'a:26:{s:9:"ChangeLog";s:4:"7899";s:10:"_.htaccess";s:4:"a6b1";s:20:"class.tx_realurl.php";s:4:"1186";s:29:"class.tx_realurl_advanced.php";s:4:"acdc";s:32:"class.tx_realurl_autoconfgen.php";s:4:"9e88";s:26:"class.tx_realurl_dummy.php";s:4:"6e1b";s:28:"class.tx_realurl_tcemain.php";s:4:"ea96";s:33:"class.tx_realurl_userfunctest.php";s:4:"dda5";s:21:"ext_conf_template.txt";s:4:"c890";s:12:"ext_icon.gif";s:4:"ea80";s:17:"ext_localconf.php";s:4:"9dff";s:14:"ext_tables.php";s:4:"8380";s:14:"ext_tables.sql";s:4:"0ab1";s:16:"locallang_db.xml";s:4:"fe70";s:43:"cleanup/class.tx_realurl_cleanuphandler.php";s:4:"a18c";s:12:"doc/TODO.txt";s:4:"b8cb";s:14:"doc/manual.sxw";s:4:"a5b3";s:13:"mod1/conf.php";s:4:"f960";s:14:"mod1/index.php";s:4:"9be3";s:18:"mod1/locallang.xml";s:4:"23df";s:22:"mod1/locallang_mod.xml";s:4:"9fd8";s:19:"mod1/moduleicon.png";s:4:"6b5a";s:38:"modfunc1/class.tx_realurl_modfunc1.php";s:4:"4ac6";s:22:"modfunc1/locallang.xml";s:4:"0593";s:16:"testmod/conf.php";s:4:"309a";s:17:"testmod/index.php";s:4:"d33b";}',
 	'constraints' => array(
 		'depends' => array(
 			'php' => '5.2.0-0.0.0',
