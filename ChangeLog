@@ -1,3 +1,7 @@
+2010-01-13  Dmitry Dulepov  <dmitry.dulepov+extrealurl@gmail.com>
+
+	* Updated documentation: described that appendMissingSlash works before any other option
+
 2009-11-17  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
 	* Fixed bug #12158: KEY bk_realurl02 of table tx_realurl_uniqalias is too long
