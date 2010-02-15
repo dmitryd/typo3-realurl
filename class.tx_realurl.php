@@ -845,12 +845,7 @@ class tx_realurl {
 							$matches = array();
 							if (preg_match('/^redirect(\[(30[1237])\])?$/', $option, $matches)) {
 								$code = count($matches) > 1 ? $matches[2] : 301;
-								if (version_compare(TYPO3_version, '4.3.0') >= 0) {
-									$status = constant('t3lib_div::HTTP_STATUS_' . $code);
-								}
-								else {
-									$status = 'HTTP/1.0 ' . $code . ' TYPO3 RealURL redirect';
-								}
+								$status = 'HTTP/1.0 ' . $code . ' TYPO3 RealURL redirect';
 
 								// Check path segment to be relative for the current site.
 								// parse_url() does not work with relative URLs, so we use it to test
