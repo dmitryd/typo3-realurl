@@ -187,7 +187,16 @@ class tx_realurl {
 	 */
 	function encodeSpURL(&$params) {
 		if ($this->enableDevLog) {
-			t3lib_div::devLog('Entering encodeSpURL for ' . $params['LD']['totalURL'], 'realurl');
+			if (TYPO3_DLOG) {
+				t3lib_div::devLog('Entering encodeSpURL for ' . $params['LD']['totalURL'], 'realurl');
+			}
+		}
+
+		if ($this->isInWorkspace()) {
+			if (TYPO3_DLOG) {
+				t3lib_div::devLog('Workspace detected. Not doing anything!', 'realurl');
+			}
+			return;
 		}
 
 		if (!$params['TCEmainHook']) {
@@ -2284,6 +2293,19 @@ class tx_realurl {
 			}
 		}
 		return $newUrl;
+	}
+
+	/**
+	 * Checks if system runs in non-live workspace
+	 *
+	 * @return boolean
+	 */
+	protected function isInWorkspace() {
+		$result = false;
+		if (isset($GLOBALS['BE_USER']) && ($GLOBALS['BE_USER'] instanceof t3lib_beUserAuth)) {
+			$result = ($GLOBALS['BE_USER']->workspace != 0);
+		}
+		return $result;
 	}
 }
 
