@@ -2178,7 +2178,7 @@ class tx_realurl {
 			if (!$rootpage_id && !$this->multidomain) {
 				// Try by TS template
 				$rows = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('pid',
-							'sys_template', 'root=1 AND hidden=0');
+							'sys_template', 'root=1 AND hidden=0 AND deleted=0');
 				if (count($rows) == 1) {
 					$rootpage_id = $rows[0]['pid'];
 					if ($this->enableDevLog) {

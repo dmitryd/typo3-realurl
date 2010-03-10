@@ -2,6 +2,7 @@
 
 	* Fixed bug #12919: Mistyping of a sql query 'expires' instead of 'expire'
 	* Preparatory work for #9858: Making slash at the end ot the path configurable
+	* Fixed bug #13507: Deleted templates are included when finding rootpage_id by searching sys_template
 
 2010-01-13  Dmitry Dulepov  <dmitry.dulepov+extrealurl@gmail.com>
 
