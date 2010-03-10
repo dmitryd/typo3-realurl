@@ -2208,7 +2208,7 @@ class tx_realurl {
 		static $multidomain = null;
 
 		if ($multidomain === null) {
-			list($row) = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('COUNT(distinct(pid)) AS t',
+			list($row) = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('COUNT(distinct pid) AS t',
 				'sys_domain', 'redirectTo=\'\' AND hidden=0');
 			$multidomain = ($row['t'] > 1);
 		}
