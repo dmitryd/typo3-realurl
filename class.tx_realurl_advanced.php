@@ -686,7 +686,7 @@ class tx_realurl_advanced {
 
 		// Creating currentIdMp variable if not set:
 		if (!is_array($currentIdMp)) {
-			$currentIdMp = array( $pid, $mpvar, $foundUID);			
+			$currentIdMp = array( $pid, $mpvar, $foundUID);
 		}
 
 		// No more urlparts? Return what we have.
@@ -886,7 +886,7 @@ class tx_realurl_advanced {
 		$processedTitle = strip_tags($processedTitle);
 
 		// Convert some special tokens to the space character:
-		$space = isset($this->conf['spaceCharacter']) ? $this->conf['spaceCharacter'] : '_';
+		$space = $this->conf['spaceCharacter'] ? $this->conf['spaceCharacter'] : '_';
 		$processedTitle = preg_replace('/[ \-+_]+/', $space, $processedTitle); // convert spaces
 
 		// Convert extended letters to ascii equivalents:

@@ -6,6 +6,7 @@
 	* Fixed bug #13018: editPathCacheEntry() attempts to update nonexistent db field in class.tx_realurl_modfunc1.php
 	* Fixed bug #12992: Table "tx_realurl_uniqalias" doesn't get created on a fresh installation (MySQL)
 	* Fixed bug #9025: RealUrl generates links to live version within a draft workspace preview
+	* Fixed bug #12698: Empty conf[spaceCharacter] => PHP Warning "Compilation failed"
 
 2010-01-13  Dmitry Dulepov  <dmitry.dulepov+extrealurl@gmail.com>
 
