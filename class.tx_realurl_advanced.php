@@ -259,7 +259,7 @@ class tx_realurl_advanced {
 			if ($row['t'] > 1) {
 				// Using pathq2 index!
 				$GLOBALS['TYPO3_DB']->sql_query('DELETE FROM tx_realurl_pathcache ' .
-					'WHERE ' . $cond . ' AND expires=0 LIMIT ' . ($row['t'] - 1));
+					'WHERE ' . $cond . ' AND expire=0 LIMIT ' . ($row['t'] - 1));
 			}
 
 			// Next delete all expired

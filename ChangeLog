@@ -1,3 +1,7 @@
+2010-03-10  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
+
+	* Fixed bug #12919: Mistyping of a sql query 'expires' instead of 'expire'
+
 2010-01-13  Dmitry Dulepov  <dmitry.dulepov+extrealurl@gmail.com>
 
 	* Updated documentation: described that appendMissingSlash works before any other option
