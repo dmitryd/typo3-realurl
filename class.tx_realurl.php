@@ -369,17 +369,13 @@ class tx_realurl {
 		$this->encodeSpURL_gettingPostVarSets($paramKeyValues, $pathParts, $postVarSetCfg);
 
 		// Compile Speaking URL path
-		$newUrl = count($pathParts) ? preg_replace('/\/*$/', '', implode('/', $pathParts)) . '/' : '';
+		$newUrl = $this->compileFinalUrl($pathParts);
 
 		// Add filename, if any:
-		$fileName = $this->encodeSpURL_fileName($paramKeyValues);
-		if (strlen($newUrl) && !strlen($fileName) && $this->extConf['fileName']['defaultToHTMLsuffixOnPrev']) {
-			$newUrl = substr($newUrl, 0, -1) . (!$this->isString($this->extConf['fileName']['defaultToHTMLsuffixOnPrev'], 'defaultToHTMLsuffixOnPrev') ? '.html' : $this->extConf['fileName']['defaultToHTMLsuffixOnPrev']);
-		} else {
-			$newUrl .= rawurlencode($fileName);
-		}
+		$newUrl = $this->appendFileName($paramKeyValues, $newUrl);
 
 		// Totally blank URLs will be set $GLOBALS['TSFE']->"
+		$newUrl = $this->fixEmptyUrl($newUrl);
 		if (!strlen($newUrl)) {
 			if (is_bool($this->extConf['init']['emptyUrlReturnValue']) && $this->extConf['init']['emptyUrlReturnValue']) {
 				$newUrl = $GLOBALS['TSFE']->baseUrl;
@@ -2233,6 +2229,61 @@ class tx_realurl {
 					'unable to determine rootpage_id for the current domain.');
 			}
 		}
+	}
+
+	/**
+	 * Compiles the final URL
+	 *
+	 * @param array $pathParts
+	 * @return string
+	 */
+	protected function compileFinalUrl(array $pathParts) {
+		$url = '';
+		if (count($pathParts)) {
+			$url = preg_replace('/\/*$/', '', implode('/', $pathParts));
+			// TODO Implement a feature to skip appending a slash.
+			// See http://bugs.typo3.org/view.php?id=9858
+			$url .= '/';
+		}
+		return $url;
+	}
+
+	/**
+	 * Appends a file name to the url if necessary
+	 *
+	 * @param array $paramKeyValues
+	 * @param string $newUrl
+	 * @return string
+	 */
+	protected function appendFileName(array $paramKeyValues, $newUrl) {
+		$fileName = $this->encodeSpURL_fileName($paramKeyValues);
+		$urlLength = strlen($newUrl);
+		$suffix = $this->extConf['fileName']['defaultToHTMLsuffixOnPrev'];
+		if ($urlLength && !strlen($fileName) && $suffix) {
+			if ($newUrl{$urlLength - 1} == '/') {
+				$newUrl = substr($newUrl, 0, -1);
+			}
+			$newUrl .= (!$this->isString($suffix, 'defaultToHTMLsuffixOnPrev') ? '.html' : $suffix);
+		}
+		else {
+			$newUrl .= rawurlencode($fileName);
+		}
+
+		return $newUrl;
+	}
+
+	/**
+	 * Fixes empty URL
+	 */
+	protected function fixEmptyUrl($newUrl) {
+		if (!strlen($newUrl)) {
+			if (is_bool($this->extConf['init']['emptyUrlReturnValue']) && $this->extConf['init']['emptyUrlReturnValue']) {
+				$newUrl = ($GLOBALS['TSFE']->config['config']['absRefPrefix'] ? $GLOBALS['TSFE']->config['config']['absRefPrefix'] : $GLOBALS['TSFE']->baseUrl);
+			} else {
+				$newUrl = '' . $this->extConf['init']['emptyUrlReturnValue'];
+			}
+		}
+		return $newUrl;
 	}
 }
 

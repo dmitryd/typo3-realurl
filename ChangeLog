@@ -1,6 +1,7 @@
 2010-03-10  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
 	* Fixed bug #12919: Mistyping of a sql query 'expires' instead of 'expire'
+	* Preparatory work for #9858: Making slash at the end ot the path configurable
 
 2010-01-13  Dmitry Dulepov  <dmitry.dulepov+extrealurl@gmail.com>
 
