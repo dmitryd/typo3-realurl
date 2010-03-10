@@ -617,8 +617,7 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 	 */
 	function editPathCacheEntry($cache_id,$value)	{
 		$field_values = array(
-			'pagepath' => $value,
-			'hash' => substr(md5($value),0,10),
+			'pagepath' => $value
 		);
 		$GLOBALS['TYPO3_DB']->exec_UPDATEquery('tx_realurl_pathcache','cache_id='.intval($cache_id), $field_values);
 

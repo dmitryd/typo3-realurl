@@ -3,6 +3,7 @@
 	* Fixed bug #12919: Mistyping of a sql query 'expires' instead of 'expire'
 	* Preparatory work for #9858: Making slash at the end ot the path configurable
 	* Fixed bug #13507: Deleted templates are included when finding rootpage_id by searching sys_template
+	* Fixed bug #13018: editPathCacheEntry() attempts to update nonexistent db field in class.tx_realurl_modfunc1.php
 
 2010-01-13  Dmitry Dulepov  <dmitry.dulepov+extrealurl@gmail.com>
 
