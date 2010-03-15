@@ -2,6 +2,7 @@
 
 	* Fixed bug #10348: 301 Moved Permanently with redirects and redirects_regex
 	* Fixed bug #12968: Set RealURL as conflicting with simulatestatic
+	* Added PHP5 access specifiers to tx_realurl and tx_realurl_advanced
 
 2010-03-10  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 

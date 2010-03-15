@@ -79,20 +79,35 @@ class tx_realurl_advanced {
 	 *
 	 * @var	t3lib_pageSelect
 	 */
-	var $sys_page;
+	protected $sys_page;
 
-	// Internal, for "path" id resolver:
-	var $IDtoPagePathCache = array(); // Contains cached versions of page paths for id/language combinations.
+	/**
+	 * Contains cached versions of page paths for id/language combinations
+	 *
+	 * @var array
+	 */
+	protected $IDtoPagePathCache = array();
 
-	// Internal, dynamic:
 	/**
 	 * Reference to parent object
 	 *
 	 * @var	tx_realurl
 	 */
-	var $pObj;
+	protected $pObj;
 
-	var $conf; // Local configuration for the "pagePath"
+	/**
+	 * Class configuration
+	 *
+	 * @var array $conf
+	 */
+	protected $conf;
+
+	/**
+	 * Configuration for the current domain
+	 *
+	 * @var array
+	 */
+	protected $extConf;
 
 	/**
 	 * Main function, called for both encoding and deconding of URLs.
@@ -102,12 +117,13 @@ class tx_realurl_advanced {
 	 * @param	tx_realurl		Copy of parent object. Not used.
 	 * @return	mixed		Depends on branching.
 	 */
-	function main(&$params, $ref) {
+	public function main(array $params, tx_realurl $parent) {
 		/* @var $ref tx_realurl */
 
 		// Setting internal variables:
-		$this->pObj = &$ref;
+		$this->pObj = $parent;
 		$this->conf = $params['conf'];
+		$this->extConf = $this->pObj->getConfiguration();
 
 		// Branching out based on type:
 		$result = false;
@@ -138,7 +154,7 @@ class tx_realurl_advanced {
 	 * @return	void
 	 * @see encodeSpURL_pathFromId()
 	 */
-	function IDtoPagePath(&$paramKeyValues, &$pathParts) {
+	protected function IDtoPagePath(&$paramKeyValues, &$pathParts) {
 
 		// Get page id and remove entry in paramKeyValues:
 		$pageid = $paramKeyValues['id'];
@@ -183,7 +199,7 @@ class tx_realurl_advanced {
 
 		// Set error if applicable.
 		if ($this->conf['excludePageIds'] && t3lib_div::inList($this->conf['excludePageIds'], $pageid)) {
-			$this->pObj->encodeError = TRUE;
+			$this->pObj->setEncodeError();
 			return;
 		}
 
@@ -214,7 +230,7 @@ class tx_realurl_advanced {
 
 		// Set error if applicable.
 		if ($pagePath === '__ERROR') {
-			$this->pObj->encodeError = TRUE;
+			$this->pObj->setEncodeError();
 			return;
 		}
 
@@ -234,7 +250,7 @@ class tx_realurl_advanced {
 	 * @param	string		If set, then a new entry will be inserted ONLY if it is different from $cached_pagepath
 	 * @return	string		The page path
 	 */
-	function updateURLCache($id, $mpvar, $lang, $cached_pagepath = '') {
+	protected function updateURLCache($id, $mpvar, $lang, $cached_pagepath = '') {
 		// Build the new page path, in the correct language
 		$pagepathRec = $this->IDtoPagePathSegments($id, $mpvar, $lang);
 		if (!$pagepathRec) {
@@ -308,7 +324,7 @@ class tx_realurl_advanced {
 	 * @param	integer		Language id
 	 * @return	array		The page path etc.
 	 */
-	function IDtoPagePathSegments($id, $mpvar, $langID) {
+	protected function IDtoPagePathSegments($id, $mpvar, $langID) {
 		// Check to see if we already built this one in this session
 		$cacheKey = $id . '.' . $mpvar . '.' . $langID;
 		if (!isset($this->IDtoPagePathCache[$cacheKey])) {
@@ -331,9 +347,7 @@ class tx_realurl_advanced {
 			$innerSubDomain = false;
 			for ($a = $cc - 1; $a >= 0; $a--) {
 				if ($rootLine[$a]['is_siteroot']) {
-					if ($this->pObj->enableDevLog) {
-						t3lib_div::devLog('Found siteroot in the rootline for id=' . $id, 'realurl', 0);
-					}
+					$this->pObj->devLog('Found siteroot in the rootline for id=' . $id);
 					$rootFound = true;
 					$innerSubDomain = true;
 					for ( ; $a < $cc; $a++) {
@@ -344,14 +358,10 @@ class tx_realurl_advanced {
 			}
 			if (!$rootFound) {
 				// Pass #2 -- check normal page
-				if ($this->pObj->enableDevLog) {
-					t3lib_div::devLog('Starting to walk rootline for id=' . $id . ' from index=' . $a, 'realurl', 0, $rootLine);
-				}
+				$this->pObj->devLog('Starting to walk rootline for id=' . $id . ' from index=' . $a, $rootLine);
 				for ($a = 0; $a < $cc; $a++) {
 					if ($GLOBALS['TSFE']->tmpl->rootLine[0]['uid'] == $rootLine[$a]['uid']) {
-						if ($this->pObj->enableDevLog) {
-							t3lib_div::devLog('Found rootline', 'realurl', 0, array('uid' => $id, 'rootline start pid' => $rootLine[$a]['uid']));
-						}
+						$this->pObj->devLog('Found rootline', array('uid' => $id, 'rootline start pid' => $rootLine[$a]['uid']));
 						$rootFound = true;
 						for ( ; $a < $cc; $a++) {
 							$newRootLine[] = $rootLine[$a];
@@ -363,24 +373,18 @@ class tx_realurl_advanced {
 			if ($rootFound) {
 				// Translate the rootline to a valid path (rootline contains localized titles at this point!):
 				$pagepath = $this->rootLineToPath($newRootLine, $langID);
-				if ($this->pObj->enableDevLog) {
-					t3lib_div::devLog('Got page path', 'realurl', 0, array('uid' => $id, 'pagepath' => $pagepath));
-				}
+				$this->pObj->devLog('Got page path', array('uid' => $id, 'pagepath' => $pagepath));
 				$rootpage_id = $this->conf['rootpage_id'];
 				if ($innerSubDomain) {
 					$parts = parse_url($pagepath);
-					if ($this->pObj->enableDevLog) {
-						t3lib_div::devLog('$innerSubDomain=true, showing page path parts', 'realurl', 0, $parts);
-					}
+					$this->pObj->devLog('$innerSubDomain=true, showing page path parts', $parts);
 					if ($parts['host'] == '') {
 						$domain = '';
 						foreach ($newRootLine as $rl) {
 							$rows = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('domainName', 'sys_domain', 'pid=' . $rl['uid'] . ' AND redirectTo=\'\' AND hidden=0', '', 'sorting');
 							if (count($rows)) {
 								$domain = $rows[0]['domainName'];
-								if ($this->pObj->enableDevLog) {
-									t3lib_div::devLog('Found domain', 'realurl', 0, $domain);
-								}
+								$this->pObj->devLog('Found domain', $domain);
 								$rootpage_id = $rl['uid'];
 							}
 						}
@@ -413,14 +417,12 @@ class tx_realurl_advanced {
 	 * @return	string		Path for the page, eg.
 	 * @see IDtoPagePathSegments()
 	 */
-	function rootLineToPath($rl, $lang) {
+	protected function rootLineToPath($rl, $lang) {
 		$paths = array();
 		array_shift($rl); // Ignore the first path, as this is the root of the website
 		$c = count($rl);
 		$stopUsingCache = false;
-		if ($this->pObj->enableDevLog) {
-			t3lib_div::devLog('rootLineToPath starts searching', 'realurl', 0, array('rootline size' => count($rl)));
-		}
+		$this->pObj->devLog('rootLineToPath starts searching', array('rootline size' => count($rl)));
 		for ($i = 1; $i <= $c; $i++) {
 			$page = array_shift($rl);
 
@@ -439,18 +441,14 @@ class tx_realurl_advanced {
 				if ($GLOBALS['TYPO3_DB']->sql_num_rows($result) == 1) { // If there seems to be more than one page path cached for this combo, we will fix it later
 					$cachedPagePath = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($result);
 					$lastPath = implode('/', $paths);
-					if ($this->pObj->enableDevLog) {
-						t3lib_div::devLog('rootLineToPath found path', 'realurl', 0, $lastPath);
-					}
+					$this->pObj->devLog('rootLineToPath found path', $lastPath);
 					if ($cachedPagePath != false && substr($cachedPagePath['pagepath'], 0, strlen($lastPath)) != $lastPath) {
 						// Oops. Cached path does not start from already generated path.
 						// It means that path was mapped from a parallel mount point.
 						// We cannot not rely on cache any more. Stop using it.
 						$cachedPagePath = false;
 						$stopUsingCache = true;
-						if ($this->pObj->enableDevLog) {
-							t3lib_div::devLog('rootLineToPath stops searching', 'realurl');
-						}
+						$this->pObj->devLog('rootLineToPath stops searching');
 					}
 				}
 				$GLOBALS['TYPO3_DB']->sql_free_result($result);
@@ -495,7 +493,7 @@ class tx_realurl_advanced {
 	 * @return	integer		Page ID
 	 * @see decodeSpURL_idFromPath()
 	 */
-	function pagePathtoID(&$pathParts) {
+	protected function pagePathtoID(&$pathParts) {
 
 		// Init:
 		$GET_VARS = '';
@@ -570,18 +568,14 @@ class tx_realurl_advanced {
 			// (in this order!) entry for the same page od and redirect to corresponding path. 3 - same as
 			// 1 but means that entry is going to expire eventually, nothing to do for us yet.
 			if ($row['expire'] > 0) {
-				if ($this->pObj->enableDevLog) {
-					t3lib_div::devLog('pagePathToId found row', 'realurl', 0, $row);
-				}
+				$this->pObj->devLog('pagePathToId found row', $row);
 				// 'expire' in the query is only for logging
 				// Using pathq2 index!
 				list($newEntry) = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('pagepath,expire', 'tx_realurl_pathcache',
 						'page_id=' . intval($row['page_id']) . '
 						AND language_id=' . intval($row['language_id']) . '
 						AND (expire=0 OR expire>' . $row['expire'] . ')', '', 'expire', '1');
-				if ($this->pObj->enableDevLog) {
-					t3lib_div::devLog('pagePathToId searched for new entry', 'realurl', 0, $newEntry);
-				}
+				$this->pObj->devLog('pagePathToId searched for new entry', $newEntry);
 
 				// Redirect to new path immediately if it is found
 				if ($newEntry) {
@@ -647,7 +641,7 @@ class tx_realurl_advanced {
 	 * @param	array		Path parts, passed by reference.
 	 * @return	array		Info array, currently with "id" set to the ID.
 	 */
-	function findIDByURL(&$urlParts) {
+	protected function findIDByURL(&$urlParts) {
 
 		// Initialize:
 		$info = array();
@@ -682,7 +676,7 @@ class tx_realurl_advanced {
 	 * @param	array		Array with the current pid/mpvar to return if no processing is done.
 	 * @return	array		With resolved id and $mpvar
 	 */
-	function searchTitle ( $pid, $mpvar, &$urlParts, $currentIdMp = '', $foundUID = false) {
+	protected function searchTitle( $pid, $mpvar, &$urlParts, $currentIdMp = '', $foundUID = false) {
 
 		// Creating currentIdMp variable if not set:
 		if (!is_array($currentIdMp)) {
@@ -730,7 +724,7 @@ class tx_realurl_advanced {
 	 * @param	array	$urlParts	URL segments
 	 * @return	array	Resolved id and mpvar
 	 */
-	function searchTitle_processResult($row, $mpvar, &$urlParts, $foundUID) {
+	protected function searchTitle_processResult($row, $mpvar, &$urlParts, $foundUID) {
 		$uid = $row['uid'];
 		// Set base currentIdMp for next level:
 		$currentIdMp = array( $uid, $mpvar, $foundUID);
@@ -759,7 +753,7 @@ class tx_realurl_advanced {
 	 * @access private
 	 * @see searchTitle()
 	 */
-	function searchTitle_searchPid($searchPid, $title) {
+	protected function searchTitle_searchPid($searchPid, $title) {
 
 		// List of "pages" fields to traverse for a "directory title" in the speaking URL (only from RootLine!!):
 		$segTitleFieldList = $this->conf['segTitleFieldList'] ? $this->conf['segTitleFieldList'] : TX_REALURL_SEGTITLEFIELDLIST_DEFAULT;
@@ -778,7 +772,7 @@ class tx_realurl_advanced {
 		$result = $GLOBALS['TYPO3_DB']->exec_SELECTquery($selList, 'pages',
 						'pid=' . intval($searchPid) .
 						' AND deleted=0 AND doktype!=255', '', 'sorting');
-		while (($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($result))) {
+		while (false != ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($result))) {
 
 			// Mount points:
 			$mount_info = $sys_page->getMountPointInfo($row['uid'], $row);
@@ -826,7 +820,7 @@ class tx_realurl_advanced {
 		foreach ($uidTrackKeys as $l_id) {
 			$result = $GLOBALS['TYPO3_DB']->exec_SELECTquery(TX_REALURL_SEGTITLEFIELDLIST_PLO,
 					'pages_language_overlay', 'pid=' . intval($l_id) . ' AND deleted=0');
-			while (($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($result))) {
+			while (false != ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($result))) {
 				foreach ($segTitleFieldArray as $fieldName) {
 					if ($row[$fieldName]) {
 						$encodedTitle = $this->encodeTitle($row[$fieldName]);
@@ -874,7 +868,7 @@ class tx_realurl_advanced {
 	 * @return	string		Encoded title, passed through rawurlencode() = ready to put in the URL.
 	 * @see rootLineToPath()
 	 */
-	function encodeTitle($title) {
+	protected function encodeTitle($title) {
 
 		// Fetch character set:
 		$charset = $GLOBALS['TYPO3_CONF_VARS']['BE']['forceCharset'] ? $GLOBALS['TYPO3_CONF_VARS']['BE']['forceCharset'] : $GLOBALS['TSFE']->defaultCharSet;
@@ -912,7 +906,7 @@ class tx_realurl_advanced {
 	 * @param	int		$offsetFromNow	Offset to expiration
 	 * @return	int		Expiration time stamp
 	 */
-	function makeExpirationTime($offsetFromNow = 0) {
+	protected function makeExpirationTime($offsetFromNow = 0) {
 		if (!t3lib_extMgm::isLoaded('adodb') && (TYPO3_db_host == '127.0.0.1' || TYPO3_db_host == 'localhost')) {
 			// Same host, same time, optimize
 			return $offsetFromNow ? '(UNIX_TIMESTAMP()+(' . $offsetFromNow . '))' : 'UNIX_TIMESTAMP()';
@@ -927,7 +921,7 @@ class tx_realurl_advanced {
 	 *
 	 * @return	integer		Current language or 0
 	 */
-	function getLanguageVar() {
+	protected function getLanguageVar() {
 		$lang = 0;
 		// Setting the language variable based on GETvar in URL which has been configured to carry the language uid:
 		if ($this->conf['languageGetVar'] && isset($this->pObj->orig_paramKeyValues[$this->conf['languageGetVar']])) {
@@ -954,7 +948,7 @@ class tx_realurl_advanced {
 	 * @param	array	$log	Internal log
 	 * @return	int	Found page id
 	 */
-	function resolveShortcut($page, $disableGroupAccessCheck, $log = array()) {
+	protected function resolveShortcut($page, $disableGroupAccessCheck, $log = array()) {
 		if (isset($log[$page['uid']])) {
 			// loop detected!
 			return $page['uid'];
