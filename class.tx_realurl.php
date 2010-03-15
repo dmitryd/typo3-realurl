@@ -928,7 +928,13 @@ class tx_realurl {
 		$speakingURIpath = trim($speakingURIpath);
 
 		if (isset($this->extConf['redirects'][$speakingURIpath])) {
-			header('Location: ' . t3lib_div::locationHeaderUrl($this->extConf['redirects'][$speakingURIpath]));
+			$url = $this->extConf['redirects'][$speakingURIpath];
+			if (preg_match('/^30[1237];/', $url)) {
+				$redirectCode = intval(substr($url, 0, 3));
+				$url = substr($url, 4);
+				header('HTTP/1.0 ' . $redirectCode . ' Redirect');
+			}
+			header('Location: ' . t3lib_div::locationHeaderUrl($url));
 			exit();
 		}
 
@@ -936,9 +942,16 @@ class tx_realurl {
 		if (is_array($this->extConf['redirects_regex'])) {
 			foreach ($this->extConf['redirects_regex'] as $regex => $substString) {
 				if (preg_match('/' . $regex . '/', $speakingURIpath)) {
-					$speakingURIpath = preg_replace('/' . $regex . '/', $substString, $speakingURIpath);
-					header('Location: ' . t3lib_div::locationHeaderUrl($speakingURIpath));
-					exit();
+					$url = @preg_replace('/' . $regex . '/', $substString, $speakingURIpath);
+					if ($url) {
+						if (preg_match('/^30[1237];/', $url)) {
+							$redirectCode = intval(substr($url, 0, 3));
+							header('HTTP/1.0 ' . $redirectCode . ' Redirect');
+							$url = substr($url, 4);
+						}
+						header('Location: ' . t3lib_div::locationHeaderUrl($url));
+						exit();
+					}
 				}
 			}
 		}
@@ -964,6 +977,7 @@ class tx_realurl {
 			if ($redirect_row['has_moved']) {
 				header('HTTP/1.1 301 Moved Permanently');
 			}
+
 			header('Location: ' . t3lib_div::locationHeaderUrl($redirect_row['destination']));
 			exit();
 		}
