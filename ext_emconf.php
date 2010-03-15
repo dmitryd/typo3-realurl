@@ -16,7 +16,7 @@ $EM_CONF[$_EXTKEY] = array(
 	'category' => 'fe',
 	'shy' => 0,
 	'dependencies' => '',
-	'conflicts' => 'cooluri',
+	'conflicts' => 'cooluri,simulatestatic',
 	'priority' => '',
 	'loadOrder' => '',
 	'module' => 'testmod',
@@ -41,6 +41,7 @@ $EM_CONF[$_EXTKEY] = array(
 		),
 		'conflicts' => array(
 			'cooluri' => '',
+			'simulatestatic' => ''
 		),
 		'suggests' => array(
 			'static_info_tables' => '2.0.2-',

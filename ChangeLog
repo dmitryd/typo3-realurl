@@ -1,6 +1,7 @@
 2010-03-15  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
 	* Fixed bug #10348: 301 Moved Permanently with redirects and redirects_regex
+	* Fixed bug #12968: Set RealURL as conflicting with simulatestatic
 
 2010-03-10  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
