@@ -79,7 +79,7 @@ class tx_realurl_advanced {
 	 *
 	 * @var	t3lib_pageSelect
 	 */
-	protected $sys_page;
+	protected $sysPage;
 
 	/**
 	 * Contains cached versions of page paths for id/language combinations
@@ -330,13 +330,9 @@ class tx_realurl_advanced {
 		if (!isset($this->IDtoPagePathCache[$cacheKey])) {
 
 			// Get rootLine for current site (overlaid with any language overlay records).
-			if (!is_object($this->sys_page)) { // Create object if not found before:
-				// Initialize the page-select functions.
-				$this->sys_page = t3lib_div::makeInstance('t3lib_pageSelect');
-				$this->sys_page->init($GLOBALS['TSFE']->showHiddenPage || $this->pObj->isBEUserLoggedIn());
-			}
-			$this->sys_page->sys_language_uid = $langID;
-			$rootLine = $this->sys_page->getRootLine($id, $mpvar);
+			$this->createSysPageIfNecessary();
+			$this->sysPage->sys_language_uid = $langID;
+			$rootLine = $this->sysPage->getRootLine($id, $mpvar);
 			$cc = count($rootLine);
 			$newRootLine = array();
 			$rootFound = FALSE;
@@ -407,7 +403,7 @@ class tx_realurl_advanced {
 	/**
 	 * Build a virtual path for a page, like "products/product_1/features/"
 	 * The path is language dependant.
-	 * There is also a function $TSFE->sys_page->getPathFromRootline, but that one can only be used for a visual
+	 * There is also a function $TSFE->sysPage->getPathFromRootline, but that one can only be used for a visual
 	 * indication of the path in the backend, not for a real page path.
 	 * Note also that the for-loop starts with 1 so the first page is stripped off. This is (in most cases) the
 	 * root of the website (which is 'handled' by the domainname).
@@ -975,6 +971,18 @@ class tx_realurl_advanced {
 			}
 		}
 		return $pageid;
+	}
+
+	/**
+	 * Creates $this->sysPage if it does not exist yet
+	 *
+	 * @return void
+	 */
+	protected function createSysPageIfNecessary() {
+		if (!is_object($this->sysPage)) {
+			$this->sysPage = t3lib_div::makeInstance('t3lib_pageSelect');
+			$this->sysPage->init($GLOBALS['TSFE']->showHiddenPage || $this->pObj->isBEUserLoggedIn());
+		}
 	}
 }
 
