@@ -1,6 +1,7 @@
 2010-03-16  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
 	* Small optimization for aliases
+	* Fixed bug #6400: Unexpected behaviour when postVarsets => _DEFAULT is not set
 
 2010-03-15  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 

@@ -1938,7 +1938,8 @@ class tx_realurl {
 			$page_id = $this->extConf[$mainCat][$page_id];
 		}
 
-		$cfg = is_array($this->extConf[$mainCat][$page_id]) ? $this->extConf[$mainCat][$page_id] : $this->extConf[$mainCat]['_DEFAULT'];
+		$cfg = is_array($this->extConf[$mainCat][$page_id]) ? $this->extConf[$mainCat][$page_id] :
+			(is_array($this->extConf[$mainCat]['_DEFAULT']) ? $this->extConf[$mainCat]['_DEFAULT'] : array());
 		return $cfg;
 	}
 
