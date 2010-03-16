@@ -1204,7 +1204,7 @@ class tx_realurl {
 						case 'admin':
 							$this->decodeSpURL_jumpAdmin();
 							break;
-						case 'single': //
+						case 'single':
 							$GET_string .= $this->decodeSpURL_getSingle($postVarSetCfg[$key]['keyValues']);
 							break;
 						default:
@@ -1729,17 +1729,16 @@ class tx_realurl {
 	protected function lookUp_idToUniqAlias($cfg, $idValue, $lang, $aliasValue = '') {
 
 		// Look for an alias based on ID:
-		$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('value_alias', 'tx_realurl_uniqalias',
+		list($row) = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('value_alias', 'tx_realurl_uniqalias',
 				'value_id=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($idValue, 'tx_realurl_uniqalias') .
 				' AND field_alias=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($cfg['alias_field'], 'tx_realurl_uniqalias') .
 				' AND field_id=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($cfg['id_field'], 'tx_realurl_uniqalias') .
 				' AND tablename=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($cfg['table'], 'tx_realurl_uniqalias') .
 				' AND lang=' . intval($lang) .
-				' AND expire=0' . ($aliasValue ? ' AND value_alias=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($aliasValue, 'tx_realurl_uniqalias') : ''));
-
-		$row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res);
-		$GLOBALS['TYPO3_DB']->sql_free_result($res);
-		if ($row) {
+				' AND expire=0' .
+				($aliasValue ? ' AND value_alias=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($aliasValue, 'tx_realurl_uniqalias') : ''),
+				'', '', '1');
+		if (is_array($row)) {
 			return $row['value_alias'];
 		}
 		return null;

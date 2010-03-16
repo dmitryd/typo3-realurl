@@ -1,3 +1,7 @@
+2010-03-16  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
+
+	* Small optimization for aliases
+
 2010-03-15  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
 	* Fixed bug #10348: 301 Moved Permanently with redirects and redirects_regex
