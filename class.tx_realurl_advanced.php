@@ -888,7 +888,8 @@ class tx_realurl_advanced {
 		$processedTitle = trim($processedTitle, $space);
 
 		if ($this->conf['encodeTitle_userProc']) {
-			$params = array('pObj' => &$this, 'title' => $title, 'processedTitle' => $processedTitle);
+			$encodingConfiguration = array('strtolower' => true, 'spaceCharacter' => $this->conf['spaceCharacter']);
+			$params = array('pObj' => &$this, 'title' => $title, 'processedTitle' => $processedTitle, 'encodingConfiguration' => $encodingConfiguration);
 			$processedTitle = t3lib_div::callUserFunction($this->conf['encodeTitle_userProc'], $params, $this);
 		}
 

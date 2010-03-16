@@ -2,6 +2,7 @@
 
 	* Small optimization for aliases
 	* Fixed bug #6400: Unexpected behaviour when postVarsets => _DEFAULT is not set
+	* Fixed bug #13721: No access to configuration in encodeTitle_userProc function from inside tx_realurl
 
 2010-03-15  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 

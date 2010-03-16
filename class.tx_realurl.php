@@ -1849,7 +1849,8 @@ class tx_realurl {
 		$processedTitle = trim($processedTitle, $space);
 
 		if ($cfg['useUniqueCache_conf']['encodeTitle_userProc']) {
-			$params = array('pObj' => &$this, 'title' => $newAliasValue, 'processedTitle' => $processedTitle);
+			$encodingConfiguration = array('strtolower' => $cfg['useUniqueCache_conf']['strtolower'], 'spaceCharacter' => $cfg['useUniqueCache_conf']['spaceCharacter']);
+			$params = array('pObj' => &$this, 'title' => $newAliasValue, 'processedTitle' => $processedTitle, 'encodingConfiguration' => $encodingConfiguration);
 			$processedTitle = t3lib_div::callUserFunction($cfg['useUniqueCache_conf']['encodeTitle_userProc'], $params, $this);
 		}
 
