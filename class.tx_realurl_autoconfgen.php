@@ -184,6 +184,11 @@ class tx_realurl_autoconfgen {
 				);
 		}
 
+		// Add respectSimulateStaticURLs if SimulateStatic is loaded
+		if(t3lib_extMgm::isLoaded('simulatestatic')) {
+			$confTemplate['init']['respectSimulateStaticURLs'] = true;
+		}
+
 		$this->addLanguages($confTemplate);
 
 		// Add from extensions
