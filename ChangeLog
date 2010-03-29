@@ -1,3 +1,7 @@
+2010-03-29  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
+
+	* Fixed bug #13918: Autoconf breaks SimulateStatic-URLs
+
 2010-03-16  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
 	* Small optimization for aliases
