@@ -1,3 +1,7 @@
+2010-04-07  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
+
+	* Released version 1.8.0
+
 2010-03-29  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
 	* Fixed bug #13918: Autoconf breaks SimulateStatic-URLs
