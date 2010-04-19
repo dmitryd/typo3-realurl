@@ -1,3 +1,7 @@
+2010-04-19  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
+
+	* Removed duplicate code
+
 2010-04-07  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
 	* Released version 1.8.0

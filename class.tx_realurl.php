@@ -403,15 +403,8 @@ class tx_realurl {
 		// Add filename, if any:
 		$newUrl = $this->appendFileName($paramKeyValues, $newUrl);
 
-		// Totally blank URLs will be set $GLOBALS['TSFE']->"
+		// Fix empty URLs
 		$newUrl = $this->fixEmptyUrl($newUrl);
-		if (!strlen($newUrl)) {
-			if (is_bool($this->extConf['init']['emptyUrlReturnValue']) && $this->extConf['init']['emptyUrlReturnValue']) {
-				$newUrl = $GLOBALS['TSFE']->baseUrl;
-			} else {
-				$newUrl = '' . $this->extConf['init']['emptyUrlReturnValue'];
-			}
-		}
 
 		// Store cHash cache:
 		if ($cHashCache) {
