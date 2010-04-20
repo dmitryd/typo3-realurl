@@ -2,6 +2,7 @@
 
 	* Fixed bug #14031: RealURL 1.8.0 floods sys_log with error messages: tx_realurl::encodeSpURL_urlPrepend is no valid callback
 	* Fixed bug #13966: RealUrl uses t3lib_div::fixed_lgd() which is deprecated
+	* Added a note to the manual that _DEFAULT must not be used in multidomain configurations
 
 2010-04-19  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
