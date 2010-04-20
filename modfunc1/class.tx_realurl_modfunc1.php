@@ -889,13 +889,13 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 					}
 
 						// Get vars:
-					$tCells[]='<td>'.htmlspecialchars(t3lib_div::fixed_lgd($inf['origparams'],100)).'</td>';
+					$tCells[]='<td>'.htmlspecialchars(t3lib_div::fixed_lgd_cs($inf['origparams'], 100)).'</td>';
 
 						// Internal Extras:
 					$tCells[]='<td>'.($inf['internalExtras'] ? t3lib_div::arrayToLogString(unserialize($inf['internalExtras'])) : '&nbsp;').'</td>';
 
 						// Path:
-					$tCells[]='<td>'.htmlspecialchars(t3lib_div::fixed_lgd($inf['content'],100)).'</td>';
+					$tCells[]='<td>'.htmlspecialchars(t3lib_div::fixed_lgd_cs($inf['content'],100)).'</td>';
 
 						// Delete:
 					$tCells[]='<td>'.
