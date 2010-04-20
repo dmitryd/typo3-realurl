@@ -4,6 +4,7 @@
 	* Fixed bug #13966: RealUrl uses t3lib_div::fixed_lgd() which is deprecated
 	* Added a note to the manual that _DEFAULT must not be used in multidomain configurations
 	* Recreate TCEmain hook to clean/expire path entries
+	* Refactor and simplify insertion/updates in the path cache
 
 2010-04-19  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 

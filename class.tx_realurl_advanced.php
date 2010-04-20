@@ -252,63 +252,88 @@ class tx_realurl_advanced {
 	 */
 	protected function updateURLCache($id, $mpvar, $lang, $cached_pagepath = '') {
 		// Build the new page path, in the correct language
-		$pagepathRec = $this->IDtoPagePathSegments($id, $mpvar, $lang);
-		if (!$pagepathRec) {
+		$pagePathRec = $this->IDtoPagePathSegments($id, $mpvar, $lang);
+		if (!$pagePathRec) {
 			return '__ERROR';
 		}
 
-		$pagepath = $pagepathRec['pagepath'];
-		$langID = $pagepathRec['langID'];
+		$pagePath = $pagePathRec['pagepath'];
+		$langId = $pagePathRec['langID'];
 
-		if (!$this->conf['disablePathCache'] && !$this->pObj->isBEUserLoggedIn() && ((!$cached_pagepath && $pagepath) || (string)$pagepath !== (string)$cached_pagepath)) {
-
-			$cond = 'page_id=' . intval($id) . ' AND language_id=' . intval($langID) .
-						' AND rootpage_id=' . intval($this->conf['rootpage_id']) .
-						' AND mpvar=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($mpvar, 'tx_realurl_pathcache');
+		$canCachePaths = !$this->conf['disablePathCache'] && !$this->pObj->isBEUserLoggedIn();
+		$newPathDiffers = ((string)$pagePath !== (string)$cached_pagepath);
+		if ($canCachePaths && $newPathDiffers) {
+			$cacheCondition = 'page_id=' . intval($id) . ' AND language_id=' . intval($langId) .
+				' AND rootpage_id=' . intval($this->conf['rootpage_id']) .
+				' AND mpvar=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($mpvar, 'tx_realurl_pathcache');
 
 			$GLOBALS['TYPO3_DB']->sql_query('START TRANSACTION');
 
-			// Make sure we have only one active record
-			// Using pathq2 index!
-			list($row) = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('COUNT(*) AS t',
-				'tx_realurl_pathcache', $cond . ' AND expire=0');
-			if ($row['t'] > 1) {
-				// Using pathq2 index!
-				$GLOBALS['TYPO3_DB']->sql_query('DELETE FROM tx_realurl_pathcache ' .
-					'WHERE ' . $cond . ' AND expire=0 LIMIT ' . ($row['t'] - 1));
-			}
-
-			// Next delete all expired
-			// Using pathq2 index!
-			$GLOBALS['TYPO3_DB']->exec_DELETEquery('tx_realurl_pathcache',
-						$cond . ' AND expire>0 AND expire<' . $this->makeExpirationTime());
-
-			// Set expiration on existing records:
-			// Using pathq2 index!
-			$GLOBALS['TYPO3_DB']->exec_UPDATEquery('tx_realurl_pathcache',
-						$cond . ' AND expire=0',
-						array(
-							'expire' => $this->makeExpirationTime((isset($this->conf['expireDays']) ? $this->conf['expireDays'] : 60) * 24 * 3600)
-						),
-						'expire'	// No quote!
-					);
-
-			// Insert URL in cache:
-			$insertArray = array(
-				'page_id' => $id,
-				'language_id' => $langID,
-				'pagepath' => $pagepath,
-				'expire' => 0,
-				'rootpage_id' => intval($pagepathRec['rootpage_id']),
-				'mpvar' => $mpvar
-			);
-
-			$GLOBALS['TYPO3_DB']->exec_INSERTquery('tx_realurl_pathcache', $insertArray);
+			$this->removeExpiredPathCacheEntries();
+			$this->setExpirationOnOldPathCacheEntries($pagePath, $cacheCondition);
+			$this->addNewPagePathEntry($pagePath, $cacheCondition, $id, $mpvar, $langId);
 
 			$GLOBALS['TYPO3_DB']->sql_query('COMMIT');
 		}
 
-		return $pagepathRec['pagepath'];
+		return $pagePathRec['pagepath'];
+	}
+
+	/**
+	 * Adds a new entry to the path cache
+	 *
+	 * @param string $currentPagePath
+	 * @param string $pathCacheCondition
+	 * @param int $pageId
+	 * @param string $mpvar
+	 * @param int $langId
+	 * @return void
+	 */
+	protected function addNewPagePathEntry($currentPagePath, $pathCacheCondition, $pageId, $mpvar, $langId) {
+		$condition = $pathCacheCondition . ' AND pagepath=' .
+			$GLOBALS['TYPO3_DB']->fullQuoteStr($currentPagePath, 'tx_realurl_pathcache');
+		list($count) = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('COUNT(*) AS t',
+			'tx_realurl_pathcache', $condition);
+		if ($count['t'] == 0) {
+			$insertArray = array(
+				'page_id' => $pageId,
+				'language_id' => $langId,
+				'pagepath' => $currentPagePath,
+				'expire' => 0,
+				'rootpage_id' => intval($this->conf['rootpage_id']),
+				'mpvar' => $mpvar
+			);
+			$GLOBALS['TYPO3_DB']->exec_INSERTquery('tx_realurl_pathcache', $insertArray);
+		}
+	}
+
+	/**
+	 * Sets expiration time for the old path cache entries
+	 *
+	 * @param string $currentPagePath
+	 * @param string $pathCacheCondition
+	 * @return void
+	 */
+	protected function setExpirationOnOldPathCacheEntries($currentPagePath, $pathCacheCondition) {
+		$expireDays = (isset($this->conf['expireDays']) ? $this->conf['expireDays'] : 60) * 24 * 3600;
+		$condition = $pathCacheCondition . ' AND expire=0 AND pagepath<>' .
+			$GLOBALS['TYPO3_DB']->fullQuoteStr($currentPagePath, 'tx_realurl_pathcache');
+		$GLOBALS['TYPO3_DB']->exec_UPDATEquery('tx_realurl_pathcache', $condition,
+			array(
+				'expire' => $this->makeExpirationTime($expireDays)
+			),
+			'expire'
+		);
+	}
+
+	/**
+	 * Removes all expired path cache entries
+	 *
+	 * @return void
+	 */
+	protected function removeExpiredPathCacheEntries() {
+		$GLOBALS['TYPO3_DB']->exec_DELETEquery('tx_realurl_pathcache',
+			'expire>0 AND expire<' . $this->makeExpirationTime());
 	}
 
 	/**
