@@ -5,6 +5,7 @@
 	* Added a note to the manual that _DEFAULT must not be used in multidomain configurations
 	* Recreate TCEmain hook to clean/expire path entries
 	* Refactor and simplify insertion/updates in the path cache
+	* Released version 1.8.1
 
 2010-04-19  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
