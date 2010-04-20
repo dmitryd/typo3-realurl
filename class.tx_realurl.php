@@ -325,7 +325,7 @@ class tx_realurl {
 	 * @param	object		$cObj: Reference to the calling tslib_content instance
 	 * @return	void
 	 */
-	protected function encodeSpURL_urlPrepend(&$parameters, &$pObj) {
+	public function encodeSpURL_urlPrepend(&$parameters, &$pObj) {
 		if (isset($parameters['finalTagParts']['url']) && isset($this->urlPrepend[$parameters['finalTagParts']['url']])) {
 			$urlKey = $url = $parameters['finalTagParts']['url'];
 
