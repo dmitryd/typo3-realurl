@@ -9,6 +9,8 @@
 	* Fixed bug #14552: Path cache is not used in some cases
 	* Fixed bug #14200: after logging out from BE realurl stops working on some pages
 	* Fixed bug #14300: FileName option does not drop used parameters
+	* Fixed bug #14321: If page title is empty, fall back to the uid of the page for path generation
+	* Fixed bug #10073: If page title is empty, RealURL generates path to the upper page
 
 2010-04-20  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
