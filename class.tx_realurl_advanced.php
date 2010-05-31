@@ -449,7 +449,7 @@ class tx_realurl_advanced {
 
 			// First, check for cached path of this page:
 			$cachedPagePath = false;
-			if (!$stopUsingCache && !$this->conf['disablePathCache'] && !$this->conf['autoUpdatePathCache']) {
+			if (!$page['tx_realurl_exclude'] && !$stopUsingCache && !$this->conf['disablePathCache'] && !$this->conf['autoUpdatePathCache']) {
 
 				// Using pathq2 index!
 				$result = $GLOBALS['TYPO3_DB']->exec_SELECTquery('pagepath', 'tx_realurl_pathcache',
