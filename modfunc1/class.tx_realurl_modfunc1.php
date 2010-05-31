@@ -1371,7 +1371,7 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 					$host = $config;
 					$config = (isset($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl'][$host]) ? $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl'][$host] : false);
 				}
-				if (is_array($config) && isset($config['pagePath']) && isset($config['pagePath']['rootpage_id'])) {
+				if (is_array($config) && isset($config['pagePath']) && isset($config['pagePath']['rootpage_id']) && $config['pagePath']['rootpage_id'] == $rootpage_id) {
 					return 'http://' . $hostName;
 				}
 			}
