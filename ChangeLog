@@ -8,6 +8,7 @@
 	* Fixed bug #14266: set as redirect does not work
 	* Fixed bug #14552: Path cache is not used in some cases
 	* Fixed bug #14200: after logging out from BE realurl stops working on some pages
+	* Fixed bug #14300: FileName option does not drop used parameters
 
 2010-04-20  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 

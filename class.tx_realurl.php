@@ -2290,7 +2290,7 @@ class tx_realurl {
 	 * @param string $newUrl
 	 * @return string
 	 */
-	protected function appendFileName(array $paramKeyValues, $newUrl) {
+	protected function appendFileName(array &$paramKeyValues, $newUrl) {
 		$fileName = $this->encodeSpURL_fileName($paramKeyValues);
 		$urlLength = strlen($newUrl);
 		$suffix = $this->extConf['fileName']['defaultToHTMLsuffixOnPrev'];
