@@ -1919,6 +1919,7 @@ class tx_realurl {
 	 * @param	string		Main key in realurl configuration array. Default is "postVarSets" but could be "fixedPostVars"
 	 * @return	array		Configuration array
 	 * @see decodeSpURL_doDecode()
+	 * @internal
 	 */
 	public function getPostVarSetConfig($page_id, $mainCat = 'postVarSets') {
 
@@ -1998,6 +1999,7 @@ class tx_realurl {
 	 * Checks if BE user is logged in.
 	 *
 	 * @return	boolean		<code>true</code> if BE user is logged in
+	 * @internal
 	 */
 	public function isBEUserLoggedIn() {
 		return $this->pObj->beUserLogin;
@@ -2177,8 +2179,9 @@ class tx_realurl {
 	 * Attempts to find root page ID for the current host. Processes redirectes as well.
 	 *
 	 * @return	mixed		Found root page UID or false if not found
+	 * @internal
 	 */
-	protected function findRootPageId() {
+	public function findRootPageId() {
 		$rootpage_id = false; $host = $this->host;
 
 		if (!$this->enableStrictMode) {
@@ -2333,6 +2336,7 @@ class tx_realurl {
 	 * @param int $severity
 	 * @param mixed $dataVar
 	 * @return void
+	 * @internal
 	 */
 	public function devLog($message, $dataVar = false, $severity = 0) {
 		if ($this->enableDevLog) {
@@ -2344,6 +2348,7 @@ class tx_realurl {
 	 * Sets encoding result to error
 	 *
 	 * @return void
+	 * @internal
 	 */
 	public function setEncodeError() {
 		$this->encodeError = true;
@@ -2353,6 +2358,7 @@ class tx_realurl {
 	 * Obtains a copy of configuration
 	 *
 	 * @return array
+	 * @internal
 	 */
 	public function getConfiguration() {
 		return $this->extConf;

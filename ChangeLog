@@ -1,3 +1,7 @@
+2010-05-31  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
+
+	* Fixed bug #14381: 404 Handling throws a 500 error
+
 2010-04-20  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
 	* Fixed bug #14031: RealURL 1.8.0 floods sys_log with error messages: tx_realurl::encodeSpURL_urlPrepend is no valid callback
