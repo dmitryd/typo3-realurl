@@ -3,6 +3,7 @@
 	* Fixed bug #14381: 404 Handling throws a 500 error
 	* Fixed bug #14414: wrong behavior with Exclude from speaking URL setting (thanks to Vladimir Podkovanov)
 	* Fixed bug #12904: Exclude from speaking URL
+	* Fixed bug #14111: tx_realurl::lookUp_cleanAlias() could be used in user functions but is protected since v1.8.0
 
 2010-04-20  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 

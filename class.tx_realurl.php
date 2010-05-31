@@ -1738,7 +1738,11 @@ class tx_realurl {
 	}
 
 	/**
-	 * Creates a new alias<->id relation in database lookup table
+	 * Creates a new alias<->id relation in database lookup table.
+	 *
+	 * WARNING! This function is internal to RealURL. It is made public for
+	 * backwards compatibility but its behavior and parameters may change as
+	 * necessary for RealURL. No guaranties at all!
 	 *
 	 * @param	array		Configuration array of lookup table
 	 * @param	string		Preferred new alias (final alias might be different if duplicates were found in the cache)
@@ -1746,6 +1750,7 @@ class tx_realurl {
 	 * @param	integer		sys_language_uid to store with record
 	 * @return	string		Final alias string
 	 * @see lookUpTranslation()
+	 * @internal
 	 */
 	protected function lookUp_newAlias($cfg, $newAliasValue, $idValue, $lang) {
 
