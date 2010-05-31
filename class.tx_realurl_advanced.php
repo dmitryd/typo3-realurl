@@ -448,15 +448,14 @@ class tx_realurl_advanced {
 			if (!$page['tx_realurl_exclude'] && !$stopUsingCache && !$this->conf['disablePathCache'] && !$this->conf['autoUpdatePathCache']) {
 
 				// Using pathq2 index!
-				$result = $GLOBALS['TYPO3_DB']->exec_SELECTquery('pagepath', 'tx_realurl_pathcache',
+				list($cachedPagePath) = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('pagepath', 'tx_realurl_pathcache',
 								'page_id=' . intval($page['uid']) .
 								' AND language_id=' . intval($lang) .
 								' AND rootpage_id=' . intval($this->conf['rootpage_id']) .
 								' AND mpvar=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($page['_MP_PARAM'], 'tx_realurl_pathcache') .
-								' AND expire=0');
+								' AND expire=0', '', '', 1);
 
-				if ($GLOBALS['TYPO3_DB']->sql_num_rows($result) == 1) { // If there seems to be more than one page path cached for this combo, we will fix it later
-					$cachedPagePath = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($result);
+				if (is_array($cachedPagePath)) {
 					$lastPath = implode('/', $paths);
 					$this->pObj->devLog('rootLineToPath found path', $lastPath);
 					if ($cachedPagePath != false && substr($cachedPagePath['pagepath'], 0, strlen($lastPath)) != $lastPath) {
@@ -468,11 +467,10 @@ class tx_realurl_advanced {
 						$this->pObj->devLog('rootLineToPath stops searching');
 					}
 				}
-				$GLOBALS['TYPO3_DB']->sql_free_result($result);
 			}
 
 			// If a cached path was found for the page it will be inserted as the base of the new path, overriding anything build prior to this:
-			if ($cachedPagePath != false) {
+			if ($cachedPagePath) {
 				$paths = array();
 				$paths[$i] = $cachedPagePath['pagepath'];
 			}
@@ -531,19 +529,15 @@ class tx_realurl_advanced {
 			}
 			while (count($copy_pathParts)) {
 				// Using pathq1 index!
-				$result = $GLOBALS['TYPO3_DB']->exec_SELECTquery('tx_realurl_pathcache.*', 'tx_realurl_pathcache,pages',
+				list($row) = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows(
+						'tx_realurl_pathcache.*', 'tx_realurl_pathcache,pages',
 						'tx_realurl_pathcache.page_id=pages.uid AND pages.deleted=0' .
 						' AND rootpage_id=' . intval($this->conf['rootpage_id']) .
 						' AND pagepath=' . $GLOBALS['TYPO3_DB']->fullQuoteStr(implode('/', $copy_pathParts), 'tx_realurl_pathcache'),
 						'', 'expire', '1');
 
 				// This lookup does not include language and MP var since those are supposed to be fully reflected in the built url!
-				if (false !== ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($result))) {
-					break;
-				}
-				$GLOBALS['TYPO3_DB']->sql_free_result($result);
-
-				if ($this->conf['firstHitPathCache']) {
+				if (is_array($row) || $this->conf['firstHitPathCache']) {
 					break;
 				}
 
@@ -721,7 +715,7 @@ class tx_realurl_advanced {
 				$urlParts_copy = $urlParts;
 				array_unshift($urlParts_copy, $title);
 				$result = $this->searchTitle_processResult( $row, $mpvar, $urlParts_copy, false);
-				if ( $result[2] ) {
+				if ($result[2]) {
 					$urlParts = $urlParts_copy;
 					return $result;
 				}
