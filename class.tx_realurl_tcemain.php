@@ -66,7 +66,7 @@ class tx_realurl_tcemain {
 	}
 
 	/**
-	 * Expires record in the patch cache
+	 * Expires record in the path cache
 	 *
 	 * @param int $pageId
 	 * @param int $languageId
@@ -76,6 +76,21 @@ class tx_realurl_tcemain {
 		$expirationTime = $this->getExpirationTime();
 		$GLOBALS['TYPO3_DB']->exec_UPDATEquery('tx_realurl_pathcache',
 			'page_id=' . $pageId . ' AND language_id=' . $languageId . ' AND expire=0',
+			array(
+				'expire' => $expirationTime
+			));
+	}
+
+	/**
+	 * Expires record in the path cache
+	 *
+	 * @param int $pageId
+	 * @return void
+	 */
+	protected function expirePathCacheForAllLanguages($pageId) {
+		$expirationTime = $this->getExpirationTime();
+		$GLOBALS['TYPO3_DB']->exec_UPDATEquery('tx_realurl_pathcache',
+			'page_id=' . $pageId . ' AND expire=0',
 			array(
 				'expire' => $expirationTime
 			));
@@ -179,7 +194,12 @@ class tx_realurl_tcemain {
 			list($pageId, $languageId) = $this->getPageData($tableName, $recordId);
 			$this->fetchRealURLConfiguration($pageId);
 			if ($this->shouldFixCaches($tableName, $databaseData)) {
-				$this->expirePathCache($pageId, $languageId);
+				if (isset($databaseData['alias'])) {
+					$this->expirePathCacheForAllLanguages($pageId);
+				}
+				else {
+					$this->expirePathCache($pageId, $languageId);
+				}
 				$this->clearOtherCaches($pageId);
 			}
 			// TODO Handle changes to tx_realurl_exclude recursively
