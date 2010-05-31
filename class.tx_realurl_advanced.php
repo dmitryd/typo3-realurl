@@ -208,15 +208,11 @@ class tx_realurl_advanced {
 		// Fetch cached path
 		$cachedPagePath = false;
 		if (!$this->conf['disablePathCache']) {
-			$result = $GLOBALS['TYPO3_DB']->exec_SELECTquery('pagepath', 'tx_realurl_pathcache',
+			list($cachedPagePath) = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('pagepath', 'tx_realurl_pathcache',
 							'page_id=' . intval($pageid) . ' AND language_id=' . intval($lang) .
-							' AND rootpage_id='.intval($this->conf['rootpage_id']).
+							' AND rootpage_id=' . intval($this->conf['rootpage_id']).
 							' AND mpvar=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($mpvar, 'tx_realurl_pathcache') .
-							' AND expire=0');
-			if ($GLOBALS['TYPO3_DB']->sql_num_rows($result) == 1) { // More than one entry for a page with no expire time is wrong...!
-				$cachedPagePath = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($result);
-			}
-			$GLOBALS['TYPO3_DB']->sql_free_result($result);
+							' AND expire=0', '', '', 1);
 		}
 
 		// If a cached page path was found, get it now:
