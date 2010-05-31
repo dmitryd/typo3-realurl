@@ -66,6 +66,17 @@ class tx_realurl_tcemain {
 	}
 
 	/**
+	 * Clears path cache for the given page id
+	 *
+	 * @param int $pageId
+	 * @return void
+	 */
+	protected function clearPathCache($pageId) {
+		$GLOBALS['TYPO3_DB']->exec_DELETEquery('tx_realurl_pathcache',
+			'page_id=' . $pageId);
+	}
+
+	/**
 	 * Expires record in the path cache
 	 *
 	 * @param int $pageId
@@ -181,7 +192,33 @@ class tx_realurl_tcemain {
 	}
 
 	/**
-	 * TCEmain hook to expire old records and add new ones
+	 * A TCEMain hook to update caches when something happens to a page or
+	 * language overlay.
+	 *
+	 * @param string $command
+	 * @param string $table
+	 * @param int $id
+	 * @param mixed $value
+	 * @return void
+	 */
+	public function processCmdmap_postProcess($command, $tableName, $recordId) {
+		if ($this->isTableOfInterest($tableName)) {
+			if ($command == 'delete' || $command == 'move') {
+				list($pageId, ) = $this->getPageData($tableName, $recordId);
+				$this->fetchRealURLConfiguration($pageId);
+				if ($command == 'delete') {
+					$this->clearPathCache($pageId);
+				}
+				else {
+					$this->expirePathCacheForAllLanguages($pageId);
+				}
+				$this->clearOtherCaches($pageId);
+			}
+		}
+	}
+
+	/**
+	 * A TCEmain hook to expire old records and add new ones
 	 *
 	 * @param string $status 'new' (ignoring) or 'update'
 	 * @param string $tableName

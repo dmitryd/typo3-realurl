@@ -12,6 +12,7 @@
 	* Fixed bug #14321: If page title is empty, fall back to the uid of the page for path generation
 	* Fixed bug #10073: If page title is empty, RealURL generates path to the upper page
 	* Fixed bug #7825: Alias change does not change paths in non–default language
+	* Fixed bug #4481: after page a page is deleted it remains in the pathcache
 
 2010-04-20  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
