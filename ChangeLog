@@ -7,6 +7,7 @@
 	* Fixed bug #14261: Error Log in BE use wrong DomainName
 	* Fixed bug #14266: set as redirect does not work
 	* Fixed bug #14552: Path cache is not used in some cases
+	* Fixed bug #14200: after logging out from BE realurl stops working on some pages
 
 2010-04-20  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 

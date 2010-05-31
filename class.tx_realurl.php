@@ -2328,7 +2328,7 @@ class tx_realurl {
 	 */
 	protected function isInWorkspace() {
 		$result = false;
-		if (isset($GLOBALS['BE_USER']) && ($GLOBALS['BE_USER'] instanceof t3lib_beUserAuth)) {
+		if ($GLOBALS['TSFE']->beUserLogin) {
 			$result = ($GLOBALS['BE_USER']->workspace != 0);
 		}
 		return $result;
