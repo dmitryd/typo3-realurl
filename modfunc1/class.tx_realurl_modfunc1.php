@@ -1557,7 +1557,7 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 	 * @return	string	Generated HTML
 	 */
 	protected function getRedirectEditForm() {
-		$url = t3lib_div::_GP('url');
+		$url = t3lib_div::_GP('defUrl');
 		list($row) = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows(
 			'url_hash,destination,has_moved', 'tx_realurl_redirects',
 			'url=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($url, 'tx_realurl_redirects'));
