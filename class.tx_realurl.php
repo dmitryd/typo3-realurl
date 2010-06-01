@@ -711,7 +711,7 @@ class tx_realurl {
 					$this->encodePageId = $this->pageAliasToID($this->encodePageId);
 				}
 
-				if ($this->extConf['init']['enableUrlEncodeCache']) { // Otherwise ask database:
+				if ($this->extConf['init']['enableUrlEncodeCache'] && $this->canCachePageURL($this->encodePageId)) {
 					$insertFields = array(
 							'url_hash' => $hash,
 							'origparams' => $urlToEncode,
@@ -1563,7 +1563,7 @@ class tx_realurl {
 			if (is_array($cachedInfo)) { // STORE cachedInfo
 
 
-				if (!$this->isBEUserLoggedIn()) {
+				if (!$this->isBEUserLoggedIn() && $this->canCachePageURL($cachedInfo['id'])) {
 					$rootpage_id = intval($cachedInfo['rootpage_id']);
 					$hash = md5($speakingURIpath . $rootpage_id);
 
@@ -2461,6 +2461,18 @@ class tx_realurl {
 				$segments[] = urlencode($this->filePart);
 			}
 		}
+	}
+
+	/**
+	 * Determines if this page can be cached with RealURL encode or decode cache
+	 *
+	 * @param int $pageId
+	 * @return boolean
+	 */
+	protected function canCachePageURL($pageId) {
+		list($pageRecord) = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('tx_realurl_nocache',
+			'pages', 'uid=' . intval($pageId));
+		return is_array($pageRecord) ? !$pageRecord['tx_realurl_nocache'] : false;
 	}
 }
 
