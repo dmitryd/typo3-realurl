@@ -161,7 +161,7 @@ class tx_realurl_autoconfgen {
 				'adminJumpToBackend' => true,
 				'enableUrlDecodeCache' => true,
 				'enableUrlEncodeCache' => true,
-				'emptyUrlReturnValue' => '/',
+				'emptyUrlReturnValue' => t3lib_div::getIndpEnv('TYPO3_SITE_PATH')
 			),
 			'pagePath' => array(
 				'type' => 'user',

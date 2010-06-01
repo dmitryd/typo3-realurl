@@ -3,6 +3,7 @@
 	* Fixed bug #12383: Append suffix depending on GETvars
 	* Fixed bug #14576: Add a flag to the page to exclude it from RealURL caches
 	* Fixed bug #9757: Autoconfig should be rewritten after update to sys_domain
+	* Fixed bug #13951: Wrong link when linking to root page on TYPO3 installation inside a subdirectory
 
 2010-05-31  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
