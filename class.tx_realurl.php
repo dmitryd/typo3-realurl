@@ -154,6 +154,13 @@ class tx_realurl {
 	 */
 	protected $devLogId;
 
+	/**
+	 * Mime type that can be set according to the file extension (decoding only).
+	 *
+	 * @var string
+	 */
+	protected $mimeType = null;
+
 	var $enableStrictMode = false;
 	var $enableChashDebug = false;
 
@@ -398,10 +405,10 @@ class tx_realurl {
 		$this->encodeSpURL_gettingPostVarSets($paramKeyValues, $pathParts, $postVarSetCfg);
 
 		// Compile Speaking URL path
-		$newUrl = $this->compileFinalUrl($pathParts);
+		$pathParts = $this->cleanUpPathParts($pathParts);
 
 		// Add filename, if any:
-		$newUrl = $this->appendFileName($paramKeyValues, $newUrl);
+		$newUrl = $this->createURLWithFileName($paramKeyValues, $pathParts);
 
 		// Fix empty URLs
 		$newUrl = $this->fixEmptyUrl($newUrl);
@@ -515,7 +522,7 @@ class tx_realurl {
 	 * @return	string		Returns the filename to prepend, if any
 	 * @see encodeSpURL_doEncode(), decodeSpURL_fileName()
 	 */
-	protected function encodeSpURL_fileName(&$paramKeyValues) {
+	protected function encodeSpURL_fileName(array &$paramKeyValues) {
 
 		// Look if any filename matches the remaining variables:
 		if (is_array($this->extConf['fileName']['index'])) {
@@ -921,6 +928,11 @@ class tx_realurl {
 				// Setting info in TSFE:
 				$this->pObj->mergingWithGetVars($cachedInfo['GET_VARS']);
 				$this->pObj->id = $cachedInfo['id'];
+
+				if ($this->mimeType) {
+					header('Content-type: ' . $this->mimeType);
+					$this->mimeType = null;
+				}
 			}
 		}
 	}
@@ -1007,17 +1019,9 @@ class tx_realurl {
 
 		// Split URL + resolve parts of path:
 		$pathParts = explode('/', $speakingURIpath);
-		$this->filePart = array_pop($pathParts);
 
-		// Checking default HTML name:
-		if (strlen($this->filePart) && ($this->extConf['fileName']['defaultToHTMLsuffixOnPrev'] || $this->extConf['fileName']['acceptHTMLsuffix']) && !isset($this->extConf['fileName']['index'][$this->filePart])) {
-			$suffix = preg_quote($this->isString($this->extConf['fileName']['defaultToHTMLsuffixOnPrev'], 'defaultToHTMLsuffixOnPrev') ? $this->extConf['fileName']['defaultToHTMLsuffixOnPrev'] : '.html', '/');
-			if ($this->isString($this->extConf['fileName']['acceptHTMLsuffix'], 'acceptHTMLsuffix')) {
-				$suffix = '(' . $suffix . '|' . preg_quote($this->extConf['fileName']['acceptHTMLsuffix'], '/') . ')';
-			}
-			$pathParts[] = preg_replace('/' . $suffix . '$/', '', $this->filePart);
-			$this->filePart = '';
-		}
+		// Strip/process file name or extension first
+		$file_GET_VARS = $this->decodeSpURL_decodeFileName($pathParts);
 
 		// Setting original dir-parts:
 		$this->dirParts = $pathParts;
@@ -1040,9 +1044,6 @@ class tx_realurl {
 		if (count($pathParts)) {
 			$this->decodeSpURL_throw404('"' . $speakingURIpath . '" could not be found, closest page matching is ' . substr(implode('/', $this->dirParts), 0, -strlen(implode('/', $pathParts))) . '');
 		}
-
-		// Setting filename:
-		$file_GET_VARS = $this->decodeSpURL_fileName($this->filePart);
 
 		// Merge Get vars together:
 		$cachedInfo['GET_VARS'] = array();
@@ -1217,7 +1218,7 @@ class tx_realurl {
 						array_pop($originalDirs);
 					}
 					// If a file part was detected, add that:
-					$originalDirs[] = $this->filePart;
+					$this->appendFilePart($originalDirs);
 
 					// Implode URL and redirect:
 					$redirectUrl = implode('/', $originalDirs);
@@ -1271,31 +1272,94 @@ class tx_realurl {
 	}
 
 	/**
-	 * Analysing the filename segment
+	 * Decodes the file name and adjusts file parts accordingly
 	 *
-	 * @param	string		Filename
-	 * @return	array		GET-vars resulting from the analysis
-	 * @see decodeSpURL_doDecode(), encodeSpURL_fileName()
+	 * @param array $pathParts Path parts of the URLs (can be modified)
+	 * @return array GET varaibles from the file name or empty array
 	 */
-	protected function decodeSpURL_fileName($fileName) {
-
-		// Create basic GET string:
-		$fileName = rawurldecode($fileName);
-
-		if ($fileName && !isset($this->extConf['fileName']['index'][$fileName])) {
-			$this->decodeSpURL_throw404('File "' . $fileName . '" was not found!');
-		} else {
-			$idx = isset($this->extConf['fileName']['index'][$fileName]) ? $fileName : '_DEFAULT';
+	protected function decodeSpURL_decodeFileName(array &$pathParts) {
+		$pathPartsCopy = $pathParts;
+		$getVars = array();
+		$fileName = rawurldecode(array_pop($pathPartsCopy));
+		list($segment, $extension) = t3lib_div::revExplode('.', $fileName, 2);
+		if ($extension) {
+			$getVars = array();
+			$handled = $this->decodeSpURL_decodeFileName_lookupInIndex($fileName, $segment, $extension, $pathPartsCopy, $getVars);
+			if (!$handled) {
+				if (!$this->decodeSpURL_decodeFileName_checkHtmlSuffix($fileName, $segment, $extension, $pathPartsCopy)) {
+					$this->decodeSpURL_throw404('File "' . $fileName . '" was not found (1)!');
+				}
+			}
+			$pathParts = $pathPartsCopy;
 		}
-		$GET_string = $this->decodeSpURL_getSingle($this->extConf['fileName']['index'][$idx]['keyValues']);
+		return $getVars;
+	}
 
-		// If a get string is created, then:
-		if ($GET_string) {
-			$GET_VARS = false;
-			parse_str($GET_string, $GET_VARS);
-			return $GET_VARS;
+	/**
+	 * Checks if the suffix matches to the configured one.
+	 *
+	 * @param string $fileName
+	 * @param string $segment
+	 * @param string $extension
+	 * @param array $pathPartsCopy
+	 * @see tx_realurl::decodeSpURL_decodeFileName()
+	 */
+	protected function decodeSpURL_decodeFileName_checkHtmlSuffix($fileName, $segment, $extension, array &$pathPartsCopy) {
+		if (isset($this->extConf['fileName']['defaultToHTMLsuffixOnPrev'])) {
+			$suffix = $this->extConf['fileName']['defaultToHTMLsuffixOnPrev'];
+			$suffix = (!$this->isString($suffix, 'defaultToHTMLsuffixOnPrev') ? '.html' : $suffix);
+			if ($suffix == '.' . $extension) {
+				$pathPartsCopy[] = urlencode($segment);
+				$this->filePart = '.' . $extension;
+			}
+			else {
+				$this->decodeSpURL_throw404('File "' . $fileName . '" was not found (2)!');
+			}
 		}
-		return null;
+	}
+
+	/**
+	 * Looks up the file name or the extension in the index.
+	 *
+	 * @param string $fileName
+	 * @param string $segment
+	 * @param string $extension
+	 * @param array $pathPartsCopy Path parts (can be modified)
+	 * @return array GET variables (can be enpty in case if there is a default file name)
+	 * @see tx_realurl::decodeSpURL_decodeFileName()
+	 */
+	protected function decodeSpURL_decodeFileName_lookupInIndex($fileName, $segment, $extension, array &$pathPartsCopy, array &$getVars) {
+		$handled = false;
+		$keyValues = '';
+		if (is_array($this->extConf['fileName']['index'])) {
+			foreach ($this->extConf['fileName']['index'] as $key => $config) {
+				if ($key == $fileName) {
+					$keyValues = $config['keyValues'];
+					$this->filePart = $fileName;
+					if (isset($config['mimetype'])) {
+						$this->mimeType = $config['mimetype'];
+					}
+					$handled = true;
+					break;
+				}
+				elseif ($key == '.' . $extension) {
+					$keyValues = $config['keyValues'];
+					$pathPartsCopy[] = urlencode($segment);
+					$this->filePart = '.' . $extension;
+					if (isset($config['mimetype'])) {
+						$this->mimeType = $config['mimetype'];
+					}
+					$handled = true;
+					break;
+				}
+			}
+		}
+		// Must decode key values if set
+		if ($keyValues) {
+			$getString = $this->decodeSpURL_getSingle($keyValues);
+			parse_str($getString, $getVars);
+		}
+		return $handled;
 	}
 
 	/**
@@ -1327,7 +1391,7 @@ class tx_realurl {
 							case 'redirect':
 								$url = (string)$setup['index'][$idx]['url'];
 								$url = str_replace('###INDEX###', rawurlencode($value), $url);
-								$pathParts[] = $this->filePart;
+								$this->appendFilePart($pathParts);
 								$remainPath = implode('/', $pathParts);
 								if ($this->appendedSlash) {
 									$remainPath = substr($remainPath, 0, -1);
@@ -2267,44 +2331,54 @@ class tx_realurl {
 	}
 
 	/**
-	 * Compiles the final URL
+	 * Cleans up empty path segments
 	 *
 	 * @param array $pathParts
-	 * @return string
+	 * @return array
 	 */
-	protected function compileFinalUrl(array $pathParts) {
-		$url = '';
-		if (count($pathParts)) {
-			$url = preg_replace('/\/*$/', '', implode('/', $pathParts));
-			// TODO Implement a feature to skip appending a slash.
-			// See http://bugs.typo3.org/view.php?id=9858
-			$url .= '/';
+	protected function cleanUpPathParts(array $pathParts) {
+		for ($index = count($pathParts) - 1; $index >= 0; $index--) {
+			if ($pathParts[$index] == '') {
+				unset($pathParts[$index]);
+			}
 		}
-		return $url;
+		return $pathParts;
 	}
 
 	/**
-	 * Appends a file name to the url if necessary
+	 * Creates a new URL and appends a file name to the url if necessary
 	 *
 	 * @param array $paramKeyValues
-	 * @param string $newUrl
+	 * @param array $pathParts
 	 * @return string
 	 */
-	protected function appendFileName(array &$paramKeyValues, $newUrl) {
-		$fileName = $this->encodeSpURL_fileName($paramKeyValues);
-		$urlLength = strlen($newUrl);
+	protected function createURLWithFileName(array &$paramKeyValues, array $pathParts) {
+		$url = implode('/', $pathParts);
+		$paramKeyValuesCopy = $paramKeyValues;
+		$fileName = rawurlencode($this->encodeSpURL_fileName($paramKeyValues));
 		$suffix = $this->extConf['fileName']['defaultToHTMLsuffixOnPrev'];
-		if ($urlLength && !strlen($fileName) && $suffix) {
-			if ($newUrl{$urlLength - 1} == '/') {
-				$newUrl = substr($newUrl, 0, -1);
+
+		if ($fileName == '' && $suffix != '') {
+			// No file name, has default
+			$url .= (!$this->isString($suffix, 'defaultToHTMLsuffixOnPrev') ? '.html' : $suffix);
+		}
+		elseif ($fileName{0} == '.') {
+			// Only extension
+			if ($url == '') {
+				// Home page. We can't append just extension here. So we pass
+				// parameters as is to the home page.
+				$paramKeyValues = $paramKeyValuesCopy;
 			}
-			$newUrl .= (!$this->isString($suffix, 'defaultToHTMLsuffixOnPrev') ? '.html' : $suffix);
+			else {
+				$url .= $fileName;
+			}
 		}
 		else {
-			$newUrl .= rawurlencode($fileName);
+			// File name
+			$url .= '/' . $fileName;
 		}
 
-		return $newUrl;
+		return $url;
 	}
 
 	/**
@@ -2367,6 +2441,26 @@ class tx_realurl {
 	 */
 	public function getConfiguration() {
 		return $this->extConf;
+	}
+
+	/**
+	 * Appends the file part to path segments.
+	 *
+	 * @param array $segments
+	 * @internal
+	 */
+	public function appendFilePart(array &$segments) {
+		if ($this->filePart) {
+			if ($this->filePart{0} == '.') {
+				$segmentCount = count($segments);
+				if ($segmentCount > 0) {
+					$segments[$segmentCount - 1] .= urlencode($this->filePart);
+				}
+			}
+			else {
+				$segments[] = urlencode($this->filePart);
+			}
+		}
 	}
 }
 

@@ -602,19 +602,8 @@ class tx_realurl_advanced {
 					}
 					$newPathSegments = explode('/', $newEntry['pagepath']); // Split new pagepath into segments.
 					$newUrlSegments = array_merge($originalDirs, $newPathSegments, $cp_pathParts); // Merge those segments.
-					$newUrlSegments[] = $this->pObj->filePart; // Add any filename as well
-					$redirectUrl = implode('/', $newUrlSegments); // Create redirect URL:
-					if ($this->pObj->extConf['fileName']['defaultToHTMLsuffixOnPrev'] && strlen($redirectUrl) > 1) {
-						if (substr($redirectUrl, -1, 1) == '/') {
-							$redirectUrl = substr($redirectUrl, 0, -1);
-						}
-						if (!t3lib_div::testInt($this->pObj->extConf['fileName']['defaultToHTMLsuffixOnPrev'])) {
-							$redirectUrl .= $this->pObj->extConf['fileName']['defaultToHTMLsuffixOnPrev'];
-						}
-						else {
-							$redirectUrl .= '.html';
-						}
-					}
+					$this->pObj->appendFilePart($newUrlSegments);
+					$redirectUrl = implode('/', $newUrlSegments);
 
 					header('HTTP/1.1 301 Moved Permanently');
 					header('Location: ' . t3lib_div::locationHeaderUrl($redirectUrl));
