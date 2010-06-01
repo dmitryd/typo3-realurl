@@ -65,7 +65,7 @@ class tx_realurl_autoconfgen {
 	 *
 	 * @return	void
 	 */
-	function generateConfiguration() {
+	public function generateConfiguration() {
 		$fileName = PATH_site . TX_REALURL_AUTOCONF_FILE;
 		$fd = @fopen($fileName, 'a+');
 		if ($fd) {
@@ -86,7 +86,7 @@ class tx_realurl_autoconfgen {
 	 * @param	resource		$fd	FIle descriptor to write to
 	 * @return	void
 	 */
-	function doGenerateConfiguration(&$fd) {
+	protected function doGenerateConfiguration(&$fd) {
 
 		if (!isset($GLOBALS['TYPO3_DB'])) {
 			if (!TYPO3_db)	{
@@ -153,7 +153,7 @@ class tx_realurl_autoconfgen {
 	 *
 	 * @return	array		Template
 	 */
-	function getTemplate() {
+	protected function getTemplate() {
 		$confTemplate = array(
 			'init' => array(
 				'enableCHashCache' => true,
@@ -214,7 +214,7 @@ class tx_realurl_autoconfgen {
 	 * @param	array		$conf	Configuration (passed as reference)
 	 * @return	void
 	 */
-	function addLanguages(&$conf) {
+	protected function addLanguages(&$conf) {
 		if ($this->hasStaticInfoTables) {
 			$languages = $this->db->exec_SELECTgetRows('t1.uid AS uid,t2.lg_iso_2 AS lg_iso_2', 'sys_language t1, static_languages t2', 't2.uid=t1.static_lang_isocode AND t1.hidden=0');
 		}

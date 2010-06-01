@@ -2,6 +2,7 @@
 
 	* Fixed bug #12383: Append suffix depending on GETvars
 	* Fixed bug #14576: Add a flag to the page to exclude it from RealURL caches
+	* Fixed bug #9757: Autoconfig should be rewritten after update to sys_domain
 
 2010-05-31  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 

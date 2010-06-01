@@ -48,7 +48,7 @@ class tx_realurl_tcemain {
 	 * @param string $tableName
 	 * @return boolean
 	 */
-	protected static function isTableOfInterest($tableName) {
+	protected static function isTableForCache($tableName) {
 		return ($tableName == 'pages' || $tableName == 'pages_language_overlay');
 	}
 
@@ -202,7 +202,7 @@ class tx_realurl_tcemain {
 	 * @return void
 	 */
 	public function processCmdmap_postProcess($command, $tableName, $recordId) {
-		if ($this->isTableOfInterest($tableName)) {
+		if ($this->isTableForCache($tableName)) {
 			if ($command == 'delete' || $command == 'move') {
 				list($pageId, ) = $this->getPageData($tableName, $recordId);
 				$this->fetchRealURLConfiguration($pageId);
@@ -214,6 +214,9 @@ class tx_realurl_tcemain {
 				}
 				$this->clearOtherCaches($pageId);
 			}
+		}
+		elseif ($tableName == 'sys_domain') {
+			@unlink(PATH_site . TX_REALURL_AUTOCONF_FILE);
 		}
 	}
 
@@ -241,6 +244,9 @@ class tx_realurl_tcemain {
 			}
 			// TODO Handle changes to tx_realurl_exclude recursively
 		}
+		if ($tableName == 'sys_domain') {
+			@unlink(PATH_site . TX_REALURL_AUTOCONF_FILE);
+		}
 	}
 
 	/**
@@ -252,7 +258,7 @@ class tx_realurl_tcemain {
 	 */
 	protected function shouldFixCaches($tableName, array $databaseData) {
 		$result = false;
-		if (self::isTableOfInterest($tableName)) {
+		if (self::isTableForCache($tableName)) {
 			$interestingFields = $this->getFieldList($tableName);
 			$result = count(array_intersect($interestingFields, array_keys($databaseData))) > 0;
 		}

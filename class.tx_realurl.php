@@ -1944,7 +1944,7 @@ class tx_realurl {
 			$_realurl_gen = t3lib_div::makeInstance('tx_realurl_autoconfgen');
 			$_realurl_gen->generateConfiguration();
 			unset($_realurl_gen);
-			@include_once (PATH_site . TX_REALURL_AUTOCONF_FILE);
+			@include_once(PATH_site . TX_REALURL_AUTOCONF_FILE);
 		}
 
 		$extConf = &$GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl'];
