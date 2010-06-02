@@ -595,7 +595,7 @@ class tx_realurl {
 						}
 						break;
 					default:
-							if (!is_array($setup['cond']) || $this->checkCondition($setup['cond'], $prevVal)) {
+						if (!is_array($setup['cond']) || $this->checkCondition($setup['cond'], $prevVal)) {
 
 							// Looking if the GET var is found in parameter index:
 							$GETvarVal = isset($paramKeyValues[$setup['GETvar']]) ? $paramKeyValues[$setup['GETvar']] : '';
