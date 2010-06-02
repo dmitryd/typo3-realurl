@@ -165,7 +165,7 @@ class tx_realurl {
 	var $enableChashDebug = false;
 
 	/**
-	 * If non-mepty, corresponding URL query parameter will be ignored in preVars
+	 * If non-empty, corresponding URL query parameter will be ignored in preVars
 	 * (note: preVars only!). This is necessary for _DOMAINS feature. This value
 	 * is set to empty in adjustConfigurationByHostEncode().
 	 *
@@ -174,6 +174,25 @@ class tx_realurl {
 	 * @var	string
 	 */
 	protected $ignoreGETvar;
+
+	/**
+	 * Contains URL parameters that were merged into URL. This is necessary
+	 * if cHash has to be recalculated due to bypassed parameters. Used during
+	 * encoding only.
+	 *
+	 * @var array
+	 * @see http://bugs.typo3.org/view.php?id=11219
+	 */
+	protected $cHashParameters;
+
+	/**
+	 * Indicates wether cHash should be rebuilt for the URL. Used during
+	 * encoding only.
+	 *
+	 * @var boolean
+	 * @see http://bugs.typo3.org/view.php?id=11219
+	 */
+	protected $rebuildCHash;
 
 	/************************************
 	 *
@@ -368,6 +387,9 @@ class tx_realurl {
 	 */
 	protected function encodeSpURL_doEncode($inputQuery, $cHashCache = FALSE, $origUrl = '') {
 
+		$this->cHashParameters = array();
+		$this->rebuildCHash = false;
+
 		// Extract all GET parameters into an ARRAY:
 		$paramKeyValues = array();
 		$GETparams = explode('&', $inputQuery);
@@ -426,6 +448,9 @@ class tx_realurl {
 			}
 			$newUrl .= '?' . implode('&', $q);
 		}
+
+		// Memory clean up
+		unset($this->cHashParameters);
 
 		// Return new, Speaking URL encoded URL:
 		return $newUrl;
@@ -597,8 +622,11 @@ class tx_realurl {
 					default:
 						if (!is_array($setup['cond']) || $this->checkCondition($setup['cond'], $prevVal)) {
 
-							// Looking if the GET var is found in parameter index:
-							$GETvarVal = isset($paramKeyValues[$setup['GETvar']]) ? $paramKeyValues[$setup['GETvar']] : '';
+							// Looking if the GET var is found in parameter index
+							$GETvar = $setup['GETvar'];
+							$parameterSet = isset($paramKeyValues[$GETvar]);
+							$GETvarVal = $parameterSet ? $paramKeyValues[$GETvar] : '';
+							$this->rebuildCHash |= !$parameterSet;
 
 							// Set reverse map:
 							$revMap = is_array($setup['valueMap']) ? array_flip($setup['valueMap']) : array();
@@ -606,8 +634,10 @@ class tx_realurl {
 							if (isset($revMap[$GETvarVal])) {
 								$prevVal = $GETvarVal;
 								$pathParts[] = rawurlencode($revMap[$GETvarVal]);
+								$this->cHashParameters[$GETvar] = $GETvarVal;
 							} elseif ($setup['noMatch'] == 'bypass') { // If no match in reverse value map and "bypass" is set, then return the value to $pathParts and break
-								// Do nothing...
+								// Must rebuild cHash because we remove a parameter!
+								$this->rebuildCHash = true;
 							} elseif ($setup['noMatch'] == 'null') { // If no match and "null" is set, then set "dummy" value
 								// Set "dummy" value (?)
 								$prevVal = '';
@@ -617,16 +647,20 @@ class tx_realurl {
 								$prevVal = $GETvarVal;
 								$GETvarVal = t3lib_div::callUserFunction($setup['userFunc'], $params, $this);
 								$pathParts[] = rawurlencode($GETvarVal);
+								$this->cHashParameters[$GETvar] = $prevVal;
 							} elseif (is_array($setup['lookUpTable'])) {
 								$prevVal = $GETvarVal;
 								$GETvarVal = $this->lookUpTranslation($setup['lookUpTable'], $GETvarVal);
 								$pathParts[] = rawurlencode($GETvarVal);
+								$this->cHashParameters[$GETvar] = $prevVal;
 							} elseif (isset($setup['valueDefault'])) {
 								$prevVal = $setup['valueDefault'];
 								$pathParts[] = rawurlencode($setup['valueDefault']);
+								$this->cHashParameters[$GETvar] = $setup['valueDefault'];
 							} else {
 								$prevVal = $GETvarVal;
 								$pathParts[] = rawurlencode($GETvarVal);
+								$this->cHashParameters[$GETvar] = $prevVal;
 							}
 
 							// Finally, unset GET var so it doesn't get processed once more:
@@ -664,6 +698,7 @@ class tx_realurl {
 			if ($allSet) {
 				$pathParts[] = rawurlencode($keyWord);
 				foreach ($keyValues as $getVar => $value) {
+					$this->cHashParameters[$getVar] = $value;
 					unset($paramKeyValues[$getVar]);
 				}
 
@@ -756,41 +791,52 @@ class tx_realurl {
 		// (if there are others our problem is that the cHash probably covers those
 		// as well and if we include the cHash anyways we might get duplicates for
 		// the same speaking URL in the cache table!)
-		if (isset($paramKeyValues['cHash']) && count($paramKeyValues) == 1) {
+		if (isset($paramKeyValues['cHash'])) {
 
-			$spUrlHash = md5($newUrl);
-			$spUrlHashQuoted = $GLOBALS['TYPO3_DB']->fullQuoteStr($spUrlHash, 'tx_realurl_chashcache');
-
-			// first, look if a cHash is already there for this SpURL
-			$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('chash_string',
-				'tx_realurl_chashcache', 'spurl_hash=' . $spUrlHashQuoted);
-
-			// If nothing found, lets insert:
-			if (!$GLOBALS['TYPO3_DB']->sql_num_rows($res)) {
-				$insertArray = array(
-					'spurl_hash' => $spUrlHash,
-					'spurl_string' => $this->enableChashUrlDebug ? $newUrl : null,
-					'chash_string' => $paramKeyValues['cHash']
-				);
-				$GLOBALS['TYPO3_DB']->exec_INSERTquery('tx_realurl_chashcache', $insertArray);
+			if ($this->rebuildCHash) {
+				$cHashParameters = array_merge($this->cHashParameters, $paramKeyValues);
+				unset($cHashParameters['cHash']);
+				$cHashParameters = t3lib_div::cHashParams(t3lib_div::implodeArrayForUrl('', $cHashParameters));
+				$paramKeyValues['cHash'] = t3lib_div::calculateCHash($cHashParameters);
+				unset($cHashParameters);
 			}
-			else {
-				// If one found, check if it is different, and if so update:
-				$row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res);
-				if ($row['chash_string'] != $paramKeyValues['cHash']) {
-					// If that chash_string is different from the one we want to
-					// insert, that might be a bug or mean that encryptionKey was
-					// changed so cHash values will be different now
-					// In any case we will just silently update the value:
-					$insertArray = array('chash_string' => $paramKeyValues['cHash']);
-					$GLOBALS['TYPO3_DB']->exec_UPDATEquery('tx_realurl_chashcache',
-						'spurl_hash=' . $spUrlHashQuoted, $insertArray);
+
+			if (count($paramKeyValues) == 1) {
+
+				$spUrlHash = md5($newUrl);
+				$spUrlHashQuoted = $GLOBALS['TYPO3_DB']->fullQuoteStr($spUrlHash, 'tx_realurl_chashcache');
+
+				// first, look if a cHash is already there for this SpURL
+				list($row) = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('chash_string',
+					'tx_realurl_chashcache', 'spurl_hash=' . $spUrlHashQuoted);
+
+				if (!is_array($row)) {
+					// Nothing found, insert to the cache
+					$data = array(
+						'spurl_hash' => $spUrlHash,
+						'spurl_string' => $this->enableChashUrlDebug ? $newUrl : null,
+						'chash_string' => $paramKeyValues['cHash']
+					);
+					$GLOBALS['TYPO3_DB']->exec_INSERTquery('tx_realurl_chashcache', $data);
 				}
-			}
-			$GLOBALS['TYPO3_DB']->sql_free_result($res);
+				else {
+					// If one found, check if it is different, and if so update:
+					if ($row['chash_string'] != $paramKeyValues['cHash']) {
+						// If that chash_string is different from the one we want to
+						// insert, that might be a bug or mean that encryptionKey was
+						// changed so cHash values will be different now
+						// In any case we will just silently update the value:
+						$data = array(
+							'chash_string' => $paramKeyValues['cHash']
+						);
+						$GLOBALS['TYPO3_DB']->exec_UPDATEquery('tx_realurl_chashcache',
+							'spurl_hash=' . $spUrlHashQuoted, $data);
+					}
+				}
 
-			// Unset "cHash" (and array should now be empty!)
-			unset($paramKeyValues['cHash']);
+				// Unset "cHash" (and array should now be empty!)
+				unset($paramKeyValues['cHash']);
+			}
 		}
 	}
 
