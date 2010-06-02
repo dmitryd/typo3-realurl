@@ -879,16 +879,22 @@ class tx_realurl_advanced {
 		// Strip tags
 		$processedTitle = strip_tags($processedTitle);
 
-		// Convert some special tokens to the space character:
+		// Convert some special tokens to the space character
 		$space = $this->conf['spaceCharacter'] ? $this->conf['spaceCharacter'] : '_';
 		$processedTitle = preg_replace('/[ \-+_]+/', $space, $processedTitle); // convert spaces
 
-		// Convert extended letters to ascii equivalents:
+		// Convert extended letters to ascii equivalents
 		$processedTitle = $GLOBALS['TSFE']->csConvObj->specCharsToASCII($charset, $processedTitle);
 
-		// Strip the rest...:
-		$processedTitle = preg_replace('/[^a-zA-Z0-9\\' . $space . ']/', '', $processedTitle); // strip the rest
-		$processedTitle = preg_replace('/\\' . $space . '+/', $space, $processedTitle); // Convert multiple 'spaces' to a single one
+		// Strip the rest
+		if ($this->extConf['init']['enableAllUnicodeLetters']) {
+			// Warning: slow!!!
+			$processedTitle = preg_replace('/[^\p{L}0-9\\' . $space . ']/u', '', $processedTitle);
+		}
+		else {
+			$processedTitle = preg_replace('/[^a-zA-Z0-9\\' . $space . ']/', '', $processedTitle);
+		}
+		$processedTitle = preg_replace('/\\' . $space . '{2,}/', $space, $processedTitle); // Convert multiple 'spaces' to a single one
 		$processedTitle = trim($processedTitle, $space);
 
 		if ($this->conf['encodeTitle_userProc']) {

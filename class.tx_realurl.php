@@ -1017,8 +1017,9 @@ class tx_realurl {
 		// Cached info:
 		$cachedInfo = array();
 
-		// Split URL + resolve parts of path:
+		// Convert URL to segments
 		$pathParts = explode('/', $speakingURIpath);
+		array_walk($pathParts, create_function('&$value', '$value = rawurldecode($value);'));
 
 		// Strip/process file name or extension first
 		$file_GET_VARS = $this->decodeSpURL_decodeFileName($pathParts);
@@ -1905,9 +1906,15 @@ class tx_realurl {
 		// Convert extended letters to ascii equivalents:
 		$processedTitle = $GLOBALS['TSFE']->csConvObj->specCharsToASCII($charset, $processedTitle);
 
-		// Strip the rest...:
-		$processedTitle = preg_replace('/[^a-zA-Z0-9\\' . $space . ']/', '', $processedTitle); // strip the rest
-		$processedTitle = preg_replace('/\\' . $space . '+/', $space, $processedTitle); // Convert multiple 'spaces' to a single one
+		// Strip the rest
+		if ($this->extConf['init']['enableAllUnicodeLetters']) {
+			// Warning: slow!!!
+			$processedTitle = preg_replace('/[^\p{L}0-9\\' . $space . ']/u', '', $processedTitle);
+		}
+		else {
+			$processedTitle = preg_replace('/[^a-zA-Z0-9\\' . $space . ']/', '', $processedTitle);
+		}
+		$processedTitle = preg_replace('/\\' . $space . '{2,}/', $space, $processedTitle); // Convert multiple 'spaces' to a single one
 		$processedTitle = trim($processedTitle, $space);
 
 		if ($cfg['useUniqueCache_conf']['encodeTitle_userProc']) {
