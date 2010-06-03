@@ -635,10 +635,12 @@ class tx_realurl {
 								$prevVal = $GETvarVal;
 								$pathParts[] = rawurlencode($revMap[$GETvarVal]);
 								$this->cHashParameters[$GETvar] = $GETvarVal;
-							} elseif ($setup['noMatch'] == 'bypass') { // If no match in reverse value map and "bypass" is set, then return the value to $pathParts and break
+							} elseif ($setup['noMatch'] == 'bypass') {
+								// If no match in reverse value map and "bypass" is set, remove the parameter from the URL
 								// Must rebuild cHash because we remove a parameter!
 								$this->rebuildCHash = true;
-							} elseif ($setup['noMatch'] == 'null') { // If no match and "null" is set, then set "dummy" value
+							} elseif ($setup['noMatch'] == 'null') {
+								// If no match and "null" is set, then set "dummy" value
 								// Set "dummy" value (?)
 								$prevVal = '';
 								$pathParts[] = '';
