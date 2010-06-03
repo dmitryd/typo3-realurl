@@ -1,3 +1,7 @@
+2010-06-03  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
+
+	* Fixed bug #10124: Outdated entry in tx_realurl_uniqaliase should throw a 404 error
+
 2010-06-02  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
 	* Fixed bug #11219: Incorrect cHash stored when bypassing parameters

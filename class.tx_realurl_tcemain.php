@@ -29,7 +29,7 @@
  */
 
 /**
- * TCEmain hook to update path cache if page is renamed
+ * TCEmain hook to update various caches when data is modified in TYPO3 Backend
  *
  * @author	Dmitry Dulepov <dmitry@typo3.org>
  */
@@ -43,13 +43,39 @@ class tx_realurl_tcemain {
 	protected $config;
 
 	/**
-	 * Checks if the update table can affect cache entries
+	 * Removes autoconfiguration file if table name is sys_domain
 	 *
 	 * @param string $tableName
-	 * @return boolean
+	 * @return void
 	 */
-	protected static function isTableForCache($tableName) {
-		return ($tableName == 'pages' || $tableName == 'pages_language_overlay');
+	protected function clearAutoConfiguration($tableName) {
+		if ($tableName == 'sys_domain') {
+			@unlink(PATH_site . TX_REALURL_AUTOCONF_FILE);
+		}
+	}
+
+	/**
+	 * Clears RealURL caches if necessary
+	 *
+	 * @param string $command
+	 * @param string $tableName
+	 * @param int $recordId
+	 * @return void
+	 */
+	protected function clearCaches($command, $tableName, $recordId) {
+		if ($this->isTableForCache($tableName)) {
+			if ($command == 'delete' || $command == 'move') {
+				list($pageId, ) = $this->getPageData($tableName, $recordId);
+				$this->fetchRealURLConfiguration($pageId);
+				if ($command == 'delete') {
+					$this->clearPathCache($pageId);
+				}
+				else {
+					$this->expirePathCacheForAllLanguages($pageId);
+				}
+				$this->clearOtherCaches($pageId);
+			}
+		}
 	}
 
 	/**
@@ -74,6 +100,22 @@ class tx_realurl_tcemain {
 	protected function clearPathCache($pageId) {
 		$GLOBALS['TYPO3_DB']->exec_DELETEquery('tx_realurl_pathcache',
 			'page_id=' . $pageId);
+	}
+
+	/**
+	 * Removes unique alias in case if the record is deleted from the table
+	 *
+	 * @param string $command
+	 * @param string $tableName
+	 * @param mixed $recordId
+	 * @return void
+	 */
+	protected function clearUniqueAlias($command, $tableName, $recordId) {
+		if ($command == 'delete') {
+			$GLOBALS['TYPO3_DB']->exec_DELETEquery('tx_realurl_uniqalias',
+				'tablename=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($tableName, 'tx_realurl_uniqalias') .
+				'value_id=' . intval($recordId));
+		}
 	}
 
 	/**
@@ -192,6 +234,16 @@ class tx_realurl_tcemain {
 	}
 
 	/**
+	 * Checks if the update table can affect cache entries
+	 *
+	 * @param string $tableName
+	 * @return boolean
+	 */
+	protected static function isTableForCache($tableName) {
+		return ($tableName == 'pages' || $tableName == 'pages_language_overlay');
+	}
+
+	/**
 	 * A TCEMain hook to update caches when something happens to a page or
 	 * language overlay.
 	 *
@@ -202,22 +254,9 @@ class tx_realurl_tcemain {
 	 * @return void
 	 */
 	public function processCmdmap_postProcess($command, $tableName, $recordId) {
-		if ($this->isTableForCache($tableName)) {
-			if ($command == 'delete' || $command == 'move') {
-				list($pageId, ) = $this->getPageData($tableName, $recordId);
-				$this->fetchRealURLConfiguration($pageId);
-				if ($command == 'delete') {
-					$this->clearPathCache($pageId);
-				}
-				else {
-					$this->expirePathCacheForAllLanguages($pageId);
-				}
-				$this->clearOtherCaches($pageId);
-			}
-		}
-		elseif ($tableName == 'sys_domain') {
-			@unlink(PATH_site . TX_REALURL_AUTOCONF_FILE);
-		}
+		$this->clearCaches($command, $tableName, $recordId);
+		$this->clearAutoConfiguration($tableName);
+		$this->clearUniqueAlias($command, $tableName, $recordId);
 	}
 
 	/**
@@ -228,8 +267,24 @@ class tx_realurl_tcemain {
 	 * @param int $recordId
 	 * @param array $databaseData
 	 * @return void
+	 * @todo Expire unique alias cache: how to get the proper timeout value easily here?
 	 */
 	public function processDatamap_afterDatabaseOperations($status, $tableName, $recordId, array $databaseData) {
+		$this->processContentUpdates($status, $tableName, $recordId, $databaseData);
+		$this->clearAutoConfiguration($tableName);
+	}
+
+	/**
+	 * Processes page and content changes in regard to RealURL caches.
+	 *
+	 * @param string $status
+	 * @param string $tableName
+	 * @param int $recordId
+	 * @param array $databaseData
+	 * @return void
+	 * @todo Handle changes to tx_realurl_exclude recursively
+	 */
+	protected function processContentUpdates($status, $tableName, $recordId, array $databaseData) {
 		if ($status == 'update' && t3lib_div::testInt($recordId)) {
 			list($pageId, $languageId) = $this->getPageData($tableName, $recordId);
 			$this->fetchRealURLConfiguration($pageId);
@@ -242,10 +297,6 @@ class tx_realurl_tcemain {
 				}
 				$this->clearOtherCaches($pageId);
 			}
-			// TODO Handle changes to tx_realurl_exclude recursively
-		}
-		if ($tableName == 'sys_domain') {
-			@unlink(PATH_site . TX_REALURL_AUTOCONF_FILE);
 		}
 	}
 
