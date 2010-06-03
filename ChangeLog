@@ -4,6 +4,7 @@
 	* Fixed bug #13993: valueMaps: noMatch:bypass removes the parameter from the url
 	* Fixed bug #14370: realurl fails on mapping with multidomain conf with different default langs (thanks to Vladimir Podkovanov)
 	* Fixed bug #13475: Add possibility to userFuncs to bypass the param as known from valueMap (thanks to Steffen Ritter)
+	* Released version 1.9.0
 
 2010-06-02  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
