@@ -655,7 +655,12 @@ class tx_realurl {
 								$prevVal = '';
 								$pathParts[] = '';
 							} elseif ($setup['userFunc']) {
-								$params = array('pObj' => &$this, 'value' => $GETvarVal, 'decodeAlias' => false);
+								$params = array(
+									'pObj' => &$this,
+									'value' => $GETvarVal,
+									'decodeAlias' => false,
+									'pathParts' => &$pathParts
+								);
 								$prevVal = $GETvarVal;
 								$GETvarVal = t3lib_div::callUserFunction($setup['userFunc'], $params, $this);
 								$pathParts[] = rawurlencode($GETvarVal);
@@ -1487,7 +1492,13 @@ class tx_realurl {
 							} elseif ($setup['noMatch'] == 'null') { // If no match and "null" is set, then break (without setting any value!)
 								break;
 							} elseif ($setup['userFunc']) {
-								$params = array('pObj' => &$this, 'value' => $value, 'decodeAlias' => TRUE);
+								$params = array(
+									'decodeAlias' => true,
+									'origValue' => $origValue,
+									'pathParts' => &$pathParts,
+									'pObj' => &$this,
+									'value' => $value,
+								);
 								$value = t3lib_div::callUserFunction($setup['userFunc'], $params, $this);
 							} elseif (is_array($setup['lookUpTable'])) {
 								$temp = $value;
