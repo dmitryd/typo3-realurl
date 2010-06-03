@@ -938,7 +938,7 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 		$tCells[]='<td>Title:</td>';
 		$tCells[]='<td>ID:</td>';
 		$tCells[]='<td>&nbsp;</td>';
-		$tCells[]='<td>GET variables:</td>';
+		$tCells[]='<td>Host | GET variables:</td>';
 		$tCells[]='<td>Internal Extras:</td>';
 		$tCells[]='<td>Path:</td>';
 		$tCells[]='<td>&nbsp;</td>';

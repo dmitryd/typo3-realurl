@@ -134,6 +134,15 @@ class tx_realurl {
 
 
 	var $host = ''; // Current host name. Set in setConfig()
+
+	/**
+	 * Actual host name (configuration key) for the current request. This can
+	 * be different from the $this->host if there are host aliases.
+	 *
+	 * @var string
+	 */
+	protected $hostConfigured = '';
+
 	var $multidomain = false;
 	var $urlPrepend = array();
 
@@ -293,16 +302,17 @@ class tx_realurl {
 		// Parse current URL into main parts:
 		$uParts = parse_url($params['LD']['totalURL']);
 
-		// Look in memory cache first:
-		$newUrl = $this->encodeSpURL_encodeCache($uParts['query'], $internalExtras);
+		// Look in memory cache first
+		$urlData = $this->hostConfigured . ' | ' . $uParts['query'];
+		$newUrl = $this->encodeSpURL_encodeCache($urlData, $internalExtras);
 		if (!$newUrl) {
-
-			// Encode URL:
+			// Encode URL
 			$newUrl = $this->encodeSpURL_doEncode($uParts['query'], $this->extConf['init']['enableCHashCache'], $params['LD']['totalURL']);
 
-			// Set new URL in cache:
-			$this->encodeSpURL_encodeCache($uParts['query'], $internalExtras, $newUrl);
+			// Set new URL in cache
+			$this->encodeSpURL_encodeCache($urlData, $internalExtras, $newUrl);
 		}
+		unset($urlData);
 
 		// Adding any anchor there might be:
 		if ($uParts['fragment']) {
@@ -713,16 +723,16 @@ class tx_realurl {
 	/**
 	 * Setting / Getting encoded URL to/from cache (memory cache, but could be extended to database cache)
 	 *
-	 * @param	string		The original URL with GET parameters - identifying the cached version to find.
+	 * @param	string		Host + the original URL with GET parameters - identifying the cached version to find
 	 * @param	array		Array with extra data to include in encoding. This is flags if adminJump url or feLogin flags are set since these are NOT a part of the URL to encode and therefore are needed for the hash to be true.
 	 * @param	string		If set, this URL will be cached as the encoded version of $urlToEncode. Otherwise the function will look for and return the cached version of $urlToEncode
 	 * @return	mixed		If $setEncodedURL is true, this will be STORED as the cached version and the function returns false, otherwise the cached version is returned (string).
 	 * @see encodeSpURL()
 	 */
-	protected function encodeSpURL_encodeCache($urlToEncode, $internalExtras, $setEncodedURL = '') {
+	protected function encodeSpURL_encodeCache($urlData, $internalExtras, $setEncodedURL = '') {
 
 		// Create hash string:
-		$hash = md5($urlToEncode . '///' . serialize($internalExtras));
+		$hash = md5($urlData . '///' . serialize($internalExtras));
 
 		if (!$setEncodedURL) { // Asking for cached encoded URL:
 
@@ -751,7 +761,7 @@ class tx_realurl {
 				if ($this->extConf['init']['enableUrlEncodeCache'] && $this->canCachePageURL($this->encodePageId)) {
 					$insertFields = array(
 							'url_hash' => $hash,
-							'origparams' => $urlToEncode,
+							'origparams' => $urlData,
 							'internalExtras' => count($internalExtras) ? serialize($internalExtras) : '',
 							'content' => $setEncodedURL,
 							'page_id' => $this->encodePageId,
@@ -1990,7 +2000,7 @@ class tx_realurl {
 	protected function setConfig() {
 
 		// Finding host-name / IP, always in lowercase:
-		$this->host = strtolower(t3lib_div::getIndpEnv('TYPO3_HOST_ONLY'));
+		$this->hostConfigured = $this->host = strtolower(t3lib_div::getIndpEnv('TYPO3_HOST_ONLY'));
 
 		$_realurl_conf = @unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['realurl']);
 		// Autoconfiguration
@@ -2012,10 +2022,12 @@ class tx_realurl {
 
 			// If it turned out to be a string pointer, then look up the real config:
 			while (!is_null($this->extConf) && is_string($this->extConf)) {
+				$this->hostConfigured = $this->extConf;
 				$this->extConf = $extConf[$this->extConf];
 			}
 			if (!is_array($this->extConf)) {
 				$this->extConf = $extConf['_DEFAULT'];
+				$this->hostConfigured = '_DEFAULT';
 				if ($this->multidomain && isset($this->extConf['pagePath']['rootpage_id'])) {
 					// This can't be right!
 					unset($this->extConf['pagePath']['rootpage_id']);
@@ -2029,6 +2041,7 @@ class tx_realurl {
 					'\' is not configured for RealURL. Please, fix your RealURL configuration!');
 			}
 			$this->extConf = (array)$extConf['_DEFAULT'];
+			$this->hostConfigured = '_DEFAULT';
 			if ($this->multidomain && isset($this->extConf['pagePath']['rootpage_id'])) {
 				// This can't be right!
 				unset($this->extConf['pagePath']['rootpage_id']);

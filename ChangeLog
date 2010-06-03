@@ -2,6 +2,7 @@
 
 	* Fixed bug #10124: Outdated entry in tx_realurl_uniqaliase should throw a 404 error
 	* Fixed bug #13993: valueMaps: noMatch:bypass removes the parameter from the url
+	* Fixed bug #14370: realurl fails on mapping with multidomain conf with different default langs (thanks to Vladimir Podkovanov)
 
 2010-06-02  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
