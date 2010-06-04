@@ -814,7 +814,12 @@ class tx_realurl {
 				$cHashParameters = array_merge($this->cHashParameters, $paramKeyValues);
 				unset($cHashParameters['cHash']);
 				$cHashParameters = t3lib_div::cHashParams(t3lib_div::implodeArrayForUrl('', $cHashParameters));
-				$paramKeyValues['cHash'] = t3lib_div::calculateCHash($cHashParameters);
+				if (method_exists('t3lib_div', 'calculateCHash')) {
+					$paramKeyValues['cHash'] = t3lib_div::calculateCHash($cHashParameters);
+				}
+				else {
+					$paramKeyValues['cHash'] = t3lib_div::shortMD5(serialize($cHashParameters));
+				}
 				unset($cHashParameters);
 			}
 

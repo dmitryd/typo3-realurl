@@ -1,3 +1,7 @@
+2010-06-04  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
+
+	* Fixed bug #XXX: Error: Call to undefined method t3lib_div::calculatechash()
+
 2010-06-03  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
 	* Fixed bug #10124: Outdated entry in tx_realurl_uniqaliase should throw a 404 error
