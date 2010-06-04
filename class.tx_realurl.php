@@ -1961,7 +1961,7 @@ class tx_realurl {
 	 * @return	string		New alias value
 	 * @see lookUpTranslation()
 	 */
-	protected function lookUp_cleanAlias($cfg, $newAliasValue) {
+	public function lookUp_cleanAlias($cfg, $newAliasValue) {
 
 		// Fetch character set:
 		$charset = $GLOBALS['TYPO3_CONF_VARS']['BE']['forceCharset'] ? $GLOBALS['TYPO3_CONF_VARS']['BE']['forceCharset'] : $GLOBALS['TSFE']->defaultCharSet;
