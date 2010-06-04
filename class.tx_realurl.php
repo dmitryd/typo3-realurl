@@ -1374,6 +1374,7 @@ class tx_realurl {
 	 * @see tx_realurl::decodeSpURL_decodeFileName()
 	 */
 	protected function decodeSpURL_decodeFileName_checkHtmlSuffix($fileName, $segment, $extension, array &$pathPartsCopy) {
+		$handled = false;
 		if (isset($this->extConf['fileName']['defaultToHTMLsuffixOnPrev'])) {
 			$suffix = $this->extConf['fileName']['defaultToHTMLsuffixOnPrev'];
 			$suffix = (!$this->isString($suffix, 'defaultToHTMLsuffixOnPrev') ? '.html' : $suffix);
@@ -1384,7 +1385,9 @@ class tx_realurl {
 			else {
 				$this->decodeSpURL_throw404('File "' . $fileName . '" was not found (2)!');
 			}
+			$handled = true;
 		}
+		return $handled;
 	}
 
 	/**
@@ -2442,11 +2445,7 @@ class tx_realurl {
 		$fileName = rawurlencode($this->encodeSpURL_fileName($paramKeyValues));
 		$suffix = $this->extConf['fileName']['defaultToHTMLsuffixOnPrev'];
 
-		if ($fileName == '' && $suffix != '') {
-			// No file name, has default
-			$url .= (!$this->isString($suffix, 'defaultToHTMLsuffixOnPrev') ? '.html' : $suffix);
-		}
-		elseif ($fileName{0} == '.') {
+		if ($fileName{0} == '.') {
 			// Only extension
 			if ($url == '') {
 				// Home page. We can't append just extension here. So we pass
@@ -2457,9 +2456,16 @@ class tx_realurl {
 				$url .= $fileName;
 			}
 		}
-		else {
-			// File name
-			$url .= '/' . $fileName;
+		elseif ($url != '' && ($fileName || $suffix)) {
+			if ($fileName) {
+				$url .= '/' . $fileName;
+			}
+			else {
+				if (!$this->isString($suffix)) {
+					$suffix = 'html';
+				}
+				$url .= '.' . $suffix;
+			}
 		}
 
 		return $url;
