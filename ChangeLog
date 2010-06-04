@@ -1,7 +1,8 @@
 2010-06-04  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
 	* Fixed bug #XXX: Error: Call to undefined method t3lib_div::calculatechash()
-	* 14111: tx_realurl::lookUp_cleanAlias() could be used in user functions but is protected since v1.8.0
+	* Fixed bug #14111: tx_realurl::lookUp_cleanAlias() could be used in user functions but is protected since v1.8.0
+	* Released version 1.9.1
 
 2010-06-03  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
