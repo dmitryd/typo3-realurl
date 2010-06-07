@@ -1,3 +1,7 @@
+2010-06-07  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
+
+	* Released version 1.9.2
+
 2010-06-04  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
 	* Fixed bug #14617: defaultToHTMLsuffixOnPrev doesn't work anymore
