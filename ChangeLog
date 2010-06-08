@@ -1,3 +1,7 @@
+2010-06-08  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
+
+	* Fixed bug #14642: Missing argument 2 for tx_realurl::isString()
+
 2010-06-07  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
 	* Released version 1.9.2

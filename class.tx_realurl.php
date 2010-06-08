@@ -2461,7 +2461,7 @@ class tx_realurl {
 				$url .= '/' . $fileName;
 			}
 			else {
-				if (!$this->isString($suffix)) {
+				if (!$this->isString($suffix, 'defaultToHTMLsuffixOnPrev')) {
 					$suffix = 'html';
 				}
 				$url .= '.' . $suffix;
