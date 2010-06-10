@@ -2462,9 +2462,9 @@ class tx_realurl {
 			}
 			else {
 				if (!$this->isString($suffix, 'defaultToHTMLsuffixOnPrev')) {
-					$suffix = 'html';
+					$suffix = '.html';
 				}
-				$url .= '.' . $suffix;
+				$url .= $suffix;
 			}
 		}
 

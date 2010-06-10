@@ -1,3 +1,7 @@
+2010-06-09  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
+
+	* Fixed bug #14661: wrong URL if defaultToHTMLsuffixOnPrev is set to ".html"
+
 2010-06-08  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
 	* Fixed bug #14642: Missing argument 2 for tx_realurl::isString()
