@@ -2443,7 +2443,6 @@ class tx_realurl {
 		$url = implode('/', $pathParts);
 		$paramKeyValuesCopy = $paramKeyValues;
 		$fileName = rawurlencode($this->encodeSpURL_fileName($paramKeyValues));
-		$suffix = $this->extConf['fileName']['defaultToHTMLsuffixOnPrev'];
 
 		if ($fileName{0} == '.') {
 			// Only extension
@@ -2456,15 +2455,22 @@ class tx_realurl {
 				$url .= $fileName;
 			}
 		}
-		elseif ($url != '' && ($fileName || $suffix)) {
+		elseif ($url != '') {
 			if ($fileName) {
+				// File name includes extension
 				$url .= '/' . $fileName;
 			}
 			else {
-				if (!$this->isString($suffix, 'defaultToHTMLsuffixOnPrev')) {
-					$suffix = '.html';
+				$suffix = $this->extConf['fileName']['defaultToHTMLsuffixOnPrev'];
+				if ($suffix) {
+					if (!$this->isString($suffix, 'defaultToHTMLsuffixOnPrev')) {
+						$suffix = '.html';
+					}
+					$url .= $suffix;
 				}
-				$url .= $suffix;
+				elseif (strpos($this->extConf['init']['appendMissingSlash'], 'ifNotFile') !== false) {
+					$url .= '/';
+				}
 			}
 		}
 
