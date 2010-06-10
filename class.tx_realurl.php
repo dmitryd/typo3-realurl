@@ -2465,7 +2465,7 @@ class tx_realurl {
 					}
 					$url .= $suffix;
 				}
-				elseif (strpos($this->extConf['init']['appendMissingSlash'], 'ifNotFile') !== false) {
+				else {
 					$url .= '/';
 				}
 			}

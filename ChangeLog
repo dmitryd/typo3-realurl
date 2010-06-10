@@ -3,6 +3,7 @@
 	* Fixed bug #14661: wrong URL if defaultToHTMLsuffixOnPrev is set to ".html"
 	* Fixed bug #14667: Missed trailing slashes
 	* Fixed bug #14657: 404 error on some shortcut pages
+	* Regression: URLs by default do not have slashes appended
 
 2010-06-08  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
