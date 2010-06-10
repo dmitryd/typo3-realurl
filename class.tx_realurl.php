@@ -1347,19 +1347,16 @@ class tx_realurl {
 	 * @return array GET varaibles from the file name or empty array
 	 */
 	protected function decodeSpURL_decodeFileName(array &$pathParts) {
-		$pathPartsCopy = $pathParts;
 		$getVars = array();
-		$fileName = rawurldecode(array_pop($pathPartsCopy));
+		$fileName = rawurldecode(array_pop($pathParts));
 		list($segment, $extension) = t3lib_div::revExplode('.', $fileName, 2);
 		if ($extension) {
 			$getVars = array();
-			$handled = $this->decodeSpURL_decodeFileName_lookupInIndex($fileName, $segment, $extension, $pathPartsCopy, $getVars);
-			if (!$handled) {
-				if (!$this->decodeSpURL_decodeFileName_checkHtmlSuffix($fileName, $segment, $extension, $pathPartsCopy)) {
+			if (!$this->decodeSpURL_decodeFileName_lookupInIndex($fileName, $segment, $extension, $pathParts, $getVars)) {
+				if (!$this->decodeSpURL_decodeFileName_checkHtmlSuffix($fileName, $segment, $extension, $pathParts)) {
 					$this->decodeSpURL_throw404('File "' . $fileName . '" was not found (1)!');
 				}
 			}
-			$pathParts = $pathPartsCopy;
 		}
 		return $getVars;
 	}
@@ -1373,13 +1370,13 @@ class tx_realurl {
 	 * @param array $pathPartsCopy
 	 * @see tx_realurl::decodeSpURL_decodeFileName()
 	 */
-	protected function decodeSpURL_decodeFileName_checkHtmlSuffix($fileName, $segment, $extension, array &$pathPartsCopy) {
+	protected function decodeSpURL_decodeFileName_checkHtmlSuffix($fileName, $segment, $extension, array &$pathParts) {
 		$handled = false;
 		if (isset($this->extConf['fileName']['defaultToHTMLsuffixOnPrev'])) {
 			$suffix = $this->extConf['fileName']['defaultToHTMLsuffixOnPrev'];
 			$suffix = (!$this->isString($suffix, 'defaultToHTMLsuffixOnPrev') ? '.html' : $suffix);
 			if ($suffix == '.' . $extension) {
-				$pathPartsCopy[] = urlencode($segment);
+				$pathParts[] = urlencode($segment);
 				$this->filePart = '.' . $extension;
 			}
 			else {
