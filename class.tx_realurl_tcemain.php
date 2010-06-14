@@ -114,7 +114,7 @@ class tx_realurl_tcemain {
 		if ($command == 'delete') {
 			$GLOBALS['TYPO3_DB']->exec_DELETEquery('tx_realurl_uniqalias',
 				'tablename=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($tableName, 'tx_realurl_uniqalias') .
-				'value_id=' . intval($recordId));
+				' AND value_id=' . intval($recordId));
 		}
 	}
 
