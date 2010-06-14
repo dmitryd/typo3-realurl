@@ -1,6 +1,7 @@
 2010-06-14  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
 	* Fixed bug #14684: tx_realurl_tcemain->clearUniqueAlias SQL error
+	* Released version 1.9.3
 
 2010-06-09  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
