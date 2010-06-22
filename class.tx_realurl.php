@@ -2296,10 +2296,12 @@ class tx_realurl {
 	 * @return	void
 	 */
 	public function clearPageCacheMgm($params) {
-		$pageIdList = $params['table'] == 'pages' ? array(intval($params['uid'])) : $params['pageIdArray'];
-		if (is_array($pageIdList)) {
-			$GLOBALS['TYPO3_DB']->exec_DELETEquery('tx_realurl_urlencodecache', 'page_id IN (' . implode(',', $GLOBALS['TYPO3_DB']->cleanIntArray($pageIdList)) . ')');
-			$GLOBALS['TYPO3_DB']->exec_DELETEquery('tx_realurl_urldecodecache', 'page_id IN (' . implode(',', $GLOBALS['TYPO3_DB']->cleanIntArray($pageIdList)) . ')');
+		$pageIdArray = $params['table'] == 'pages' ? array(intval($params['uid'])) : $params['pageIdArray'];
+		if (is_array($pageIdArray) && count($pageIdArray) > 0) {
+			$pageIdList = implode(',', $GLOBALS['TYPO3_DB']->cleanIntArray($pageIdArray));
+			$GLOBALS['TYPO3_DB']->exec_DELETEquery('tx_realurl_urlencodecache', 'page_id IN (' . $pageIdList . ')');
+			$GLOBALS['TYPO3_DB']->exec_DELETEquery('tx_realurl_urldecodecache', 'page_id IN (' . $pageIdList . ')');
+			$GLOBALS['TYPO3_DB']->exec_DELETEquery('tx_realurl_pathcache', 'page_id IN (' . $pageIdList . ') AND expire<=' . time());
 		}
 	}
 
