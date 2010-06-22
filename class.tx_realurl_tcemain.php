@@ -218,6 +218,7 @@ class tx_realurl_tcemain {
 				$fieldList = TX_REALURL_SEGTITLEFIELDLIST_DEFAULT;
 			}
 		}
+		$fieldList .= ',hidden';
 		return array_unique(t3lib_div::trimExplode(',', $fieldList, true));
 	}
 

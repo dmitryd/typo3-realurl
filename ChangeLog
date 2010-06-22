@@ -2,6 +2,7 @@
 
 	* Fixed bug #14815: missing extension configuration causes PHP errors
 	* Fixed bug #14700: Length of tablename field in tx_realurl_uniqalias is too short
+	* Fixed bug #14820: Clear cache when page's "hidden" flag changes
 
 2010-06-14  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
