@@ -221,7 +221,7 @@ class tx_realurl {
 			$GLOBALS['TYPO3_DB']->sql_free_result($res);
 			$this->useMySQLExtendedSyntax = version_compare($rec[0], '4.1.0', '>');
 		}
-		$sysconf = unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['realurl']);
+		$sysconf = (array)unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['realurl']);
 		$this->enableStrictMode = (boolean)$sysconf['enableStrictMode'];
 		$this->enableChashUrlDebug = (boolean)$sysconf['enableChashUrlDebug'];
 
@@ -2018,7 +2018,7 @@ class tx_realurl {
 		// Finding host-name / IP, always in lowercase:
 		$this->hostConfigured = $this->host = strtolower(t3lib_div::getIndpEnv('TYPO3_HOST_ONLY'));
 
-		$_realurl_conf = @unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['realurl']);
+		$_realurl_conf = (array)@unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['realurl']);
 		// Autoconfiguration
 		if ($_realurl_conf['enableAutoConf'] && !isset($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']) && !@include_once (PATH_site . TX_REALURL_AUTOCONF_FILE) && !isset($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl'])) {
 			require_once (t3lib_extMgm::extPath('realurl', 'class.tx_realurl_autoconfgen.php'));
