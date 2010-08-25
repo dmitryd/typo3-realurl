@@ -2454,22 +2454,20 @@ class tx_realurl {
 				$url .= $fileName;
 			}
 		}
+		elseif ($fileName) {
+			// File name includes extension
+			$url .= '/' . $fileName;
+		}
 		elseif ($url != '') {
-			if ($fileName) {
-				// File name includes extension
-				$url .= '/' . $fileName;
+			$suffix = $this->extConf['fileName']['defaultToHTMLsuffixOnPrev'];
+			if ($suffix) {
+				if (!$this->isString($suffix, 'defaultToHTMLsuffixOnPrev')) {
+					$suffix = '.html';
+				}
+				$url .= $suffix;
 			}
 			else {
-				$suffix = $this->extConf['fileName']['defaultToHTMLsuffixOnPrev'];
-				if ($suffix) {
-					if (!$this->isString($suffix, 'defaultToHTMLsuffixOnPrev')) {
-						$suffix = '.html';
-					}
-					$url .= $suffix;
-				}
-				else {
-					$url .= '/';
-				}
+				$url .= '/';
 			}
 		}
 

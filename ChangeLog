@@ -1,3 +1,7 @@
+2010-08-25  Dmitry Dulepov  <dmitry@typo3.org>
+
+	* Fixed bug #15552: Impossible to have file names on the root page
+
 2010-06-22  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
 	* Fixed bug #14815: missing extension configuration causes PHP errors
