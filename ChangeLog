@@ -1,6 +1,7 @@
 2010-08-25  Dmitry Dulepov  <dmitry@typo3.org>
 
 	* Fixed bug #15552: Impossible to have file names on the root page
+	* Fixed bug #15335: PHP Warning: Invalid argument supplied for foreach() in class.tx_realurl_tcemain
 
 2010-06-22  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 

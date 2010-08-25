@@ -158,17 +158,20 @@ class tx_realurl_tcemain {
 	protected function fetchRealURLConfiguration($pageId) {
 		$rootLine = t3lib_BEfunc::BEgetRootLine($pageId);
 		$rootPageId = $rootLine[1]['uid'];
-		foreach ($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl'] as $config) {
-			if (is_array($config) && $config['pagePath']['rootpage_id'] == $rootPageId) {
-				$this->config = $config;
-				return;
+		$this->config = array();
+		if (isset($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl'])) {
+			foreach ($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl'] as $config) {
+				if (is_array($config) && $config['pagePath']['rootpage_id'] == $rootPageId) {
+					$this->config = $config;
+					return;
+				}
+			}
+			if (is_array($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['_DEFAULT'])) {
+				$this->config = $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['_DEFAULT'];
 			}
 		}
-		if (is_array($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['_DEFAULT'])) {
-			$this->config = $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['_DEFAULT'];
-		}
 		else {
-			$this->config = array();
+			t3lib_div::sysLog('RealURL is not configured! Please, configure it or uninstall.', 'RealURL', 3);
 		}
 	}
 
