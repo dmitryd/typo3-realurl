@@ -3,6 +3,7 @@
 	* Fixed bug #15552: Impossible to have file names on the root page
 	* Fixed bug #15335: PHP Warning: Invalid argument supplied for foreach() in class.tx_realurl_tcemain
 	* Fixed bug #15435: Editing of redirects not possible anymore
+	* Fixed bug #15366: uniqalias for an item with the same name is rotatory generated als -1 and -2 (thanks to David Frerich)
 
 2010-06-22  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 

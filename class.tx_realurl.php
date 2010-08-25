@@ -1833,18 +1833,13 @@ class tx_realurl {
 	protected function lookUp_uniqAliasToId($cfg, $aliasValue, $onlyNonExpired = FALSE) {
 
 		// Look up the ID based on input alias value:
-		$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('value_id', 'tx_realurl_uniqalias',
+		list($row) = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('value_id', 'tx_realurl_uniqalias',
 				'value_alias=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($aliasValue, 'tx_realurl_uniqalias') .
 				' AND field_alias=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($cfg['alias_field'], 'tx_realurl_uniqalias') .
 				' AND field_id=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($cfg['id_field'], 'tx_realurl_uniqalias') .
 				' AND tablename=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($cfg['table'], 'tx_realurl_uniqalias') .
 				' AND ' . ($onlyNonExpired ? 'expire=0' : '(expire=0 OR expire>' . time() . ')'));
-		$row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res);
-		$GLOBALS['TYPO3_DB']->sql_free_result($res);
-		if ($row) {
-			return $row['value_id'];
-		}
-		return null;
+		return (is_array($row) ? $row['value_id'] : false);
 	}
 
 	/**
@@ -1905,21 +1900,18 @@ class tx_realurl {
 		$uniqueAlias = '';
 		$counter = 0;
 		$maxTry = 100;
+		$test_newAliasValue = $newAliasValue;
 		while ($counter < $maxTry) {
 
-			// Suffix numbers if counter is larger than zero (in order to make unique alias):
-			if ($counter > 0) {
-				$test_newAliasValue = $newAliasValue . '-' . $counter;
-			} else {
-				$test_newAliasValue = $newAliasValue;
-			}
 			// If the test-alias did NOT exist, it must be unique and we break out:
-			if (!$this->lookUp_uniqAliasToId($cfg, $test_newAliasValue, TRUE)) {
+			$foundId = $this->lookUp_uniqAliasToId($cfg, $test_newAliasValue, true);
+			if (!$foundId || $foundId == $idValue) {
 				$uniqueAlias = $test_newAliasValue;
 				break;
 			}
 			// Otherwise, increment counter and test again...
 			$counter++;
+			$test_newAliasValue = $newAliasValue . '-' . $counter;
 		}
 
 		// if no unique alias was found in the process above, just suffix a hash string and assume that is unique...
