@@ -1316,7 +1316,7 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 				$tCells[]='<td>'.$rec['counter'].'</td>';
 				$tCells[]='<td>'.t3lib_BEfunc::dateTimeAge($rec['tstamp']).'</td>';
 				$tCells[]='<td><a href="'.htmlspecialchars($host.'/'.$rec['url']).'" target="_blank">'.($host ? $host . '/' : '') . htmlspecialchars($rec['url']).'</a>'.
-							' <a href="'.$this->linkSelf('&cmd=new&defUrl='.rawurlencode($rec['url']).'&SET[type]=redirects').'">'.
+							' <a href="'.$this->linkSelf('&cmd=new&url='.rawurlencode($rec['url']).'&SET[type]=redirects').'">'.
 							'<img'.t3lib_iconWorks::skinImg($this->pObj->doc->backPath,'gfx/napshot.gif','width="12" height="12"').' title="Set as redirect" alt="" />'.
 							'</a>'.
 							'</td>';
@@ -1557,7 +1557,7 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 	 * @return	string	Generated HTML
 	 */
 	protected function getRedirectEditForm() {
-		$url = t3lib_div::_GP('defUrl');
+		$url = t3lib_div::_GP('url');
 		list($row) = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows(
 			'url_hash,destination,has_moved', 'tx_realurl_redirects',
 			'url=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($url, 'tx_realurl_redirects'));
