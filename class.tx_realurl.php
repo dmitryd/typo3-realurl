@@ -1923,10 +1923,12 @@ class tx_realurl {
 		$insertArray = array('tstamp' => time(), 'tablename' => $cfg['table'], 'field_alias' => $cfg['alias_field'], 'field_id' => $cfg['id_field'], 'value_alias' => $uniqueAlias, 'value_id' => $idValue, 'lang' => $lang);
 
 		// Checking that this alias hasn't been stored since we looked last time:
-		if (($returnAlias = $this->lookUp_idToUniqAlias($cfg, $idValue, $lang, $uniqueAlias))) {
+		$returnAlias = $this->lookUp_idToUniqAlias($cfg, $idValue, $lang, $uniqueAlias);
+		if ($returnAlias) {
 			// If we are here it is because another process managed to create this alias in the time between we looked the first time and now when we want to put it in database.
 			$uniqueAlias = $returnAlias;
-		} else {
+		}
+		else {
 			// Expire all other aliases:
 			// Look for an alias based on ID:
 			$GLOBALS['TYPO3_DB']->exec_UPDATEquery('tx_realurl_uniqalias', 'value_id=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($idValue, 'tx_realurl_uniqalias') . '
