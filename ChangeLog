@@ -3,6 +3,7 @@
 	* Fixed bug #14780: Resolving incorrect id when only language-preVar gets passed (thanks to Bernhard Kraft)
 	* Fixed bug #15481: Visibility of tx_realurl_advanced::encodeTitle()
 	* Fixed bug #10774: localized pagePath encoding by tx_realurl_advanced not working when using new _DOMAINS config
+	* Fixed bug #14266: set as redirect does not work
 
 2010-08-25  Dmitry Dulepov  <dmitry@typo3.org>
 
