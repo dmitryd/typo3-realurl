@@ -1440,12 +1440,13 @@ class tx_realurl {
 	 * @see decodeSpURL_settingPreVars(), decodeSpURL_settingPostVarSets()
 	 */
 	protected function decodeSpURL_getSequence(&$pathParts, $setupArr) {
-
 		$GET_string = '';
-		if (count($pathParts) > 0) {
-			$prevVal = '';
-			foreach ($setupArr as $setup) {
-
+		$prevVal = '';
+		foreach ($setupArr as $setup) {
+			if (count($pathParts) == 0) {
+				break;
+			}
+			else {
 				// Get value and remove from path parts:
 				$value = $origValue = array_shift($pathParts);
 				$value = rawurldecode($value);

@@ -1,3 +1,7 @@
+2010-08-30  Dmitry Dulepov  <dmitry@typo3.org>
+
+	* Fixed bug #14780: Resolving incorrect id when only language-preVar gets passed (thanks to Bernhard Kraft)
+
 2010-08-25  Dmitry Dulepov  <dmitry@typo3.org>
 
 	* Fixed bug #15552: Impossible to have file names on the root page
