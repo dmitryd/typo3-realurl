@@ -1525,27 +1525,29 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 	 */
 	protected function getProcessForm() {
 		$content = $error = '';
-		if ($this->processRedirectSubmission($error)) {
-			// Submission successful -- show "New" button
-			$content = $this->getNewButton();
-		}
-		else {
-			// Submission error or no submission
-			if ($error) {
-				$error = '<div style="color:red;margin-bottom:.5em;font-weight:bold">Problem found! ' . $error . '</div>';
-			}
-			$hint = '<div style="margin:.5em 0">' .
-				'Note: the exact source URL will match! Add a slash to the end ' .
-				'of the URL if necessary!</div>';
-			if (!t3lib_div::_GP('url')) {
-				$content .= '<h2>Add new redirects</h2>' . $error . $hint .
-					$this->getRedirectNewForm();
+		if (!t3lib_div::_POST('_edit_cancel')) {
+			if ($this->processRedirectSubmission($error)) {
+				// Submission successful -- show "New" button
+				$content = $this->getNewButton();
 			}
 			else {
-				$content .= '<h2>Edit a redirect</h2>' . $error . $hint . $this->getRedirectEditForm();
+				// Submission error or no submission
+				if ($error) {
+					$error = '<div style="color:red;margin-bottom:.5em;font-weight:bold">Problem found! ' . $error . '</div>';
+				}
+				$hint = '<div style="margin:.5em 0">' .
+					'Note: the exact source URL will match! Add a slash to the end ' .
+					'of the URL if necessary!</div>';
+				if (!t3lib_div::_GP('url')) {
+					$content .= '<h2>Add new redirects</h2>' . $error . $hint .
+						$this->getRedirectNewForm();
+				}
+				else {
+					$content .= '<h2>Edit a redirect</h2>' . $error . $hint . $this->getRedirectEditForm();
+				}
+				$content .= '<input type="hidden" name="id" value="'.htmlspecialchars($this->pObj->id).'" />';
+				$content .= '<input type="hidden" name="cmd" value="'.htmlspecialchars(t3lib_div::_GP('cmd')).'" />';
 			}
-			$content .= '<input type="hidden" name="id" value="'.htmlspecialchars($this->pObj->id).'" />';
-			$content .= '<input type="hidden" name="cmd" value="'.htmlspecialchars(t3lib_div::_GP('cmd')).'" />';
 		}
 		return $content;
 	}
