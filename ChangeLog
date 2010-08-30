@@ -5,6 +5,7 @@
 	* Fixed bug #10774: localized pagePath encoding by tx_realurl_advanced not working when using new _DOMAINS config
 	* Fixed bug #14266: set as redirect does not work
 	* Fixed bug #15599: Pressing "Cancel" in redirect view does not hide the form
+	* Released version 1.9.4
 
 2010-08-25  Dmitry Dulepov  <dmitry@typo3.org>
 
