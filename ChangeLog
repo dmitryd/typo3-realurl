@@ -1,6 +1,7 @@
 2010-08-30  Dmitry Dulepov  <dmitry@typo3.org>
 
 	* Fixed bug #14780: Resolving incorrect id when only language-preVar gets passed (thanks to Bernhard Kraft)
+	* Fixed bug #15481: Visibility of tx_realurl_advanced::encodeTitle()
 
 2010-08-25  Dmitry Dulepov  <dmitry@typo3.org>
 

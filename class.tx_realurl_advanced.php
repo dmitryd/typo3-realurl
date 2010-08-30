@@ -866,9 +866,10 @@ class tx_realurl_advanced {
 	 *
 	 * @param	string		Input title to clean
 	 * @return	string		Encoded title, passed through rawurlencode() = ready to put in the URL.
+	 * @internal The signature or visibility of this function may change at any moment!
 	 * @see rootLineToPath()
 	 */
-	protected function encodeTitle($title) {
+	public function encodeTitle($title) {
 
 		// Fetch character set:
 		$charset = $GLOBALS['TYPO3_CONF_VARS']['BE']['forceCharset'] ? $GLOBALS['TYPO3_CONF_VARS']['BE']['forceCharset'] : $GLOBALS['TSFE']->defaultCharSet;
