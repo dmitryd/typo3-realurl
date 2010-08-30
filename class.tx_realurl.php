@@ -402,12 +402,18 @@ class tx_realurl {
 
 		// Extract all GET parameters into an ARRAY:
 		$paramKeyValues = array();
+		$additionalVariables = array();
 		$GETparams = explode('&', $inputQuery);
 		foreach ($GETparams as $paramAndValue) {
 			list($p, $v) = explode('=', $paramAndValue, 2);
 			$p = rawurldecode($p);
-			if ($p != '' && $p != $this->ignoreGETvar) {
-				$paramKeyValues[$p] = rawurldecode($v);
+			if ($p != '') {
+				if ($p != $this->ignoreGETvar) {
+					$paramKeyValues[$p] = rawurldecode($v);
+				}
+				else {
+					$additionalVariables[$p] = rawurldecode($v);
+				}
 			}
 		}
 		$this->orig_paramKeyValues = $paramKeyValues;
@@ -421,7 +427,13 @@ class tx_realurl {
 		// Create path from ID value:
 		$page_id = $this->encodePageId = $paramKeyValues['id'];
 		$this->encodeError = FALSE;
+		if ($this->ignoreGETvar) {
+			$paramKeyValues = array_merge($paramKeyValues, $additionalVariables);
+		}
 		$this->encodeSpURL_pathFromId($paramKeyValues, $pathParts);
+		if ($this->ignoreGETvar) {
+			$paramKeyValues = array_diff($paramKeyValues, $additionalVariables);
+		}
 		if ($this->encodeError) {
 			return $origUrl;
 		}

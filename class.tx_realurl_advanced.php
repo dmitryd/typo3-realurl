@@ -203,7 +203,7 @@ class tx_realurl_advanced {
 			return;
 		}
 
-		$lang = $this->getLanguageVar();
+		$lang = $this->getLanguageVar($paramKeyValues);
 
 		// Fetch cached path
 		$cachedPagePath = false;
@@ -929,11 +929,17 @@ class tx_realurl_advanced {
 	 *
 	 * @return	integer		Current language or 0
 	 */
-	protected function getLanguageVar() {
+	protected function getLanguageVar(array $urlParameters) {
 		$lang = 0;
 		// Setting the language variable based on GETvar in URL which has been configured to carry the language uid:
-		if ($this->conf['languageGetVar'] && isset($this->pObj->orig_paramKeyValues[$this->conf['languageGetVar']])) {
-			$lang = intval($this->pObj->orig_paramKeyValues[$this->conf['languageGetVar']]);
+		if ($this->conf['languageGetVar']) {
+			$lang = 0;
+			if (isset($urlParameters[$this->conf['languageGetVar']])) {
+				$lang = intval($urlParameters[$this->conf['languageGetVar']]);
+			}
+			elseif (isset($this->pObj->orig_paramKeyValues[$this->conf['languageGetVar']])) {
+				$lang = intval($this->pObj->orig_paramKeyValues[$this->conf['languageGetVar']]);
+			}
 
 			// Might be excepted (like you should for CJK cases which does not translate to ASCII equivalents)
 			if (t3lib_div::inList($this->conf['languageExceptionUids'], $lang)) {
