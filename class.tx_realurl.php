@@ -1388,7 +1388,7 @@ class tx_realurl {
 			$suffix = $this->extConf['fileName']['defaultToHTMLsuffixOnPrev'];
 			$suffix = (!$this->isString($suffix, 'defaultToHTMLsuffixOnPrev') ? '.html' : $suffix);
 			if ($suffix == '.' . $extension) {
-				$pathParts[] = urlencode($segment);
+				$pathParts[] = rawurlencode($segment);
 				$this->filePart = '.' . $extension;
 			}
 			else {
