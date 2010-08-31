@@ -2,6 +2,7 @@
 
 	* Fixed forge issue #9285: t3blog problems with RealURL when using file names
 	* Updated copyright information
+	* Removed unused modules
 
 2010-08-30  Dmitry Dulepov  <dmitry@typo3.org>
 
