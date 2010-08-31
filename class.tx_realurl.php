@@ -3,6 +3,7 @@
  *  Copyright notice
  *
  *  (c) 2004 Kasper Skaarhoj (kasper@typo3.com)
+ *  (c) 2005-2010 Dmitry Dulepov (dmitry@typo3.org)
  *  All rights reserved
  *
  *  This script is part of the Typo3 project. The Typo3 project is
