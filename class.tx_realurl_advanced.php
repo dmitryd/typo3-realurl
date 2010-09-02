@@ -210,8 +210,9 @@ class tx_realurl_advanced {
 		$cachedPagePath = false;
 		if (!$this->conf['disablePathCache']) {
 			list($cachedPagePath) = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('pagepath', 'tx_realurl_pathcache',
-							'page_id=' . intval($pageid) . ' AND language_id=' . intval($lang) .
-							' AND rootpage_id=' . intval($this->conf['rootpage_id']).
+							'page_id=' . intval($pageid) .
+							' AND language_id=' . intval($lang) .
+							' AND rootpage_id=' . intval($this->conf['rootpage_id']) .
 							' AND mpvar=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($mpvar, 'tx_realurl_pathcache') .
 							' AND expire=0', '', '', 1);
 		}
@@ -260,7 +261,8 @@ class tx_realurl_advanced {
 		$canCachePaths = !$this->conf['disablePathCache'] && !$this->pObj->isBEUserLoggedIn();
 		$newPathDiffers = ((string)$pagePath !== (string)$cached_pagepath);
 		if ($canCachePaths && $newPathDiffers) {
-			$cacheCondition = 'page_id=' . intval($id) . ' AND language_id=' . intval($langId) .
+			$cacheCondition = 'page_id=' . intval($id) .
+				' AND language_id=' . intval($langId) .
 				' AND rootpage_id=' . intval($this->conf['rootpage_id']) .
 				' AND mpvar=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($mpvar, 'tx_realurl_pathcache');
 
