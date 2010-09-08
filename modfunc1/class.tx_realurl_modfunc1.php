@@ -137,8 +137,9 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 			case 'pathcache':
 				$this->edit_save();
 				$result .= $this->getDepthSelector();
+				$moduleContent .= $this->renderModule($this->initializeTree());
 				$result .= $this->renderSearchForm();
-				$result .= $this->renderModule($this->initializeTree());
+				$result .= $moduleContent;
 				break;
 			case 'encode':
 				$result .= $this->getDepthSelector();
@@ -184,10 +185,13 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 	 * @return void
 	 */
 	protected function addModuleStyles() {
-		$this->pObj->content = str_replace('/*###POSTCSSMARKER###*/','
+		$this->pObj->doc->inDocStyles .= '
 			TABLE.c-list TR TD { white-space: nowrap; vertical-align: top; }
 			TABLE#tx-realurl-pathcacheTable TD { vertical-align: top; }
-		',$this->pObj->content);
+			FIELDSET { border: none; padding: 16px 0; }
+			FIELDSET DIV { clear: left; border-collapse: collapse; margin-bottom: 5px; }
+			FIELDSET DIV LABEL { display: block; float: left; width: 100px; }
+		';
 	}
 
 
@@ -549,47 +553,97 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 	 */
 	function renderSearchForm()	{
 
-		$output.= '<br/>';
-		$output.= '<br/>';
+		$output = '<fieldset>';
+		$output .= $this->getLanguageSelector();
+		$output .= $this->getSearchField();
+		$output .= $this->getReplaceAndDeleteFields();
 
-			// Language selector:
-		$sys_languages = t3lib_BEfunc::getRecordsByField('sys_language','pid',0,'','','title');
+		$output.= '<input type="hidden" name="id" value="' . $this->pObj->id . '" />';
+		$output.= '</fieldset>';
 
-		// Masi: fix if no sys_language records defined
-		if (!is_array($sys_languages)) {
-			$sys_languages = array();
+		return $output;
+	}
+
+	/**
+	 * Obtains fields for replace/delete.
+	 *
+	 * @return string
+	 */
+	private function getReplaceAndDeleteFields() {
+		$output = '';
+
+		if ($this->searchResultCounter && !t3lib_div::_POST('_replace') && !t3lib_div::_POST('_delete'))	{
+			$output .= '<div><label for="pathPrefixReplace">Replace with:</label> <input type="text" name="pathPrefixReplace" value="'.htmlspecialchars(t3lib_div::_GP('pathPrefixSearch')).'" />';
+			$output .= '<input type="submit" name="_replace" value="Replace" /> or <input type="submit" name="_delete" value="Delete" /></div>';
+			$output .= '<div><b>'.sprintf('Found: %d result(s).',$this->searchResultCounter).'</b></div>';
 		}
-		array_unshift($sys_languages, array('uid' => 0, 'title' => 'Default'));
-		array_unshift($sys_languages, array('uid' => '', 'title' => 'All'));
+		return $output;
+	}
+
+	/**
+	 * Enter description here ...
+	 * @param output
+	 */
+	protected function getSearchField() {
+		$output = '<div><label for="pathPrefixSearch">' . $GLOBALS['LANG']->getLL('search_path', true) .
+			'</label> <input type="text" name="pathPrefixSearch" value="' .
+				htmlspecialchars(t3lib_div::_GP('pathPrefixSearch')).'" />' .
+			'<input type="submit" name="_" value="' .
+				$GLOBALS['LANG']->getLL('look_up', true) . '" />' .
+			'</div>';
+
+		return $output;
+	}
+
+
+	/**
+	 * Generates language selector.
+	 *
+	 * @return string
+	 */
+	protected function getLanguageSelector() {
+		$languages = $this->getSystemLanguages();
 
 		$options = array();
 		$showLanguage = t3lib_div::_GP('showLanguage');
-		foreach ($sys_languages as $record)	{
-			$selected = $showLanguage === $record['uid'] ? ' selected="selected"' : '';
-			$options[] = '
-				<option value="' . $record['uid'] . '"' . $selected . '>' .
-				htmlspecialchars($record['title'].' ['.$record['uid'].']').'</option>';
+		foreach ($languages as $language) {
+			$selected = $showLanguage === $language['uid'] ? ' selected="selected"' : '';
+			$options[] = '<option value="' . $language['uid'] . '"' . $selected . '>' .
+				htmlspecialchars($language['title']) . '</option>';
 		}
 
-		$output.= 'Language: <select name="showLanguage">'.implode('', $options).'</select><br /><br />';
+		return '<div><label for="showLanguage">' . $GLOBALS['LANG']->getLL('language', true) .
+			'</label> <select name="showLanguage">' . implode('', $options).'</select></div>';
+	}
 
-			// Search path:
-		$output.= 'Path: <input type="text" name="pathPrefixSearch" value="'.htmlspecialchars(t3lib_div::_GP('pathPrefixSearch')).'" />';
-		$output.= '<input type="submit" name="_" value="Look up" />';
-		$output.= '<br/>';
+	/**
+	 * Enter description here ...
+	 */
+	protected function getSystemLanguages() {
+		$languages = (array)t3lib_BEfunc::getRecordsByField('sys_language','pid',0,'','','title');
 
-			// Search / Replace part:
-		if ($this->searchResultCounter && !t3lib_div::_POST('_replace') && !t3lib_div::_POST('_delete'))	{
-			$output.= '<br/><b>'.sprintf('%s results found.',$this->searchResultCounter).'</b><br/>';
-			$output.= 'Replace with: <input type="text" name="pathPrefixReplace" value="'.htmlspecialchars(t3lib_div::_GP('pathPrefixSearch')).'" />';
-			$output.= '<input type="submit" name="_replace" value="Replace" /> - <input type="submit" name="_delete" value="Delete" /><br/>';
+		$defaultLanguageLabel = $this->getDefaultLanguageName();
+
+		array_unshift($languages, array('uid' => 0, 'title' => $defaultLanguageLabel));
+		array_unshift($languages, array('uid' => '', 'title' => $GLOBALS['LANG']->getLL('all_languages')));
+
+		return $languages;
+	}
+
+	/**
+	 * Obtains the name of the default language.
+	 *
+	 * @return string
+	 */
+	protected function getDefaultLanguageName() {
+		$tsConfig = t3lib_BEfunc::getPagesTSconfig($this->pObj->id);
+		if (isset($tsConfig['mod.']['SHARED.']['defaultLanguageLabel'])) {
+			$label = $tsConfig['mod.']['SHARED.']['defaultLanguageLabel'];
 		}
-
-			// Hidden fields:
-		$output.= '<input type="hidden" name="id" value="'.htmlspecialchars($this->pObj->id).'" />';
-		$output.= '<br/>';
-
-		return $output;
+		else {
+			$label = $GLOBALS['LANG']->getLL('default_language');
+		}
+		return $label;
 	}
 
 	/**

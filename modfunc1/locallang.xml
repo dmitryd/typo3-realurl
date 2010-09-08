@@ -11,6 +11,11 @@
             <label index="no_page_id">Please, select a page from the page tree.</label>
             <label index="depth">Depth:</label>
             <label index="function">Show:</label>
+            <label index="default_language">Default</label>
+            <label index="all_languages">All</label>
+            <label index="language">Language:</label>
+            <label index="search_path">Path:</label>
+            <label index="look_up">Look up</label>
         </languageKey>
     </data>
 </T3locallang>
