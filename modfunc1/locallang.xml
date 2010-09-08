@@ -7,7 +7,7 @@
     </meta>
     <data type="array">
         <languageKey index="default" type="array">
-            <label index="title">RealURL Management</label>
+            <label index="title">Speaking URL Management</label>
             <label index="no_page_id">Please, select a page from the page tree.</label>
             <label index="depth">Depth:</label>
             <label index="function">Show:</label>
@@ -17,6 +17,7 @@
             <label index="search_path">Path:</label>
             <label index="look_up">Look up</label>
             <label index="show_all">Show all</label>
+            <label index="displaying_results">Results %1$d-%2$d of %3$d</label>
         </languageKey>
     </data>
 </T3locallang>

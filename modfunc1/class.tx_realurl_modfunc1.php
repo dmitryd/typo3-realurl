@@ -68,6 +68,7 @@ require_once(PATH_t3lib.'class.t3lib_pagetree.php');
 require_once(PATH_t3lib.'class.t3lib_extobjbase.php');
 
 $GLOBALS['LANG']->includeLLfile('EXT:realurl/modfunc1/locallang.xml');
+require_once(t3lib_extMgm::extPath('realurl', 'modfunc1/class.tx_realurl_pagebrowser.php'));
 
 /**
  * Speaking Url management extension
@@ -191,7 +192,7 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 			FIELDSET { border: none; padding: 16px 0; }
 			FIELDSET DIV { clear: left; border-collapse: collapse; margin-bottom: 5px; }
 			FIELDSET DIV LABEL { display: block; float: left; width: 100px; }
-		';
+		' . tx_realurl_pagebrowser::getInlineStyles();
 	}
 
 
@@ -1494,7 +1495,7 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 
 	protected function getRedirectsSearch() {
 		$result .= $this->getSearchField();
-		if (t3lib_div::_POST('pathPrefixSearch')) {
+		if (t3lib_div::_GP('pathPrefixSearch')) {
 			$result .= ' <input type="reset" name="_" value="' .
 				$GLOBALS['LANG']->getLL('show_all', true) . '" ' .
 				'onclick="document.getElementById(\'pathPrefixSearch\').value=\'\';document.forms[0].submit()" ' .
@@ -1515,8 +1516,10 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 	protected function getRedirectsTableContent($sortingParameter, $sortingDirection) {
 		$itemCounter = 0;
 
+		$page = max(1, intval(t3lib_div::_GP('page')));
+
 		$condition = '';
-		$seachPath = t3lib_div::_POST('pathPrefixSearch');
+		$seachPath = t3lib_div::_GP('pathPrefixSearch');
 		if ($seachPath) {
 			$seachPath = $GLOBALS['TYPO3_DB']->quoteStr(
 				$GLOBALS['TYPO3_DB']->escapeStrForLike($seachPath, 'tx_realurl_redirects'),
@@ -1524,8 +1527,12 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 			$condition = 'url LIKE \'%' . $seachPath . '%\' OR ' .
 				'destination LIKE \'%' . $seachPath . '%\'';
 		}
+
+		$start = ($page-1)*tx_realurl_pagebrowser::RESULTS_PER_PAGE;
 		$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery(
-			'*', 'tx_realurl_redirects', $condition, $sortingParameter . ' ' . $sortingDirection
+			'*', 'tx_realurl_redirects', $condition, $sortingParameter . ' ' . $sortingDirection,
+			'',
+			$start . ',' . tx_realurl_pagebrowser::RESULTS_PER_PAGE
 		);
 		while (false !== ($rec = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res))) {
 			$output .= '<tr class="bgColor'.($itemCounter%2 ? '-20':'-10').'">' .
@@ -1533,6 +1540,20 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 			$itemCounter++;
 		}
 		$GLOBALS['TYPO3_DB']->sql_free_result($res);
+
+		list($count) = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows(
+			'COUNT(*) AS t', 'tx_realurl_redirects', $condition);
+		$totalResults = $count['t'];
+		if ($totalResults > tx_realurl_pagebrowser::RESULTS_PER_PAGE) {
+			$pageBrowser = t3lib_div::makeInstance('tx_realurl_pagebrowser');
+			/* @var $pageBrowser tx_realurl_pagebrowser */
+			$results = sprintf($GLOBALS['LANG']->getLL('displaying_results'),
+				$start + 1, min($totalResults, ($start + tx_realurl_pagebrowser::RESULTS_PER_PAGE)), $totalResults);
+			$output .= '<tr><td colspan="4" style="vertical-align:middle">' . $results . '</td>' .
+				'<td colspan="4" style="text-align: right">' . $pageBrowser->getPageBrowser($totalResults) . '</td></tr>';
+		}
+
+		$output .= '</table>';
 
 		return $output;
 	}

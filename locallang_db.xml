@@ -12,7 +12,7 @@
 			<label index="pages.tx_realurl_pathsegment">Speaking URL path segment:</label>
 			<label index="pages.tx_realurl_exclude">Exclude from speaking URL:</label>
 			<label index="pages.tx_realurl_nocache">Disable RealURL cache</label>
-			<label index="moduleFunction.tx_realurl_modfunc1">Speaking Url Management</label>
+			<label index="moduleFunction.tx_realurl_modfunc1">Speaking URL Management</label>
 		</languageKey>
 	</data>
 	<orig_hash type="array">

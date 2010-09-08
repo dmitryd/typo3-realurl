@@ -2,6 +2,7 @@
 
 	* Refactoring modfunc1/index.php
 	* Refactor redirect view and add search to it
+	* Added a page browser to the redirect view
 
 2010-08-31  Dmitry Dulepov  <dmitry@typo3.org>
 
