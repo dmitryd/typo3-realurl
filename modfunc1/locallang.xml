@@ -16,6 +16,7 @@
             <label index="language">Language:</label>
             <label index="search_path">Path:</label>
             <label index="look_up">Look up</label>
+            <label index="show_all">Show all</label>
         </languageKey>
     </data>
 </T3locallang>

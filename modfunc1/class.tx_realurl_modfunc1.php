@@ -514,7 +514,7 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 
 			// Traverse result:
 		$output = array();
-		while($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res))	{
+		while (false != ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res))) {
 
 				// Delete entries:
 			if ($cmd==='delete' && (!strcmp($entry,$row['cache_id']) || !strcmp($entry,'ALL')))	{
@@ -532,6 +532,7 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 				$output[] = $row;
 			}
 		}
+		$GLOBALS['TYPO3_DB']->sql_free_result($res);
 
 		return $output;
 	}
@@ -555,7 +556,7 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 
 		$output = '<fieldset>';
 		$output .= $this->getLanguageSelector();
-		$output .= $this->getSearchField();
+		$output .= '<div>' . $this->getSearchField() . '</div>';
 		$output .= $this->getReplaceAndDeleteFields();
 
 		$output.= '<input type="hidden" name="id" value="' . $this->pObj->id . '" />';
@@ -585,12 +586,11 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 	 * @param output
 	 */
 	protected function getSearchField() {
-		$output = '<div><label for="pathPrefixSearch">' . $GLOBALS['LANG']->getLL('search_path', true) .
-			'</label> <input type="text" name="pathPrefixSearch" value="' .
+		$output = '<label for="pathPrefixSearch">' . $GLOBALS['LANG']->getLL('search_path', true) .
+			'</label> <input type="text" name="pathPrefixSearch" id="pathPrefixSearch" value="' .
 				htmlspecialchars(t3lib_div::_GP('pathPrefixSearch')).'" />' .
 			'<input type="submit" name="_" value="' .
-				$GLOBALS['LANG']->getLL('look_up', true) . '" />' .
-			'</div>';
+				$GLOBALS['LANG']->getLL('look_up', true) . '" />';
 
 		return $output;
 	}
@@ -617,7 +617,9 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 	}
 
 	/**
-	 * Enter description here ...
+	 * Obtains system languages.
+	 *
+	 * @return array
 	 */
 	protected function getSystemLanguages() {
 		$languages = (array)t3lib_BEfunc::getRecordsByField('sys_language','pid',0,'','','title');
@@ -1479,102 +1481,164 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 	function redirectView()	{
 
 		$output = $this->pObj->doc->spacer(12);
+		$output .= $this->processRedirectActions();
 
-		// Dispatch actions
+		list($sortingParameter, $sortingDirection) = $this->getRedirectViewSortingParameters();
+
+		$output .= $this->getRedirectsSearch();
+		$output .= $this->getRedirectViewHeader($sortingDirection);
+		$output .= $this->getRedirectsTableContent($sortingParameter, $sortingDirection);
+
+		return $output;
+	}
+
+	protected function getRedirectsSearch() {
+		$result .= $this->getSearchField();
+		if (t3lib_div::_POST('pathPrefixSearch')) {
+			$result .= ' <input type="reset" name="_" value="' .
+				$GLOBALS['LANG']->getLL('show_all', true) . '" ' .
+				'onclick="document.getElementById(\'pathPrefixSearch\').value=\'\';document.forms[0].submit()" ' .
+				'/>';
+		}
+		$result .= '<input type="hidden" name="id" value="' . $this->pObj->id . '" />';
+
+		return $result;
+	}
+
+	/**
+	 * Creates a list of redirect entries.
+	 *
+	 * @param string $sortingParameter
+	 * @param string $sortingDirection
+	 * @return string
+	 */
+	protected function getRedirectsTableContent($sortingParameter, $sortingDirection) {
+		$itemCounter = 0;
+
+		$condition = '';
+		$seachPath = t3lib_div::_POST('pathPrefixSearch');
+		if ($seachPath) {
+			$seachPath = $GLOBALS['TYPO3_DB']->quoteStr(
+				$GLOBALS['TYPO3_DB']->escapeStrForLike($seachPath, 'tx_realurl_redirects'),
+				'tx_realurl_redirects');
+			$condition = 'url LIKE \'%' . $seachPath . '%\' OR ' .
+				'destination LIKE \'%' . $seachPath . '%\'';
+		}
+		$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery(
+			'*', 'tx_realurl_redirects', $condition, $sortingParameter . ' ' . $sortingDirection
+		);
+		while (false !== ($rec = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res))) {
+			$output .= '<tr class="bgColor'.($itemCounter%2 ? '-20':'-10').'">' .
+				$this->generateSingleRedirectContent($rec);
+			$itemCounter++;
+		}
+		$GLOBALS['TYPO3_DB']->sql_free_result($res);
+
+		return $output;
+	}
+
+	/**
+	 * Creates an HTML table row for a single redirect record.
+	 *
+	 * @param array $rec
+	 * @return string
+	 */
+	protected function generateSingleRedirectContent(array $rec) {
+		$output = '<td>'.
+					'<a href="'.$this->linkSelf('&cmd=edit&url=' . rawurlencode($rec['url'])) .'">'.
+					'<img'.t3lib_iconWorks::skinImg($this->pObj->doc->backPath,'gfx/edit2.gif','width="11" height="12"').' title="Edit entry" alt="" />'.
+					'</a>'.
+					'<a href="'.$this->linkSelf('&cmd=delete&url=' . rawurlencode($rec['url'])) . '">'.
+					'<img'.t3lib_iconWorks::skinImg($this->pObj->doc->backPath,'gfx/garbage.gif','width="11" height="12"').' title="Delete entry" alt="" />'.
+					'</a>'.
+				'</td>';
+		$output .= sprintf( '<td><a href="%s" target="_blank">/%s</a></td>', htmlspecialchars(t3lib_div::getIndpEnv('TYPO3_SITE_URL').$rec['url']), htmlspecialchars($rec['url']) );
+		$destinationURL = $this->getDestinationRedirectURL($rec['destination']);
+		$output .= sprintf( '<td><a href="%1$s" target="_blank" title="%1$s">%2$s</a></td>', htmlspecialchars($destinationURL), htmlspecialchars(t3lib_div::fixed_lgd_cs($destinationURL, 30)));
+		$output .= '<td align="center">'.($rec['has_moved'] ? '+' : '&nbsp;').'</td>';
+		$output .= '<td align="center">'.$rec['counter'].'</td>';
+
+		if ($rec['tstamp']) {
+			$output .= '<td>' . t3lib_BEfunc::dateTimeAge($rec['tstamp']) . '</td>';
+		}
+		else {
+			$output .= '<td align="center">&mdash;</td>';
+		}
+
+		if ($rec['last_referer']) {
+			$lastRef = htmlspecialchars($rec['last_referer']);
+			$output .= sprintf( '<td><a href="%s" target="_blank" title="%s">%s</a></td>', $lastRef, $lastRef, (strlen($rec['last_referer']) > 30) ? htmlspecialchars(substr($rec['last_referer'], 0, 30)) . '...' : $lastRef);
+		}
+		else {
+			$output .= '<td>&nbsp;</td>';
+		}
+
+		// Error:
+		$errorMessage = '';
+		$pagesWithURL = array_keys($GLOBALS['TYPO3_DB']->exec_SELECTgetRows('page_id','tx_realurl_urlencodecache','content='.$GLOBALS['TYPO3_DB']->fullQuoteStr($rec['url'],'tx_realurl_urlencodecache'), '', '', '', '', 'page_id'));
+		if (count($pagesWithURL) > 0) {
+			$errorMessage.= $this->pObj->doc->icons(3).'Also a page URL: '.implode(',',array_unique($pagesWithURL));
+		}
+		$output .='<td>'.$errorMessage.'</td>';
+
+		return $output;
+	}
+
+
+	/**
+	 * Creates a header for the redirects table.
+	 *
+	 * @return string
+	 */
+	protected function getRedirectViewHeader($sortingDirection) {
+		return '<table border="0" cellspacing="2" cellpadding="2" id="tx-realurl-pathcacheTable" class="lrPadding c-list">'.
+			'<tr class="bgColor5 tableheader">' .
+			'<td>&nbsp;</td>' .
+			sprintf('<td><a href="%s">Source:</a></td>', sprintf('index.php?id=%d&SET[type]=%s&SET[ob]=url&SET[obdir]=%s', $this->pObj->id, $this->pObj->MOD_SETTINGS['type'], $sortingDirection)) .
+			sprintf('<td><a href="%s">Redirect to:</a></td>', sprintf('index.php?id=%d&SET[type]=%s&SET[ob]=destination&SET[obdir]=%s', $this->pObj->id, $this->pObj->MOD_SETTINGS['type'], $sortingDirection)) .
+			sprintf('<td><a href="%s">Permanent:</a></td>', sprintf('index.php?id=%d&SET[type]=%s&SET[ob]=has_moved&SET[obdir]=%s', $this->pObj->id, $this->pObj->MOD_SETTINGS['type'], $sortingDirection)) .
+			sprintf('<td><a href="%s">Hits:</a></td>', sprintf('index.php?id=%d&SET[type]=%s&SET[ob]=counter&SET[obdir]=%s', $this->pObj->id, $this->pObj->MOD_SETTINGS['type'], $sortingDirection)) .
+			'<td>Last hit time:</td>' .
+			sprintf('<td><a href="%s">Last referer:</a></td>', sprintf('index.php?id=%d&SET[type]=%s&SET[ob]=last_referer&SET[obdir]=%s', $this->pObj->id, $this->pObj->MOD_SETTINGS['type'], $sortingDirection)) .
+			'<td>Errors:</td></tr>';
+	}
+
+
+	/**
+	 * Creates sorting parameters for the redirect view.
+	 *
+	 * @return array
+	 */
+	protected function getRedirectViewSortingParameters() {
+		$gpVars = t3lib_div::_GP('SET');
+		$sortingParameter = isset($gpVars['ob']) ? $gpVars['ob'] : 'url';
+		$sortingDirection = isset($gpVars['obdir']) ? $gpVars['obdir'] : 'ASC';
+
+		return array($sortingParameter, $sortingDirection);
+	}
+
+
+	/**
+	 * Processes redirect view actions according to request parameters.
+	 *
+	 * @return string
+	 */
+	protected function processRedirectActions() {
 		switch (t3lib_div::_GP('cmd')) {
 			case 'new':
 			case 'edit':
-				$output .= $this->getProcessForm();
+				$output = $this->getProcessForm();
 				break;
 			case 'delete':
 				$this->deleteRedirectEntry();
 				// Fall through
 			default:
-				$output .= $this->getNewButton();
+				$output = $this->getNewButton();
 				break;
 		}
-
-		// Sorting
-		$gpVars = t3lib_div::_GP('SET');
-		$this->pObj->MOD_SETTINGS['ob'] = isset($gpVars['ob']) ? $gpVars['ob'] : 'url';
-		$obdir = $this->pObj->MOD_SETTINGS['obdir'] = isset($gpVars['obdir']) ? $gpVars['obdir'] : 'ASC';
-
-		// Create header:
-		$output .= '<h2>Redirects</h2>' .
-			'<table border="0" cellspacing="2" cellpadding="2" id="tx-realurl-pathcacheTable" class="lrPadding c-list">'.
-			'<tr class="bgColor5 tableheader">' .
-			'<td>&nbsp;</td>' .
-			sprintf('<td><a href="%s">Source:</a></td>', sprintf('index.php?id=%d&SET[type]=%s&SET[ob]=url&SET[obdir]=%s', $this->pObj->id, $this->pObj->MOD_SETTINGS['type'], $obdir)) .
-			sprintf('<td><a href="%s">Redirect to:</a></td>', sprintf('index.php?id=%d&SET[type]=%s&SET[ob]=destination&SET[obdir]=%s', $this->pObj->id, $this->pObj->MOD_SETTINGS['type'], $obdir)) .
-			sprintf('<td><a href="%s">Permanent:</a></td>', sprintf('index.php?id=%d&SET[type]=%s&SET[ob]=has_moved&SET[obdir]=%s', $this->pObj->id, $this->pObj->MOD_SETTINGS['type'], $obdir)) .
-			sprintf('<td><a href="%s">Hits:</a></td>', sprintf('index.php?id=%d&SET[type]=%s&SET[ob]=counter&SET[obdir]=%s', $this->pObj->id, $this->pObj->MOD_SETTINGS['type'], $obdir)) .
-			'<td>Last hit time:</td>' .
-			sprintf('<td><a href="%s">Last referer:</a></td>', sprintf('index.php?id=%d&SET[type]=%s&SET[ob]=last_referer&SET[obdir]=%s', $this->pObj->id, $this->pObj->MOD_SETTINGS['type'], $obdir)) .
-			'<td>Errors:</td></tr>';
-
-		// Select all entries
-		$list = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows(
-			'*',
-			'tx_realurl_redirects',
-			'',
-			'',
-			$this->pObj->MOD_SETTINGS['ob'] . ' ' . $this->pObj->MOD_SETTINGS['obdir']
-		);
-
-		if (is_array($list))	{
-			$cc = 0;
-
-			foreach($list as $rec)	{
-
-					// Add data:
-				$tCells = array();
-				$tCells[] = '<td>'.
-							'<a href="'.$this->linkSelf('&cmd=edit&url=' . rawurlencode($rec['url'])) .'">'.
-							'<img'.t3lib_iconWorks::skinImg($this->pObj->doc->backPath,'gfx/edit2.gif','width="11" height="12"').' title="Edit entry" alt="" />'.
-							'</a>'.
-							'<a href="'.$this->linkSelf('&cmd=delete&url=' . rawurlencode($rec['url'])) . '">'.
-							'<img'.t3lib_iconWorks::skinImg($this->pObj->doc->backPath,'gfx/garbage.gif','width="11" height="12"').' title="Delete entry" alt="" />'.
-							'</a>'.
-						'</td>';
-				$tCells[] = sprintf( '<td><a href="%s" target="_blank">/%s</a></td>', htmlspecialchars(t3lib_div::getIndpEnv('TYPO3_SITE_URL').$rec['url']), htmlspecialchars($rec['url']) );
-				$destinationURL = $this->getDestinationRedirectURL($rec['destination']);
-				$tCells[] = sprintf( '<td><a href="%1$s" target="_blank" title="%1$s">%2$s</a></td>', htmlspecialchars($destinationURL), htmlspecialchars(t3lib_div::fixed_lgd_cs($destinationURL, 30)));
-				$tCells[] = '<td align="center">'.($rec['has_moved'] ? '+' : '&nbsp;').'</td>';
-				$tCells[] = '<td align="center">'.$rec['counter'].'</td>';
-
-				if ($rec['tstamp']) {
-					$tCells[] = '<td>' . t3lib_BEfunc::dateTimeAge($rec['tstamp']) . '</td>';
-				}
-				else {
-					$tCells[] = '<td align="center">&mdash;</td>';
-				}
-
-				if ($rec['last_referer']) {
-					$lastRef = htmlspecialchars($rec['last_referer']);
-					$tCells[] = sprintf( '<td><a href="%s" target="_blank" title="%s">%s</a></td>', $lastRef, $lastRef, (strlen($rec['last_referer']) > 30) ? htmlspecialchars(substr($rec['last_referer'], 0, 30)) . '...' : $lastRef);
-				} else {
-					$tCells[] = '<td>&nbsp;</td>';
-				}
-
-				// Error:
-				$eMsg = '';
-				if (($pagesWithUrl = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('page_id','tx_realurl_urlencodecache','content='.$GLOBALS['TYPO3_DB']->fullQuoteStr($rec['url'],'tx_realurl_urlencodecache'))))	{
-					foreach($pagesWithUrl as $k => $temp)	$pagesWithUrl[$k] = $temp['page_id'];
-					$eMsg.= $this->pObj->doc->icons(3).'Also a page URL: '.implode(',',array_unique($pagesWithUrl));
-				}
-				$tCells[]='<td>'.$eMsg.'</td>';
-
-				// Compile Row:
-				$output .= '<tr class="bgColor'.($cc%2 ? '-20':'-10').'">' .
-						implode('',$tCells).'</tr>';
-				$cc++;
-			}
-
-			$output .= '</table>';
-
-			return $output;
-		}
+		return $output;
 	}
+
 
 	/**
 	 * Deletes a redirect entry.
