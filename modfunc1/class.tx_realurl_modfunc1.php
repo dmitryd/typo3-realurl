@@ -67,7 +67,7 @@
 require_once(PATH_t3lib.'class.t3lib_pagetree.php');
 require_once(PATH_t3lib.'class.t3lib_extobjbase.php');
 
-
+$GLOBALS['LANG']->includeLLfile('EXT:realurl/modfunc1/locallang.xml');
 
 /**
  * Speaking Url management extension
@@ -115,94 +115,122 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 	 *
 	 * @return	string		Output HTML for the module.
 	 */
-	function main()	{
-		global $BACK_PATH,$LANG,$SOBE;
-
-		if ($this->pObj->id)	{
-			$theOutput = '';
-
-				// Depth selector:
-			$h_func = t3lib_BEfunc::getFuncMenu($this->pObj->id,'SET[type]',$this->pObj->MOD_SETTINGS['type'],$this->pObj->MOD_MENU['type'],'index.php').'<br/>';
-			if (!t3lib_div::inList('uniqalias,log,redirects', $this->pObj->MOD_SETTINGS['type']))	{
-				$h_func.= t3lib_BEfunc::getFuncMenu($this->pObj->id,'SET[depth]',$this->pObj->MOD_SETTINGS['depth'],$this->pObj->MOD_MENU['depth'],'index.php');
-			}
-			$theOutput.= $h_func;
-
-			if ($this->pObj->MOD_SETTINGS['type']!='uniqalias')	{
-					// Showing the tree:
-					// Initialize starting point of page tree:
-				$treeStartingPoint = intval($this->pObj->id);
-				$treeStartingRecord = t3lib_BEfunc::getRecord('pages', $treeStartingPoint);
-				t3lib_BEfunc::workspaceOL('pages',$treeStartingRecord);
-				$depth = $this->pObj->MOD_SETTINGS['depth'];
-
-					// Initialize tree object:
-				$tree = t3lib_div::makeInstance('t3lib_pageTree');
-				$tree->addField('nav_title',1);
-				$tree->addField('alias',1);
-				$tree->addField('tx_realurl_pathsegment',1);
-				$tree->init('AND '.$GLOBALS['BE_USER']->getPagePermsClause(1));
-
-					// Creating top icon; the current page
-				$HTML = t3lib_iconWorks::getIconImage('pages', $treeStartingRecord, $GLOBALS['BACK_PATH'],'align="top"');
-				$tree->tree[] = array(
-					'row' => $treeStartingRecord,
-					'HTML' => $HTML
-				);
-
-					// Create the tree from starting point:
-				if ($depth>0)	{
-					$tree->getTree($treeStartingPoint, $depth, '');
-				}
-			}
-
-				// Add CSS needed:
-			$this->pObj->content = str_replace('/*###POSTCSSMARKER###*/','
-				TABLE.c-list TR TD { white-space: nowrap; vertical-align: top; }
-				TABLE#tx-realurl-pathcacheTable TD { vertical-align: top; }
-			',$this->pObj->content);
-
-
-				// Branching:
-			switch($this->pObj->MOD_SETTINGS['type'])	{
-				case 'pathcache':
-
-						// Save editing if any:
-					$this->edit_save();
-
-						// Render information table:
-					$treeHTML = $this->renderModule($tree);
-
-						// Render Search Form:
-					$theOutput.= $this->renderSearchForm();
-
-						// Add tree table:
-					$theOutput.= $treeHTML;
-				break;
-				case 'encode':
-					$theOutput.= $this->encodeView($tree);
-				break;
-				case 'decode':
-					$theOutput.= $this->decodeView($tree);
-				break;
-				case 'uniqalias':
-					$this->edit_save_uniqAlias();
-					$theOutput.= $this->uniqueAlias();
-				break;
-				case 'config':
-					$theOutput.= $this->configView();
-				break;
-				case 'redirects':
-					$theOutput.= $this->redirectView();
-				break;
-				case 'log':
-					$theOutput.= $this->logView();
-				break;
-			}
+	function main() {
+		if ($this->pObj->id) {
+			$result = $this->createModuleContentForPage();
+		}
+		else {
+			$result = '<p>' . $GLOBALS['LANG']->getLL('no_page_id') . '</p>';
 		}
 
-		return $theOutput;
+		return $result;
 	}
+	/**
+	 * Enter description here ...
+	 */
+	protected function createModuleContentForPage() {
+		$this->addModuleStyles();
+
+		$result = $this->getFunctionMenu() . ' ';
+
+		switch ($this->pObj->MOD_SETTINGS['type']) {
+			case 'pathcache':
+				$this->edit_save();
+				$result .= $this->getDepthSelector();
+				$result .= $this->renderSearchForm();
+				$result .= $this->renderModule($this->initializeTree());
+				break;
+			case 'encode':
+				$result .= $this->getDepthSelector();
+				$result .= $this->encodeView($this->initializeTree());
+				break;
+			case 'decode':
+				$result .= $this->getDepthSelector();
+				$result .= $this->decodeView($this->initializeTree());
+				break;
+			case 'uniqalias':
+				$this->edit_save_uniqAlias();
+				$result .= $this->uniqueAlias();
+				break;
+			case 'config':
+				$result .= $this->getDepthSelector();
+				$result .= $this->configView();
+				break;
+			case 'redirects':
+				$result .= $this->redirectView();
+				break;
+			case 'log':
+				$result .= $this->logView();
+				break;
+		}
+		return $result;
+	}
+
+	/**
+	 * Obtains function selection menu.
+	 *
+	 * @return string
+	 */
+	protected function getFunctionMenu() {
+		return $GLOBALS['LANG']->getLL('function') . ' ' .
+			t3lib_BEfunc::getFuncMenu($this->pObj->id, 'SET[type]',
+				$this->pObj->MOD_SETTINGS['type'], $this->pObj->MOD_MENU['type'],
+				'index.php');
+	}
+
+	/**
+	 * Adds module-specific styles to the output.
+	 *
+	 * @return void
+	 */
+	protected function addModuleStyles() {
+		$this->pObj->content = str_replace('/*###POSTCSSMARKER###*/','
+			TABLE.c-list TR TD { white-space: nowrap; vertical-align: top; }
+			TABLE#tx-realurl-pathcacheTable TD { vertical-align: top; }
+		',$this->pObj->content);
+	}
+
+
+	/**
+	 * Creates depth selector HTML for the page tree.
+	 *
+	 * @return string
+	 */
+	protected function getDepthSelector() {
+		return $GLOBALS['LANG']->getLL('depth') .
+			t3lib_BEfunc::getFuncMenu($this->pObj->id,'SET[depth]',$this->pObj->MOD_SETTINGS['depth'],$this->pObj->MOD_MENU['depth'],'index.php');
+	}
+
+	/**
+	 * Initializes the page tree.
+	 *
+	 * @return t3lib_pageTree
+	 */
+	protected function initializeTree() {
+		$tree = t3lib_div::makeInstance('t3lib_pageTree');
+		/* @var $tree t3lib_pageTree */
+		$tree->addField('nav_title', true);
+		$tree->addField('alias', true);
+		$tree->addField('tx_realurl_pathsegment', true);
+		$tree->init('AND '.$GLOBALS['BE_USER']->getPagePermsClause(1));
+
+		$treeStartingPoint = intval($this->pObj->id);
+		$treeStartingRecord = t3lib_BEfunc::getRecord('pages', $treeStartingPoint);
+		t3lib_BEfunc::workspaceOL('pages',$treeStartingRecord);
+
+			// Creating top icon; the current page
+		$tree->tree[] = array(
+			'row' => $treeStartingRecord,
+			'HTML' => t3lib_iconWorks::getIconImage('pages', $treeStartingRecord, $GLOBALS['BACK_PATH'], 'align="top"')
+		);
+
+			// Create the tree from starting point:
+		if ($this->pObj->MOD_SETTINGS['depth'] > 0) {
+			$tree->getTree($treeStartingPoint, $this->pObj->MOD_SETTINGS['depth'], '');
+		}
+		return $tree;
+	}
+
 
 
 
@@ -531,17 +559,19 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 		if (!is_array($sys_languages)) {
 			$sys_languages = array();
 		}
-		array_unshift($sys_languages,array('uid' => 0, 'title' => 'Default'));
-		array_unshift($sys_languages,array('uid' => '', 'title' => 'All languages'));
+		array_unshift($sys_languages, array('uid' => 0, 'title' => 'Default'));
+		array_unshift($sys_languages, array('uid' => '', 'title' => 'All'));
 
 		$options = array();
 		$showLanguage = t3lib_div::_GP('showLanguage');
-		foreach($sys_languages as $record)	{
+		foreach ($sys_languages as $record)	{
+			$selected = $showLanguage === $record['uid'] ? ' selected="selected"' : '';
 			$options[] = '
-				<option value="'.htmlspecialchars($record['uid']).'"'.(!strcmp($showLanguage,$record['uid']) ? 'selected="selected"' : '').'>'.htmlspecialchars($record['title'].' ['.$record['uid'].']').'</option>';
+				<option value="' . $record['uid'] . '"' . $selected . '>' .
+				htmlspecialchars($record['title'].' ['.$record['uid'].']').'</option>';
 		}
 
-		$output.= 'Only language: <select name="showLanguage">'.implode('', $options).'</select><br/>';
+		$output.= 'Language: <select name="showLanguage">'.implode('', $options).'</select><br /><br />';
 
 			// Search path:
 		$output.= 'Path: <input type="text" name="pathPrefixSearch" value="'.htmlspecialchars(t3lib_div::_GP('pathPrefixSearch')).'" />';
