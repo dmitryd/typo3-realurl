@@ -2024,7 +2024,7 @@ class tx_realurl {
 	protected function setConfig() {
 
 		// Finding host-name / IP, always in lowercase:
-		$this->hostConfigured = $this->host = strtolower(t3lib_div::getIndpEnv('TYPO3_HOST_ONLY'));
+		$this->hostConfigured = $this->host = $this->getHost();
 
 		$_realurl_conf = (array)@unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['realurl']);
 		// Autoconfiguration
@@ -2071,6 +2071,28 @@ class tx_realurl {
 				unset($this->extConf['pagePath']['rootpage_id']);
 			}
 		}
+	}
+
+	/**
+	 * Determines the current host. Sometimes it is not possible to determine
+	 * that from the environment, so the hook is used to get the host from the
+	 * third-party scripts.
+	 *
+	 * @return string
+	 */
+	protected function getHost() {
+		$host = strtolower((string)t3lib_div::getIndpEnv('TYPO3_HOST_ONLY'));
+
+		if (is_array($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['getHost'])) {
+			$hookParams = array(
+				'host' => &$host,
+			);
+			foreach($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['getHost'] as $userFunc) {
+				t3lib_div::callUserFunction($userFunc, $hookParams, $this);
+			}
+		}
+
+		return $host;
 	}
 
 	/**
