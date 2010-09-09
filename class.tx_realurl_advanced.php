@@ -293,10 +293,14 @@ class tx_realurl_advanced {
 	 * @return	string		The page path
 	 */
 	protected function createPagePathAndUpdateURLCache($id, $mpvar, $lang, $cachedPagePath = '') {
-		// Build the new page path, in the correct language
-		$pagePathRec = $this->IDtoPagePathSegments($id, $mpvar, $lang);
+
+		$pagePathRec = $this->IDtoPagePathOverride($id, $lang);
 		if (!$pagePathRec) {
-			return '__ERROR';
+			// Build the new page path, in the correct language
+			$pagePathRec = $this->IDtoPagePathSegments($id, $mpvar, $lang);
+			if (!$pagePathRec) {
+				return '__ERROR';
+			}
 		}
 
 		$pagePath = $pagePathRec['pagepath'];
