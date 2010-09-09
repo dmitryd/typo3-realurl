@@ -155,100 +155,144 @@ class tx_realurl_advanced {
 	 * @return	void
 	 * @see encodeSpURL_pathFromId()
 	 */
-	protected function IDtoPagePath(&$paramKeyValues, &$pathParts) {
+	protected function IDtoPagePath(array &$paramKeyValues, &$pathParts) {
 
-		// Get page id and remove entry in paramKeyValues:
-		$pageid = $paramKeyValues['id'];
+		$pageId = $paramKeyValues['id'];
 		unset($paramKeyValues['id']);
 
-		// Get MP variable and remove entry in paramKeyValues:
 		$mpvar = $paramKeyValues['MP'];
 		unset($paramKeyValues['MP']);
 
 		// Convert a page-alias to a page-id if needed
-		if (!is_numeric($pageid)) {
-			$pageid = $GLOBALS['TSFE']->sys_page->getPageIdFromAlias($pageid);
-		}
+		$pageId = $this->resolveAlias($pageId);
+		$pageId = $this->resolveShortcuts($pageId);
+		if ($pageId) {
+			// Set error if applicable.
+			if ($this->isExcludedPage($pageId)) {
+				$this->pObj->setEncodeError();
+			}
+			else {
+				$lang = $this->getLanguageVar($paramKeyValues);
+				$cachedPagePath = $this->getPagePathFromCache($pageId, $lang, $mpvar);
 
-		// Fetch pagerecord, resolve shortcuts
-		$page = array();
+				if ($cachedPagePath !== false && !$this->conf['autoUpdatePathCache']) {
+					$pagePath = $cachedPagePath;
+				}
+				else {
+					$pagePath = $this->createPagePathAndUpdateURLCache($pageId,
+						$mpvar, $lang, $cachedPagePath);
+				}
+
+				// Set error if applicable.
+				if ($pagePath === '__ERROR') {
+					$this->pObj->setEncodeError();
+				}
+				else {
+					$this->mergeWithPathParts($pathParts, $pagePath);
+				}
+			}
+		}
+	}
+
+	/**
+	 * If page id is not numeric, try to resolve it from alias.
+	 *
+	 * @param mixed pageId
+	 * @param int
+	 */
+	private function resolveAlias($pageId) {
+		if (!is_numeric($pageId)) {
+			$pageId = $GLOBALS['TSFE']->sys_page->getPageIdFromAlias($pageId);
+		}
+		return $pageId;
+	}
+
+	/**
+	 * Checks if the page should be excluded from processing.
+	 *
+	 * @param int $pageId
+	 * @return boolean
+	 */
+	protected function isExcludedPage($pageId) {
+		return $this->conf['excludePageIds'] && t3lib_div::inList($this->conf['excludePageIds'], $pageId);
+	}
+
+	/**
+	 * Merges the path with existing path parts and creates an array of path
+	 * segments.
+	 *
+	 * @param array $pathParts
+	 * @param string $pagePath
+	 * @return void
+	 */
+	protected function mergeWithPathParts(array &$pathParts, $pagePath) {
+		if (strlen($pagePath)) {
+			$pagePathParts = explode('/', $pagePath);
+			$pathParts = array_merge($pathParts, $pagePathParts);
+		}
+	}
+
+	/**
+	 * Resolves shortcuts if necessary and returns the final destination page id.
+
+	 * @param int pageId
+	 * @return mixed false if not found or int
+	 */
+	protected function resolveShortcuts($pageId) {
+		$disableGroupAccessCheck = ($GLOBALS['TSFE']->config['config']['typolinkLinkAccessRestrictedPages'] ? true : false);
 		$loopCount = 20; // Max 20 shortcuts, to prevent an endless loop
-		while (($pageid > 0) && ($loopCount > 0)) {
+		while ($pageId > 0 && $loopCount > 0) {
 			$loopCount--;
 
-			$disableGroupAccessCheck = ($GLOBALS['TSFE']->config['config']['typolinkLinkAccessRestrictedPages'] ? true : false);
-			$page = $GLOBALS['TSFE']->sys_page->getPage($pageid, $disableGroupAccessCheck);
+			$page = $GLOBALS['TSFE']->sys_page->getPage($pageId, $disableGroupAccessCheck);
 			if (!$page) {
-				$pageid = -1;
+				$pageId = false;
 				break;
 			}
 
 			if (!$this->conf['dontResolveShortcuts'] && $page['doktype'] == 4) {
 				// Shortcut
-				$pageid = $this->resolveShortcut($page, $disableGroupAccessCheck);
+				$pageId = $this->resolveShortcut($page, $disableGroupAccessCheck);
 			}
 			else { // done
-				$pageid = $page['uid'];
+				$pageId = $page['uid'];
 				break;
 			}
 		}
-
-		// The page wasn't found. Just return FALSE, so the calling function can revert to another way to build the link
-		if ($pageid == -1) {
-			return;
-		}
-
-		// Set error if applicable.
-		if ($this->conf['excludePageIds'] && t3lib_div::inList($this->conf['excludePageIds'], $pageid)) {
-			$this->pObj->setEncodeError();
-			return;
-		}
-
-		$lang = $this->getLanguageVar($paramKeyValues);
-
-		// Fetch cached path
-		$cachedPagePath = false;
-		if (!$this->conf['disablePathCache']) {
-			list($cachedPagePath) = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('pagepath', 'tx_realurl_pathcache',
-							'page_id=' . intval($pageid) .
-							' AND language_id=' . intval($lang) .
-							' AND rootpage_id=' . intval($this->conf['rootpage_id']) .
-							' AND mpvar=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($mpvar, 'tx_realurl_pathcache') .
-							' AND expire=0', '', '', 1);
-		}
-
-		// If a cached page path was found, get it now:
-		if (is_array($cachedPagePath) && !$this->conf['autoUpdatePathCache']) {
-			$pagePath = $cachedPagePath['pagepath'];
-		}
-		else {
-			// There's no page path cached yet (or if autoUpdatePathCache is set), just call updateCache() to let it generate and possibly cache the path
-			$pagePath = $this->updateURLCache($pageid, $mpvar, $lang, is_array($cachedPagePath) ? $cachedPagePath['pagepath'] : '');
-		}
-
-		// Set error if applicable.
-		if ($pagePath === '__ERROR') {
-			$this->pObj->setEncodeError();
-			return;
-		}
-
-		// Exploding the path, adding the entries to $pathParts (which is passed by reference and therefore automatically returned to main application)
-		if (strlen($pagePath)) {
-			$pagePath_exploded = explode('/', $pagePath);
-			$pathParts = array_merge($pathParts, $pagePath_exploded);
-		}
+		return $pageId;
 	}
 
 	/**
-	 * Insert into the pathcache, if enabled.
+	 * Retireves page path from cache.
+	 *
+	 * @return mixed Page path (string) or false if not found
+	 */
+	private function getPagePathFromCache($pageid, $lang, $mpvar) {
+		$result = false;
+		if (!$this->conf['disablePathCache']) {
+			list($cachedPagePath) = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('pagepath', 'tx_realurl_pathcache',
+				'page_id=' . intval($pageid) .
+				' AND language_id=' . intval($lang) .
+				' AND rootpage_id=' . intval($this->conf['rootpage_id']) .
+				' AND mpvar=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($mpvar, 'tx_realurl_pathcache') .
+				' AND expire=0', '', '', 1);
+			if (is_array($cachedPagePath)) {
+				$result = $cachedPagePath['pagepath'];
+			}
+		}
+		return $result;
+	}
+
+	/**
+	 * Creates the path and inserts into the path cache (if enabled).
 	 *
 	 * @param	integer		Page id
 	 * @param	string		MP variable string
 	 * @param	integer		Language uid
-	 * @param	string		If set, then a new entry will be inserted ONLY if it is different from $cached_pagepath
+	 * @param	string		If set, then a new entry will be inserted ONLY if it is different from $cachedPagePath
 	 * @return	string		The page path
 	 */
-	protected function updateURLCache($id, $mpvar, $lang, $cached_pagepath = '') {
+	protected function createPagePathAndUpdateURLCache($id, $mpvar, $lang, $cachedPagePath = '') {
 		// Build the new page path, in the correct language
 		$pagePathRec = $this->IDtoPagePathSegments($id, $mpvar, $lang);
 		if (!$pagePathRec) {
@@ -259,7 +303,7 @@ class tx_realurl_advanced {
 		$langId = $pagePathRec['langID'];
 
 		$canCachePaths = !$this->conf['disablePathCache'] && !$this->pObj->isBEUserLoggedIn();
-		$newPathDiffers = ((string)$pagePath !== (string)$cached_pagepath);
+		$newPathDiffers = ((string)$pagePath !== (string)$cachedPagePath);
 		if ($canCachePaths && $newPathDiffers) {
 			$cacheCondition = 'page_id=' . intval($id) .
 				' AND language_id=' . intval($langId) .
