@@ -1,6 +1,8 @@
 2010-09-09  Dmitry Dulepov  <dmitry@typo3.org>
 
 	* Added database fields for overriding path segment completely
+	* Fixed bug #15665: Method to manually set the host during URL encoding
+	* Fixed bug #15602: key is too long
 
 2010-09-08  Dmitry Dulepov  <dmitry@typo3.org>
 
