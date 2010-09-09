@@ -679,7 +679,7 @@ class tx_realurl_advanced {
 	 * @param	array		Array with the current pid/mpvar to return if no processing is done.
 	 * @return	array		With resolved id and $mpvar
 	 */
-	protected function searchTitle( $pid, $mpvar, &$urlParts, $currentIdMp = '', $foundUID = false) {
+	protected function searchTitle($pid, $mpvar, &$urlParts, $currentIdMp = '', $foundUID = false) {
 
 		// Creating currentIdMp variable if not set:
 		if (!is_array($currentIdMp)) {
@@ -699,14 +699,14 @@ class tx_realurl_advanced {
 
 		// If a title was found...
 		if ($uid) {
-			return $this->searchTitle_processResult( $row, $mpvar, $urlParts, true);
+			return $this->searchTitle_processResult($row, $mpvar, $urlParts, true);
 		}
 		elseif (count($exclude)) {
 			// There were excluded pages, we have to process those!
 			foreach ($exclude as $row) {
 				$urlParts_copy = $urlParts;
 				array_unshift($urlParts_copy, $title);
-				$result = $this->searchTitle_processResult( $row, $mpvar, $urlParts_copy, false);
+				$result = $this->searchTitle_processResult($row, $mpvar, $urlParts_copy, false);
 				if ($result[2]) {
 					$urlParts = $urlParts_copy;
 					return $result;
