@@ -647,7 +647,10 @@ class tx_realurl_advanced {
 		$startPid = $this->getRootPid();
 
 		if ($startPid && count($urlParts)) {
-			list($id, $mpvar) = $this->findIDBySegment($startPid, '', $urlParts);
+			list($id, $mpvar) = $this->findIDByPathOverride($startPid, $urlParts);
+			if ($id == 0) {
+				list($id, $mpvar) = $this->findIDBySegment($startPid, '', $urlParts);
+			}
 			if ($mpvar) {
 				$GET_VARS = array('MP' => $mpvar);
 			}
@@ -669,6 +672,78 @@ class tx_realurl_advanced {
 			$startPid = $this->pObj->findRootPageId();
 		}
 		return intval($startPid);
+	}
+
+	/**
+	 * Attempts to find the page inside the root page that has a path override
+	 * that fits into the passed segments.
+	 *
+	 * @param int $rootPid
+	 * @param array $urlParts
+	 * @return array Key 0 is pid (or 0), key 2 is empty string
+	 */
+	protected function findIDByPathOverride($rootPid, array &$urlParts) {
+		$pageInfo = array(0, '');
+		$extraUrlSegments = array();
+		while (count($urlParts) > 0) {
+			// Search for the path inside the root page
+			$url = implode('/', $urlParts);
+			$pageInfo = $this->findPageByPath($rootPid, $url);
+			if ($pageInfo[0]) {
+				break;
+			}
+
+			// Not found, try smaller segment
+			array_unshift($extraUrlSegments, array_pop($urlParts));
+		}
+		$urlParts = $extraUrlSegments;
+		return $pageInfo;
+	}
+
+	/**
+	 * Attempts to find the page inside the root page that has the given path.
+	 *
+	 * @param int $rootPid
+	 * @param string $url
+	 * @return array Key 0 is pid (or 0), key 2 is empty string
+	 */
+	protected function findPageByPath($rootPid, $url) {
+		$pages = $this->fetchPagesForPath($url);
+		foreach ($pages as $page) {
+			if ($this->isAnyChildOf($page['pid'], $rootPid)) {
+				return array($page['uid'], '');
+			}
+		}
+		return array(0, '');
+	}
+
+	/**
+	 * Checks if the the page is any child of the root page.
+	 *
+	 * @param int $pid
+	 * @param int $rootPid
+	 */
+	protected function isAnyChildOf($pid, $rootPid) {
+		$this->createSysPageIfNecessary();
+		$rootLine = $this->sysPage->getRootLine($pid);
+		foreach ($rootLine as $page) {
+			if ($page['uid'] == $rootPid) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Fetches a list of pages (uid,pid) for path.
+	 *
+	 * @param string $url
+	 * @return array
+	 */
+	protected function fetchPagesForPath($url) {
+		return $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('uid,pid', 'pages',
+			'hidden=0 AND deleted=0 AND tx_realurl_pathsegment=' .
+				$GLOBALS['TYPO3_DB']->fullQuoteStr($url, 'pages'));
 	}
 
 
