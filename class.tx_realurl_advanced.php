@@ -626,12 +626,8 @@ class tx_realurl_advanced {
 			$GET_VARS = $row['mpvar'] ? array('MP' => $row['mpvar']) : '';
 		}
 		else {
-
 			// Find it
-			list($info, $GET_VARS) = $this->findIDByURL($pathParts);
-
-			// Setting id:
-			$id = ($info['id'] ? $info['id'] : 0);
+			list($id, $GET_VARS) = $this->findIDByURL($pathParts);
 		}
 
 		// Return found ID:
@@ -644,31 +640,37 @@ class tx_realurl_advanced {
 	 * @param	array		Path parts, passed by reference.
 	 * @return	array		Info array, currently with "id" set to the ID.
 	 */
-	protected function findIDByURL(&$urlParts) {
+	protected function findIDByURL(array &$urlParts) {
 
-		// Initialize:
-		$info = array();
-		$info['id'] = 0;
+		$id = 0;
 		$GET_VARS = '';
+		$startPid = $this->getRootPid();
 
-		// Find the PID where to begin the resolve:
-		if ($this->conf['rootpage_id']) { // Take PID from rootpage_id if any:
-			$pid = intval($this->conf['rootpage_id']);
-		}
-		else {
-			$pid = $this->pObj->findRootPageId();
-		}
-
-		// Now, recursively search for the path from this root (if there are any elements in $urlParts)
-		if ($pid && count($urlParts)) {
-			list($info['id'], $mpvar) = $this->searchTitle($pid, '', $urlParts);
+		if ($startPid && count($urlParts)) {
+			list($id, $mpvar) = $this->findIDBySegment($startPid, '', $urlParts);
 			if ($mpvar) {
 				$GET_VARS = array('MP' => $mpvar);
 			}
 		}
 
-		return array($info, $GET_VARS);
+		return array(intval($id), $GET_VARS);
 	}
+
+	/**
+	 * Obtains root page id for the current request.
+	 *
+	 * @return int
+	 */
+	protected function getRootPid() {
+		if ($this->conf['rootpage_id']) { // Take PID from rootpage_id if any:
+			$startPid = intval($this->conf['rootpage_id']);
+		}
+		else {
+			$startPid = $this->pObj->findRootPageId();
+		}
+		return intval($startPid);
+	}
+
 
 	/**
 	 * Recursively search the subpages of $pid for the first part of $urlParts
@@ -679,11 +681,11 @@ class tx_realurl_advanced {
 	 * @param	array		Array with the current pid/mpvar to return if no processing is done.
 	 * @return	array		With resolved id and $mpvar
 	 */
-	protected function searchTitle($pid, $mpvar, &$urlParts, $currentIdMp = '', $foundUID = false) {
+	protected function findIDBySegment($startPid, $mpvar, array &$urlParts, $currentIdMp = '', $foundUID = false) {
 
 		// Creating currentIdMp variable if not set:
 		if (!is_array($currentIdMp)) {
-			$currentIdMp = array( $pid, $mpvar, $foundUID);
+			$currentIdMp = array($startPid, $mpvar, $foundUID);
 		}
 
 		// No more urlparts? Return what we have.
@@ -692,29 +694,29 @@ class tx_realurl_advanced {
 		}
 
 		// Get the title we need to find now:
-		$title = array_shift($urlParts);
+		$segment = array_shift($urlParts);
 
 		// Perform search:
-		list($uid, $row, $exclude) = $this->searchTitle_searchPid($pid, $title);
+		list($uid, $row, $exclude) = $this->findPageBySegmentAndPid($startPid, $segment);
 
 		// If a title was found...
 		if ($uid) {
-			return $this->searchTitle_processResult($row, $mpvar, $urlParts, true);
+			return $this->processFoundPage($row, $mpvar, $urlParts, true);
 		}
 		elseif (count($exclude)) {
 			// There were excluded pages, we have to process those!
 			foreach ($exclude as $row) {
-				$urlParts_copy = $urlParts;
-				array_unshift($urlParts_copy, $title);
-				$result = $this->searchTitle_processResult($row, $mpvar, $urlParts_copy, false);
+				$urlPartsCopy = $urlParts;
+				array_unshift($urlPartsCopy, $segment);
+				$result = $this->processFoundPage($row, $mpvar, $urlPartsCopy, false);
 				if ($result[2]) {
-					$urlParts = $urlParts_copy;
+					$urlParts = $urlPartsCopy;
 					return $result;
 				}
 			}
 		}
 		// No title, so we reached the end of the id identifying part of the path and now put back the current non-matched title segment before we return the PID:
-		array_unshift($urlParts, $title);
+		array_unshift($urlParts, $segment);
 		return $currentIdMp;
 	}
 
@@ -726,8 +728,9 @@ class tx_realurl_advanced {
 	 * @param	array	$mpvar	MP var
 	 * @param	array	$urlParts	URL segments
 	 * @return	array	Resolved id and mpvar
+	 * @see findPageBySegment()
 	 */
-	protected function searchTitle_processResult($row, $mpvar, &$urlParts, $foundUID) {
+	protected function processFoundPage($row, $mpvar, array &$urlParts, $foundUID) {
 		$uid = $row['uid'];
 		// Set base currentIdMp for next level:
 		$currentIdMp = array( $uid, $mpvar, $foundUID);
@@ -744,7 +747,7 @@ class tx_realurl_advanced {
 		}
 
 		// Yep, go search for the next subpage
-		return $this->searchTitle($uid, $mpvar, $urlParts, $currentIdMp, $foundUID);
+		return $this->findIDBySegment($uid, $mpvar, $urlParts, $currentIdMp, $foundUID);
 	}
 
 	/**
@@ -754,9 +757,9 @@ class tx_realurl_advanced {
 	 * @param	string		Title to search for
 	 * @return	array		First entry is uid, second entry is the row selected, including information about the page as a mount point.
 	 * @access private
-	 * @see searchTitle()
+	 * @see findPageBySegment()
 	 */
-	protected function searchTitle_searchPid($searchPid, $title) {
+	protected function findPageBySegmentAndPid($searchPid, $title) {
 
 		// List of "pages" fields to traverse for a "directory title" in the speaking URL (only from RootLine!!):
 		$segTitleFieldList = $this->conf['segTitleFieldList'] ? $this->conf['segTitleFieldList'] : TX_REALURL_SEGTITLEFIELDLIST_DEFAULT;
