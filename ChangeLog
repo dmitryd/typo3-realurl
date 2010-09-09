@@ -1,3 +1,7 @@
+2010-09-09  Dmitry Dulepov  <dmitry@typo3.org>
+
+	* Added database fields for overriding path segment completely
+
 2010-09-08  Dmitry Dulepov  <dmitry@typo3.org>
 
 	* Refactoring modfunc1/index.php
