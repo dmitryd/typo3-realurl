@@ -1571,7 +1571,7 @@ class tx_realurl {
 	 * @param	string		Message string
 	 * @return	void
 	 */
-	protected function decodeSpURL_throw404($msg) {
+	public function decodeSpURL_throw404($msg) {
 
 		// Log error:
 		if (!$this->extConf['init']['disableErrorLog']) {
