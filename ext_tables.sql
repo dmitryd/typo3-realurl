@@ -111,16 +111,17 @@ CREATE TABLE tx_realurl_redirects (
 # Modifying pages table
 #
 CREATE TABLE pages (
-	tx_realurl_pathsegment varchar(60) DEFAULT '' NOT NULL,
+	tx_realurl_pathsegment varchar(255) DEFAULT '' NOT NULL,
+	tx_realurl_pathoverride int(1) DEFAULT '0' NOT NULL,
 	tx_realurl_exclude int(1) DEFAULT '0' NOT NULL,
-	tx_realurl_nocache int(1) DEFAULT '0' NOT NULL,
+	tx_realurl_nocache int(1) DEFAULT '0' NOT NULL
 );
 
 #
 # Modifying pages_language_overlay table
 #
 CREATE TABLE pages_language_overlay (
-	tx_realurl_pathsegment varchar(60) DEFAULT '' NOT NULL,
+	tx_realurl_pathsegment varchar(255) DEFAULT '' NOT NULL
 );
 
 #

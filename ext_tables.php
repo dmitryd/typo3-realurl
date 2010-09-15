@@ -22,10 +22,19 @@ $TCA['pages']['columns'] += array(
 		'exclude' => 1,
 		'config' => array (
 			'type' => 'input',
-			'max' => 60,
+			'max' => 255,
 			'eval' => 'trim,nospace,lower'
-			//'eval' => 'uniqueInPid'	// DON'T use this anyway, it is very confusing when a path is automatically set!
 		),
+	),
+	'tx_realurl_pathoverride' => array(
+		'label' => 'LLL:EXT:realurl/locallang_db.xml:pages.tx_realurl_path_override',
+		'exclude' => 1,
+		'config' => array (
+			'type' => 'check',
+			'items' => array(
+				array('', '')
+			)
+		)
 	),
 	'tx_realurl_exclude' => array(
 		'label' => 'LLL:EXT:realurl/locallang_db.xml:pages.tx_realurl_exclude',
@@ -33,9 +42,9 @@ $TCA['pages']['columns'] += array(
 		'config' => array (
 			'type' => 'check',
 			'items' => array(
-				array('', ''),
-			),
-		),
+				array('', '')
+			)
+		)
 	),
 	'tx_realurl_nocache' => array(
 		'label' => 'LLL:EXT:realurl/locallang_db.xml:pages.tx_realurl_nocache',
@@ -49,18 +58,24 @@ $TCA['pages']['columns'] += array(
 	)
 );
 
+$TCA['pages']['ctrl']['requestUpdate'] .= ',tx_realurl_exclude';
+
+$TCA['pages']['palettes']['137'] = array(
+	'showitem' => 'tx_realurl_pathoverride'
+);
+
 if (t3lib_div::compat_version('4.3')) {
 	t3lib_extMgm::addFieldsToPalette('pages', '3', 'tx_realurl_nocache', 'after:cache_timeout');
 }
 if (t3lib_div::compat_version('4.2')) {
 	// For 4.2 or new add fields to advanced page only
-	t3lib_extMgm::addToAllTCAtypes('pages', 'tx_realurl_pathsegment,tx_realurl_exclude', '1', 'after:nav_title');
-	t3lib_extMgm::addToAllTCAtypes('pages', 'tx_realurl_pathsegment,tx_realurl_exclude', '4,254', 'after:title');
+	t3lib_extMgm::addToAllTCAtypes('pages', 'tx_realurl_pathsegment;;137;;,tx_realurl_exclude', '1', 'after:nav_title');
+	t3lib_extMgm::addToAllTCAtypes('pages', 'tx_realurl_pathsegment;;137;;,tx_realurl_exclude', '4,254', 'after:title');
 }
 else {
 	// Put it for standard page
-	t3lib_extMgm::addToAllTCAtypes('pages', 'tx_realurl_pathsegment,tx_realurl_exclude', '2', 'after:nav_title');
-	t3lib_extMgm::addToAllTCAtypes('pages', 'tx_realurl_pathsegment,tx_realurl_exclude', '1,5,4,254', 'after:title');
+	t3lib_extMgm::addToAllTCAtypes('pages', 'tx_realurl_pathsegment;;137;;,tx_realurl_exclude', '2', 'after:nav_title');
+	t3lib_extMgm::addToAllTCAtypes('pages', 'tx_realurl_pathsegment;;137;;,tx_realurl_exclude', '1,5,4,254', 'after:title');
 }
 
 t3lib_extMgm::addLLrefForTCAdescr('pages','EXT:realurl/locallang_csh.xml');
@@ -71,7 +86,7 @@ $TCA['pages_language_overlay']['columns'] += array(
 		'exclude' => 1,
 		'config' => array (
 			'type' => 'input',
-			'max' => 60,
+			'max' => 255,
 			'eval' => 'trim,nospace,lower'
 		),
 	),

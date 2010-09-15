@@ -11,6 +11,7 @@
 			<label index="tx_realurl_nocache.description">Disables RealURL encode and decode cache for this page only</label>
 			<label index="tx_realurl_pathsegment.description">URL path segment for this. Only valud URL characters are allowed, namely: latin letters, numbers, underscore and/or minus character.</label>
 			<label index="tx_realurl_exclude.description">Excludes this page from the speaking URL. Note that this works only if this page is not the target page of the reader.</label>
+			<label index="tx_realurl_pathoverride.description">If checked, the speaking path segment field must contain the whole path to the page (excluding pre- and postVars). This gives an option to override the path completely. Without this option the field defines only a single URL segment for the current page. When overriding the whole path, the path MUST NOT start or end with a slash!</label>
 		</languageKey>
 	</data>
 </T3locallang>
