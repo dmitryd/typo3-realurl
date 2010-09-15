@@ -293,7 +293,7 @@ class tx_realurl_advanced {
 		}
 
 		$this->updateURLCache($id, $cachedPagePath, $pagePathRec['pagepath'],
-			$pagePathRec['langID'], $pagePathRec['rootpage_id']);
+			$pagePathRec['langID'], $pagePathRec['rootpage_id'], $mpvar);
 
 		return $pagePathRec['pagepath'];
 	}
@@ -367,24 +367,49 @@ class tx_realurl_advanced {
 	 */
 	protected function IDtoPagePathThroughOverride($id, $mpvar, $lang) {
 		$result = false;
-		$disableGroupAccessCheck = ($GLOBALS['TSFE']->config['config']['typolinkLinkAccessRestrictedPages'] ? true : false);
-		$page = $GLOBALS['TSFE']->sys_page->getPage($id, $disableGroupAccessCheck);
-		if ($lang > 0) {
-			$page = $GLOBALS['TSFE']->sys_page->getPageOverlay($id, $lang);
-		}
+		$page = $this->getPage($id, $lang);
 		if ($page['tx_realurl_pathoverride']) {
-			if (isset($page['sys_language_uid'])) {
-				$lang = $page['sys_language_uid'];
+			if ($page['tx_realurl_pathsegment']) {
+				$result = array(
+					'pagepath' => trim($page['tx_realurl_pathsegment'], '/'),
+					'langID' => intval($lang),
+					// TODO Might be better to fetch root line here to process mount
+					// points and inner subdomains correctly.
+					'rootpage_id' => intval($this->conf['rootpage_id'])
+				);
 			}
-			$result = array(
-				'pagepath' => trim($page['tx_realurl_pathsegment'], '/'),
-				'langID' => intval($lang),
-				// TODO Might be better to fetch root line here to process mount
-				// points and inner subdomains correctly.
-				'rootpage_id' => intval($this->conf['rootpage_id'])
-			);
+			else {
+				$message = sprintf('Path override is set for page=%d (language=%d) but no segment defined!',
+					$id, $lang);
+				t3lib_div::sysLog($message, 'realurl', 3);
+				$this->pObj->devLog($message, false, 2);
+			}
 		}
 		return $result;
+	}
+
+	/**
+	 * Obtains a page and its translation (if necessary). The reason to use this
+	 * function instead of $GLOBALS['TSFE']->sys_page->getPage() is that
+	 * $GLOBALS['TSFE']->sys_page->getPage() always applies a language overlay
+	 * (even if we have a different language id).
+	 *
+	 * @param int $pageId
+	 * @param int $languageId
+	 * @return mixed Page row or false if not found
+	 */
+	protected function getPage($pageId, $languageId) {
+		$condition = 'uid=' . intval($pageId) . $GLOBALS['TSFE']->sys_page->where_hid_del;
+		$disableGroupAccessCheck = ($GLOBALS['TSFE']->config['config']['typolinkLinkAccessRestrictedPages'] ? true : false);
+		if (!$disableGroupAccessCheck) {
+			$condition .= $GLOBALS['TSFE']->sys_page->where_groupAccess;
+		}
+		list($row) = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('*', 'pages',
+			$condition);
+		if (is_array($row) && $languageId > 0) {
+			$row = $GLOBALS['TSFE']->sys_page->getPageOverlay($row, $languageId);
+		}
+		return $row;
 	}
 
 	/**
