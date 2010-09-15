@@ -2084,11 +2084,14 @@ class tx_realurl {
 		$host = strtolower((string)t3lib_div::getIndpEnv('HTTP_HOST'));
 
 		if (is_array($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['getHost'])) {
-			$hookParams = array(
-				'host' => &$host,
-			);
 			foreach($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['getHost'] as $userFunc) {
-				t3lib_div::callUserFunction($userFunc, $hookParams, $this);
+				$hookParams = array(
+					'host' => $host,
+				);
+				$newHost = t3lib_div::callUserFunction($userFunc, $hookParams, $this);
+				if (!empty($newHost) && is_string($newHost)) {
+					$host = $newHost;
+				}
 			}
 		}
 
