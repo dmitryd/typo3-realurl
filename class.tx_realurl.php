@@ -2081,7 +2081,7 @@ class tx_realurl {
 	 * @return string
 	 */
 	protected function getHost() {
-		$host = strtolower((string)t3lib_div::getIndpEnv('TYPO3_HOST_ONLY'));
+		$host = strtolower((string)t3lib_div::getIndpEnv('HTTP_HOST'));
 
 		if (is_array($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['getHost'])) {
 			$hookParams = array(

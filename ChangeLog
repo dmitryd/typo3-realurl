@@ -1,3 +1,7 @@
+2010-09-15  Dmitry Dulepov  <dmitry@typo3.org>
+
+	* Fixed bug #15708: No separate configuration possible if only port differs
+
 2010-09-09  Dmitry Dulepov  <dmitry@typo3.org>
 
 	* Fixed bug #15665: Method to manually set the host during URL encoding
