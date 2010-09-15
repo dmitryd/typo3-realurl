@@ -1121,7 +1121,7 @@ class tx_realurl_advanced {
 		$processedTitle = strip_tags($processedTitle);
 
 		// Convert some special tokens to the space character
-		$space = $this->conf['spaceCharacter'] ? $this->conf['spaceCharacter'] : '_';
+		$space = isset($this->conf['spaceCharacter']) ? $this->conf['spaceCharacter'] : '_';
 		$processedTitle = preg_replace('/[ \-+_]+/', $space, $processedTitle); // convert spaces
 
 		// Convert extended letters to ascii equivalents
