@@ -866,7 +866,7 @@ class tx_realurl_advanced {
 				'', '', '', 'pid');
 		if (count($pagesOverlay) > 0) {
 			$pages = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('uid,pid', 'pages',
-			'hidden=0 AND deleted=0 AND uid IN (' . array_keys($pagesOverlay) . ')',
+			'hidden=0 AND deleted=0 AND uid IN (' . implode(',', array_keys($pagesOverlay)) . ')',
 			'', '', '', 'uid');
 		}
 		// $pages has strings as keys. Therefore array_merge will ensure uniqueness.
