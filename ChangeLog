@@ -3,6 +3,7 @@
 	* Fixed bug #15708: No separate configuration possible if only port differs
 	* Fixed problem: decoding of path override did not work for non-default language
 	* Fixed problem: encoding of path override did not work for links with default language on localized pages
+	* Fixed bug #15643: Not compatible with new Shortcude mode "Parent page" (thanks to Steffen Gebert)
 
 2010-09-09  Dmitry Dulepov  <dmitry@typo3.org>
 

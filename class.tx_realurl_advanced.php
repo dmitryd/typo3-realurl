@@ -1210,7 +1210,7 @@ class tx_realurl_advanced {
 		$log[$page['uid']] = '';
 		$pageid = $page['uid'];
 		if ($page['shortcut_mode'] == 0) {
-			// Jumps to defined page
+			// Jumps to a certain page
 			if ($page['shortcut']) {
 				$pageid = intval($page['shortcut']);
 				$page = $GLOBALS['TSFE']->sys_page->getPage($pageid, $disableGroupAccessCheck);
@@ -1220,12 +1220,20 @@ class tx_realurl_advanced {
 			}
 		}
 		elseif ($page['shortcut_mode'] == 1) {
-			// Jumps to first subpage
+			// Jumps to the first subpage
 			$rows = $GLOBALS['TSFE']->sys_page->getMenu($page['uid']);
 			if (count($rows) > 0) {
 				reset($rows);
 				$row = current($rows);
 				$pageid = ($row['doktype'] == 4 ? $this->resolveShortcut($row, $disableGroupAccessCheck, $log) : $row['uid']);
+			}
+		}
+		elseif ($page['shortcut_mode'] == 4) {
+			// Jumps to the parent page
+			$page = $GLOBALS['TSFE']->sys_page->getPage($page['pid'], $disableGroupAccessCheck);
+			$pageid = $page['uid'];
+			if ($page && $page['doktype'] == 4) {
+				$pageid = $this->resolveShortcut($page, $disableGroupAccessCheck, $log);
 			}
 		}
 		return $pageid;
