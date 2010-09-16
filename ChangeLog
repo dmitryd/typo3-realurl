@@ -1,3 +1,7 @@
+2010-09-16  Dmitry Dulepov  <dmitry@typo3.org>
+
+	* Released version 1.10.0
+
 2010-09-15  Dmitry Dulepov  <dmitry@typo3.org>
 
 	* Fixed bug #15708: No separate configuration possible if only port differs
