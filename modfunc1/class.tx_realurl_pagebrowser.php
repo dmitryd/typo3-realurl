@@ -39,11 +39,12 @@ class tx_realurl_pagebrowser {
 	const PAGES_BEFORE_END = 1;
 	const PAGES_AFTER = 1;
 	const PAGES_AFTER_START = 1;
-	const RESULTS_PER_PAGE = 20;
+	const RESULTS_PER_PAGE_DEFAULT = 20;
 
 	protected $currentPage;
 	protected $totalPages;
 	protected $baseURL;
+	protected $resultsPerPage;
 
 	/**
 	 * Creates an isntance of this class.
@@ -57,9 +58,13 @@ class tx_realurl_pagebrowser {
 		unset($urlParameters['cmd']);
 		$this->baseURL = t3lib_div::getIndpEnv('TYPO3_REQUEST_SCRIPT') .
 			'?' . t3lib_div::implodeArrayForUrl('', $urlParameters);
+		$this->resultsPerPage = self::RESULTS_PER_PAGE_DEFAULT;
 	}
 
-	public function getPageBrowser($totalResults) {
+	public function getPageBrowser($totalResults, $resultsPerPage = 0) {
+		if ($resultsPerPage) {
+			$this->resultsPerPage = $resultsPerPage;
+		}
 		$this->calcTotalPages($totalResults);
 
 		$markup = '';
@@ -132,8 +137,8 @@ class tx_realurl_pagebrowser {
 	}
 
 	protected function calcTotalPages($totalResults) {
-		$this->totalPages = intval($totalResults/self::RESULTS_PER_PAGE) +
-			(($totalResults % self::RESULTS_PER_PAGE) != 0 ? 1 : 0);
+		$this->totalPages = intval($totalResults/$this->resultsPerPage) +
+			(($totalResults % $this->resultsPerPage) != 0 ? 1 : 0);
 	}
 
 }

@@ -1517,6 +1517,7 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 		$itemCounter = 0;
 
 		$page = max(1, intval(t3lib_div::_GP('page')));
+		$resultsPerPage = $this->getResultsPerPage('redirects');
 
 		$condition = '';
 		$seachPath = t3lib_div::_GP('pathPrefixSearch');
@@ -1528,11 +1529,11 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 				'destination LIKE \'%' . $seachPath . '%\'';
 		}
 
-		$start = ($page-1)*tx_realurl_pagebrowser::RESULTS_PER_PAGE;
+		$start = ($page-1)*$resultsPerPage;
 		$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery(
 			'*', 'tx_realurl_redirects', $condition, $sortingParameter . ' ' . $sortingDirection,
 			'',
-			$start . ',' . tx_realurl_pagebrowser::RESULTS_PER_PAGE
+			$start . ',' . $resultsPerPage
 		);
 		while (false !== ($rec = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res))) {
 			$output .= '<tr class="bgColor'.($itemCounter%2 ? '-20':'-10').'">' .
@@ -1544,18 +1545,30 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 		list($count) = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows(
 			'COUNT(*) AS t', 'tx_realurl_redirects', $condition);
 		$totalResults = $count['t'];
-		if ($totalResults > tx_realurl_pagebrowser::RESULTS_PER_PAGE) {
+		if ($totalResults > $resultsPerPage) {
 			$pageBrowser = t3lib_div::makeInstance('tx_realurl_pagebrowser');
 			/* @var $pageBrowser tx_realurl_pagebrowser */
 			$results = sprintf($GLOBALS['LANG']->getLL('displaying_results'),
-				$start + 1, min($totalResults, ($start + tx_realurl_pagebrowser::RESULTS_PER_PAGE)), $totalResults);
+				$start + 1, min($totalResults, ($start + $resultsPerPage)), $totalResults);
 			$output .= '<tr><td colspan="4" style="vertical-align:middle">' . $results . '</td>' .
-				'<td colspan="4" style="text-align: right">' . $pageBrowser->getPageBrowser($totalResults) . '</td></tr>';
+				'<td colspan="4" style="text-align: right">' . $pageBrowser->getPageBrowser($totalResults, $resultsPerPage) . '</td></tr>';
 		}
 
 		$output .= '</table>';
 
 		return $output;
+	}
+
+	/**
+	 * Obtains amount of results per page for the given view.
+	 *
+	 * @param string $view
+	 * @return int
+	 */
+	protected function getResultsPerPage($view) {
+		$tsConfig = t3lib_BEfunc::getModTSconfig($this->pObj->id, 'tx_realurl.' . $view . '.pagebrowser.resultsPerPage');
+		$resultsPerPage = $tsConfig['value'];
+		return t3lib_div::testInt($resultsPerPage) ? intval($resultsPerPage) : tx_realurl_pagebrowser::RESULTS_PER_PAGE_DEFAULT;
 	}
 
 	/**
