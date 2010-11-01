@@ -1,6 +1,7 @@
 2010-11-01  Dmitry Dulepov  <dmitry@typo3.org>
 
 	* Fixed bug #15824: Speaking URL path segment does not work
+	* Improve performance of expire time deletions
 
 2010-10-19  Dmitry Dulepov  <dmitry@typo3.org>
 

@@ -12,7 +12,8 @@ CREATE TABLE tx_realurl_pathcache (
 
 	PRIMARY KEY (cache_id),
 	KEY pathq1 (rootpage_id,pagepath(32),expire),
-	KEY pathq2 (page_id,language_id,rootpage_id,expire)
+	KEY pathq2 (page_id,language_id,rootpage_id,expire),
+	KEY expire (expire)
 ) ENGINE=InnoDB;
 
 #
