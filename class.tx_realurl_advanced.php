@@ -465,8 +465,13 @@ class tx_realurl_advanced {
 	 * @return void
 	 */
 	protected function removeExpiredPathCacheEntries() {
-		$GLOBALS['TYPO3_DB']->exec_DELETEquery('tx_realurl_pathcache',
-			'expire>0 AND expire<' . $this->makeExpirationTime());
+		$lastCleanUpFileName = PATH_site . 'typo3temp/realurl_last_clean_up';
+		$lastCleanUpTime = @filemtime($lastCleanUpFileName);
+		if ($lastCleanUpTime === false || (time() - $lastCleanUpTime >= 6*60*60)) {
+			touch($lastCleanUpFileName);
+			$GLOBALS['TYPO3_DB']->exec_DELETEquery('tx_realurl_pathcache',
+				'expire>0 AND expire<' . $this->makeExpirationTime());
+		}
 	}
 
 	/**
@@ -773,12 +778,12 @@ class tx_realurl_advanced {
 		$id = 0;
 		$GET_VARS = '';
 		$startPid = $this->getRootPid();
-
 		if ($startPid && count($urlParts)) {
 			list($id, $mpvar) = $this->findIDByPathOverride($startPid, $urlParts);
-			if ($id == 0) {
-				list($id, $mpvar) = $this->findIDBySegment($startPid, '', $urlParts);
+			if ($id != 0) {
+				$startPid = $id;
 			}
+			list($id, $mpvar) = $this->findIDBySegment($startPid, '', $urlParts);
 			if ($mpvar) {
 				$GET_VARS = array('MP' => $mpvar);
 			}
@@ -820,7 +825,6 @@ class tx_realurl_advanced {
 			if ($pageInfo[0]) {
 				break;
 			}
-
 			// Not found, try smaller segment
 			array_unshift($extraUrlSegments, array_pop($urlParts));
 		}
@@ -897,12 +901,14 @@ class tx_realurl_advanced {
 		// $pages has strings as keys. Therefore array_merge will ensure uniqueness.
 		// Selection from 'pages' table will override selection from
 		// pages_language_overlay.
-		$pages = array_merge($pages, $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('uid,pid', 'pages',
+		$pages2 = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('uid,pid', 'pages',
 			'hidden=0 AND deleted=0 AND tx_realurl_pathsegment=' .
 				$GLOBALS['TYPO3_DB']->fullQuoteStr($url, 'pages'),
-				'', '', '', 'uid'));
-
-		return $pages;
+				'', '', '', 'uid');
+		if (count($pages2)) {
+			$pages = array_merge($pages, $pages2);
+		}
+		return array_unique($pages);
 	}
 
 
