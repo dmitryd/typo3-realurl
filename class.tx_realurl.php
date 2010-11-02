@@ -1415,7 +1415,8 @@ class tx_realurl {
 		$keyValues = '';
 		if (is_array($this->extConf['fileName']['index'])) {
 			foreach ($this->extConf['fileName']['index'] as $key => $config) {
-				if ($key == $fileName) {
+				// Note: strict comparison because the following is true in PHP: 0 == 'whatever'
+				if ($key === $fileName) {
 					$keyValues = $config['keyValues'];
 					$this->filePart = $fileName;
 					if (isset($config['mimetype'])) {
@@ -1424,7 +1425,7 @@ class tx_realurl {
 					$handled = true;
 					break;
 				}
-				elseif ($key == '.' . $extension) {
+				elseif ($key === '.' . $extension) {
 					$keyValues = $config['keyValues'];
 					$pathPartsCopy[] = urlencode($segment);
 					$this->filePart = '.' . $extension;

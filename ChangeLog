@@ -1,3 +1,7 @@
+2010-11-02  Dmitry Dulepov  <dmitry@typo3.org>
+
+	* Fixed bug: fileName did not work if file name is an integer
+
 2010-11-01  Dmitry Dulepov  <dmitry@typo3.org>
 
 	* Fixed bug #15824: Speaking URL path segment does not work
