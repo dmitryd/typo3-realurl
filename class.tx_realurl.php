@@ -649,7 +649,6 @@ class tx_realurl {
 							$GETvar = $setup['GETvar'];
 							$parameterSet = isset($paramKeyValues[$GETvar]);
 							$GETvarVal = $parameterSet ? $paramKeyValues[$GETvar] : '';
-							$this->rebuildCHash |= !$parameterSet;
 
 							// Set reverse map:
 							$revMap = is_array($setup['valueMap']) ? array_flip($setup['valueMap']) : array();
@@ -661,12 +660,13 @@ class tx_realurl {
 							} elseif ($setup['noMatch'] == 'bypass') {
 								// If no match in reverse value map and "bypass" is set, remove the parameter from the URL
 								// Must rebuild cHash because we remove a parameter!
-								$this->rebuildCHash = true;
+								$this->rebuildCHash |= $parameterSet;
 							} elseif ($setup['noMatch'] == 'null') {
 								// If no match and "null" is set, then set "dummy" value
 								// Set "dummy" value (?)
 								$prevVal = '';
 								$pathParts[] = '';
+								$this->rebuildCHash |= $parameterSet;
 							} elseif ($setup['userFunc']) {
 								$params = array(
 									'pObj' => &$this,
@@ -687,10 +687,12 @@ class tx_realurl {
 								$prevVal = $setup['valueDefault'];
 								$pathParts[] = rawurlencode($setup['valueDefault']);
 								$this->cHashParameters[$GETvar] = $setup['valueDefault'];
+								$this->rebuildCHash |= !$parameterSet;
 							} else {
 								$prevVal = $GETvarVal;
 								$pathParts[] = rawurlencode($GETvarVal);
 								$this->cHashParameters[$GETvar] = $prevVal;
+								$this->rebuildCHash |= !$parameterSet;
 							}
 
 							// Finally, unset GET var so it doesn't get processed once more:
@@ -1535,6 +1537,9 @@ class tx_realurl {
 
 							// Add to GET string:
 							if ($setup['GETvar'] && strlen($value)) { // Checking length of value; normally a *blank* parameter is not found in the URL! And if we don't do this we may disturb "cHash" calculations!
+								if (isset($this->extConf['init']['emptySegmentValue']) && $this->extConf['init']['emptySegmentValue'] === $value) {
+									$value = '';
+								}
 								$GET_string .= '&' . rawurlencode($setup['GETvar']) . '=' . rawurlencode($value);
 							}
 						} else {
@@ -2457,9 +2462,12 @@ class tx_realurl {
 	 * @return array
 	 */
 	protected function cleanUpPathParts(array $pathParts) {
-		for ($index = count($pathParts) - 1; $index >= 0; $index--) {
-			if ($pathParts[$index] == '') {
-				unset($pathParts[$index]);
+		if (isset($this->extConf['init']['emptySegmentValue'])) {
+			$emptyValue = rawurlencode($this->extConf['init']['emptySegmentValue']);
+			for ($index = count($pathParts) - 1; $index >= 0; $index--) {
+				if ($pathParts[$index] == '') {
+					$pathParts[$index] = $emptyValue;
+				}
 			}
 		}
 		return $pathParts;
