@@ -1,6 +1,7 @@
 2010-11-02  Dmitry Dulepov  <dmitry@typo3.org>
 
 	* Fixed bug: fileName did not work if file name is an integer
+	* Fixed bug #16098: renaming page removes path cache entries instead of expiring them
 
 2010-11-01  Dmitry Dulepov  <dmitry@typo3.org>
 
