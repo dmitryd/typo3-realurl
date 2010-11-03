@@ -1460,7 +1460,12 @@ class tx_realurl {
 		$prevVal = '';
 		foreach ($setupArr as $setup) {
 			if (count($pathParts) == 0) {
-				break;
+				// If we are here, it means we are at the end of the URL.
+				// Since some items still remain in the $setupArr, it means
+				// we stripped empty segments at the end of the URL on encoding.
+				// Reconstruct them or cHash check will fail in TSFE.
+				// Related to bug #15906.
+				$GET_string .= '&' . rawurlencode($setup['GETvar']) . '=';
 			}
 			else {
 				// Get value and remove from path parts:
@@ -2462,8 +2467,13 @@ class tx_realurl {
 	 * @return array
 	 */
 	protected function cleanUpPathParts(array $pathParts) {
+		// Remove trailing empty segments
+		for ($index = count($pathParts) - 1; $index >= 0 && $pathParts[$index] == ''; $index--) {
+			unset($pathParts[$index]);
+		}
 		if (isset($this->extConf['init']['emptySegmentValue'])) {
 			$emptyValue = rawurlencode($this->extConf['init']['emptySegmentValue']);
+			// Set empty value
 			for ($index = count($pathParts) - 1; $index >= 0; $index--) {
 				if ($pathParts[$index] == '') {
 					$pathParts[$index] = $emptyValue;
