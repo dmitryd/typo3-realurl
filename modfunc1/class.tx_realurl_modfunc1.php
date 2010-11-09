@@ -1625,6 +1625,7 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 	 * @return string
 	 */
 	protected function getRedirectViewHeader($sortingDirection) {
+		$sortingDirection = ($sortingDirection == 'ASC' ? 'DESC' : 'ASC');
 		return '<table border="0" cellspacing="2" cellpadding="2" id="tx-realurl-pathcacheTable" class="lrPadding c-list">'.
 			'<tr class="bgColor5 tableheader">' .
 			'<td>&nbsp;</td>' .

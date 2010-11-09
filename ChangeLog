@@ -1,6 +1,7 @@
 2010-11-09  Dmitry Dulepov  <dmitry@typo3.org>
 
 	* Fixed bug #16222: Typo in csh
+	* Fixed bug: sorting direction cannot be changed in redirects view
 
 2010-11-03  Dmitry Dulepov  <dmitry@typo3.org>
 
