@@ -1,3 +1,7 @@
+2010-11-09  Dmitry Dulepov  <dmitry@typo3.org>
+
+	* Fixed bug #16222: Typo in csh
+
 2010-11-03  Dmitry Dulepov  <dmitry@typo3.org>
 
 	* Continue fixes for #15096 (see comment 0043394 and below in the bug report)
