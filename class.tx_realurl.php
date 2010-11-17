@@ -216,7 +216,7 @@ class tx_realurl {
 	 * @return	void
 	 */
 	public function __construct() {
-		if (!t3lib_extMgm::isLoaded('dbal') && get_resource_type($GLOBALS['TYPO3_DB']->link) == 'mysql link') {
+		if (!t3lib_extMgm::isLoaded('dbal') && strpos(get_resource_type($GLOBALS['TYPO3_DB']->link), 'mysql link') !== false) {
 			$res = $GLOBALS['TYPO3_DB']->sql_query('SELECT @@VERSION');
 			$rec = $GLOBALS['TYPO3_DB']->sql_fetch_row($res);
 			$GLOBALS['TYPO3_DB']->sql_free_result($res);
