@@ -1,6 +1,7 @@
 2010-11-17  Dmitry Dulepov  <dmitry@typo3.org>
 
 	* Fixed bug #16398: MySQL extended syntax i snot used in case of persistent connections
+	* Released version 1.10.1
 
 2010-11-09  Dmitry Dulepov  <dmitry@typo3.org>
 
