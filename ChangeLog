@@ -1,6 +1,7 @@
 2011-01-27  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
 	* Fixed bug #15929: lookUpTable to localize tt_news single view URL does not work
+	* Fixed bug #16748: URL ending in '?' gets trailing slash from appendMissingSlash
 
 2010-11-17  Dmitry Dulepov  <dmitry@typo3.org>
 
