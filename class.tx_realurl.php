@@ -409,12 +409,7 @@ class tx_realurl {
 			list($p, $v) = explode('=', $paramAndValue, 2);
 			$p = rawurldecode($p);
 			if ($p != '') {
-				if ($p != $this->ignoreGETvar) {
-					$paramKeyValues[$p] = rawurldecode($v);
-				}
-				else {
-					$additionalVariables[$p] = rawurldecode($v);
-				}
+				$paramKeyValues[$p] = rawurldecode($v);
 			}
 		}
 		$this->orig_paramKeyValues = $paramKeyValues;
@@ -457,6 +452,11 @@ class tx_realurl {
 
 		// Fix empty URLs
 		$newUrl = $this->fixEmptyUrl($newUrl);
+
+		// Clear ignored var
+		if (isset($paramKeyValues[$this->ignoreGETvar])) {
+			unset($paramKeyValues[$this->ignoreGETvar]);
+		}
 
 		// Store cHash cache:
 		if ($cHashCache) {
@@ -647,6 +647,10 @@ class tx_realurl {
 
 							// Looking if the GET var is found in parameter index
 							$GETvar = $setup['GETvar'];
+							if ($GETvar == $this->ignoreGETvar) {
+								// Do not do anything with this var!
+								continue;
+							}
 							$parameterSet = isset($paramKeyValues[$GETvar]);
 							$GETvarVal = $parameterSet ? $paramKeyValues[$GETvar] : '';
 

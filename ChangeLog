@@ -1,3 +1,7 @@
+2011-01-27  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
+
+	* Fixed bug #15929: lookUpTable to localize tt_news single view URL does not work
+
 2010-11-17  Dmitry Dulepov  <dmitry@typo3.org>
 
 	* Fixed bug #16398: MySQL extended syntax i snot used in case of persistent connections
