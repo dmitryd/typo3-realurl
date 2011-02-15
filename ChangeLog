@@ -1,6 +1,7 @@
 2011-02-15  Dmitry Dulepov <dmitry.dulepov@gmail.com>
 
 	* Fixed bug #17514: Wrong html breaks table layout
+	* FIxed bug #17505: array_unique in tx_realurl_advanced->fetchPagesForPath produces incorrect results
 
 2011-01-31  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 

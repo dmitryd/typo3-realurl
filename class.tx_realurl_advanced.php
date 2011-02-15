@@ -908,7 +908,7 @@ class tx_realurl_advanced {
 		if (count($pages2)) {
 			$pages = array_merge($pages, $pages2);
 		}
-		return array_unique($pages);
+		return $pages;
 	}
 
 
