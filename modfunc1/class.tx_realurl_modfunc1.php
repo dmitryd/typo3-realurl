@@ -1788,7 +1788,7 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 				'<input type="text" size="30" name="data[' . $i . '][target]" value="' .
 				(isset($data[$i]['target']) ? htmlspecialchars($data[$i]['target']) : '') . '" /></td><td align="center">' .
 				'<input type="checkbox" name="data[' . $i . '][permanent]" ' .
-				(isset($data[$i]['target']) ? ($data[$i]['target'] ? ' checked="checked"' : '') : '') . '" /></td>' .
+				(isset($data[$i]['target']) ? ($data[$i]['target'] ? ' checked="checked"' : '') : '') . ' /></td>' .
 				'</tr>';
 		}
 		$content .= '<tr><td colspan="3">' . $this->saveCancelButtons() . '</td></tr>' .

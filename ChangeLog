@@ -1,3 +1,7 @@
+2011-02-15  Dmitry Dulepov <dmitry.dulepov@gmail.com>
+
+	* Fixed bug #17514: Wrong html breaks table layout
+
 2011-01-31  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
 	* Released version 1.10.2
