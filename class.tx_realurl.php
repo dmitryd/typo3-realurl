@@ -83,7 +83,7 @@
  * 1699:     function getPostVarSetConfig($page_id, $mainCat = 'postVarSets')
  * 1721:     function pageAliasToID($alias)
  * 1744:     function rawurlencodeParam($str)
- * 1759:     function checkCondition($setup, $prevVal)
+ * 1759:     function checkCondition($setup, $prevVal, $value)
  * 1777:     function isBEUserLoggedIn()
  *
  *              SECTION: External Hooks
@@ -1465,7 +1465,12 @@ class tx_realurl {
 				// we stripped empty segments at the end of the URL on encoding.
 				// Reconstruct them or cHash check will fail in TSFE.
 				// Related to bug #15906.
-				$GET_string .= '&' . rawurlencode($setup['GETvar']) . '=';
+				if (!$setup['optional']) {
+					if (!is_array($setup['cond']) || $this->checkCondition($setup['cond'], $prevVal)) {
+						$GET_string .= '&' . rawurlencode($setup['GETvar']) . '=';
+						$prevVal = '';
+					}
+				}
 			}
 			else {
 				// Get value and remove from path parts:
@@ -2180,13 +2185,12 @@ class tx_realurl {
 	 * @see encodeSpURL_setSequence(), decodeSpURL_getSequence()
 	 */
 	protected function checkCondition($setup, $prevVal) {
+		$return = true;
 
-		$return = TRUE;
-
-		//	 Check previous value:
+		// Check previous value:
 		if (isset($setup['prevValueInList'])) {
 			if (!t3lib_div::inList($setup['prevValueInList'], $prevVal))
-				$return = FALSE;
+			$return = false;
 		}
 
 		return $return;
