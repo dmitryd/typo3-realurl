@@ -168,7 +168,7 @@ class tx_realurl_advanced {
 				$lang = $this->getLanguageVar($paramKeyValues);
 				$cachedPagePath = $this->getPagePathFromCache($pageId, $lang, $mpvar);
 
-				if ($cachedPagePath !== false && !$this->conf['autoUpdatePathCache']) {
+				if ($cachedPagePath !== false) {
 					$pagePath = $cachedPagePath;
 				}
 				else {
@@ -581,7 +581,7 @@ class tx_realurl_advanced {
 
 			// First, check for cached path of this page:
 			$cachedPagePath = false;
-			if (!$page['tx_realurl_exclude'] && !$stopUsingCache && !$this->conf['disablePathCache'] && !$this->conf['autoUpdatePathCache']) {
+			if (!$page['tx_realurl_exclude'] && !$stopUsingCache && !$this->conf['disablePathCache']) {
 
 				// Using pathq2 index!
 				list($cachedPagePath) = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('pagepath', 'tx_realurl_pathcache',
@@ -652,10 +652,6 @@ class tx_realurl_advanced {
 		// If pagePath cache is not disabled, look for entry:
 		if (!$this->conf['disablePathCache']) {
 
-			if (!isset($this->conf['firstHitPathCache'])) {
-				$this->conf['firstHitPathCache'] = ((!isset($this->pObj->extConf['postVarSets']) || count($this->pObj->extConf['postVarSets']) == 0) && (!isset($this->pObj->extConf['fixedPostVars']) || count($this->pObj->extConf['fixedPostVars']) == 0));
-			}
-
 			// Work from outside-in to look up path in cache:
 			$postVar = false;
 			$copy_pathParts = $pathParts;
@@ -673,7 +669,7 @@ class tx_realurl_advanced {
 						'', 'expire', '1');
 
 				// This lookup does not include language and MP var since those are supposed to be fully reflected in the built url!
-				if (is_array($row) || $this->conf['firstHitPathCache']) {
+				if (is_array($row)) {
 					break;
 				}
 
@@ -1008,6 +1004,7 @@ class tx_realurl_advanced {
 
 		// page select object - used to analyse mount points.
 		$sys_page = t3lib_div::makeInstance('t3lib_pageSelect');
+		/** @var t3lib_pageSelect $sys_page */
 
 		// Build an array with encoded values from the segTitleFieldArray of the subpages
 		// First we find field values from the default language

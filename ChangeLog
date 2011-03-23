@@ -1,3 +1,7 @@
+2011-03-23	Dmitry Dulepov	<dmitry.dulepov@gmail.com>
+
+	* Removed autoUpdatePathCache and firstHitPathCache because they causes random hard to catch problems (404 errors and performance issues)
+
 2011-03-22	Dmitry Dulepov	<dmitry.dulepov@gmail.com>
 
 	* Added a new experimental "optional" directive
