@@ -882,18 +882,23 @@ class tx_realurl_advanced {
 	 */
 	protected function fetchPagesForPath($url) {
 		$pages = array();
-		$pagesOverlay = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('t1.pid',
-			'pages_language_overlay t1, pages t2',
-			't1.hidden=0 AND t1.deleted=0 AND ' .
+		$language = $this->pObj->getDetectedLanguage();
+		if ($language != 0) {
+			$pagesOverlay = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('t1.pid',
+				'pages_language_overlay t1, pages t2',
+				't1.hidden=0 AND t1.deleted=0 AND ' .
 				't2.hidden=0 AND t2.deleted=0 AND ' .
 				't1.pid=t2.uid AND ' .
 				't2.tx_realurl_pathoverride=1 AND ' .
+				($language > 0 ? 't1.sys_language_uid=' . $language . ' AND ' : '') .
 				't1.tx_realurl_pathsegment=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($url, 'pages_language_overlay'),
-				'', '', '', 'pid');
-		if (count($pagesOverlay) > 0) {
-			$pages = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('uid,pid', 'pages',
-				'hidden=0 AND deleted=0 AND uid IN (' . implode(',', array_keys($pagesOverlay)) . ')',
-				'', '', '', 'uid');
+				'', '', '', 'pid'
+			);
+			if (count($pagesOverlay) > 0) {
+				$pages = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('uid,pid', 'pages',
+					'hidden=0 AND deleted=0 AND uid IN (' . implode(',', array_keys($pagesOverlay)) . ')',
+					'', '', '', 'uid');
+			}
 		}
 		// $pages has strings as keys. Therefore array_merge will ensure uniqueness.
 		// Selection from 'pages' table will override selection from
@@ -1061,20 +1066,26 @@ class tx_realurl_advanced {
 
 		// We have to search the language overlay too, if: a) the language isn't the default (0), b) if it's not set (-1)
 		$uidTrackKeys = array_keys($uidTrack);
-		foreach ($uidTrackKeys as $l_id) {
-			$result = $GLOBALS['TYPO3_DB']->exec_SELECTquery(TX_REALURL_SEGTITLEFIELDLIST_PLO,
-					'pages_language_overlay', 'pid=' . intval($l_id) . ' AND deleted=0');
-			while (false != ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($result))) {
-				foreach ($segTitleFieldArray as $fieldName) {
-					if ($row[$fieldName]) {
-						$encodedTitle = $this->encodeTitle($row[$fieldName]);
-						if (!isset($titles[$fieldName][$encodedTitle])) {
-							$titles[$fieldName][$encodedTitle] = $l_id;
+		$language = $this->pObj->getDetectedLanguage();
+		if ($language != 0) {
+			foreach ($uidTrackKeys as $l_id) {
+				$result = $GLOBALS['TYPO3_DB']->exec_SELECTquery(TX_REALURL_SEGTITLEFIELDLIST_PLO,
+					'pages_language_overlay',
+					'pid=' . intval($l_id) . ' AND deleted=0' .
+					($language > 0 ? ' AND sys_language_uid=' . $language : '')
+				);
+				while (false != ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($result))) {
+					foreach ($segTitleFieldArray as $fieldName) {
+						if ($row[$fieldName]) {
+							$encodedTitle = $this->encodeTitle($row[$fieldName]);
+							if (!isset($titles[$fieldName][$encodedTitle])) {
+								$titles[$fieldName][$encodedTitle] = $l_id;
+							}
 						}
 					}
 				}
+				$GLOBALS['TYPO3_DB']->sql_free_result($result);
 			}
-			$GLOBALS['TYPO3_DB']->sql_free_result($result);
 		}
 
 		// Merge titles:

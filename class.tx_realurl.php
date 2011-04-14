@@ -150,6 +150,17 @@ class tx_realurl {
 	var $useMySQLExtendedSyntax = false;
 
 	/**
+	 * Holds a uid of the detected language during decoding to limit search of
+	 * titles only to this language. Valid values are:
+	 * -1 - no language detected
+	 * 0 - default language (only if really detected!)
+	 * >0 - a language uid taken from preVars or _DOMAINS (corresponds to uid in sys_languages table)
+	 *
+	 * @var int
+	 */
+	protected $detectedLanguage = -1;
+
+	/**
 	 * Inidicates wwether devLog is enabled
 	 *
 	 * @var true
@@ -1112,6 +1123,17 @@ class tx_realurl {
 
 		// Setting "preVars":
 		$pre_GET_VARS = $this->decodeSpURL_settingPreVars($pathParts, $this->extConf['preVars']);
+		if (isset($this->extConf['pagePath']['languageGetVar'])) {
+			$languageGetVar = $this->extConf['pagePath']['languageGetVar'];
+			if (isset($pre_GET_VARS[$languageGetVar]) && t3lib_div::testInt($pre_GET_VARS[$languageGetVar])) {
+				// Language from URL
+				$this->detectedLanguage = $pre_GET_VARS[$languageGetVar];
+			}
+			elseif (isset($_GET[$languageGetVar]) && t3lib_div::testInt($_GET[$languageGetVar])) {
+				// This is for _DOMAINS feature
+				$this->detectedLanguage = $_GET[$languageGetVar];
+			}
+		}
 
 		// Setting page id:
 		list($cachedInfo['id'], $id_GET_VARS, $cachedInfo['rootpage_id']) = $this->decodeSpURL_idFromPath($pathParts);
@@ -2622,6 +2644,16 @@ class tx_realurl {
 		list($pageRecord) = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('tx_realurl_nocache',
 			'pages', 'uid=' . intval($pageId));
 		return is_array($pageRecord) ? !$pageRecord['tx_realurl_nocache'] : false;
+	}
+
+	/**
+	 * Returns the detected language (decoding only). Language is detected
+	 * from preVars or _DOMAINS feature.
+	 *
+	 * @return int
+	 */
+	public function getDetectedLanguage() {
+		return intval($this->detectedLanguage);
 	}
 }
 
