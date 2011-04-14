@@ -1,6 +1,7 @@
 2011-04-14	Dmitry Dulepov	<dmitry.dulepov@gmail.com>
 
 	* Fixed bug #18077: Wrong table column name (thanks to Juris Treibahs)
+	* Fixed bug #18047: 1.10.2 treats tx_realurl_pathsegment as entire url regardless of tx_realurl_pathoverride
 
 2011-03-23	Dmitry Dulepov	<dmitry.dulepov@gmail.com>
 

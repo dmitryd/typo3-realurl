@@ -882,20 +882,24 @@ class tx_realurl_advanced {
 	 */
 	protected function fetchPagesForPath($url) {
 		$pages = array();
-		$pagesOverlay = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('pid', 'pages_language_overlay',
-			'hidden=0 AND deleted=0 AND tx_realurl_pathsegment=' .
-				$GLOBALS['TYPO3_DB']->fullQuoteStr($url, 'pages_language_overlay'),
+		$pagesOverlay = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('t1.pid',
+			'pages_language_overlay t1, pages t2',
+			't1.hidden=0 AND t1.deleted=0 AND ' .
+				't2.hidden=0 AND t2.deleted=0 AND ' .
+				't1.pid=t2.uid AND ' .
+				't2.tx_realurl_pathoverride=1 AND ' .
+				't1.tx_realurl_pathsegment=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($url, 'pages_language_overlay'),
 				'', '', '', 'pid');
 		if (count($pagesOverlay) > 0) {
 			$pages = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('uid,pid', 'pages',
-			'hidden=0 AND deleted=0 AND uid IN (' . implode(',', array_keys($pagesOverlay)) . ')',
-			'', '', '', 'uid');
+				'hidden=0 AND deleted=0 AND uid IN (' . implode(',', array_keys($pagesOverlay)) . ')',
+				'', '', '', 'uid');
 		}
 		// $pages has strings as keys. Therefore array_merge will ensure uniqueness.
 		// Selection from 'pages' table will override selection from
 		// pages_language_overlay.
 		$pages2 = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('uid,pid', 'pages',
-			'hidden=0 AND deleted=0 AND tx_realurl_pathsegment=' .
+			'hidden=0 AND deleted=0 AND tx_realurl_pathoverride=1 AND tx_realurl_pathsegment=' .
 				$GLOBALS['TYPO3_DB']->fullQuoteStr($url, 'pages'),
 				'', '', '', 'uid');
 		if (count($pages2)) {
