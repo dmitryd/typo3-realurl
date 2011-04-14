@@ -646,8 +646,7 @@ class tx_realurl_advanced {
 	 */
 	protected function pagePathtoID(&$pathParts) {
 
-		// Init:
-		$GET_VARS = '';
+		$row = $postVar = false;
 
 		// If pagePath cache is not disabled, look for entry:
 		if (!$this->conf['disablePathCache']) {
@@ -676,8 +675,6 @@ class tx_realurl_advanced {
 				// If no row was found, we simply pop off one element of the path and try again until there are no more elements in the array - which means we didn't find a match!
 				$postVar = array_pop($copy_pathParts);
 			}
-		} else {
-			$row = false;
 		}
 
 		// It could be that entry point to a page but it is not in the cache. If we popped
@@ -687,10 +684,10 @@ class tx_realurl_advanced {
 		// there is a postVar 'how' on this page, the check below will not work. But it is still
 		// better than nothing.
 		if ($row && $postVar) {
-			$postVars = $this->pObj->getPostVarSetConfig($row['pid'], 'postVarSets');
+			$postVars = $this->pObj->getPostVarSetConfig($row['page_id'], 'postVarSets');
 			if (!is_array($postVars) || !isset($postVars[$postVar])) {
 				// Check fixed
-				$postVars = $this->pObj->getPostVarSetConfig($row['pid'], 'fixedPostVars');
+				$postVars = $this->pObj->getPostVarSetConfig($row['page_id'], 'fixedPostVars');
 				if (!is_array($postVars) || !isset($postVars[$postVar])) {
 					// Not a postVar, so page most likely in not in cache. Clear row.
 					// TODO It would be great to update cache in this case but usually TYPO3 is not

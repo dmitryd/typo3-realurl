@@ -1,3 +1,7 @@
+2011-04-14	Dmitry Dulepov	<dmitry.dulepov@gmail.com>
+
+	* Fixed bug #18077: Wrong table column name (thanks to Juris Treibahs)
+
 2011-03-23	Dmitry Dulepov	<dmitry.dulepov@gmail.com>
 
 	* Removed autoUpdatePathCache and firstHitPathCache because they causes random hard to catch problems (404 errors and performance issues)
