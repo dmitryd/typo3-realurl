@@ -3,6 +3,7 @@
 	* Fixed bug #18077: Wrong table column name (thanks to Juris Treibahs)
 	* Fixed bug #18047: 1.10.2 treats tx_realurl_pathsegment as entire url regardless of tx_realurl_pathoverride
 	* Fixed bug #18099: Use only detected language when decoding
+	* Fixed bug #18042: pagePath.spaceCharacter empty not supported anymore
 
 2011-03-23	Dmitry Dulepov	<dmitry.dulepov@gmail.com>
 
