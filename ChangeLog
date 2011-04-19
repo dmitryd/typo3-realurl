@@ -1,6 +1,7 @@
 2011-04-19	Dmitry Dulepov	<dmitry.dulepov@gmail.com>
 
 	* Fixed bug #18081: With default config RealURL accepts pages with .html suffix as long as with /
+	* Fixed bug #17944: "Excludes from speaking URL" for "Visual menu separator"
 
 2011-04-14	Dmitry Dulepov	<dmitry.dulepov@gmail.com>
 
