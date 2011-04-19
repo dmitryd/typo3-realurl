@@ -2,6 +2,7 @@
 
 	* Fixed bug #18081: With default config RealURL accepts pages with .html suffix as long as with /
 	* Fixed bug #17944: "Excludes from speaking URL" for "Visual menu separator"
+	* Fixed bug #16001: Error in documentation: parameter condPrevValue is wrong, should be cond['prevValueInList']
 
 2011-04-14	Dmitry Dulepov	<dmitry.dulepov@gmail.com>
 
