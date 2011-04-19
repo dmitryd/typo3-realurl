@@ -536,7 +536,6 @@ class tx_realurl_advanced {
 				$parts = parse_url($pagePath);
 				$this->pObj->devLog('$innerSubDomain=true, showing page path parts', $parts);
 				if ($parts['host'] == '') {
-					$domain = '';
 					foreach ($newRootLine as $rl) {
 						$rows = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('domainName', 'sys_domain', 'pid=' . $rl['uid'] . ' AND redirectTo=\'\' AND hidden=0', '', 'sorting');
 						if (count($rows)) {
