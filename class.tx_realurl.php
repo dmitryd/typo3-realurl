@@ -1409,17 +1409,26 @@ class tx_realurl {
 	 */
 	protected function decodeSpURL_decodeFileName_checkHtmlSuffix($fileName, $segment, $extension, array &$pathParts) {
 		$handled = false;
-		if (isset($this->extConf['fileName']['defaultToHTMLsuffixOnPrev'])) {
+		if (isset($this->extConf['fileName']['defaultToHTMLsuffixOnPrev']) && $this->extConf['fileName']['defaultToHTMLsuffixOnPrev']) {
 			$suffix = $this->extConf['fileName']['defaultToHTMLsuffixOnPrev'];
 			$suffix = (!$this->isString($suffix, 'defaultToHTMLsuffixOnPrev') ? '.html' : $suffix);
 			if ($suffix == '.' . $extension) {
 				$pathParts[] = rawurlencode($segment);
 				$this->filePart = '.' . $extension;
+				$handled = true;
 			}
-			else {
-				$this->decodeSpURL_throw404('File "' . $fileName . '" was not found (2)!');
+		}
+		if (!$handled && isset($this->extConf['fileName']['acceptHTMLsuffix']) && $this->extConf['fileName']['acceptHTMLsuffix']) {
+			$suffix = $this->extConf['fileName']['acceptHTMLsuffix'];
+			$suffix = (!$this->isString($suffix, 'acceptHTMLsuffix') ? '.html' : $suffix);
+			if (substr($fileName, -strlen($suffix)) == $suffix) {
+				$pathParts[] = rawurlencode($segment);
+				$this->filePart = $suffix;
+				$handled = true;
 			}
-			$handled = true;
+		}
+		if (!$handled) {
+			$this->decodeSpURL_throw404('File "' . $fileName . '" was not found (2)!');
 		}
 		return $handled;
 	}
