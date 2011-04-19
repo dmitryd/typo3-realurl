@@ -158,7 +158,7 @@ class tx_realurl_advanced {
 
 		// Convert a page-alias to a page-id if needed
 		$pageId = $this->resolveAlias($pageId);
-		$pageId = $this->resolveShortcuts($pageId);
+		$pageId = $this->resolveShortcuts($pageId, $mpvar);
 		if ($pageId) {
 			// Set error if applicable.
 			if ($this->isExcludedPage($pageId)) {
@@ -231,7 +231,7 @@ class tx_realurl_advanced {
 	 * @param int pageId
 	 * @return mixed false if not found or int
 	 */
-	protected function resolveShortcuts($pageId) {
+	protected function resolveShortcuts($pageId, &$mpvar) {
 		$disableGroupAccessCheck = ($GLOBALS['TSFE']->config['config']['typolinkLinkAccessRestrictedPages'] ? true : false);
 		$loopCount = 20; // Max 20 shortcuts, to prevent an endless loop
 		while ($pageId > 0 && $loopCount > 0) {
@@ -245,7 +245,7 @@ class tx_realurl_advanced {
 
 			if (!$this->conf['dontResolveShortcuts'] && $page['doktype'] == 4) {
 				// Shortcut
-				$pageId = $this->resolveShortcut($page, $disableGroupAccessCheck);
+				$pageId = $this->resolveShortcut($page, $disableGroupAccessCheck, array(), $mpvar);
 			}
 			else {
 				$pageId = $page['uid'];
@@ -1216,7 +1216,7 @@ class tx_realurl_advanced {
 	 * @param	array	$log	Internal log
 	 * @return	int	Found page id
 	 */
-	protected function resolveShortcut($page, $disableGroupAccessCheck, $log = array()) {
+	protected function resolveShortcut($page, $disableGroupAccessCheck, $log = array(), &$mpvar = null) {
 		if (isset($log[$page['uid']])) {
 			// loop detected!
 			return $page['uid'];
@@ -1229,7 +1229,8 @@ class tx_realurl_advanced {
 				$pageid = intval($page['shortcut']);
 				$page = $GLOBALS['TSFE']->sys_page->getPage($pageid, $disableGroupAccessCheck);
 				if ($page && $page['doktype'] == 4) {
-					$pageid = $this->resolveShortcut($page, $disableGroupAccessCheck, $log);
+					$mpvar = '';
+					$pageid = $this->resolveShortcut($page, $disableGroupAccessCheck, $log, &$mpvar);
 				}
 			}
 		}
@@ -1239,7 +1240,15 @@ class tx_realurl_advanced {
 			if (count($rows) > 0) {
 				reset($rows);
 				$row = current($rows);
-				$pageid = ($row['doktype'] == 4 ? $this->resolveShortcut($row, $disableGroupAccessCheck, $log) : $row['uid']);
+				$pageid = ($row['doktype'] == 4 ? $this->resolveShortcut($row, $disableGroupAccessCheck, $log, &$mpvar) : $row['uid']);
+			}
+
+			if (isset($row['_MP_PARAM'])) {
+				if ($mpvar) {
+					$mpvar .= ',';
+				}
+
+				$mpvar .= $row['_MP_PARAM'];
 			}
 		}
 		elseif ($page['shortcut_mode'] == 4) {
@@ -1247,7 +1256,7 @@ class tx_realurl_advanced {
 			$page = $GLOBALS['TSFE']->sys_page->getPage($page['pid'], $disableGroupAccessCheck);
 			$pageid = $page['uid'];
 			if ($page && $page['doktype'] == 4) {
-				$pageid = $this->resolveShortcut($page, $disableGroupAccessCheck, $log);
+				$pageid = $this->resolveShortcut($page, $disableGroupAccessCheck, $log, &$mpvar);
 			}
 		}
 		return $pageid;
