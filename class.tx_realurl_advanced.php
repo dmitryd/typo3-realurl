@@ -938,7 +938,7 @@ class tx_realurl_advanced {
 		$segment = array_shift($urlParts);
 
 		// Perform search:
-		list($uid, $row, $exclude) = $this->findPageBySegmentAndPid($startPid, $segment);
+		list($uid, $row, $exclude, $possibleMatch) = $this->findPageBySegmentAndPid($startPid, $segment);
 
 		// If a title was found...
 		if ($uid) {
@@ -956,6 +956,16 @@ class tx_realurl_advanced {
 				}
 			}
 		}
+
+			// the possible "exclude in URL segment" match must be checked if no other results in
+			// deeper tree branches were found, because we want to access this page also
+			// + Books <-- excluded in URL (= possibleMatch)
+			//   - TYPO3
+			//   - ExtJS
+		if (count($possibleMatch) > 0) {
+			return $this->processFoundPage($possibleMatch, $mpvar, $urlParts, true);
+		}
+
 		// No title, so we reached the end of the id identifying part of the path and now put back the current non-matched title segment before we return the PID:
 		array_unshift($urlParts, $segment);
 		return $currentIdMp;
@@ -1098,10 +1108,14 @@ class tx_realurl_advanced {
 
 		// Return:
 		$encodedTitle = $this->encodeTitle($title);
+		$possibleMatch = array();
 		if (isset($allTitles[$encodedTitle])) {
-			return array($allTitles[$encodedTitle], $uidTrack[$allTitles[$encodedTitle]], false);
+			if (!$uidTrack[$allTitles[$encodedTitle]]['tx_realurl_exclude']) {
+				return array($allTitles[$encodedTitle], $uidTrack[$allTitles[$encodedTitle]], false, array());
+			}
+			$possibleMatch = $uidTrack[$allTitles[$encodedTitle]];
 		}
-		return array(false, false, $exclude);
+		return array(false, false, $exclude, $possibleMatch);
 	}
 
 	/*******************************

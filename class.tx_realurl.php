@@ -1144,7 +1144,7 @@ class tx_realurl {
 
 		// Setting "postVarSets":
 		$postVarSetCfg = $this->getPostVarSetConfig($cachedInfo['id']);
-		$post_GET_VARS = $this->decodeSpURL_settingPostVarSets($pathParts, $postVarSetCfg);
+		$post_GET_VARS = $this->decodeSpURL_settingPostVarSets($pathParts, $postVarSetCfg, $cachedInfo['id']);
 
 		// Looking for remaining parts:
 		if (count($pathParts)) {
@@ -1292,7 +1292,7 @@ class tx_realurl {
 	 * @return	array		GET-vars resulting from the analysis
 	 * @see decodeSpURL_doDecode(), encodeSpURL_gettingPostVarSets()
 	 */
-	protected function decodeSpURL_settingPostVarSets(&$pathParts, $postVarSetCfg) {
+	protected function decodeSpURL_settingPostVarSets(&$pathParts, $postVarSetCfg, $pid) {
 		if (is_array($postVarSetCfg)) {
 			$GET_string = '';
 
@@ -1336,7 +1336,7 @@ class tx_realurl {
 					array_unshift($pathParts, $key);
 					break;
 				} else {
-					$this->decodeSpURL_throw404('Segment "' . $key . '" was not a keyword for a postVarSet as expected!');
+					$this->decodeSpURL_throw404('Segment "' . $key . '" was not a keyword for a postVarSet as expected on page with id=' . $pid . '.');
 				}
 			}
 
