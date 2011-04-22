@@ -1536,7 +1536,7 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 				' LIMIT ' . $start . ',' . $resultsPerPage;
 		}
 		else {
-			$query = 'SELECT * FROM tx_realurl_redirects t1' .
+			$query = 'SELECT t1.* FROM tx_realurl_redirects t1' .
 				' LEFT JOIN sys_domain t2 ON t1.domain_limit=t2.uid' .
 				($condition ? ' WHERE ' . $condition : '') .
 				' ORDER BY ' . $sortingParameter . ' ' . $sortingDirection .

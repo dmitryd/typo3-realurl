@@ -1087,7 +1087,7 @@ class tx_realurl {
 				'last_referer' => t3lib_div::getIndpEnv('HTTP_REFERER')
 			);
 			$GLOBALS['TYPO3_DB']->exec_UPDATEquery('tx_realurl_redirects',
-				'url_hash=' . $hash . ' AND url=' . $url,
+				'url_hash=' . $hash . ' AND url=' . $url . ' AND domain_limit=' . $domainId,
 				$fields_values, array('counter'));
 
 			// Redirect
