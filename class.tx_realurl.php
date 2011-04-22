@@ -1074,10 +1074,12 @@ class tx_realurl {
 		// DB defined redirects:
 		$hash = t3lib_div::md5int($speakingURIpath);
 		$url = $GLOBALS['TYPO3_DB']->fullQuoteStr($speakingURIpath, 'tx_realurl_redirects');
-		list($redirect_row) = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows(
+		$domainId = $this->getCurrentDomainId();
+		list($redirectRow) = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows(
 			'destination,has_moved', 'tx_realurl_redirects',
-			'url_hash=' . $hash . ' AND url=' . $url);
-		if (is_array($redirect_row)) {
+			'url_hash=' . $hash . ' AND url=' . $url . ' AND domain_limit IN (0,' . $domainId . ')',
+			'', 'domain_limit DESC');
+		if (is_array($redirectRow)) {
 			// Update statistics
 			$fields_values = array(
 				'counter' => 'counter+1',
@@ -1089,13 +1091,29 @@ class tx_realurl {
 				$fields_values, array('counter'));
 
 			// Redirect
-			if ($redirect_row['has_moved']) {
+			if ($redirectRow['has_moved']) {
 				header('HTTP/1.1 301 Moved Permanently');
 			}
 
-			header('Location: ' . t3lib_div::locationHeaderUrl($redirect_row['destination']));
+			header('Location: ' . t3lib_div::locationHeaderUrl($redirectRow['destination']));
 			exit();
 		}
+	}
+
+	/**
+	 * Obtains current domain id from sys_domain.
+	 *
+	 * @return void
+	 */
+	protected function getCurrentDomainId() {
+		list($row) = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('uid',
+			'sys_domain',
+			'domainName=' . $GLOBALS['TYPO3_DB']->fullQuoteStr(t3lib_div::getIndpEnv('HTTP_HOST')) .
+				' AND redirectTo=\'\''
+		);
+		$result = (is_array($row) ? intval($row['uid']) : 0);
+
+		return $result;
 	}
 
 	/**

@@ -67,8 +67,6 @@ CREATE TABLE tx_realurl_urldecodecache (
 
 #
 # Table structure for table 'tx_realurl_urlencodecache'
-# Cache for GEt parameter strings being translated to Speaking URls.
-# Flushable
 #
 CREATE TABLE tx_realurl_urlencodecache (
 	url_hash char(32) DEFAULT '' NOT NULL,
@@ -104,6 +102,7 @@ CREATE TABLE tx_realurl_redirects (
 	counter int(11) DEFAULT '0' NOT NULL,
 	tstamp int(11) DEFAULT '0' NOT NULL,
 	has_moved int(11) DEFAULT '0' NOT NULL,
+	domain_limit int(11) DEFAULT '0' NOT NULL,
 
 	PRIMARY KEY (url_hash)
 );

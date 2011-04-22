@@ -138,7 +138,7 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 			case 'pathcache':
 				$this->edit_save();
 				$result .= $this->getDepthSelector();
-				$moduleContent .= $this->renderModule($this->initializeTree());
+				$moduleContent = $this->renderModule($this->initializeTree());
 				$result .= $this->renderSearchForm();
 				$result .= $moduleContent;
 				break;
@@ -736,7 +736,7 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 	 * @return	string		Form elements
 	 */
 	function saveCancelButtons($extra='')	{
-		$output .= '<input type="submit" name="_edit_save" value="Save" /> ';
+		$output = '<input type="submit" name="_edit_save" value="Save" /> ';
 		$output .= '<input type="submit" name="_edit_cancel" value="Cancel" />';
 		$output .= $extra;
 
@@ -1177,7 +1177,7 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 				$field_alias = $aliasRecord['field_alias'];
 
 					// Compile Row:
-				$output.= '
+				$output = '
 					<tr class="bgColor'.($cc%2 ? '-20':'-10').'">
 						'.implode('
 						',$tCells).'
@@ -1494,7 +1494,7 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 	}
 
 	protected function getRedirectsSearch() {
-		$result .= $this->getSearchField();
+		$result = $this->getSearchField();
 		if (t3lib_div::_GP('pathPrefixSearch')) {
 			$result .= ' <input type="reset" name="_" value="' .
 				$GLOBALS['LANG']->getLL('show_all', true) . '" ' .
@@ -1530,11 +1530,21 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 		}
 
 		$start = ($page-1)*$resultsPerPage;
-		$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery(
-			'*', 'tx_realurl_redirects', $condition, $sortingParameter . ' ' . $sortingDirection,
-			'',
-			$start . ',' . $resultsPerPage
-		);
+		if ($sortingParameter !== 'domain_limit') {
+			$query = 'SELECT t1.* FROM tx_realurl_redirects t1' . ($condition ? ' WHERE ' . $condition : '') .
+				' ORDER BY ' . $sortingParameter . ' ' . $sortingDirection .
+				' LIMIT ' . $start . ',' . $resultsPerPage;
+		}
+		else {
+			$query = 'SELECT * FROM tx_realurl_redirects t1' .
+				' LEFT JOIN sys_domain t2 ON t1.domain_limit=t2.uid' .
+				($condition ? ' WHERE ' . $condition : '') .
+				' ORDER BY ' . $sortingParameter . ' ' . $sortingDirection .
+				' LIMIT ' . $start . ',' . $resultsPerPage;
+		}
+
+		$res = $GLOBALS['TYPO3_DB']->sql_query($query);
+		$output = '';
 		while (false !== ($rec = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res))) {
 			$output .= '<tr class="bgColor'.($itemCounter%2 ? '-20':'-10').'">' .
 				$this->generateSingleRedirectContent($rec);
@@ -1551,7 +1561,7 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 			$results = sprintf($GLOBALS['LANG']->getLL('displaying_results'),
 				$start + 1, min($totalResults, ($start + $resultsPerPage)), $totalResults);
 			$output .= '<tr><td colspan="4" style="vertical-align:middle">' . $results . '</td>' .
-				'<td colspan="4" style="text-align: right">' . $pageBrowser->getPageBrowser($totalResults, $resultsPerPage) . '</td></tr>';
+				'<td colspan="5" style="text-align: right">' . $pageBrowser->getPageBrowser($totalResults, $resultsPerPage) . '</td></tr>';
 		}
 
 		$output .= '</table>';
@@ -1588,7 +1598,8 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 				'</td>';
 		$output .= sprintf( '<td><a href="%s" target="_blank">/%s</a></td>', htmlspecialchars(t3lib_div::getIndpEnv('TYPO3_SITE_URL').$rec['url']), htmlspecialchars($rec['url']) );
 		$destinationURL = $this->getDestinationRedirectURL($rec['destination']);
-		$output .= sprintf( '<td><a href="%1$s" target="_blank" title="%1$s">%2$s</a></td>', htmlspecialchars($destinationURL), htmlspecialchars(t3lib_div::fixed_lgd_cs($destinationURL, 30)));
+		$output .= sprintf('<td><a href="%1$s" target="_blank" title="%1$s">%2$s</a></td>', htmlspecialchars($destinationURL), htmlspecialchars(t3lib_div::fixed_lgd_cs($destinationURL, 30)));
+		$output .= '<td>' . htmlspecialchars($this->getRedirectDomain($rec['domain_limit'])) . '</td>';
 		$output .= '<td align="center">'.($rec['has_moved'] ? '+' : '&nbsp;').'</td>';
 		$output .= '<td align="center">'.$rec['counter'].'</td>';
 
@@ -1618,6 +1629,24 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 		return $output;
 	}
 
+	/**
+	 * Obtains domain name by its id.
+	 *
+	 * @param int $domainId
+	 * @return string
+	 */
+	protected function getRedirectDomain($domainId) {
+		$result = ' ';
+		if ($domainId != 0) {
+			list($row) = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('domainName',
+				'sys_domain', 'uid=' . intval($domainId)
+			);
+			if (is_array($row)) {
+				$result = $row['domainName'];
+			}
+		}
+		return $result;
+	}
 
 	/**
 	 * Creates a header for the redirects table.
@@ -1631,6 +1660,7 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 			'<td>&nbsp;</td>' .
 			sprintf('<td><a href="%s">Source:</a></td>', sprintf('index.php?id=%d&SET[type]=%s&SET[ob]=url&SET[obdir]=%s', $this->pObj->id, $this->pObj->MOD_SETTINGS['type'], $sortingDirection)) .
 			sprintf('<td><a href="%s">Redirect to:</a></td>', sprintf('index.php?id=%d&SET[type]=%s&SET[ob]=destination&SET[obdir]=%s', $this->pObj->id, $this->pObj->MOD_SETTINGS['type'], $sortingDirection)) .
+			sprintf('<td><a href="%s">Domain:</a></td>', sprintf('index.php?id=%d&SET[type]=%s&SET[ob]=domain_limit&SET[obdir]=%s', $this->pObj->id, $this->pObj->MOD_SETTINGS['type'], $sortingDirection)) .
 			sprintf('<td><a href="%s">Permanent:</a></td>', sprintf('index.php?id=%d&SET[type]=%s&SET[ob]=has_moved&SET[obdir]=%s', $this->pObj->id, $this->pObj->MOD_SETTINGS['type'], $sortingDirection)) .
 			sprintf('<td><a href="%s">Hits:</a></td>', sprintf('index.php?id=%d&SET[type]=%s&SET[ob]=counter&SET[obdir]=%s', $this->pObj->id, $this->pObj->MOD_SETTINGS['type'], $sortingDirection)) .
 			'<td>Last hit time:</td>' .
@@ -1645,11 +1675,19 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 	 * @return array
 	 */
 	protected function getRedirectViewSortingParameters() {
+		session_start();
 		$gpVars = t3lib_div::_GP('SET');
-		$sortingParameter = isset($gpVars['ob']) ? $gpVars['ob'] : 'url';
-		$sortingDirection = isset($gpVars['obdir']) ? $gpVars['obdir'] : 'ASC';
+		if (isset($gpVars['ob'])) {
+			$sortingParameter = $gpVars['ob'];
+			$sortingDirection = $gpVars['obdir'];
+			$_SESSION['realurl']['redirects_view']['sorting'] = array($sortingParameter, $sortingDirection);
+		}
+		elseif (!isset($_SESSION['realurl']['redirects_view']['sorting'])) {
+			$_SESSION['realurl']['redirects_view']['sorting'] = array('url','asc');
+		}
 
-		return array($sortingParameter, $sortingDirection);
+
+		return $_SESSION['realurl']['redirects_view']['sorting'];
 	}
 
 
@@ -1743,18 +1781,22 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 	 * @return	string	Generated HTML
 	 */
 	protected function getRedirectEditForm() {
+		$content = '';
 		$url = t3lib_div::_GP('url');
 		list($row) = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows(
-			'url_hash,destination,has_moved', 'tx_realurl_redirects',
+			'url_hash,destination,has_moved,domain_limit', 'tx_realurl_redirects',
 			'url=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($url, 'tx_realurl_redirects'));
 		if (is_array($row)) {
-			$content = '<table border="0" cellspacing="3" cellpadding="0" style="margin-bottom:1em">' .
+			$content = '<table border="0" cellspacing="2" cellpadding="1" style="margin-bottom:1em">' .
 				'<tr><td>Redirect from:</td>' .
-				'<td>/<input type="text" name="data[0][source]" value="' . htmlspecialchars($url) . '" size="40" /></td></tr>' .
-				'<tr><td>Redirect to:</td>' .
-				'<td><span style="visibility:hidden">/</span><input type="text" name="data[0][target]" value="' . htmlspecialchars($row['destination']).'" size="40" /></td></tr>' .
-				'<tr><td></td><td><span style="visibility:hidden">/</span><input type="checkbox" name="data[0][permanent]" ' . ($row['has_moved'] ? ' checked="checked"':'').' /> Permanent redirect (send "301 Moved permanently" header)</td></tr>' .
-				'<tr><td></td><td><span style="visibility:hidden">/</span>' . $this->saveCancelButtons() . '</td></tr>' .
+				'<td width="1">/</td><td><input type="text" name="data[0][source]" value="' . htmlspecialchars($url) . '" size="40" /></td></tr>' .
+				'<tr><td colspan="2">Redirect to:</td>' .
+				'<td><input type="text" name="data[0][target]" value="' . htmlspecialchars($row['destination']).'" size="40" /></td></tr>' .
+				'<tr><td colspan="2">Domain:</td></td>' .
+				'<td><select name="data[0][domain_limit]">' . $this->getRedirectDomainOptions(intval($row['domain_limit'])) . '</select></td></tr>' .
+				'<tr><td colspan="2"></td>' .
+				'<td><input type="checkbox" name="data[0][permanent]" ' . ($row['has_moved'] ? ' checked="checked"':'').' /> Permanent redirect (send "301 Moved permanently" header)</td></tr>' .
+				'<tr><td colspan="2"></td><td>' . $this->saveCancelButtons() . '</td></tr>' .
 				'</table>' .
 				'<input type="hidden" name="data[0][old_url]" value="' . htmlspecialchars($url) . '" />' .
 				'<input type="hidden" name="data[0][url_hash]" value="' . $row['url_hash'] . '" />'
@@ -1772,7 +1814,7 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 		$content = '<table style="margin-bottom:1em">';
 
 		// Show the form header
-		$content .= '<tr class="bgColor5 tableheader"><td>Source URL</td><td>Destination URL:</td><td>Permanent:</td></tr>';
+		$content .= '<tr class="bgColor5 tableheader"><td>Source URL</td><td>Destination URL:</td><td>Domain:</td><td>Permanent:</td></tr>';
 
 		// Show fields
 		$data = t3lib_div::_GP('data');
@@ -1786,7 +1828,8 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 				'/<input type="text" size="30" name="data[' . $i . '][source]" value="' .
 				(isset($data[$i]['source']) ? htmlspecialchars($data[$i]['source']) : '') . '" /></td><td>' .
 				'<input type="text" size="30" name="data[' . $i . '][target]" value="' .
-				(isset($data[$i]['target']) ? htmlspecialchars($data[$i]['target']) : '') . '" /></td><td align="center">' .
+				(isset($data[$i]['target']) ? htmlspecialchars($data[$i]['target']) : '') . '" /></td><td>' .
+				'<select name="data[' . $i . '][domain_limit]">' . $this->getRedirectDomainOptions(intval($data[$i]['domain_limit'])) . '</select></td><td align="center">' .
 				'<input type="checkbox" name="data[' . $i . '][permanent]" ' .
 				(isset($data[$i]['target']) ? ($data[$i]['target'] ? ' checked="checked"' : '') : '') . ' /></td>' .
 				'</tr>';
@@ -1795,6 +1838,31 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 			'</table>';
 
 		return $content;
+	}
+
+	/**
+	 * Creates a list of options for the domain selector box.
+	 *
+	 * @param int $selectedDomain
+	 * @return string
+	 */
+	protected function getRedirectDomainOptions($selectedDomain) {
+		static $domainList = null;
+
+		if (is_null($domainList)) {
+			$domainList = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('uid,domainName',
+				'sys_domain', 'redirectTo=\'\'', '', 'domainName'
+			);
+		}
+
+		$result = '<option value="0">' . htmlspecialchars($GLOBALS['LANG']->getLL('all_domains')) . '</option>';
+		foreach ($domainList as $domainRecord) {
+			$result .= '<option value="' . $domainRecord['uid'] . '"' .
+				($domainRecord['uid'] == $selectedDomain ? ' selected="selected"' : '') . '>' .
+				htmlspecialchars($domainRecord['domainName']) .
+				'</option>';
+		}
+		return $result;
 	}
 
 	/**
@@ -1847,7 +1915,8 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 						'url_hash' => t3lib_div::md5int($fields['source']),
 						'url' => $fields['source'],
 						'destination' => $fields['target'],
-						'has_moved' => $fields['permanent'] ? 1 : 0
+						'has_moved' => $fields['permanent'] ? 1 : 0,
+						'domain_limit' => intval($fields['domain_limit'])
 					);
 				}
 				else {
@@ -1856,7 +1925,8 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 						'url_hash' => t3lib_div::md5int($fields['source']),
 						'url' => $fields['source'],
 						'destination' => $fields['target'],
-						'has_moved' => $fields['permanent'] ? 1 : 0
+						'has_moved' => $fields['permanent'] ? 1 : 0,
+						'domain_limit' => intval($fields['domain_limit'])
 					);
 				}
 			}
