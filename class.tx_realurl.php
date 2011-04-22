@@ -1788,7 +1788,6 @@ class tx_realurl {
 		$langEnabled = FALSE;
 		$fieldList = array();
 		if ($cfg['languageGetVar'] && $cfg['transOrigPointerField'] && $cfg['languageField']) {
-
 			$fieldList[] = 'uid';
 			$fieldList[] = $cfg['transOrigPointerField'];
 			$fieldList[] = $cfg['languageField'];
@@ -1801,9 +1800,8 @@ class tx_realurl {
 			// First, test if there is an entry in cache for the alias:
 			if ($cfg['useUniqueCache'] && $returnId = $this->lookUp_uniqAliasToId($cfg, $value)) {
 				return $returnId;
-			} else { // If no cached entry, look it up directly in the table:
-
-
+			}
+			else { // If no cached entry, look it up directly in the table:
 				$fieldList[] = $cfg['id_field'];
 				$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery(implode(',', $fieldList), $cfg['table'],
 									$cfg['alias_field'] . '=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($value, $cfg['table']) .
