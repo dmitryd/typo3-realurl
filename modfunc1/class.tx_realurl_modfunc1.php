@@ -89,15 +89,13 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 	 * @return	array
 	 */
 	function modMenu()	{
-		global $LANG;
-
 		return array (
 			'depth' => array(
-				0 => $LANG->sL('LLL:EXT:lang/locallang_core.php:labels.depth_0'),
-				1 => $LANG->sL('LLL:EXT:lang/locallang_core.php:labels.depth_1'),
-				2 => $LANG->sL('LLL:EXT:lang/locallang_core.php:labels.depth_2'),
-				3 => $LANG->sL('LLL:EXT:lang/locallang_core.php:labels.depth_3'),
-				99 => $LANG->sL('LLL:EXT:lang/locallang_core.php:labels.depth_infi'),
+				0 => $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.php:labels.depth_0'),
+				1 => $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.php:labels.depth_1'),
+				2 => $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.php:labels.depth_2'),
+				3 => $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.php:labels.depth_3'),
+				99 => $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.php:labels.depth_infi'),
 			),
 			'type' => array(
 				'pathcache' => 'ID-to-path mapping',
@@ -213,7 +211,7 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 	 */
 	protected function initializeTree() {
 		$tree = t3lib_div::makeInstance('t3lib_pageTree');
-		/* @var $tree t3lib_pageTree */
+		/** @var t3lib_pageTree $tree */
 		$tree->addField('nav_title', true);
 		$tree->addField('alias', true);
 		$tree->addField('tx_realurl_pathsegment', true);
@@ -260,7 +258,7 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 	 * @param	array		The Page tree data
 	 * @return	string		HTML for the information table.
 	 */
-	function renderModule($tree)	{
+	function renderModule(t3lib_pageTree $tree)	{
 
 			// Initialize:
 		$searchPath = trim(t3lib_div::_GP('pathPrefixSearch'));
@@ -417,6 +415,7 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 								'</td>';
 
 						// Set error msg:
+					$error = '';
 					if (!strcmp($inf['pagepath'],''))	{
 						if ($row['row']['uid']!=$this->pObj->id)	{	// Show error of "Empty" only for levels under the root. Yes, we cannot know that the pObj->id is the true root of the site, but at least any SUB page should probably have a path string!
 							$error = $this->pObj->doc->icons(2).'Empty';
@@ -766,10 +765,11 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 	 * @param	array		The Page tree data
 	 * @return	string		HTML for the information table.
 	 */
-	function decodeView($tree)	{
+	function decodeView(t3lib_pageTree $tree)	{
 
 			// Delete entries:
 		$cmd = t3lib_div::_GP('cmd');
+		$subcmd = '';
 		if ($cmd === 'deleteDC')	{
 			$subcmd = t3lib_div::_GP('entry');
 			$this->clearDEncodeCache($subcmd,TRUE);
@@ -915,10 +915,11 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 	 * @param	array		The Page tree data
 	 * @return	string		HTML for the information table.
 	 */
-	function encodeView($tree)	{
+	function encodeView(t3lib_pageTree $tree)	{
 
 			// Delete entries:
 		$cmd = t3lib_div::_GP('cmd');
+		$subcmd = '';
 		if ($cmd === 'deleteEC')	{
 			$subcmd = t3lib_div::_GP('entry');
 			$this->clearDEncodeCache($subcmd);
@@ -1137,7 +1138,7 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 				'value_id, lang, expire'
 			);
 
-			$cc=0;
+			$cc = 0; $field_id = $field_alias = $output = '';
 			$duplicates = array();
 			foreach($tableContent as $aliasRecord)	{
 					// Add data:
@@ -1323,11 +1324,11 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 		global $TYPO3_CONF_VARS;
 
 			// Include array browser:
-		require_once (PATH_t3lib."class.t3lib_arraybrowser.php");
+		require_once(PATH_t3lib . 'class.t3lib_arraybrowser.php');
 
 			// Initialize array browser:
-		$arrayBrowser = t3lib_div::makeInstance("t3lib_arrayBrowser");
-
+		$arrayBrowser = t3lib_div::makeInstance('t3lib_arrayBrowser');
+		/** @var t3lib_arrayBrowser $arrayBrowser */
 		$arrayBrowser->expAll = TRUE;
 		$arrayBrowser->fixedLgd = FALSE;
 		$arrayBrowser->dontLinkVar = TRUE;
@@ -1386,7 +1387,6 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 
 		if (is_array($list))	{
 			$output=''; $cc = 0;
-			$hostNameCache = array();
 
 			foreach($list as $rec)	{
 				$host = '';
@@ -1557,7 +1557,7 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 		$totalResults = $count['t'];
 		if ($totalResults > $resultsPerPage) {
 			$pageBrowser = t3lib_div::makeInstance('tx_realurl_pagebrowser');
-			/* @var $pageBrowser tx_realurl_pagebrowser */
+			/** @var tx_realurl_pagebrowser $pageBrowser */
 			$results = sprintf($GLOBALS['LANG']->getLL('displaying_results'),
 				$start + 1, min($totalResults, ($start + $resultsPerPage)), $totalResults);
 			$output .= '<tr><td colspan="4" style="vertical-align:middle">' . $results . '</td>' .
@@ -1612,7 +1612,7 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 
 		if ($rec['last_referer']) {
 			$lastRef = htmlspecialchars($rec['last_referer']);
-			$output .= sprintf( '<td><a href="%s" target="_blank" title="%s">%s</a></td>', $lastRef, $lastRef, (strlen($rec['last_referer']) > 30) ? htmlspecialchars(substr($rec['last_referer'], 0, 30)) . '...' : $lastRef);
+			$output .= sprintf('<td><a href="%s" target="_blank" title="%s">%s</a></td>', $lastRef, $lastRef, (strlen($rec['last_referer']) > 30) ? htmlspecialchars(substr($rec['last_referer'], 0, 30)) . '...' : $lastRef);
 		}
 		else {
 			$output .= '<td>&nbsp;</td>';
