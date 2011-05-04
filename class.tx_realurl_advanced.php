@@ -1244,7 +1244,7 @@ class tx_realurl_advanced {
 				$page = $GLOBALS['TSFE']->sys_page->getPage($pageid, $disableGroupAccessCheck);
 				if ($page && $page['doktype'] == 4) {
 					$mpvar = '';
-					$pageid = $this->resolveShortcut($page, $disableGroupAccessCheck, $log, &$mpvar);
+					$pageid = $this->resolveShortcut($page, $disableGroupAccessCheck, $log, $mpvar);
 				}
 			}
 		}
@@ -1254,7 +1254,7 @@ class tx_realurl_advanced {
 			if (count($rows) > 0) {
 				reset($rows);
 				$row = current($rows);
-				$pageid = ($row['doktype'] == 4 ? $this->resolveShortcut($row, $disableGroupAccessCheck, $log, &$mpvar) : $row['uid']);
+				$pageid = ($row['doktype'] == 4 ? $this->resolveShortcut($row, $disableGroupAccessCheck, $log, $mpvar) : $row['uid']);
 			}
 
 			if (isset($row['_MP_PARAM'])) {
@@ -1270,7 +1270,7 @@ class tx_realurl_advanced {
 			$page = $GLOBALS['TSFE']->sys_page->getPage($page['pid'], $disableGroupAccessCheck);
 			$pageid = $page['uid'];
 			if ($page && $page['doktype'] == 4) {
-				$pageid = $this->resolveShortcut($page, $disableGroupAccessCheck, $log, &$mpvar);
+				$pageid = $this->resolveShortcut($page, $disableGroupAccessCheck, $log, $mpvar);
 			}
 		}
 		return $pageid;
