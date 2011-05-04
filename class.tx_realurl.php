@@ -1108,7 +1108,7 @@ class tx_realurl {
 	protected function getCurrentDomainId() {
 		list($row) = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('uid',
 			'sys_domain',
-			'domainName=' . $GLOBALS['TYPO3_DB']->fullQuoteStr(t3lib_div::getIndpEnv('HTTP_HOST')) .
+			'domainName=' . $GLOBALS['TYPO3_DB']->fullQuoteStr(t3lib_div::getIndpEnv('HTTP_HOST'), 'sys_domain') .
 				' AND redirectTo=\'\''
 		);
 		$result = (is_array($row) ? intval($row['uid']) : 0);

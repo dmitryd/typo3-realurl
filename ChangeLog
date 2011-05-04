@@ -1,6 +1,7 @@
 2011-05-04  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
 	* Fixed bug #18118: Warning message related to pass-by-reference
+	* Fixed warning: missing 2nd parameter to fullQuoteStr
 
 2011-05-03  Dmitry Dulepov	<dmitry.dulepov@gmail.com>
 
