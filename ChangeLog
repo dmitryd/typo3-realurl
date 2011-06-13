@@ -1,3 +1,7 @@
+2011-06-13	Dmitry Dulepov	<dmitry.dulepov@gmail.com>
+
+	* Fixed bug #18176: L=x does not work with _DOMAINS
+
 2011-05-04  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
 	* Fixed bug #18118: Warning message related to pass-by-reference

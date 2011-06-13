@@ -1515,7 +1515,7 @@ class tx_realurl {
 				// Reconstruct them or cHash check will fail in TSFE.
 				// Related to bug #15906.
 				if (!$setup['optional']) {
-					if (!is_array($setup['cond']) || $this->checkCondition($setup['cond'], $prevVal)) {
+					if (!isset($_GET[$setup['GETvar']]) && (!is_array($setup['cond']) || $this->checkCondition($setup['cond'], $prevVal))) {
 						$GET_string .= '&' . rawurlencode($setup['GETvar']) . '=';
 						$prevVal = '';
 					}
@@ -2343,7 +2343,9 @@ class tx_realurl {
 			if (is_array($hostConfiguration)) {
 				if (isset($hostConfiguration['GETvars']) && is_array($hostConfiguration['GETvars'])) {
 					foreach ($hostConfiguration['GETvars'] as $key => $value) {
-						$_GET[$key] = $value;
+						if (empty($_GET[$key])) {
+							$_GET[$key] = $value;
+						}
 					}
 					if (isset($hostConfiguration['useConfiguration'])) {
 						$this->setConfigurationByReference($hostConfiguration['useConfiguration']);
