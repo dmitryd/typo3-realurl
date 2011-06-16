@@ -1178,7 +1178,7 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 				$field_alias = $aliasRecord['field_alias'];
 
 					// Compile Row:
-				$output = '
+				$output .= '
 					<tr class="bgColor'.($cc%2 ? '-20':'-10').'">
 						'.implode('
 						',$tCells).'
