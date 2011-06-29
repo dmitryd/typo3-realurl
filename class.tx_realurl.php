@@ -380,10 +380,8 @@ class tx_realurl {
 			// absolute URLs for pages with restricted access. It prepends
 			// current host always. See http://bugs.typo3.org/view.php?id=18200
 			$testUrl = $parameters['finalTagParts']['url'];
-			$host = t3lib_div::getIndpEnv('HTTP_HOST');
-			if (preg_match('/^https?:\/\/' . preg_quote($host) . '\//', $testUrl)) {
-				$pos = strpos($testUrl, $host);
-				$testUrl = substr($testUrl, $pos + strlen($host));
+			if (preg_match('/^https?:\/\/[^\/]+\//', $testUrl)) {
+				$testUrl = preg_replace('/https?:\/\/[^\/]+(.+)$/', '\1', $testUrl);
 			}
 
 			if (isset($this->urlPrepend[$testUrl])) {
