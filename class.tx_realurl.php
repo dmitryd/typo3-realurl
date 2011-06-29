@@ -374,27 +374,40 @@ class tx_realurl {
 	 * @return	void
 	 */
 	public function encodeSpURL_urlPrepend(&$parameters, &$pObj) {
-		if (isset($parameters['finalTagParts']['url']) && isset($this->urlPrepend[$parameters['finalTagParts']['url']])) {
-			$urlKey = $url = $parameters['finalTagParts']['url'];
+		if (isset($parameters['finalTagParts']['url'])) {
 
-			// Remove absRefPrefix if necessary
-			$absRefPrefixLength = strlen($GLOBALS['TSFE']->absRefPrefix);
-			if ($absRefPrefixLength != 0 && substr($url, 0, $absRefPrefixLength) == $GLOBALS['TSFE']->absRefPrefix) {
-				$url = substr($url, $absRefPrefixLength);
+			// We must check for absolute URLs here because typolink can force
+			// absolute URLs for pages with restricted access. It prepends
+			// current host always. See http://bugs.typo3.org/view.php?id=18200
+			$testUrl = $parameters['finalTagParts']['url'];
+			$host = t3lib_div::getIndpEnv('HTTP_HOST');
+			if (preg_match('/^https?:\/\/' . preg_quote($host) . '\//', $testUrl)) {
+				$pos = strpos($testUrl, $host);
+				$testUrl = substr($testUrl, $pos + strlen($host));
 			}
 
-			$url = $this->urlPrepend[$urlKey] . ($url{0} != '/' ? '/' : '') . $url;
+			if (isset($this->urlPrepend[$testUrl])) {
+				$urlKey = $url = $testUrl;
 
-			unset($this->urlPrepend[$parameters['finalTagParts']['url']]);
+				// Remove absRefPrefix if necessary
+				$absRefPrefixLength = strlen($GLOBALS['TSFE']->absRefPrefix);
+				if ($absRefPrefixLength != 0 && substr($url, 0, $absRefPrefixLength) == $GLOBALS['TSFE']->absRefPrefix) {
+					$url = substr($url, $absRefPrefixLength);
+				}
 
-			// Adjust the URL:
-			$parameters['finalTag'] = str_replace(
-				'"' . $parameters['finalTagParts']['url'] . '"',
-				'"' . $url . '"',
-				$parameters['finalTag']
-			);
-			$parameters['finalTagParts']['url'] = $url;
-			$pObj->lastTypoLinkUrl = $url;
+				$url = $this->urlPrepend[$urlKey] . ($url{0} != '/' ? '/' : '') . $url;
+
+				unset($this->urlPrepend[$testUrl]);
+
+				// Adjust the URL:
+				$parameters['finalTag'] = str_replace(
+					'"' . htmlspecialchars($parameters['finalTagParts']['url']) . '"',
+					'"' . htmlspecialchars($url) . '"',
+					$parameters['finalTag']
+				);
+				$parameters['finalTagParts']['url'] = $url;
+				$pObj->lastTypoLinkUrl = $url;
+			}
 		}
 	}
 

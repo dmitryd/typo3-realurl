@@ -1,3 +1,7 @@
+2011-06-29	Dmitry Dulepov	<dmitry.dulepov@gmail.com>
+
+	* Fixed bug #18200: Multiple issues with _DOMAINS feature
+
 2011-06-16	Dmitry Dulepov	<dmitry.dulepov@gmail.com>
 
 	* Fixed bug #18170: Unique Aliases not shown correctly (thanks to Joachim Streit)
