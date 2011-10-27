@@ -15,6 +15,7 @@ if (TYPO3_MODE=='BE')	{
 	);
 }
 
+t3lib_div::loadTCA('pages');
 $TCA['pages']['columns'] += array(
 	'tx_realurl_pathsegment' => array(
 		'label' => 'LLL:EXT:realurl/locallang_db.xml:pages.tx_realurl_pathsegment',
