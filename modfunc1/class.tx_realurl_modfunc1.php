@@ -1578,7 +1578,7 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 	protected function getResultsPerPage($view) {
 		$tsConfig = t3lib_BEfunc::getModTSconfig($this->pObj->id, 'tx_realurl.' . $view . '.pagebrowser.resultsPerPage');
 		$resultsPerPage = $tsConfig['value'];
-		return t3lib_div::testInt($resultsPerPage) ? intval($resultsPerPage) : tx_realurl_pagebrowser::RESULTS_PER_PAGE_DEFAULT;
+		return tx_realurl::testInt($resultsPerPage) ? intval($resultsPerPage) : tx_realurl_pagebrowser::RESULTS_PER_PAGE_DEFAULT;
 	}
 
 	/**

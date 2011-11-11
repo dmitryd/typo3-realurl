@@ -289,7 +289,7 @@ class tx_realurl_tcemain {
 	 * @todo Handle changes to tx_realurl_exclude recursively
 	 */
 	protected function processContentUpdates($status, $tableName, $recordId, array $databaseData) {
-		if ($status == 'update' && t3lib_div::testInt($recordId)) {
+		if ($status == 'update' && tx_realurl::testInt($recordId)) {
 			list($pageId, $languageId) = $this->getPageData($tableName, $recordId);
 			$this->fetchRealURLConfiguration($pageId);
 			if ($this->shouldFixCaches($tableName, $databaseData)) {
