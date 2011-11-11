@@ -2694,26 +2694,26 @@ class tx_realurl {
 		return intval($this->detectedLanguage);
 	}
 
-    /**
-     * Tests if the value represents an integer number.
-     *
-     * @param mixed $value
-     * @return bool
-     */
-    static public function testInt($value) {
-        static $useOldGoodTestInt = null;
+	/**
+	 * Tests if the value represents an integer number.
+	 *
+	 * @param mixed $value
+	 * @return bool
+	 */
+	static public function testInt($value) {
+		static $useOldGoodTestInt = null;
 
-        if (is_null($useOldGoodTestInt)) {
-            $useOldGoodTestInt = !class_exists('t3lib_utility_Math');
-        }
-        if ($useOldGoodTestInt) {
-            $result = t3lib_div::testInt($value);
-        }
-        else {
-            $result = t3lib_utility_Math::canBeInterpretedAsInteger($value);
-        }
-        return $result;
-    }
+		if (is_null($useOldGoodTestInt)) {
+			$useOldGoodTestInt = !class_exists('t3lib_utility_Math');
+		}
+		if ($useOldGoodTestInt) {
+			$result = t3lib_div::testInt($value);
+		}
+		else {
+			$result = t3lib_utility_Math::canBeInterpretedAsInteger($value);
+		}
+		return $result;
+	}
 }
 
 if (defined('TYPO3_MODE') && $TYPO3_CONF_VARS[TYPO3_MODE]['XCLASS']['ext/realurl/class.tx_realurl.php']) {
