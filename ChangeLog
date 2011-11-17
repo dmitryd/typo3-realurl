@@ -1,3 +1,7 @@
+2011-11-17  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
+
+	* Manual update: prefer absRefPrefix to baseUrl from now on
+
 2011-11-11  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
     * Fixed bug #18322: Deprecated function call to t3lib_div::testInt()
