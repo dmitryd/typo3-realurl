@@ -705,7 +705,7 @@ class tx_realurl {
 							} elseif (isset($setup['valueDefault'])) {
 								$prevVal = $setup['valueDefault'];
 								$pathParts[] = rawurlencode($setup['valueDefault']);
-								$this->cHashParameters[$GETvar] = $setup['valueDefault'];
+								$this->cHashParameters[$GETvar] = $setup['valueMap'][$setup['valueDefault']];
 								$this->rebuildCHash |= !$parameterSet;
 							} else {
 								$prevVal = $GETvarVal;

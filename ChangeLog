@@ -1,6 +1,7 @@
 2011-11-30  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
 	* Feature: allow redirects for various domains
+	* Fixed bug #18354: Wrong cHash when valueDefault and enableCHashCache is used (thanks to Helmut Hummel)
 
 2011-11-17  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
