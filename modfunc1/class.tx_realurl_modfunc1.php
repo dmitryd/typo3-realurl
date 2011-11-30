@@ -1589,10 +1589,10 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 	 */
 	protected function generateSingleRedirectContent(array $rec) {
 		$output = '<td>'.
-					'<a href="'.$this->linkSelf('&cmd=edit&url=' . rawurlencode($rec['url'])) .'">'.
+					'<a href="'.$this->linkSelf('&cmd=edit&uid=' . rawurlencode($rec['uid'])) .'">'.
 					'<img'.t3lib_iconWorks::skinImg($this->pObj->doc->backPath,'gfx/edit2.gif','width="11" height="12"').' title="Edit entry" alt="" />'.
 					'</a>'.
-					'<a href="'.$this->linkSelf('&cmd=delete&url=' . rawurlencode($rec['url'])) . '">'.
+					'<a href="'.$this->linkSelf('&cmd=delete&uid=' . rawurlencode($rec['uid'])) . '">'.
 					'<img'.t3lib_iconWorks::skinImg($this->pObj->doc->backPath,'gfx/garbage.gif','width="11" height="12"').' title="Delete entry" alt="" />'.
 					'</a>'.
 				'</td>';
@@ -1719,10 +1719,10 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 	 * @return	void
 	 */
 	protected function deleteRedirectEntry() {
-		$url = t3lib_div::_GP('url');
-		if ($url) {
+		$uid = t3lib_div::_GP('uid');
+		if ($uid) {
 			$GLOBALS['TYPO3_DB']->exec_DELETEquery('tx_realurl_redirects',
-				'url=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($url, 'tx_realurl_redirects')
+				'uid=' . intval($uid)
 			);
 		}
 	}
@@ -1760,7 +1760,7 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 				$hint = '<div style="margin:.5em 0">' .
 					'Note: the exact source URL will match! Add a slash to the end ' .
 					'of the URL if necessary!</div>';
-				if (!t3lib_div::_GP('url')) {
+				if (!t3lib_div::_GP('uid')) {
 					$content .= '<h2>Add new redirects</h2>' . $error . $hint .
 						$this->getRedirectNewForm();
 				}
@@ -1782,14 +1782,14 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 	 */
 	protected function getRedirectEditForm() {
 		$content = '';
-		$url = t3lib_div::_GP('url');
+		$uid = t3lib_div::_GP('uid');
 		list($row) = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows(
-			'url_hash,destination,has_moved,domain_limit', 'tx_realurl_redirects',
-			'url=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($url, 'tx_realurl_redirects'));
+			'url,url_hash,destination,has_moved,domain_limit', 'tx_realurl_redirects',
+			'uid=' . intval($uid));
 		if (is_array($row)) {
 			$content = '<table border="0" cellspacing="2" cellpadding="1" style="margin-bottom:1em">' .
 				'<tr><td>Redirect from:</td>' .
-				'<td width="1">/</td><td><input type="text" name="data[0][source]" value="' . htmlspecialchars($url) . '" size="40" /></td></tr>' .
+				'<td width="1">/</td><td><input type="text" name="data[0][source]" value="' . htmlspecialchars($row['url']) . '" size="40" /></td></tr>' .
 				'<tr><td colspan="2">Redirect to:</td>' .
 				'<td><input type="text" name="data[0][target]" value="' . htmlspecialchars($row['destination']).'" size="40" /></td></tr>' .
 				'<tr><td colspan="2">Domain:</td></td>' .
@@ -1798,7 +1798,7 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 				'<td><input type="checkbox" name="data[0][permanent]" ' . ($row['has_moved'] ? ' checked="checked"':'').' /> Permanent redirect (send "301 Moved permanently" header)</td></tr>' .
 				'<tr><td colspan="2"></td><td>' . $this->saveCancelButtons() . '</td></tr>' .
 				'</table>' .
-				'<input type="hidden" name="data[0][old_url]" value="' . htmlspecialchars($url) . '" />' .
+				'<input type="hidden" name="data[0][uid]" value="' . intval($uid) . '" />' .
 				'<input type="hidden" name="data[0][url_hash]" value="' . $row['url_hash'] . '" />'
 				;
 		}
@@ -1897,7 +1897,9 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 				$andWhere = ($fields['url_hash'] != '' ? ' AND url_hash<>' . intval($fields['url_hash']) : '');
 				list($row) = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('COUNT(*) AS t',
 					'tx_realurl_redirects',
-					'url=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($fields['source'], 'tx_realurl_redirects') . $andWhere);
+					'url=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($fields['source'], 'tx_realurl_redirects') .
+						' AND domain_limit=' . intval($fields['domain_limit']) .
+						$andWhere);
 				if ($row['t'] > 0) {
 					$error = 'Source URL \'/' . htmlspecialchars($fields['source']) . '\' already exists in the redirect list.';
 					return false;
@@ -1921,7 +1923,7 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 				}
 				else {
 					// Existing entry
-					$databaseUpdateData[$fields['old_url']] = array(
+					$databaseUpdateData[$fields['uid']] = array(
 						'url_hash' => t3lib_div::md5int($fields['source']),
 						'url' => $fields['source'],
 						'destination' => $fields['target'],
@@ -1934,9 +1936,9 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 			foreach ($databaseInsertData as $data) {
 				$GLOBALS['TYPO3_DB']->exec_INSERTquery('tx_realurl_redirects', $data);
 			}
-			foreach ($databaseUpdateData as $oldUrl => $data) {
+			foreach ($databaseUpdateData as $uid => $data) {
 				$GLOBALS['TYPO3_DB']->exec_UPDATEquery('tx_realurl_redirects',
-					'url=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($oldUrl, 'tx_realurl_redirects'),
+					'uid=' . intval($uid),
 					$data);
 			}
 			// Make sure we return success if the form is totally empty
