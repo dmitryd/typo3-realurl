@@ -1051,7 +1051,7 @@ class tx_realurl {
 	 * @see decodeSpURL_doDecode()
 	 */
 	protected function decodeSpURL_checkRedirects($speakingURIpath) {
-		$speakingURIpath = trim($speakingURIpath);
+		$speakingURIpath = strtolower(trim($speakingURIpath));
 
 		if (isset($this->extConf['redirects'][$speakingURIpath])) {
 			$url = $this->extConf['redirects'][$speakingURIpath];

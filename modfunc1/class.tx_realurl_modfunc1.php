@@ -1881,8 +1881,8 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 				//
 				// Validate
 				//
-				$fields['source'] = trim($fields['source']);
-				$fields['target'] = trim($fields['target']);
+				$fields['source'] = strtolower(trim($fields['source']));
+				$fields['target'] = strtolower(trim($fields['target']));
 				// Check empty or same
 				if ($fields['source'] == $fields['target']) {
 					// Either equal or empty, ignore the input
