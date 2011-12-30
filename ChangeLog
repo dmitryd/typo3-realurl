@@ -13,7 +13,7 @@
 
 2011-11-11  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
-    * Fixed bug #18322: Deprecated function call to t3lib_div::testInt()
+	* Fixed bug #18322: Deprecated function call to t3lib_div::testInt()
 
 2011-10-27  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
