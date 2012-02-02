@@ -1,3 +1,7 @@
+2012-02-02  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
+
+	* Fixed bug #18447: Many domains in the same installation is not supported by the _DOMAINS
+
 2011-12-21  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
 	* Fix: BE module for redirects is case-insensitive but FE handling is case-sensitive

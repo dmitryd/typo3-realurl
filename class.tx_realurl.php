@@ -2304,6 +2304,9 @@ class tx_realurl {
 			parse_str($urlParts['query'], $urlParams);
 
 			foreach ($configuration as $disposal) {
+				if (isset($disposal['rootpage_id']) && $disposal['rootpage_id'] != $this->extConf['pagePath']['rootpage_id']) {
+					continue;
+				}
 				if (isset($disposal['GETvar']) && isset($disposal['value'])) {
 					$GETvar = $disposal['GETvar'];
 					$currentValue = t3lib_div::_GET($GETvar);
