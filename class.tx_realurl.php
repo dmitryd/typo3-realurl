@@ -853,11 +853,13 @@ class tx_realurl {
 						unset($cHashParameters[$key]);
 					}
 				}
-				if (method_exists('t3lib_div', 'calculateCHash')) {
-					$paramKeyValues['cHash'] = t3lib_div::calculateCHash($cHashParameters);
-				}
-				else {
-					$paramKeyValues['cHash'] = t3lib_div::shortMD5(serialize($cHashParameters));
+				if (count($cHashParameters) > 1) {
+					if (method_exists('t3lib_div', 'calculateCHash')) {
+						$paramKeyValues['cHash'] = t3lib_div::calculateCHash($cHashParameters);
+					}
+					else {
+						$paramKeyValues['cHash'] = t3lib_div::shortMD5(serialize($cHashParameters));
+					}
 				}
 				unset($cHashParameters);
 			}
