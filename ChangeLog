@@ -1,6 +1,7 @@
 2011-12-21  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
 	* Fix: BE module for redirects is case-insensitive but FE handling is case-sensitive
+	* Released RealURL 1.12.0
 
 2011-11-30  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
