@@ -137,6 +137,15 @@ class tx_realurl {
 	var $host = ''; // Current host name. Set in setConfig()
 
 	/**
+	 * Additional values to use when creating chash cache. This works, for
+	 * example, when using _DOMAINS and cHash for links that do not really
+	 * need a cHash.
+	 *
+	 * @var array
+	 */
+	protected $additionalParametersForChash;
+
+	/**
 	 * Actual host name (configuration key) for the current request. This can
 	 * be different from the $this->host if there are host aliases.
 	 *
@@ -847,12 +856,8 @@ class tx_realurl {
 			if ($this->rebuildCHash) {
 				$cHashParameters = array_merge($this->cHashParameters, $paramKeyValues);
 				unset($cHashParameters['cHash']);
-				$cHashParameters = t3lib_div::cHashParams(t3lib_div::implodeArrayForUrl('', $cHashParameters));
-				foreach ($cHashParameters as $key => $value) {
-					if (!trim($key)) {
-						unset($cHashParameters[$key]);
-					}
-				}
+				$cHashParameters = t3lib_div::cHashParams(substr(t3lib_div::implodeArrayForUrl('', $cHashParameters), 1));
+				unset($cHashParameters['']);
 				if (count($cHashParameters) > 1) {
 					if (method_exists('t3lib_div', 'calculateCHash')) {
 						$paramKeyValues['cHash'] = t3lib_div::calculateCHash($cHashParameters);
@@ -866,7 +871,11 @@ class tx_realurl {
 
 			if (count($paramKeyValues) == 1) {
 
-				$spUrlHash = md5($newUrl);
+				$stringForHash = $newUrl;
+				if (count($this->additionalParametersForChash)) {
+					$stringForHash .= '|' . serialize($this->additionalParametersForChash);
+				}
+				$spUrlHash = md5($stringForHash);
 				$spUrlHashQuoted = $GLOBALS['TYPO3_DB']->fullQuoteStr($spUrlHash, 'tx_realurl_chashcache');
 
 				// first, look if a cHash is already there for this SpURL
@@ -877,7 +886,7 @@ class tx_realurl {
 					// Nothing found, insert to the cache
 					$data = array(
 						'spurl_hash' => $spUrlHash,
-						'spurl_string' => $this->enableChashUrlDebug ? $newUrl : null,
+						'spurl_string' => $this->enableChashUrlDebug ? $stringForHash : null,
 						'chash_string' => $paramKeyValues['cHash']
 					);
 					$GLOBALS['TYPO3_DB']->exec_INSERTquery('tx_realurl_chashcache', $data);
@@ -1798,9 +1807,15 @@ class tx_realurl {
 		// but when it is, we have no standard procedure to clean it up. Of course
 		// clearing it will mean it is built up again - but also that tons of URLs
 		// will not work reliably!
+
+		$stringForHash = $speakingURIpath;
+		if (count($this->additionalParametersForChash)) {
+			$stringForHash .= '|' . serialize($this->additionalParametersForChash);
+		}
+
 		list($row) = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('chash_string',
 			'tx_realurl_chashcache', 'spurl_hash=' .
-			$GLOBALS['TYPO3_DB']->fullQuoteStr(md5($speakingURIpath),
+			$GLOBALS['TYPO3_DB']->fullQuoteStr(md5($stringForHash),
 				'tx_realurl_chashcache'));
 		return is_array($row) ? $row['chash_string'] : false;
 	}
@@ -2281,6 +2296,8 @@ class tx_realurl {
 	protected function adjustConfigurationByHost($type, $params = null) {
 		$result = false;
 
+		$this->additionalParametersForChash = array();
+
 		if (isset($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['_DOMAINS'])) {
 			$configuration = $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['_DOMAINS'];
 
@@ -2324,6 +2341,7 @@ class tx_realurl {
 								$this->ignoreGETvar = $GETvar;
 								$this->setConfigurationByReference($disposal['useConfiguration']);
 							}
+							$this->additionalParametersForChash[$GETvar] = $this->testInt($urlParams[$GETvar]) ? intval($urlParams[$GETvar]) : $urlParams[$GETvar];
 							return $disposal;
 						}
 						else {
@@ -2366,6 +2384,7 @@ class tx_realurl {
 					foreach ($hostConfiguration['GETvars'] as $key => $value) {
 						if (empty($_GET[$key])) {
 							$_GET[$key] = $value;
+							$this->additionalParametersForChash[$key] = $this->testInt($value) ? $value : $value;
 						}
 					}
 					if (isset($hostConfiguration['useConfiguration'])) {
