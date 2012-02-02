@@ -848,6 +848,11 @@ class tx_realurl {
 				$cHashParameters = array_merge($this->cHashParameters, $paramKeyValues);
 				unset($cHashParameters['cHash']);
 				$cHashParameters = t3lib_div::cHashParams(t3lib_div::implodeArrayForUrl('', $cHashParameters));
+				foreach ($cHashParameters as $key => $value) {
+					if (!trim($key)) {
+						unset($cHashParameters[$key]);
+					}
+				}
 				if (method_exists('t3lib_div', 'calculateCHash')) {
 					$paramKeyValues['cHash'] = t3lib_div::calculateCHash($cHashParameters);
 				}

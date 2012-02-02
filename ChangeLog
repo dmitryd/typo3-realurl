@@ -1,6 +1,7 @@
 2012-02-02  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
 	* Fixed bug #18447: Many domains in the same installation is not supported by the _DOMAINS
+	* Fixed bug #18448: cHash calculation sometimes wrong
 
 2011-12-21  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
