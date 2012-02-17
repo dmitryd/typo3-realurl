@@ -1,3 +1,7 @@
+2012-02-17  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
+
+	* Released version 1.12.1
+
 2012-02-02  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
 	* Fixed bug #18447: Many domains in the same installation is not supported by the _DOMAINS
