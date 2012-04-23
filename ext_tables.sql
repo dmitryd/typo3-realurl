@@ -95,7 +95,7 @@ CREATE TABLE tx_realurl_errorlog (
 );
 
 CREATE TABLE tx_realurl_redirects (
-	uid int(11) DEFAULT '0' auto_increment,
+	uid int(11) NOT NULL auto_increment,
 	url_hash int(11) DEFAULT '0' NOT NULL,
 	url text NOT NULL,
 	destination text NOT NULL,
