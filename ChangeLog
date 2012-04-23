@@ -1,6 +1,7 @@
 2012-04-23  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
 	* Fixed bug #18462: wrong definition for uid column in tx_realurl_redirects
+	* Fixed bug #18479: redirect statistics sometimes are not updated
 
 2012-02-17  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
