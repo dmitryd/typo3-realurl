@@ -856,7 +856,7 @@ class tx_realurl {
 			if ($this->rebuildCHash) {
 				$cHashParameters = array_merge($this->cHashParameters, $paramKeyValues);
 				unset($cHashParameters['cHash']);
-				$cHashParameters = t3lib_div::cHashParams(substr(t3lib_div::implodeArrayForUrl('', $cHashParameters), 1));
+				$cHashParameters = t3lib_div::cHashParams(t3lib_div::implodeArrayForUrl('', $cHashParameters));
 				unset($cHashParameters['']);
 				if (count($cHashParameters) > 1) {
 					if (method_exists('t3lib_div', 'calculateCHash')) {
@@ -1130,7 +1130,7 @@ class tx_realurl {
 	/**
 	 * Obtains current domain id from sys_domain.
 	 *
-	 * @return void
+	 * @return int
 	 */
 	protected function getCurrentDomainId() {
 		list($row) = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('uid',
@@ -1540,8 +1540,8 @@ class tx_realurl {
 				// Since some items still remain in the $setupArr, it means
 				// we stripped empty segments at the end of the URL on encoding.
 				// Reconstruct them or cHash check will fail in TSFE.
-				// Related to bug #15906.
-				if (!$setup['optional']) {
+				// Related to bugs #15906, #18477.
+				if (!$setup['optional'] && $setup['noMatch'] != 'bypass') {
 					if (!isset($_GET[$setup['GETvar']]) && (!is_array($setup['cond']) || $this->checkCondition($setup['cond'], $prevVal))) {
 						$GET_string .= '&' . rawurlencode($setup['GETvar']) . '=';
 						$prevVal = '';

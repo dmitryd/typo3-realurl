@@ -1,3 +1,7 @@
+2012-05-22  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
+
+	* Fixed bug #18477: cHash is wrong when using noMatch=bypass with the last parameter in the postVarSets
+
 2012-04-23  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
 	* Fixed bug #18462: wrong definition for uid column in tx_realurl_redirects
