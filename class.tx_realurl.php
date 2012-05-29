@@ -561,6 +561,7 @@ class tx_realurl {
 							if (isset($paramKeyValues[$Gcfg['GETvar']])) {
 								$pathParts[] = rawurlencode($keyWord);
 								$pathPartsSize = count($pathParts);
+								$cHashParameters = $this->cHashParameters;
 								$this->encodeSpURL_setSequence($cfg, $paramKeyValues, $pathParts);
 								// If (1) nothing was added or (2) only empty segments added, remove this part completely
 								if (count($pathParts) == $pathPartsSize) {
@@ -576,6 +577,8 @@ class tx_realurl {
 									}
 									if ($dropSegment) {
 										$pathParts = array_slice($pathParts, 0, $pathPartsSize - 1);
+										// Nothing goes to cHash from this part.
+										$this->cHashParameters = $cHashParameters;
 									}
 								}
 								break;
@@ -858,7 +861,11 @@ class tx_realurl {
 				unset($cHashParameters['cHash']);
 				$cHashParameters = t3lib_div::cHashParams(t3lib_div::implodeArrayForUrl('', $cHashParameters));
 				unset($cHashParameters['']);
-				if (count($cHashParameters) > 1) {
+				if (count($cHashParameters) == 1) {
+					// No cHash needed.
+					unset($paramKeyValues['cHash']);
+				}
+				elseif (count($cHashParameters) > 1) {
 					if (method_exists('t3lib_div', 'calculateCHash')) {
 						$paramKeyValues['cHash'] = t3lib_div::calculateCHash($cHashParameters);
 					}

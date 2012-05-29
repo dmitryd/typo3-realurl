@@ -1,6 +1,7 @@
 2012-05-29  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
 	* Fixed bug #18551: target redirect path is saved in lower case
+	* Fixed bug #18532: cHash is incorrectly recalculated if the postVar is discarded due to the empty segment
 
 2012-05-22  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
