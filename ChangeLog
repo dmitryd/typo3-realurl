@@ -1,3 +1,7 @@
+2012-05-29  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
+
+	* Fixed bug #18551: target redirect path is saved in lower case
+
 2012-05-22  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
 	* Fixed bug #18477: cHash is wrong when using noMatch=bypass with the last parameter in the postVarSets
