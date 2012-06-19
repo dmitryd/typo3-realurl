@@ -1824,6 +1824,17 @@ class tx_realurl {
 			'tx_realurl_chashcache', 'spurl_hash=' .
 			$GLOBALS['TYPO3_DB']->fullQuoteStr(md5($stringForHash),
 				'tx_realurl_chashcache'));
+
+		if (!is_array($row) && $stringForHash != $speakingURIpath) {
+			// Use a more generic query if specific fails. This can happen when
+			// using _DOMAINS and the variable is set to 'bypass'.
+			$stringForHash = $speakingURIpath;
+			list($row) = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('chash_string',
+				'tx_realurl_chashcache', 'spurl_hash=' .
+				$GLOBALS['TYPO3_DB']->fullQuoteStr(md5($stringForHash),
+					'tx_realurl_chashcache'));
+		}
+
 		return is_array($row) ? $row['chash_string'] : false;
 	}
 
