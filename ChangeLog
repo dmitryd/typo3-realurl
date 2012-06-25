@@ -1,6 +1,7 @@
 2012-06-25  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
 	* Fixed bug #18568: insufficient URL conversion of Redirects with umlauts
+	* Fixed bug #18527: URLs with a . at the end do not produce 404 error
 
 2012-06-19  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 

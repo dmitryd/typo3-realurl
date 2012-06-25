@@ -1438,7 +1438,11 @@ class tx_realurl {
 	protected function decodeSpURL_decodeFileName(array &$pathParts) {
 		$getVars = array();
 		$fileName = rawurldecode(array_pop($pathParts));
-		list($segment, $extension) = t3lib_div::revExplode('.', $fileName, 2);
+		$fileParts = t3lib_div::revExplode('.', $fileName, 2);
+		if (count($fileParts) == 2 && !$fileParts[1]) {
+			$this->decodeSpURL_throw404('File "' . $fileName . '" was not found (2)!');
+		}
+		list($segment, $extension) = $fileParts;
 		if ($extension) {
 			$getVars = array();
 			if (!$this->decodeSpURL_decodeFileName_lookupInIndex($fileName, $segment, $extension, $pathParts, $getVars)) {
