@@ -1522,10 +1522,13 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 		$condition = '';
 		$seachPath = t3lib_div::_GP('pathPrefixSearch');
 		if ($seachPath) {
+			$seachPathDecoded = $GLOBALS['TYPO3_DB']->quoteStr(
+				$GLOBALS['TYPO3_DB']->escapeStrForLike(rawurlencode($seachPath), 'tx_realurl_redirects'),
+				'tx_realurl_redirects');
 			$seachPath = $GLOBALS['TYPO3_DB']->quoteStr(
 				$GLOBALS['TYPO3_DB']->escapeStrForLike($seachPath, 'tx_realurl_redirects'),
 				'tx_realurl_redirects');
-			$condition = 'url LIKE \'%' . $seachPath . '%\' OR ' .
+			$condition = 'url LIKE \'%' . $seachPathDecoded . '%\' OR ' .
 				'destination LIKE \'%' . $seachPath . '%\'';
 		}
 

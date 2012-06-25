@@ -1,3 +1,7 @@
+2012-06-25  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
+
+	* Fixed bug #18568: insufficient URL conversion of Redirects with umlauts
+
 2012-06-19  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
 	* Snowflake task 1570.179: cHash issues with multilanguage domains
