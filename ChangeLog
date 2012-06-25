@@ -6,6 +6,7 @@
 	* Fixed bug #18443: produce fewer results on title lookup
 	* Fixed bug #18190: apendMissingSlash handling different if a point is in query parameter
 	* Fixed bug #18133: Double quotation if magic_quotes_gpc is on
+	* Released version 1.12.2
 
 2012-06-19  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
