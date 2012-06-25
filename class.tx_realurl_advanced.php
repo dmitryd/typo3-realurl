@@ -881,15 +881,15 @@ class tx_realurl_advanced {
 	 */
 	protected function fetchPagesForPath($url) {
 		$pages = array();
-		$language = $this->pObj->getDetectedLanguage();
-		if ($language != 0) {
+		$language = intval($this->pObj->getDetectedLanguage());
+		if ($language > 0) {
 			$pagesOverlay = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('t1.pid',
 				'pages_language_overlay t1, pages t2',
 				't1.hidden=0 AND t1.deleted=0 AND ' .
 				't2.hidden=0 AND t2.deleted=0 AND ' .
 				't1.pid=t2.uid AND ' .
 				't2.tx_realurl_pathoverride=1 AND ' .
-				($language > 0 ? 't1.sys_language_uid=' . $language . ' AND ' : '') .
+				't1.sys_language_uid=' . $language . ' AND ' .
 				't1.tx_realurl_pathsegment=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($url, 'pages_language_overlay'),
 				'', '', '', 'pid'
 			);
@@ -907,7 +907,7 @@ class tx_realurl_advanced {
 				$GLOBALS['TYPO3_DB']->fullQuoteStr($url, 'pages'),
 				'', '', '', 'uid');
 		if (count($pages2)) {
-			$pages = array_merge($pages, $pages2);
+			$pages = $pages2 + $pages2;
 		}
 		return $pages;
 	}
