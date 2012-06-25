@@ -1396,6 +1396,7 @@ class tx_realurl {
 			if ($GET_string) {
 				$GET_VARS = false;
 				parse_str($GET_string, $GET_VARS);
+				$this->decodeSpURL_fixMagicQuotes($GET_VARS);
 				$this->decodeSpURL_fixBrackets($GET_VARS);
 				return $GET_VARS;
 			}
@@ -1404,10 +1405,22 @@ class tx_realurl {
 	}
 
 	/**
+	 * Fix for the magic_quotes_gpc. See http://bugs.typo3.org/view.php?id=18133
+	 *
+	 * @param mixed $array
+	 * @return void
+	 */
+	protected function decodeSpURL_fixMagicQuotes(&$array) {
+		if (get_magic_quotes_gpc() && is_array($array)) {
+			t3lib_div::stripSlashesOnArray($array);
+		}
+	}
+
+	/**
 	 * Fixes a problem with parse_url that returns `a[b[c]` instead of `a[b[c]]` when parsing `a%5Bb%5Bc%5D%5D`
 	 *
-	 * @param	array		Input array
-	 * @return	[type]		...
+	 * @param	mixed	$arr
+	 * @return	void
 	 * @see decodeSpURL_settingPostVarSets()
 	 */
 	protected function decodeSpURL_fixBrackets(&$arr) {
