@@ -4,6 +4,7 @@
 	* Fixed bug #18527: URLs with a . at the end do not produce 404 error
 	* Fixed bug #18437: Wrong ID in shortcut mode "Parent page"
 	* Fixed bug #18443: produce fewer results on title lookup
+	* Fixed bug #18190: apendMissingSlash handling different if a point is in query parameter
 
 2012-06-19  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 

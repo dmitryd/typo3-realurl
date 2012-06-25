@@ -982,7 +982,7 @@ class tx_realurl {
 				if (preg_match($regexp, $speakingURIpath)) { // Only process if a slash is missing:
 					$options = t3lib_div::trimExplode(',', $this->extConf['init']['appendMissingSlash'], true);
 					if (in_array('ifNotFile', $options)) {
-						if (!preg_match('/\/[^\/]+\.[^\/]+(\?.*)?$/', '/' . $speakingURIpath)) {
+						if (!preg_match('/\/[^\/\?]+\.[^\/]+(\?.*)?$/', '/' . $speakingURIpath)) {
 							$speakingURIpath = preg_replace($regexp, '\1/\2', $speakingURIpath);
 							$this->appendedSlash = true;
 						}
