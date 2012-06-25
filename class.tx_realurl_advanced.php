@@ -1265,7 +1265,7 @@ class tx_realurl_advanced {
 				$mpvar .= $row['_MP_PARAM'];
 			}
 		}
-		elseif ($page['shortcut_mode'] == 4) {
+		elseif ($page['shortcut_mode'] == 3) {
 			// Jumps to the parent page
 			$page = $GLOBALS['TSFE']->sys_page->getPage($page['pid'], $disableGroupAccessCheck);
 			$pageid = $page['uid'];
