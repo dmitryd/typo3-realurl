@@ -1464,6 +1464,9 @@ class tx_realurl {
 				}
 			}
 		}
+		else {
+			$pathParts[] = $fileName;
+		}
 		return $getVars;
 	}
 
