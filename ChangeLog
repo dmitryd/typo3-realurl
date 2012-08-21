@@ -2,6 +2,7 @@
 
 	* Fixed bug #18548: Deprecation Warnings with TYPO3 4.7
 	* Fixed bug #18575: wrong code for localized title detection
+	* Released version 1.12.3
 
 2012-06-29  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
