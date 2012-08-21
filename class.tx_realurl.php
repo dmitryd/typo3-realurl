@@ -857,19 +857,29 @@ class tx_realurl {
 		if (isset($paramKeyValues['cHash'])) {
 
 			if ($this->rebuildCHash) {
+				$cacheHashClassExists = class_exists('t3lib_cacheHash');
+				$cacheHash = ($cacheHashClassExists ? t3lib_div::makeInstance('t3lib_cacheHash') : NULL);
+				/* @var t3lib_cacheHash $cacheHash */
+
 				$cHashParameters = array_merge($this->cHashParameters, $paramKeyValues);
 				unset($cHashParameters['cHash']);
-				$cHashParameters = t3lib_div::cHashParams(t3lib_div::implodeArrayForUrl('', $cHashParameters));
+				$cHashParameters = t3lib_div::implodeArrayForUrl('', $cHashParameters);
+				if ($cacheHashClassExists) {
+					$cHashParameters = $cacheHash->getRelevantParameters($cHashParameters);
+				} else {
+					$cHashParameters = t3lib_div::cHashParams($cHashParameters);
+				}
 				unset($cHashParameters['']);
 				if (count($cHashParameters) == 1) {
 					// No cHash needed.
 					unset($paramKeyValues['cHash']);
 				}
 				elseif (count($cHashParameters) > 1) {
-					if (method_exists('t3lib_div', 'calculateCHash')) {
+					if ($cacheHashClassExists) {
+						$paramKeyValues['cHash'] = $cacheHash->calculateCacheHash($cHashParameters);
+					} elseif (method_exists('t3lib_div', 'calculateCHash')) {
 						$paramKeyValues['cHash'] = t3lib_div::calculateCHash($cHashParameters);
-					}
-					else {
+					} else {
 						$paramKeyValues['cHash'] = t3lib_div::shortMD5(serialize($cHashParameters));
 					}
 				}
