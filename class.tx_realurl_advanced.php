@@ -907,7 +907,7 @@ class tx_realurl_advanced {
 				$GLOBALS['TYPO3_DB']->fullQuoteStr($url, 'pages'),
 				'', '', '', 'uid');
 		if (count($pages2)) {
-			$pages = $pages2 + $pages2;
+			$pages = $pages + $pages2;
 		}
 		return $pages;
 	}

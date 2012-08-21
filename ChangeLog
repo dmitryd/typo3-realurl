@@ -1,6 +1,7 @@
 2012-08-21  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
 	* Fixed bug #18548: Deprecation Warnings with TYPO3 4.7
+	* Fixed bug #18575: wrong code for localized title detection
 
 2012-06-29  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
