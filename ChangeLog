@@ -1,3 +1,7 @@
+2012-08-23  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
+
+	* Do not set cHash if there are no GET variables (sfp 926.1041)
+
 2012-08-21  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
 	* Fixed bug #18548: Deprecation Warnings with TYPO3 4.7

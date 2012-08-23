@@ -1227,7 +1227,7 @@ class tx_realurl {
 			$cachedInfo['GET_VARS'] = t3lib_div::array_merge_recursive_overrule($cachedInfo['GET_VARS'], $file_GET_VARS);
 
 		// cHash handling:
-		if ($cHashCache) {
+		if ($cHashCache && count($cachedInfo['GET_VARS']) > 0) {
 			$cHash_value = $this->decodeSpURL_cHashCache($speakingURIpath);
 			if ($cHash_value) {
 				$cachedInfo['GET_VARS']['cHash'] = $cHash_value;
