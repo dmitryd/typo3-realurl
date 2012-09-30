@@ -127,8 +127,11 @@ class tx_realurl_tcemain {
 	 */
 	protected function expirePathCache($pageId, $languageId) {
 		$expirationTime = $this->getExpirationTime();
+		$pageIds = $this->getChildPages($pageId);
+		$pageIds[] = $pageId;
+
 		$GLOBALS['TYPO3_DB']->exec_UPDATEquery('tx_realurl_pathcache',
-			'page_id=' . $pageId . ' AND language_id=' . $languageId . ' AND expire=0',
+			'page_id IN (' . implode(',', $pageIds) . ') AND language_id=' . $languageId . ' AND expire=0',
 			array(
 				'expire' => $expirationTime
 			));
@@ -142,8 +145,11 @@ class tx_realurl_tcemain {
 	 */
 	protected function expirePathCacheForAllLanguages($pageId) {
 		$expirationTime = $this->getExpirationTime();
+		$pageIds = $this->getChildPages($pageId);
+		$pageIds[] = $pageId;
+
 		$GLOBALS['TYPO3_DB']->exec_UPDATEquery('tx_realurl_pathcache',
-			'page_id=' . $pageId . ' AND expire=0',
+			'page_id IN (' . implode(',', $pageIds) . ') AND expire=0',
 			array(
 				'expire' => $expirationTime
 			));
@@ -173,6 +179,28 @@ class tx_realurl_tcemain {
 		else {
 			t3lib_div::sysLog('RealURL is not configured! Please, configure it or uninstall.', 'RealURL', 3);
 		}
+	}
+
+	/**
+	 * Returns the IDs of all child pages of a given $pageID.
+	 *
+	 * @param $pageId integer Page ID to start searching
+	 * @return array child pages
+	 */
+	protected function getChildPages($pageId) {
+		$children  = array();
+
+		/** @var $tree t3lib_pageTree */
+		$tree = t3lib_div::makeInstance('t3lib_pageTree');
+		$tree->init('AND ' . $GLOBALS['BE_USER']->getPagePermsClause(1));
+		$tree->makeHTML = 0;
+		$tree->getTree($pageId, 99, '');
+
+		foreach ($tree->tree as $data) {
+			$children[] = $data['row']['uid'];
+		}
+
+		return $children;
 	}
 
 	/**
@@ -319,6 +347,7 @@ class tx_realurl_tcemain {
 		}
 		return $result;
 	}
+
 }
 
 if (defined('TYPO3_MODE') && $TYPO3_CONF_VARS[TYPO3_MODE]['XCLASS']['ext/realurl/class.tx_realurl_tcemain.php'])	{
