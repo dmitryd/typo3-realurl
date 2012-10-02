@@ -1652,7 +1652,7 @@ class tx_realurl {
 									$this->decodeSpURL_throw404('Couldn\'t map alias "' . $value . '" to an ID');
 								}
 							} elseif (isset($setup['valueDefault'])) { // If no matching value and a default value is given, set that:
-								$value = $setup['valueDefault'];
+								$value = $setup['valueMap'][$setup['valueDefault']];
 							}
 
 							// Set previous value:
