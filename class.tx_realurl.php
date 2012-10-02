@@ -1651,8 +1651,10 @@ class tx_realurl {
 								if ($setup['lookUpTable']['enable404forInvalidAlias'] && !self::testInt($value) && !strcmp($value, $temp)) {
 									$this->decodeSpURL_throw404('Couldn\'t map alias "' . $value . '" to an ID');
 								}
-							} elseif (isset($setup['valueDefault'])) { // If no matching value and a default value is given, set that:
-								$value = $setup['valueDefault'];
+							} elseif (isset($setup['valueDefault'])) {
+								// There was a bug in RealURL 1.12.6 and older withing this code, so we have to make a compatibility woraround here.
+								// See http://forge.typo3.org/issues/41515
+								$value = isset($setup['valueMap'][$setup['valueDefault']]) ? $setup['valueMap'][$setup['valueDefault']] : $setup['valueDefault'];
 							}
 
 							// Set previous value:
