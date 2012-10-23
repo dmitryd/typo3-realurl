@@ -1,6 +1,7 @@
 2013-02-08  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
 	* Fixed bug #43816: flock() calls in autoconf file generation prevent NFS hosting
+	* Fixed bug #42295: Revitalization of pathcache confused if nothing changed
 
 2013-01-29  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 

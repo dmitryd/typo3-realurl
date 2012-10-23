@@ -413,7 +413,7 @@ class tx_realurl_advanced {
 	}
 
 	/**
-	 * Adds a new entry to the path cache
+	 * Adds a new entry to the path cache or revitalizes existing ones
 	 *
 	 * @param string $currentPagePath
 	 * @param string $pathCacheCondition
@@ -425,19 +425,30 @@ class tx_realurl_advanced {
 	protected function addNewPagePathEntry($currentPagePath, $pathCacheCondition, $pageId, $mpvar, $langId, $rootPageId) {
 		$condition = $pathCacheCondition . ' AND pagepath=' .
 			$GLOBALS['TYPO3_DB']->fullQuoteStr($currentPagePath, 'tx_realurl_pathcache');
-		list($count) = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('COUNT(*) AS t',
-			'tx_realurl_pathcache', $condition);
-		if ($count['t'] == 0) {
-			$insertArray = array(
-				'page_id' => $pageId,
-				'language_id' => $langId,
-				'pagepath' => $currentPagePath,
-				'expire' => 0,
-				'rootpage_id' => $rootPageId,
-				'mpvar' => $mpvar
-			);
-			$GLOBALS['TYPO3_DB']->exec_INSERTquery('tx_realurl_pathcache', $insertArray);
+		$revitalizationCondition = $condition . ' AND expire<>0';
+
+		list($revitalizationCount) = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('COUNT(*) AS t',
+			'tx_realurl_pathcache', $revitalizationCondition);
+		if ($revitalizationCount['t'] > 0) {
+			$GLOBALS['TYPO3_DB']->exec_UPDATEquery('tx_realurl_pathcache', $revitalizationCondition, array('expire' => 0));
 		}
+		else {
+			$createCondition = $condition . ' AND expire=0';
+			list($createCount) = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('COUNT(*) AS t',
+				'tx_realurl_pathcache', $createCondition);
+			if ($createCount['t'] == 0) {
+				$insertArray = array(
+					'page_id' => $pageId,
+					'language_id' => $langId,
+					'pagepath' => $currentPagePath,
+					'expire' => 0,
+					'rootpage_id' => $rootPageId,
+					'mpvar' => $mpvar
+				);
+				$GLOBALS['TYPO3_DB']->exec_INSERTquery('tx_realurl_pathcache', $insertArray);
+			}
+		}
+
 	}
 
 	/**
