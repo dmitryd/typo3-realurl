@@ -3,6 +3,7 @@
 	* [BUGFIX] mysqli compatibility issue with TYPO3 CMS 6.1 (thanks to Benni Mack and Oliver Hader)
 	* Fixed bug #46782: avoid using loadTCA with TYPO3 >= 6.1
 	* Change url decoding: replace rawurldecode() with urldecode()
+	* [BUGFIX] Decodefilename adds rawurlencode to only one segment (thanks to Stephan Schuler)
 
 2012-03-13  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 

@@ -1460,7 +1460,7 @@ class tx_realurl {
 	 */
 	protected function decodeSpURL_decodeFileName(array &$pathParts) {
 		$getVars = array();
-		$fileName = rawurldecode(array_pop($pathParts));
+		$fileName = array_pop($pathParts);
 		$fileParts = t3lib_div::revExplode('.', $fileName, 2);
 		if (count($fileParts) == 2 && !$fileParts[1]) {
 			$this->decodeSpURL_throw404('File "' . $fileName . '" was not found (2)!');
@@ -1495,7 +1495,7 @@ class tx_realurl {
 			$suffix = $this->extConf['fileName']['defaultToHTMLsuffixOnPrev'];
 			$suffix = (!$this->isString($suffix, 'defaultToHTMLsuffixOnPrev') ? '.html' : $suffix);
 			if ($suffix == '.' . $extension) {
-				$pathParts[] = rawurlencode($segment);
+				$pathParts[] = $segment;
 				$this->filePart = '.' . $extension;
 				$handled = true;
 			}
@@ -1504,7 +1504,7 @@ class tx_realurl {
 			$suffix = $this->extConf['fileName']['acceptHTMLsuffix'];
 			$suffix = (!$this->isString($suffix, 'acceptHTMLsuffix') ? '.html' : $suffix);
 			if (substr($fileName, -strlen($suffix)) == $suffix) {
-				$pathParts[] = rawurlencode($segment);
+				$pathParts[] = $segment;
 				$this->filePart = $suffix;
 				$handled = true;
 			}
