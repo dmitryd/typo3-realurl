@@ -703,7 +703,8 @@ class tx_realurl {
 									'pObj' => &$this,
 									'value' => $GETvarVal,
 									'decodeAlias' => false,
-									'pathParts' => &$pathParts
+									'pathParts' => &$pathParts,
+									'setup' => $setup
 								);
 								$prevVal = $GETvarVal;
 								$GETvarVal = t3lib_div::callUserFunction($setup['userFunc'], $params, $this);
@@ -1643,6 +1644,7 @@ class tx_realurl {
 									'pathParts' => &$pathParts,
 									'pObj' => &$this,
 									'value' => $value,
+									'setup' => $setup
 								);
 								$value = t3lib_div::callUserFunction($setup['userFunc'], $params, $this);
 							} elseif (is_array($setup['lookUpTable'])) {
