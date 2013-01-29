@@ -2204,7 +2204,7 @@ class tx_realurl {
 		}
 		else {
 			if ($this->enableStrictMode && $this->multidomain) {
-				$GLOBALS['TSFE']->pageNotFoundAndExit('RealURL strict mode error: ' .
+				$this->pObj->pageNotFoundAndExit('RealURL strict mode error: ' .
 					'multidomain configuration detected and domain \'' . $this->host .
 					'\' is not configured for RealURL. Please, fix your RealURL configuration!');
 			}
@@ -2585,7 +2585,7 @@ class tx_realurl {
 		if (!$this->extConf['pagePath']['rootpage_id']) {
 
 			if ($this->enableStrictMode) {
-				$GLOBALS['TSFE']->pageNotFoundAndExit('RealURL strict mode error: ' .
+				$this->pObj->pageNotFoundAndExit('RealURL strict mode error: ' .
 					'multidomain configuration without rootpage_id. ' .
 					'Please, fix your RealURL configuration!');
 			}
@@ -2595,7 +2595,7 @@ class tx_realurl {
 			$this->extConf['pagePath']['rootpage_id'] = $this->findRootPageId();
 
 			if ($this->multidomain && !$this->extConf['pagePath']['rootpage_id']) {
-				$GLOBALS['TSFE']->pageNotFoundAndExit('RealURL error: ' .
+				$this->pObj->pageNotFoundAndExit('RealURL error: ' .
 					'unable to determine rootpage_id for the current domain.');
 			}
 		}
