@@ -1,3 +1,7 @@
+2013-01-29  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
+
+	* Fixed bug #43599: 404 error if there is a separator in the subpage
+
 2012-08-23  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
 	* Do not set cHash if there are no GET variables (sfp 926.1041)

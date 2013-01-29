@@ -1474,7 +1474,7 @@ class tx_realurl {
 				}
 			}
 		}
-		else {
+		elseif ($fileName != '') {
 			$pathParts[] = $fileName;
 		}
 		return $getVars;
