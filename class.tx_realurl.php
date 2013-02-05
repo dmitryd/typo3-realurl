@@ -2432,7 +2432,7 @@ class tx_realurl {
 					foreach ($hostConfiguration['GETvars'] as $key => $value) {
 						if (empty($_GET[$key])) {
 							$_GET[$key] = $value;
-							$this->additionalParametersForChash[$key] = $this->testInt($value) ? $value : $value;
+							$this->additionalParametersForChash[$key] = $this->testInt($value) ? intval($value) : $value;
 						}
 					}
 					if (isset($hostConfiguration['useConfiguration'])) {
