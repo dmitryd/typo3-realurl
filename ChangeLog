@@ -1,3 +1,7 @@
+2013-02-08  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
+
+	* Fixed bug #43816: flock() calls in autoconf file generation prevent NFS hosting
+
 2013-01-29  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
 	* Fixed bug #43599: 404 error if there is a separator in the subpage

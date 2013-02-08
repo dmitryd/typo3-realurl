@@ -67,17 +67,21 @@ class tx_realurl_autoconfgen {
 	 */
 	public function generateConfiguration() {
 		$fileName = PATH_site . TX_REALURL_AUTOCONF_FILE;
+
+		$lockObject = t3lib_div::makeInstance('t3lib_lock', $fileName, $GLOBALS['TYPO3_CONF_VARS']['SYS']['lockingMode']);
+		/** @var t3lib_lock $lockObject */
+		$lockObject->setEnableLogging(FALSE);
+		$lockObject->acquire();
 		$fd = @fopen($fileName, 'a+');
 		if ($fd) {
-			@flock($fd, LOCK_EX);
 			// Check size
 			fseek($fd, 0, SEEK_END);
 			if (ftell($fd) == 0) {
 				$this->doGenerateConfiguration($fd);
 			}
-			@flock($fd, LOCK_UN);
 			fclose($fd);
 		}
+		$lockObject->release();
 	}
 
 	/**
