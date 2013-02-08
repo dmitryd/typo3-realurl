@@ -28,7 +28,7 @@ $EM_CONF[$_EXTKEY] = array(
 	'clearCacheOnLoad' => 1,
 	'lockType' => '',
 	'author' => 'Dmitry Dulepov',
-	'author_email' => 'dmitry@typo3.org',
+	'author_email' => 'dmitry.dulepov@gmail.com',
 	'author_company' => '',
 	'CGLcompliance' => '',
 	'CGLcompliance_note' => '',
@@ -37,7 +37,7 @@ $EM_CONF[$_EXTKEY] = array(
 	'constraints' => array(
 		'depends' => array(
 			'php' => '5.2.0-0.0.0',
-			'typo3' => '4.4.0-0.0.0',
+			'typo3' => '4.4.0-6.0.99',
 		),
 		'conflicts' => array(
 			'cooluri' => '',
