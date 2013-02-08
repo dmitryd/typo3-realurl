@@ -2,6 +2,7 @@
 
 	* Fixed bug #43816: flock() calls in autoconf file generation prevent NFS hosting
 	* Fixed bug #42295: Revitalization of pathcache confused if nothing changed
+	* Fixed bug #41477: Pathcache entries are not expired for subpages (thanks to Steffen Gebert)
 
 2013-01-29  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 

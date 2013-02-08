@@ -182,6 +182,28 @@ class tx_realurl_tcemain {
 	}
 
 	/**
+	 * Returns the IDs of all child pages of a given $pageID.
+	 *
+	 * @param $pageId integer Page ID to start searching
+	 * @return array child pages
+	 */
+	protected function getChildPages($pageId) {
+		$children  = array();
+
+		/** @var $tree t3lib_pageTree */
+		$tree = t3lib_div::makeInstance('t3lib_pageTree');
+		$tree->init('AND ' . $GLOBALS['BE_USER']->getPagePermsClause(1));
+		$this->makeHTML = FALSE;
+		$tree->getTree($pageId, 99, '');
+
+		foreach ($tree->tree as $data) {
+			$children[] = $data['row']['uid'];
+		}
+
+		return $children;
+	}
+
+	/**
 	 * Obtains expiration time for the path cache records
 	 *
 	 * @return int
@@ -324,27 +346,6 @@ class tx_realurl_tcemain {
 			$result = count(array_intersect($interestingFields, array_keys($databaseData))) > 0;
 		}
 		return $result;
-	}
-
-	/**
-	 * Returns the IDs of all child pages of a given $pageID.
-	 *
-	 * @param $pageId integer Page ID to start searching
-	 * @return array child pages
-	 */
-	protected function getChildPages($pageId) {
-		$children  = array();
-
-		/** @var $tree t3lib_pageTree */
-		$tree = t3lib_div::makeInstance('t3lib_pageTree');
-		$tree->init('AND ' . $GLOBALS['BE_USER']->getPagePermsClause(1));
-		$tree->getTree($pageId, 99, '');
-
-		foreach ($tree->tree as $data) {
-			$children[] = $data['row']['uid'];
-		}
-
-		return $children;
 	}
 }
 
