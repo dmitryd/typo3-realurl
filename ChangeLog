@@ -1,3 +1,7 @@
+2012-02-26  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
+
+	* Added information to the manual about calling userFunc for alias processing (thanks to Christian Ludwig)
+
 2013-02-08  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
 	* Fixed bug #43816: flock() calls in autoconf file generation prevent NFS hosting
