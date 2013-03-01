@@ -1,3 +1,13 @@
+2013-07-24  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
+
+	* Use a distinct status string when redirecting from the RealURL
+	* Fixed bug #45398: getLanguageVar() returns 0 instead of sys_language_uid (thanks to Andreas Beutel)
+
+2013-05-20  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
+
+	* Remove inclusion of old TYPO3 files. Rely on autoloader and compatibility layer now.
+	* Fix 'not deleted' in the manual (wrong SQL syntax in examples)
+
 2013-05-07  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
 	* Fix mixed case extension key
