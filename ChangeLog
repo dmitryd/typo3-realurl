@@ -1,3 +1,7 @@
+2012-03-13  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
+
+	* Released version 1.12.4
+
 2012-02-26  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
 	* Added information to the manual about calling userFunc for alias processing (thanks to Christian Ludwig)
