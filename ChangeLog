@@ -1,3 +1,7 @@
+2012-04-11  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
+
+	* [BUGFIX] mysqli compatibility issue with TYPO3 CMS 6.1 (thanks to Benni Mack and Oliver Hader)
+
 2012-03-13  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
 	* Released version 1.12.4
