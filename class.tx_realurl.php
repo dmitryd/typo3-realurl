@@ -236,11 +236,10 @@ class tx_realurl {
 	 * @return	void
 	 */
 	public function __construct() {
-		if (!t3lib_extMgm::isLoaded('dbal') && strpos(get_resource_type($GLOBALS['TYPO3_DB']->link), 'mysql link') !== false) {
-			$res = $GLOBALS['TYPO3_DB']->sql_query('SELECT @@VERSION');
-			$rec = $GLOBALS['TYPO3_DB']->sql_fetch_row($res);
-			$GLOBALS['TYPO3_DB']->sql_free_result($res);
-			$this->useMySQLExtendedSyntax = version_compare($rec[0], '4.1.0', '>');
+
+		if (!t3lib_extMgm::isLoaded('dbal')) {
+			// allow to use the MySQL features of 5.x with mysqli
+			$this->useMySQLExtendedSyntax = TRUE;
 		}
 		$sysconf = (array)unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['realurl']);
 		$this->enableStrictMode = (boolean)$sysconf['enableStrictMode'];
