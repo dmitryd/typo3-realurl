@@ -1,6 +1,7 @@
 2012-04-11  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
 	* [BUGFIX] mysqli compatibility issue with TYPO3 CMS 6.1 (thanks to Benni Mack and Oliver Hader)
+	* Fixed bug #46782: avoid using loadTCA with TYPO3 >= 6.1
 
 2012-03-13  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
