@@ -436,9 +436,9 @@ class tx_realurl {
 		$GETparams = explode('&', $inputQuery);
 		foreach ($GETparams as $paramAndValue) {
 			list($p, $v) = explode('=', $paramAndValue, 2);
-			$p = rawurldecode($p);
+			$p = urldecode($p);
 			if ($p != '') {
-				$paramKeyValues[$p] = rawurldecode($v);
+				$paramKeyValues[$p] = urldecode($v);
 			}
 		}
 		$this->orig_paramKeyValues = $paramKeyValues;
@@ -1175,7 +1175,7 @@ class tx_realurl {
 
 		// Convert URL to segments
 		$pathParts = explode('/', $speakingURIpath);
-		array_walk($pathParts, create_function('&$value', '$value = rawurldecode($value);'));
+		array_walk($pathParts, create_function('&$value', '$value = urldecode($value);'));
 
 		// Strip/process file name or extension first
 		$file_GET_VARS = $this->decodeSpURL_decodeFileName($pathParts);
@@ -1360,7 +1360,7 @@ class tx_realurl {
 
 			// Getting first value, the key (and keep stripping of sets of segments until the end is reached!)
 			while (false != ($key = array_shift($pathParts))) {
-				$key = rawurldecode($key);
+				$key = urldecode($key);
 				if (is_array($postVarSetCfg[$key])) {
 					switch ((string)$postVarSetCfg[$key]['type']) {
 						case 'admin':
@@ -1588,7 +1588,7 @@ class tx_realurl {
 			else {
 				// Get value and remove from path parts:
 				$value = $origValue = array_shift($pathParts);
-				$value = rawurldecode($value);
+				$value = urldecode($value);
 
 				switch ($setup['type']) {
 					case 'action':
@@ -1605,7 +1605,7 @@ class tx_realurl {
 								if ($this->appendedSlash) {
 									$remainPath = substr($remainPath, 0, -1);
 								}
-								$url = str_replace('###REMAIN_PATH###', rawurlencode(rawurldecode($remainPath)), $url);
+								$url = str_replace('###REMAIN_PATH###', rawurlencode(urldecode($remainPath)), $url);
 
 								header('Location: ' . t3lib_div::locationHeaderUrl($url));
 								exit();
