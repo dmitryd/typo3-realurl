@@ -1,15 +1,15 @@
-2012-04-11  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
+2013-04-11  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
 	* [BUGFIX] mysqli compatibility issue with TYPO3 CMS 6.1 (thanks to Benni Mack and Oliver Hader)
 	* Fixed bug #46782: avoid using loadTCA with TYPO3 >= 6.1
 	* Change url decoding: replace rawurldecode() with urldecode()
 	* [BUGFIX] Decodefilename adds rawurlencode to only one segment (thanks to Stephan Schuler)
 
-2012-03-13  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
+2013-03-13  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
 	* Released version 1.12.4
 
-2012-02-26  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
+2013-02-26  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
 	* Added information to the manual about calling userFunc for alias processing (thanks to Christian Ludwig)
 
