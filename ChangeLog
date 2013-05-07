@@ -1,3 +1,8 @@
+2013-05-07  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
+
+	* Fix mixed case extension key
+	* Released version 1.12.6
+
 2013-05-06  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
 	* Released version 1.12.5
