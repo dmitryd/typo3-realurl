@@ -1,3 +1,7 @@
+2013-05-20  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
+
+	* Remove inclusion of old TYPO3 files. Rely on autoloader and compatibility layer now.
+
 2013-05-07  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
 	* Fix mixed case extension key
