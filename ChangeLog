@@ -1,6 +1,7 @@
 2013-05-20  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
 	* Remove inclusion of old TYPO3 files. Rely on autoloader and compatibility layer now.
+	* Fix 'not deleted' in the manual (wrong SQL syntax in examples)
 
 2013-05-07  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
