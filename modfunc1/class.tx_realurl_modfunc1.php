@@ -1166,9 +1166,9 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 							'</td>';
 
 
-
+				$keyForDuplicates = $aliasRecord['value_alias'] . ':::' . $aliasRecord['lang'];
 				$tCells[]='<td>'.
-						(isset($duplicates[$aliasRecord['value_alias']]) ? $this->pObj->doc->icons(2).'Already used by ID '.$duplicates[$aliasRecord['value_alias']] :'&nbsp;').
+						(isset($duplicates[$keyForDuplicates]) ? $this->pObj->doc->icons(2).'Already used by ID '.$duplicates[$aliasRecord['value_alias']] :'&nbsp;').
 						'</td>';
 
 				$field_id = $aliasRecord['field_id'];
@@ -1182,7 +1182,7 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 					</tr>';
 				$cc++;
 
-				$duplicates[$aliasRecord['value_alias']] = $aliasRecord['value_id'];
+				$duplicates[$keyForDuplicates] = $aliasRecord['value_id'];
 			}
 
 				// Create header:

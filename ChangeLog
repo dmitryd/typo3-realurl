@@ -3,6 +3,7 @@
 	* Fixed bug #51801: typolink.linkAccessRestrictedPages has no effect if RealURL is enabled
 	* Fixed bug #51287: add cHash on decoding only if there are relevant parameters
 	* Fixed bug #49019: Page caching does not work if cHash cache is disabled
+	* Fixed bug #48944: Check if the duplicate unique alias is a translation
 
 2013-10-07  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
