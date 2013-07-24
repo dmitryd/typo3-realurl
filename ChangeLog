@@ -3,6 +3,7 @@
 	* Use a distinct status string when redirecting from the RealURL
 	* Fixed bug #45398: getLanguageVar() returns 0 instead of sys_language_uid (thanks to Andreas Beutel)
 	* Fixed bug #41515: Wrong value applied for GET var when using value default (thanks to Helmut Hummel)
+	* Fixed bug #48514: 404 if path segment is empty
 
 2013-05-20  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 

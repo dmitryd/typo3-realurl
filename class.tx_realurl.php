@@ -1662,7 +1662,7 @@ class tx_realurl {
 							$prevVal = $value;
 
 							// Add to GET string:
-							if ($setup['GETvar'] && strlen($value)) { // Checking length of value; normally a *blank* parameter is not found in the URL! And if we don't do this we may disturb "cHash" calculations!
+							if ($setup['GETvar']) {
 								if (isset($this->extConf['init']['emptySegmentValue']) && $this->extConf['init']['emptySegmentValue'] === $value) {
 									$value = '';
 								}
