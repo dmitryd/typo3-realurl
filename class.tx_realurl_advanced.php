@@ -744,7 +744,7 @@ class tx_realurl_advanced {
 					$this->pObj->appendFilePart($newUrlSegments);
 					$redirectUrl = implode('/', $newUrlSegments);
 
-					header('HTTP/1.1 301 Moved Permanently');
+					header('HTTP/1.1 301 TYPO3 RealURL Redirect A' . __LINE__);
 					header('Location: ' . t3lib_div::locationHeaderUrl($redirectUrl));
 					exit();
 				}

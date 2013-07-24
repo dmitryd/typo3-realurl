@@ -1006,7 +1006,7 @@ class tx_realurl {
 							$matches = array();
 							if (preg_match('/^redirect(\[(30[1237])\])?$/', $option, $matches)) {
 								$code = count($matches) > 1 ? $matches[2] : 301;
-								$status = 'HTTP/1.0 ' . $code . ' TYPO3 RealURL redirect';
+								$status = 'HTTP/1.1 ' . $code . ' TYPO3 RealURL redirect M' . __LINE__;
 
 								// Check path segment to be relative for the current site.
 								// parse_url() does not work with relative URLs, so we use it to test
@@ -1091,7 +1091,7 @@ class tx_realurl {
 			if (preg_match('/^30[1237];/', $url)) {
 				$redirectCode = intval(substr($url, 0, 3));
 				$url = substr($url, 4);
-				header('HTTP/1.0 ' . $redirectCode . ' Redirect');
+				header('HTTP/1.1 ' . $redirectCode . ' TYPO3 RealURL Redirect M' . __LINE__);
 			}
 			header('Location: ' . t3lib_div::locationHeaderUrl($url));
 			exit();
@@ -1105,7 +1105,7 @@ class tx_realurl {
 					if ($url) {
 						if (preg_match('/^30[1237];/', $url)) {
 							$redirectCode = intval(substr($url, 0, 3));
-							header('HTTP/1.0 ' . $redirectCode . ' Redirect');
+							header('HTTP/1.1 ' . $redirectCode . ' TYPO3 RealURL Redirect M' . __LINE__);
 							$url = substr($url, 4);
 						}
 						header('Location: ' . t3lib_div::locationHeaderUrl($url));
@@ -1135,10 +1135,8 @@ class tx_realurl {
 				$fields_values, array('counter'));
 
 			// Redirect
-			if ($redirectRow['has_moved']) {
-				header('HTTP/1.1 301 Moved Permanently');
-			}
-
+			$redirectCode = ($redirectRow['has_moved'] ? 301 : 302);
+			header('HTTP/1.1 ' . $redirectCode . ' TYPO3 RealURL Redirect M' . __LINE__);
 			header('Location: ' . t3lib_div::locationHeaderUrl($redirectRow['destination']));
 			exit();
 		}
@@ -1390,7 +1388,7 @@ class tx_realurl {
 
 					// Implode URL and redirect:
 					$redirectUrl = implode('/', $originalDirs);
-					header('HTTP/1.1 301 Moved Permanently');
+					header('HTTP/1.1 301 TYPO3 RealURL Redirect M' . __LINE__);
 					header('Location: ' . t3lib_div::locationHeaderUrl($redirectUrl));
 					exit();
 				} elseif ($this->extConf['init']['postVarSet_failureMode'] == 'ignore') {
@@ -1607,6 +1605,7 @@ class tx_realurl {
 								}
 								$url = str_replace('###REMAIN_PATH###', rawurlencode(urldecode($remainPath)), $url);
 
+								header('HTTP/1.1 302 TYPO3 RealURL Redirect M' . __LINE__);
 								header('Location: ' . t3lib_div::locationHeaderUrl($url));
 								exit();
 								break;
@@ -1748,6 +1747,7 @@ class tx_realurl {
 			}
 		} else {
 			$adminUrl = t3lib_div::getIndpEnv('TYPO3_SITE_URL') . TYPO3_mainDir . 'index.php?redirect_url=' . rawurlencode(t3lib_div::getIndpEnv('REQUEST_URI'));
+			header('HTTP/1.1 302 TYPO3 RealURL Redirect M' . __LINE__);
 			header('Location: ' . t3lib_div::locationHeaderUrl($adminUrl));
 			exit();
 		}
@@ -1762,6 +1762,7 @@ class tx_realurl {
 	protected function decodeSpURL_jumpAdmin_goBackend($pageId) {
 		if ($this->decode_editInBackend) {
 			$editUrl = t3lib_div::getIndpEnv('TYPO3_SITE_URL') . TYPO3_mainDir . 'alt_main.php?edit=' . intval($pageId);
+			header('HTTP/1.1 302 TYPO3 RealURL Redirect M' . __LINE__);
 			header('Location: ' . t3lib_div::locationHeaderUrl($editUrl));
 			exit();
 		}
