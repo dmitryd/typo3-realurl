@@ -1,6 +1,7 @@
 2013-07-24  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
 	* Use a distinct status string when redirecting from the RealURL
+	* Fixed bug #45398: getLanguageVar() returns 0 instead of sys_language_uid (thanks to Andreas Beutel)
 
 2013-05-20  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 

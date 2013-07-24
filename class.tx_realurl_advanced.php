@@ -1204,15 +1204,18 @@ class tx_realurl_advanced {
 	}
 
 	/**
-	 * Gets the value of current language
+	 * Gets the value of current language. Defaults to value
+	 * taken from the system configuration.
 	 *
-	 * @return	integer		Current language or 0
+	 * @param array $urlParameters
+	 * @return integer Current language or system default
 	 */
 	protected function getLanguageVar(array $urlParameters) {
-		$lang = 0;
+		// Get the default language from the TSFE
+		$lang = intval($GLOBALS['TSFE']->config['config']['sys_language_uid']);
+
 		// Setting the language variable based on GETvar in URL which has been configured to carry the language uid:
 		if ($this->conf['languageGetVar']) {
-			$lang = 0;
 			if (isset($urlParameters[$this->conf['languageGetVar']])) {
 				$lang = intval($urlParameters[$this->conf['languageGetVar']]);
 			}
@@ -1222,14 +1225,10 @@ class tx_realurl_advanced {
 
 			// Might be excepted (like you should for CJK cases which does not translate to ASCII equivalents)
 			if (t3lib_div::inList($this->conf['languageExceptionUids'], $lang)) {
-				$lang = 0;
+				$lang = intval($GLOBALS['TSFE']->config['config']['sys_language_uid']);
 			}
 		}
-		else {
-			// No language in URL, get default from TSFE
-			$lang = intval($GLOBALS['TSFE']->config['config']['sys_language_uid']);
-		}
-		//debug(array('lang' => $lang, 'languageGetVar' => $this->conf['languageGetVar'], 'opkv' => $this->$this->pObj->orig_paramKeyValues[$this->conf['languageGetVar']]), 'realurl');
+
 		return $lang;
 	}
 
