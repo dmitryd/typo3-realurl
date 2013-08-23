@@ -1225,10 +1225,22 @@ class tx_realurl {
 			$cachedInfo['GET_VARS'] = t3lib_div::array_merge_recursive_overrule($cachedInfo['GET_VARS'], $file_GET_VARS);
 
 		// cHash handling:
-		if ($cHashCache && count($cachedInfo['GET_VARS']) > 0) {
-			$cHash_value = $this->decodeSpURL_cHashCache($speakingURIpath);
-			if ($cHash_value) {
-				$cachedInfo['GET_VARS']['cHash'] = $cHash_value;
+		if ($cHashCache) {
+			$queryString = t3lib_div::implodeArrayForUrl('', $cachedInfo['GET_VARS']);
+			$cacheHashClassExists = class_exists('t3lib_cacheHash');
+			if ($cacheHashClassExists) {
+				$cacheHash = t3lib_div::makeInstance('t3lib_cacheHash');
+				/** @var t3lib_cacheHash $cacheHash */
+				$containsRelevantParametersForCHashCreation = count($cacheHash->getRelevantParameters(ltrim($queryString, '&'))) > 0;
+			} else {
+				$containsRelevantParametersForCHashCreation = count(t3lib_div::cHashParams($queryString)) > 0;
+			}
+
+			if ($containsRelevantParametersForCHashCreation) {
+				$cHash_value = $this->decodeSpURL_cHashCache($speakingURIpath);
+				if ($cHash_value) {
+					$cachedInfo['GET_VARS']['cHash'] = $cHash_value;
+				}
 			}
 		}
 
