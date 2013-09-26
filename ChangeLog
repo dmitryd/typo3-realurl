@@ -1,3 +1,10 @@
+2013-09-25  TYPO3 Security team <security@typo3.org>
+
+	* Security fix for TYPO3-EXT-SA-2013-015
+	* Released version 1.12.7
+
+	WARNING! Version 1.12.7 has only changes made prior/on 2013-05-07 plus security fixes. It does not include fixes from later days. Those fixes appear in 1.12.8 release.
+
 2013-07-24  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
 	* Use a distinct status string when redirecting from the RealURL
