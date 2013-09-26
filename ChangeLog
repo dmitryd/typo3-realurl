@@ -1,3 +1,8 @@
+2013-09-25  TYPO3 Security team <security@typo3.org>
+
+	* Security fix for TYPO3-EXT-SA-2013-015
+	* Released version 1.12.7
+
 2013-05-07  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
 	* Fix mixed case extension key
