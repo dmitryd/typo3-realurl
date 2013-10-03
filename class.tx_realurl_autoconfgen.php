@@ -109,6 +109,7 @@ class tx_realurl_autoconfgen {
 
 		$this->hasStaticInfoTables = t3lib_extMgm::isLoaded('static_info_tables');
 
+		$conf = array();
 		$template = $this->getTemplate();
 
 		// Find all domains
@@ -136,6 +137,16 @@ class tx_realurl_autoconfgen {
 				// Make entry
 				$conf[$domain['domainName']] = $template;
 				$conf[$domain['domainName']]['pagePath']['rootpage_id'] = $domain['pid'];
+			}
+		}
+
+		// Post process generated configuration
+		if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/realurl/class.tx_realurl_autoconfgen.php']['postProcessConfiguration'])) {
+			foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/realurl/class.tx_realurl_autoconfgen.php']['postProcessConfiguration'] as $userFunc) {
+				$parameters = array(
+					'config' => &$conf,
+				);
+				t3lib_div::callUserFunction($userFunc, $parameters, $this);
 			}
 		}
 

@@ -1,6 +1,7 @@
 2013-10-09  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
 	* Fixed bug #45879: Unset menu items for ReaulURL management (thanks to  Leon Dietsch)
+	* Fixed bug #52515: Add hook to post process auto-generated configuration
 
 2013-10-08  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
