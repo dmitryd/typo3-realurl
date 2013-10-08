@@ -50,7 +50,7 @@
  *  412:     function encodeSpURL_setSequence($varSetCfg, &$paramKeyValues, &$pathParts)
  *  516:     function encodeSpURL_setSingle($keyWord, $keyValues, &$paramKeyValues, &$pathParts)
  *  550:     function encodeSpURL_encodeCache($urlToEncode, $internalExtras, $setEncodedURL = '')
- *  617:     function encodeSpURL_cHashCache($newUrl, &$paramKeyValues)
+ *  617:     function encodeSpURL_cHashProcessing($newUrl, &$paramKeyValues)
  *
  *              SECTION: Translate a Speaking URL to parameters (tslib_fe)
  *  669:     function decodeSpURL($params, $ref)
@@ -327,7 +327,7 @@ class tx_realurl {
 		$newUrl = $this->encodeSpURL_encodeCache($urlData, $internalExtras);
 		if (!$newUrl) {
 			// Encode URL
-			$newUrl = $this->encodeSpURL_doEncode($uParts['query'], $this->extConf['init']['enableCHashCache'], $params['LD']['totalURL']);
+			$newUrl = $this->encodeSpURL_doEncode($uParts['query'], $params['LD']['totalURL']);
 
 			// Set new URL in cache
 			$this->encodeSpURL_encodeCache($urlData, $internalExtras, $newUrl);
@@ -421,12 +421,11 @@ class tx_realurl {
 	 * Transforms a query string into a speaking URL according to the configuration in ->extConf
 	 *
 	 * @param	string		Input query string
-	 * @param	boolean		If set, the cHashCache table is used for "&cHash"
 	 * @param	string		Original URL
 	 * @return	string		Output Speaking URL (with as many GET parameters encoded into the URL as possible).
 	 * @see encodeSpURL()
 	 */
-	protected function encodeSpURL_doEncode($inputQuery, $cHashCache = FALSE, $origUrl = '') {
+	protected function encodeSpURL_doEncode($inputQuery, $origUrl = '') {
 
 		$this->cHashParameters = array();
 		$this->rebuildCHash = false;
@@ -481,10 +480,8 @@ class tx_realurl {
 			unset($paramKeyValues[$this->ignoreGETvar]);
 		}
 
-		// Store cHash cache:
-		if ($cHashCache) {
-			$this->encodeSpURL_cHashCache($newUrl, $paramKeyValues);
-		}
+		// Process cHash
+		$this->encodeSpURL_cHashProcessing($newUrl, $paramKeyValues);
 
 		// Manage remaining GET parameters:
 		if (count($paramKeyValues)) {
@@ -843,12 +840,12 @@ class tx_realurl {
 	 * This is what this function does: Stores a record in the database which relates the cHash value to a hash id of the URL. This is done ONLY if the "cHash" parameter is the only one left which would make the URL non-speaking. Otherwise it is left behind.
 	 * Obviously, this whole thing only works if there is a function in the decode part which will look up the cHash again and include it in the GET parameters resolved from the Speaking URL - but there is of course...
 	 *
-	 * @param	string		Speaking URL path (being hashed to an integer and cHash value related to this.)
-	 * @param	array		Params array, passed by reference. If "cHash" is the only value left it will be put in the cache table and the value is unset in the array.
-	 * @return	void
+	 * @param string $newUrl URL path (being hashed to an integer and cHash value related to this.)
+	 * @param array $paramKeyValues Params $array array, passed by reference. If "cHash" is the only value left it will be put in the cache table and the value is unset in the array.
+	 * @return void
 	 * @see decodeSpURL_cHashCache()
 	 */
-	protected function encodeSpURL_cHashCache($newUrl, &$paramKeyValues) {
+	protected function encodeSpURL_cHashProcessing($newUrl, &$paramKeyValues) {
 
 		// If "cHash" is the ONLY parameter left...
 		// (if there are others our problem is that the cHash probably covers those
@@ -886,7 +883,7 @@ class tx_realurl {
 				unset($cHashParameters);
 			}
 
-			if (count($paramKeyValues) == 1) {
+			if ($this->extConf['init']['enableCHashCache'] && count($paramKeyValues) == 1) {
 
 				$stringForHash = $newUrl;
 				if (count($this->additionalParametersForChash)) {
@@ -1836,11 +1833,11 @@ class tx_realurl {
 	}
 
 	/**
-	 * Get "cHash" GET var from database. See explanation in encodeSpURL_cHashCache()
+	 * Get "cHash" GET var from database. See explanation in encodeSpURL_cHashProcessing()
 	 *
 	 * @param	string		Speaking URL path (virtual path)
 	 * @return	string		cHash value, if any.
-	 * @see encodeSpURL_cHashCache()
+	 * @see encodeSpURL_cHashProcessing
 	 */
 	protected function decodeSpURL_cHashCache($speakingURIpath) {
 		// Look up cHash for this spURL
