@@ -227,12 +227,13 @@ class tx_realurl_advanced {
 
 	/**
 	 * Resolves shortcuts if necessary and returns the final destination page id.
-
-	 * @param int pageId
+	 *
+	 * @param int $pageId
+	 * @param array $mpvar
 	 * @return mixed false if not found or int
 	 */
 	protected function resolveShortcuts($pageId, &$mpvar) {
-		$disableGroupAccessCheck = ($GLOBALS['TSFE']->config['config']['typolinkLinkAccessRestrictedPages'] ? true : false);
+		$disableGroupAccessCheck = true;
 		$loopCount = 20; // Max 20 shortcuts, to prevent an endless loop
 		while ($pageId > 0 && $loopCount > 0) {
 			$loopCount--;
@@ -251,6 +252,7 @@ class tx_realurl_advanced {
 				$pageId = $page['uid'];
 				break;
 			}
+			$disableGroupAccessCheck = ($GLOBALS['TSFE']->config['config']['typolinkLinkAccessRestrictedPages'] ? true : false);
 		}
 		return $pageId;
 	}
@@ -400,10 +402,9 @@ class tx_realurl_advanced {
 	 */
 	protected function getPage($pageId, $languageId) {
 		$condition = 'uid=' . intval($pageId) . $GLOBALS['TSFE']->sys_page->where_hid_del;
-		$disableGroupAccessCheck = ($GLOBALS['TSFE']->config['config']['typolinkLinkAccessRestrictedPages'] ? true : false);
-		if (!$disableGroupAccessCheck) {
-			$condition .= $GLOBALS['TSFE']->sys_page->where_groupAccess;
-		}
+		// Note: we do not use $GLOBALS['TSFE']->sys_page->where_groupAccess here
+		// because we will not come here unless typolinkLinkAccessRestrictedPages
+		// was active in 'config' or 'typolink'
 		list($row) = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('*', 'pages',
 			$condition);
 		if (is_array($row) && $languageId > 0) {
@@ -1236,7 +1237,7 @@ class tx_realurl_advanced {
 	 * Resolves shortcut to the page
 	 *
 	 * @param	array	$page	Page record
-	 * @param	array	$disableGroupAccessCheck	Flag for getPage()
+	 * @param	bool	$disableGroupAccessCheck	Flag for getPage()
 	 * @param	array	$log	Internal log
 	 * @return	int	Found page id
 	 */
