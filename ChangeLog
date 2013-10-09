@@ -1,3 +1,7 @@
+2013-10-09  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
+
+	* Fixed bug #45879: Unset menu items for ReaulURL management (thanks to  Leon Dietsch)
+
 2013-10-08  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
 	* Fixed bug #51801: typolink.linkAccessRestrictedPages has no effect if RealURL is enabled

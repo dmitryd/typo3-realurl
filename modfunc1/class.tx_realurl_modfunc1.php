@@ -86,7 +86,7 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 	 * @return	array
 	 */
 	function modMenu()	{
-		return array (
+		$modMenu = array (
 			'depth' => array(
 				0 => $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.php:labels.depth_0'),
 				1 => $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.php:labels.depth_1'),
@@ -104,6 +104,10 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 				'log' => 'Error Log'
 			)
 		);
+
+		$modMenu['type'] = t3lib_BEfunc::unsetMenuItems($this->pObj->modTSconfig['properties'], $modMenu['type'], 'menu.realurl_type');
+
+		return $modMenu;
 	}
 
 	/**
