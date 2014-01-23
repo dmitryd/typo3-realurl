@@ -125,7 +125,8 @@ class tx_realurl_advanced {
 		$pageId = $paramKeyValues['id'];
 		unset($paramKeyValues['id']);
 
-		$mpvar = $paramKeyValues['MP'];
+		$mpvar = (string)$paramKeyValues['MP'];
+
 		unset($paramKeyValues['MP']);
 
 		// Convert a page-alias to a page-id if needed
