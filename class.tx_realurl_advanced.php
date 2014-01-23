@@ -125,7 +125,11 @@ class tx_realurl_advanced {
 		$pageId = $paramKeyValues['id'];
 		unset($paramKeyValues['id']);
 
-		$mpvar = $paramKeyValues['MP'];
+		// Patch for T3 6.2 beta4 
+		// NULL Values are now possible in INSERT Queries
+		// see https://review.typo3.org/#/c/25422/2/typo3/sysext/core/Classes/Database/DatabaseConnection.php
+		is_null($paramKeyValues['MP']) ? $mpvar = "" : $mpvar = $paramKeyValues['MP']; 
+		
 		unset($paramKeyValues['MP']);
 
 		// Convert a page-alias to a page-id if needed
