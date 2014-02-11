@@ -2,6 +2,7 @@
 
 	* Fixed bug #55436: findRootPageId: Infinite Loop in case of circular redirect
 	* Fixed bug #52651: Autoconf won't be created when hook is used
+	* Increase TYPO3 compatibility version to 6.2
 
 2013-10-09  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
