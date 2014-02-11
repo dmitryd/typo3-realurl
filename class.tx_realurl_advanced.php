@@ -85,12 +85,12 @@ class tx_realurl_advanced {
 	public function main(array $params, tx_realurl $parent) {
 		/* @var $ref tx_realurl */
 
-		// Setting internal variables:
+		// Setting internal variables
 		$this->pObj = $parent;
 		$this->conf = $params['conf'];
 		$this->extConf = $this->pObj->getConfiguration();
 
-		// Branching out based on type:
+		// Branching out based on type
 		$result = false;
 		switch ((string)$params['mode']) {
 			case 'encode':
@@ -529,7 +529,7 @@ class tx_realurl_advanced {
 			}
 		}
 		if ($rootFound) {
-			// Translate the rootline to a valid path (rootline contains localized titles at this point!):
+			// Translate the rootline to a valid path (rootline contains localized titles at this point!)
 			$pagePath = $this->rootLineToPath($newRootLine, $langID);
 			$this->pObj->devLog('Got page path', array('uid' => $id, 'pagepath' => $pagePath));
 			$rootPageId = $this->conf['rootpage_id'];
@@ -580,7 +580,7 @@ class tx_realurl_advanced {
 		for ($i = 1; $i <= $c; $i++) {
 			$page = array_shift($rl);
 
-			// First, check for cached path of this page:
+			// First, check for cached path of this page
 			$cachedPagePath = false;
 			if (!$page['tx_realurl_exclude'] && !$stopUsingCache && !$this->conf['disablePathCache']) {
 
@@ -607,7 +607,7 @@ class tx_realurl_advanced {
 				}
 			}
 
-			// If a cached path was found for the page it will be inserted as the base of the new path, overriding anything build prior to this:
+			// If a cached path was found for the page it will be inserted as the base of the new path, overriding anything build prior to this
 			if ($cachedPagePath) {
 				$paths = array();
 				$paths[$i] = $cachedPagePath['pagepath'];
@@ -615,7 +615,7 @@ class tx_realurl_advanced {
 			else {
 				// Building up the path from page title etc.
 				if (!$page['tx_realurl_exclude'] || count($rl) == 0) {
-					// List of "pages" fields to traverse for a "directory title" in the speaking URL (only from RootLine!!):
+					// List of "pages" fields to traverse for a "directory title" in the speaking URL (only from RootLine!!)
 					$segTitleFieldArray = t3lib_div::trimExplode(',', $this->conf['segTitleFieldList'] ? $this->conf['segTitleFieldList'] : TX_REALURL_SEGTITLEFIELDLIST_DEFAULT, 1);
 					$theTitle = '';
 					foreach ($segTitleFieldArray as $fieldName) {
@@ -651,10 +651,10 @@ class tx_realurl_advanced {
 		$row = $postVar = false;
 		$copy_pathParts = array();
 
-		// If pagePath cache is not disabled, look for entry:
+		// If pagePath cache is not disabled, look for entry
 		if (!$this->conf['disablePathCache']) {
 
-			// Work from outside-in to look up path in cache:
+			// Work from outside-in to look up path in cache
 			$postVar = false;
 			$copy_pathParts = $pathParts;
 			$charset = $GLOBALS['TYPO3_CONF_VARS']['BE']['forceCharset'] ? $GLOBALS['TYPO3_CONF_VARS']['BE']['forceCharset'] : $GLOBALS['TSFE']->defaultCharSet;
@@ -701,10 +701,10 @@ class tx_realurl_advanced {
 			}
 		}
 
-		// Process row if found:
+		// Process row if found
 		if ($row) { // We found it in the cache
 
-			// Check for expiration. We can get one of three:
+			// Check for expiration. We can get one of three
 			//   1. expire = 0
 			//   2. expire <= time()
 			//   3. expire > time()
@@ -724,7 +724,7 @@ class tx_realurl_advanced {
 
 				// Redirect to new path immediately if it is found
 				if ($newEntry) {
-					// Replace path-segments with new ones:
+					// Replace path-segments with new ones
 					$originalDirs = $this->pObj->dirParts; // All original
 					$cp_pathParts = $pathParts;
 					// Popping of pages of original dirs (as many as are remaining in $pathParts)
@@ -746,7 +746,7 @@ class tx_realurl_advanced {
 				$this->pObj->disableDecodeCache = true;	// Do not cache this!
 			}
 
-			// Unshift the number of segments that must have defined the page:
+			// Unshift the number of segments that must have defined the page
 			$cc = count($copy_pathParts);
 			for ($a = 0; $a < $cc; $a++) {
 				array_shift($pathParts);
@@ -761,7 +761,7 @@ class tx_realurl_advanced {
 			list($id, $GET_VARS) = $this->findIDByURL($pathParts);
 		}
 
-		// Return found ID:
+		// Return found ID
 		return array($id, $GET_VARS);
 	}
 
@@ -932,7 +932,7 @@ class tx_realurl_advanced {
 	 */
 	protected function findIDBySegment($startPid, $mpvar, array &$urlParts, $currentIdMp = '', $foundUID = false) {
 
-		// Creating currentIdMp variable if not set:
+		// Creating currentIdMp variable if not set
 		if (!is_array($currentIdMp)) {
 			$currentIdMp = array($startPid, $mpvar, $foundUID);
 		}
@@ -942,10 +942,10 @@ class tx_realurl_advanced {
 			return $currentIdMp;
 		}
 
-		// Get the title we need to find now:
+		// Get the title we need to find now
 		$segment = array_shift($urlParts);
 
-		// Perform search:
+		// Perform search
 		list($uid, $row, $exclude, $possibleMatch) = $this->findPageBySegmentAndPid($startPid, $segment);
 
 		// If a title was found...
@@ -974,7 +974,7 @@ class tx_realurl_advanced {
 			return $this->processFoundPage($possibleMatch, $mpvar, $urlParts, true);
 		}
 
-		// No title, so we reached the end of the id identifying part of the path and now put back the current non-matched title segment before we return the PID:
+		// No title, so we reached the end of the id identifying part of the path and now put back the current non-matched title segment before we return the PID
 		array_unshift($urlParts, $segment);
 		return $currentIdMp;
 	}
@@ -992,10 +992,10 @@ class tx_realurl_advanced {
 	 */
 	protected function processFoundPage($row, $mpvar, array &$urlParts, $foundUID) {
 		$uid = $row['uid'];
-		// Set base currentIdMp for next level:
+		// Set base currentIdMp for next level
 		$currentIdMp = array( $uid, $mpvar, $foundUID);
 
-		// Modify values if it was a mount point:
+		// Modify values if it was a mount point
 		if (is_array($row['_IS_MOUNTPOINT'])) {
 			$mpvar .= ($mpvar ? ',' : '') . $row['_IS_MOUNTPOINT']['MPvar'];
 			if ($row['_IS_MOUNTPOINT']['overlay']) {
@@ -1020,7 +1020,7 @@ class tx_realurl_advanced {
 	 */
 	protected function findPageBySegmentAndPid($searchPid, $title) {
 
-		// List of "pages" fields to traverse for a "directory title" in the speaking URL (only from RootLine!!):
+		// List of "pages" fields to traverse for a "directory title" in the speaking URL (only from RootLine!!)
 		$segTitleFieldList = $this->conf['segTitleFieldList'] ? $this->conf['segTitleFieldList'] : TX_REALURL_SEGTITLEFIELDLIST_DEFAULT;
 		$selList = t3lib_div::uniqueList('uid,pid,doktype,mount_pid,mount_pid_ol,tx_realurl_exclude,' . $segTitleFieldList);
 		$segTitleFieldArray = t3lib_div::trimExplode(',', $segTitleFieldList, 1);
@@ -1063,7 +1063,7 @@ class tx_realurl_advanced {
 				$row['_IS_MOUNTPOINT'] = $mount_info;
 			}
 
-			// Collect titles from selected row:
+			// Collect titles from selected row
 			if (is_array($row)) {
 				if ($row['tx_realurl_exclude']) {
 					// segment is excluded
@@ -1112,7 +1112,7 @@ class tx_realurl_advanced {
 			}
 		}
 
-		// Merge titles:
+		// Merge titles
 		$segTitleFieldArray = array_reverse($segTitleFieldArray); // To observe the priority order...
 		$allTitles = array();
 		foreach ($segTitleFieldArray as $fieldName) {
@@ -1121,7 +1121,7 @@ class tx_realurl_advanced {
 			}
 		}
 
-		// Return:
+		// Return
 		$encodedTitle = $this->encodeTitle($title);
 		$possibleMatch = array();
 		if (isset($allTitles[$encodedTitle])) {
@@ -1154,10 +1154,10 @@ class tx_realurl_advanced {
 	 * @see rootLineToPath()
 	 */
 	public function encodeTitle($title) {
-		// Fetch character set:
+		// Fetch character set
 		$charset = $GLOBALS['TYPO3_CONF_VARS']['BE']['forceCharset'] ? $GLOBALS['TYPO3_CONF_VARS']['BE']['forceCharset'] : $GLOBALS['TSFE']->defaultCharSet;
 
-		// Convert to lowercase:
+		// Convert to lowercase
 		$processedTitle = $GLOBALS['TSFE']->csConvObj->conv_case($charset, $title, 'toLower');
 
 		// Strip tags
@@ -1187,7 +1187,7 @@ class tx_realurl_advanced {
 			$processedTitle = t3lib_div::callUserFunction($this->conf['encodeTitle_userProc'], $params, $this);
 		}
 
-		// Return encoded URL:
+		// Return encoded URL
 		return rawurlencode(strtolower($processedTitle));
 	}
 
@@ -1218,7 +1218,7 @@ class tx_realurl_advanced {
 		// Get the default language from the TSFE
 		$lang = intval($GLOBALS['TSFE']->config['config']['sys_language_uid']);
 
-		// Setting the language variable based on GETvar in URL which has been configured to carry the language uid:
+		// Setting the language variable based on GETvar in URL which has been configured to carry the language uid
 		if ($this->conf['languageGetVar']) {
 			if (isset($urlParameters[$this->conf['languageGetVar']])) {
 				$lang = intval($urlParameters[$this->conf['languageGetVar']]);
