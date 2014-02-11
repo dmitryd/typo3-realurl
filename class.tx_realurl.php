@@ -2178,18 +2178,28 @@ class tx_realurl {
 		// Finding host-name / IP, always in lowercase
 		$this->hostConfigured = $this->host = $this->getHost();
 
-		$_realurl_conf = (array)@unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['realurl']);
+		$realUrlConf = (array)@unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['realurl']);
 		// Autoconfiguration
-		$autoConfPath = PATH_site . TX_REALURL_AUTOCONF_FILE;
-		/** @noinspection PhpIncludeInspection */
-		if ($_realurl_conf['enableAutoConf'] && !isset($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']) && !@include_once($autoConfPath) && !isset($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl'])) {
-			$autoConfGenerator = t3lib_div::makeInstance('tx_realurl_autoconfgen');
-			$autoConfGenerator->generateConfiguration();
-			unset($autoConfGenerator);
+		if ($realUrlConf['enableAutoConf']) {
+			$autoConfPath = PATH_site . TX_REALURL_AUTOCONF_FILE;
+			$testConf = $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl'];
+			if (is_array($testConf)) {
+				unset($testConf['getHost']);
+			}
+			else {
+				$testConf = array();
+			}
+
 			/** @noinspection PhpIncludeInspection */
-			@include_once($autoConfPath);
+			if (count($testConf) == 0 && !@include_once($autoConfPath)) {
+				$autoConfGenerator = t3lib_div::makeInstance('tx_realurl_autoconfgen');
+				$autoConfGenerator->generateConfiguration();
+				unset($autoConfGenerator);
+				/** @noinspection PhpIncludeInspection */
+				@include_once($autoConfPath);
+			}
+			unset($autoConfPath, $testConf);
 		}
-		unset($autoConfPath);
 
 		$extConf = &$GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl'];
 
