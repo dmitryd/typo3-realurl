@@ -2543,8 +2543,9 @@ class tx_realurl {
 		$rootpage_id = false; $host = $this->host;
 
 		if (!$this->enableStrictMode) {
-
 			// Search by host
+
+			$testedDomains = array($host => 1);
 			do {
 				/** @noinspection PhpUndefinedMethodInspection */
 				$domain = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('pid,redirectTo,domainName', 'sys_domain',
@@ -2559,9 +2560,19 @@ class tx_realurl {
 					else {
 						$parts = @parse_url($domain[0]['redirectTo']);
 						$host = $parts['host'];
+						if (isset($testedDomains[$host])) {
+							// Redirect loop
+							/** @noinspection PhpUndefinedMethodInspection */
+							$GLOBALS['TSFE']->pageUnavailableAndExit('TYPO3 RealURL has detected a circular redirect in domain records. There was an attempt to redirect to ' . $host . ' from ' . $domain[0]['domainName'] . ' twice.');
+							exit;
+						}
+						else {
+							$testedDomains[$host] = 1;
+						}
 					}
 				}
 			} while (count($domain) > 0);
+			unset($testedDomains);
 
 			// If root page id is not found, try other ways. We can do it only
 			// and only if there are no multiple domains. Otherwise we would

@@ -80,6 +80,7 @@ class tx_realurl_autoconfgen {
 				$this->doGenerateConfiguration($fd);
 			}
 			fclose($fd);
+			t3lib_div::fixPermissions($fileName);
 		}
 		$lockObject->release();
 	}
@@ -130,7 +131,10 @@ class tx_realurl_autoconfgen {
 					$parts = parse_url($domain['redirectTo']);
 					if (isset($domains[$parts['host']]) && ($domains['path'] == '/' || $domains['path'] == '')) {
 						// Make a shortcut
-						$conf[$domain['domainName']] = $parts['host'];
+						if ($conf[$parts['host']] != $domain['domainName']) {
+							// Here if there were no redirect from this domain to source domain
+							$conf[$domain['domainName']] = $parts['host'];
+						}
 						continue;
 					}
 				}

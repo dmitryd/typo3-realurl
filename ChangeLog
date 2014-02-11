@@ -1,3 +1,7 @@
+2014-02-11  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
+
+	* Fixed bug #55436: findRootPageId: Infinite Loop in case of circular redirect
+
 2013-10-09  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
 	* Fixed bug #45879: Unset menu items for ReaulURL management (thanks to  Leon Dietsch)
