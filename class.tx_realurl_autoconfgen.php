@@ -153,12 +153,12 @@ class tx_realurl_autoconfgen {
 		$_realurl_conf = @unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['realurl']);
 		if ($_realurl_conf['autoConfFormat'] == 0) {
 			fwrite($fd, '<' . '?php' . chr(10) . '$GLOBALS[\'TYPO3_CONF_VARS\'][\'EXTCONF\'][\'realurl\']=' .
-				'unserialize(\'' . str_replace('\'', '\\\'', serialize($conf)) . '\');' . chr(10) . '?' . '>'
+				'unserialize(\'' . str_replace('\'', '\\\'', serialize($conf)) . '\');' . chr(10)
 			);
 		}
 		else {
 			fwrite($fd, '<' . '?php' . chr(10) . '$GLOBALS[\'TYPO3_CONF_VARS\'][\'EXTCONF\'][\'realurl\']=' .
-				var_export($conf, true) . ';' . chr(10) . '?' . '>'
+				var_export($conf, true) . ';' . chr(10)
 			);
 		}
 	}
