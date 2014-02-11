@@ -34,35 +34,6 @@
  * @author	Kasper Skaarhoj <kasper@typo3.com>
  * @author	Dmitry Dulepov <dmitry@typo3.org>
  */
-/**
- * [CLASS/FUNCTION INDEX of SCRIPT]
- *
- *
- *
- *   75: class tx_realurl_advanced
- *  105:     function main(&$params, $ref)
- *
- *              SECTION: "path" ID-to-URL methods
- *  146:     function IDtoPagePath(&$paramKeyValues, &$pathParts)
- *  242:     function updateURLCache($id, $mpvar, $lang, $cached_pagepath = '')
- *  289:     function IDtoPagePathSegments($id, $mpvar, $langID)
- *  347:     function rootLineToPath($rl, $lang)
- *
- *              SECTION: URL-to-ID methods
- *  416:     function pagePathtoID(&$pathParts)
- *  546:     function findIDByURL(&$urlParts)
- *  581:     function searchTitle($pid, $mpvar, &$urlParts, $currentIdMp = '')
- *  635:     function searchTitle_searchPid($searchPid, $title)
- *
- *              SECTION: Helper functions
- *  740:     function encodeTitle($title)
- *  775:     function makeExpirationTime($offsetFromNow = 0)
- *  790:     function getLanguageVar()
- *
- * TOTAL FUNCTIONS: 12
- * (This index is automatically created/updated by the extension "extdeveval")
- *
- */
 
 /**
  * Class for translating page ids to/from path strings (Speaking URLs)
@@ -107,9 +78,9 @@ class tx_realurl_advanced {
 	 * Main function, called for both encoding and deconding of URLs.
 	 * Based on the "mode" key in the $params array it branches out to either decode or encode functions.
 	 *
-	 * @param	array		Parameters passed from parent object, "tx_realurl". Some values are passed by reference! (paramKeyValues, pathParts and pObj)
-	 * @param	tx_realurl		Copy of parent object. Not used.
-	 * @return	mixed		Depends on branching.
+	 * @param array $params Parameters passed from parent object, "tx_realurl". Some values are passed by reference! (paramKeyValues, pathParts and pObj)
+	 * @param tx_realurl $parent Copy of parent object. Not used.
+	 * @return mixed Depends on branching.
 	 */
 	public function main(array $params, tx_realurl $parent) {
 		/* @var $ref tx_realurl */
@@ -123,7 +94,8 @@ class tx_realurl_advanced {
 		$result = false;
 		switch ((string)$params['mode']) {
 			case 'encode':
-				$result = $this->IDtoPagePath($params['paramKeyValues'], $params['pathParts']);
+				$this->IDtoPagePath($params['paramKeyValues'], $params['pathParts']);
+				$result = NULL;
 				break;
 			case 'decode':
 				$result = $this->pagePathtoID($params['pathParts']);
@@ -143,9 +115,9 @@ class tx_realurl_advanced {
 	 * If the page is a shortcut to another page, it returns the page path to the shortcutted page.
 	 * MP get variables are also encoded with the page id.
 	 *
-	 * @param	array		GETvar parameters containing eg. "id" key with the page id/alias (passed by reference)
-	 * @param	array		Path parts array (passed by reference)
-	 * @return	void
+	 * @param array $paramKeyValues GETvar parameters containing eg. "id" key with the page id/alias (passed by reference)
+	 * @param array $pathParts Path parts array (passed by reference)
+	 * @return void
 	 * @see encodeSpURL_pathFromId()
 	 */
 	protected function IDtoPagePath(array &$paramKeyValues, &$pathParts) {
@@ -190,8 +162,8 @@ class tx_realurl_advanced {
 	/**
 	 * If page id is not numeric, try to resolve it from alias.
 	 *
-	 * @param mixed pageId
-	 * @param int
+	 * @param int|string $pageId
+	 * @return mixed
 	 */
 	private function resolveAlias($pageId) {
 		if (!is_numeric($pageId)) {
@@ -260,11 +232,15 @@ class tx_realurl_advanced {
 	/**
 	 * Retireves page path from cache.
 	 *
+	 * @param int $pageid
+	 * @param int $lang
+	 * @param string $mpvar
 	 * @return mixed Page path (string) or false if not found
 	 */
 	private function getPagePathFromCache($pageid, $lang, $mpvar) {
 		$result = false;
 		if (!$this->conf['disablePathCache']) {
+			/** @noinspection PhpUndefinedMethodInspection */
 			list($cachedPagePath) = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('pagepath', 'tx_realurl_pathcache',
 				'page_id=' . intval($pageid) .
 				' AND language_id=' . intval($lang) .
@@ -281,11 +257,11 @@ class tx_realurl_advanced {
 	/**
 	 * Creates the path and inserts into the path cache (if enabled).
 	 *
-	 * @param	integer		Page id
-	 * @param	string		MP variable string
-	 * @param	integer		Language uid
-	 * @param	string		If set, then a new entry will be inserted ONLY if it is different from $cachedPagePath
-	 * @return	string		The page path
+	 * @param int $id Page id
+	 * @param string $mpvar MP variable string
+	 * @param int $lang Language uid
+	 * @param string $cachedPagePath If set, then a new entry will be inserted ONLY if it is different from $cachedPagePath
+	 * @return string The page path
 	 */
 	protected function createPagePathAndUpdateURLCache($id, $mpvar, $lang, $cachedPagePath = '') {
 
@@ -315,17 +291,20 @@ class tx_realurl_advanced {
 		$canCachePaths = !$this->conf['disablePathCache'] && !$this->pObj->isBEUserLoggedIn();
 		$newPathDiffers = ((string)$pagePath !== (string)$cachedPagePath);
 		if ($canCachePaths && $newPathDiffers) {
+			/** @noinspection PhpUndefinedMethodInspection */
 			$cacheCondition = 'page_id=' . intval($pageId) .
 				' AND language_id=' . intval($langId) .
 				' AND rootpage_id=' . intval($rootPageId) .
 				' AND mpvar=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($mpvar, 'tx_realurl_pathcache');
 
+			/** @noinspection PhpUndefinedMethodInspection */
 			$GLOBALS['TYPO3_DB']->sql_query('START TRANSACTION');
 
 			$this->removeExpiredPathCacheEntries();
 			$this->setExpirationOnOldPathCacheEntries($pagePath, $cacheCondition);
 			$this->addNewPagePathEntry($pagePath, $cacheCondition, $pageId, $mpvar, $langId, $rootPageId);
 
+			/** @noinspection PhpUndefinedMethodInspection */
 			$GLOBALS['TYPO3_DB']->sql_query('COMMIT');
 		}
 	}
@@ -367,7 +346,7 @@ class tx_realurl_advanced {
 	 * @param int $lang
 	 * @return array
 	 */
-	protected function IDtoPagePathThroughOverride($id, $mpvar, $lang) {
+	protected function IDtoPagePathThroughOverride($id, /** @noinspection PhpUnusedParameterInspection */ $mpvar, $lang) {
 		$result = false;
 		$page = $this->getPage($id, $lang);
 		if ($page['tx_realurl_pathoverride']) {
@@ -405,6 +384,7 @@ class tx_realurl_advanced {
 		// Note: we do not use $GLOBALS['TSFE']->sys_page->where_groupAccess here
 		// because we will not come here unless typolinkLinkAccessRestrictedPages
 		// was active in 'config' or 'typolink'
+		/** @noinspection PhpUndefinedMethodInspection */
 		list($row) = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('*', 'pages',
 			$condition);
 		if (is_array($row) && $languageId > 0) {
@@ -421,20 +401,25 @@ class tx_realurl_advanced {
 	 * @param int $pageId
 	 * @param string $mpvar
 	 * @param int $langId
+	 * @param int $rootPageId
 	 * @return void
 	 */
 	protected function addNewPagePathEntry($currentPagePath, $pathCacheCondition, $pageId, $mpvar, $langId, $rootPageId) {
+		/** @noinspection PhpUndefinedMethodInspection */
 		$condition = $pathCacheCondition . ' AND pagepath=' .
 			$GLOBALS['TYPO3_DB']->fullQuoteStr($currentPagePath, 'tx_realurl_pathcache');
 		$revitalizationCondition = $condition . ' AND expire<>0';
 
+		/** @noinspection PhpUndefinedMethodInspection */
 		list($revitalizationCount) = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('COUNT(*) AS t',
 			'tx_realurl_pathcache', $revitalizationCondition);
 		if ($revitalizationCount['t'] > 0) {
+			/** @noinspection PhpUndefinedMethodInspection */
 			$GLOBALS['TYPO3_DB']->exec_UPDATEquery('tx_realurl_pathcache', $revitalizationCondition, array('expire' => 0));
 		}
 		else {
 			$createCondition = $condition . ' AND expire=0';
+			/** @noinspection PhpUndefinedMethodInspection */
 			list($createCount) = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('COUNT(*) AS t',
 				'tx_realurl_pathcache', $createCondition);
 			if ($createCount['t'] == 0) {
@@ -446,6 +431,7 @@ class tx_realurl_advanced {
 					'rootpage_id' => $rootPageId,
 					'mpvar' => $mpvar
 				);
+				/** @noinspection PhpUndefinedMethodInspection */
 				$GLOBALS['TYPO3_DB']->exec_INSERTquery('tx_realurl_pathcache', $insertArray);
 			}
 		}
@@ -461,8 +447,10 @@ class tx_realurl_advanced {
 	 */
 	protected function setExpirationOnOldPathCacheEntries($currentPagePath, $pathCacheCondition) {
 		$expireDays = (isset($this->conf['expireDays']) ? $this->conf['expireDays'] : 60) * 24 * 3600;
+		/** @noinspection PhpUndefinedMethodInspection */
 		$condition = $pathCacheCondition . ' AND expire=0 AND pagepath<>' .
 			$GLOBALS['TYPO3_DB']->fullQuoteStr($currentPagePath, 'tx_realurl_pathcache');
+		/** @noinspection PhpUndefinedMethodInspection */
 		$GLOBALS['TYPO3_DB']->exec_UPDATEquery('tx_realurl_pathcache', $condition,
 			array(
 				'expire' => $this->makeExpirationTime($expireDays)
@@ -481,6 +469,7 @@ class tx_realurl_advanced {
 		$lastCleanUpTime = @filemtime($lastCleanUpFileName);
 		if ($lastCleanUpTime === false || (time() - $lastCleanUpTime >= 6*60*60)) {
 			touch($lastCleanUpFileName);
+			/** @noinspection PhpUndefinedMethodInspection */
 			$GLOBALS['TYPO3_DB']->exec_DELETEquery('tx_realurl_pathcache',
 				'expire>0 AND expire<' . $this->makeExpirationTime());
 		}
@@ -494,10 +483,10 @@ class tx_realurl_advanced {
 	 *     'langID' => '2',
 	 *   );
 	 *
-	 * @param	integer		Page ID
-	 * @param	string		MP variable string
-	 * @param	integer		Language id
-	 * @return	array		The page path etc.
+	 * @param int $id Page ID
+	 * @param string $mpvar MP variable string
+	 * @param int $langID Language id
+	 * @return array The page path etc.
 	 */
 	protected function IDtoPagePathSegments($id, $mpvar, $langID) {
 		$result = false;
@@ -549,6 +538,7 @@ class tx_realurl_advanced {
 				$this->pObj->devLog('$innerSubDomain=true, showing page path parts', $parts);
 				if ($parts['host'] == '') {
 					foreach ($newRootLine as $rl) {
+						/** @noinspection PhpUndefinedMethodInspection */
 						$rows = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('domainName', 'sys_domain', 'pid=' . $rl['uid'] . ' AND redirectTo=\'\' AND hidden=0', '', 'sorting');
 						if (count($rows)) {
 							$domain = $rows[0]['domainName'];
@@ -576,9 +566,9 @@ class tx_realurl_advanced {
 	 * Note also that the for-loop starts with 1 so the first page is stripped off. This is (in most cases) the
 	 * root of the website (which is 'handled' by the domainname).
 	 *
-	 * @param	array		Rootline array for the current website (rootLine from TSFE->tmpl->rootLine but with modified localization according to language of the URL)
-	 * @param	integer		Language identifier (as in sys_languages)
-	 * @return	string		Path for the page, eg.
+	 * @param array $rl Rootline array for the current website (rootLine from TSFE->tmpl->rootLine but with modified localization according to language of the URL)
+	 * @param int $lang Language identifier (as in sys_languages)
+	 * @return string Path for the page, eg.
 	 * @see IDtoPagePathSegments()
 	 */
 	protected function rootLineToPath($rl, $lang) {
@@ -595,6 +585,7 @@ class tx_realurl_advanced {
 			if (!$page['tx_realurl_exclude'] && !$stopUsingCache && !$this->conf['disablePathCache']) {
 
 				// Using pathq2 index!
+				/** @noinspection PhpUndefinedMethodInspection */
 				list($cachedPagePath) = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('pagepath', 'tx_realurl_pathcache',
 								'page_id=' . intval($page['uid']) .
 								' AND language_id=' . intval($lang) .
@@ -651,13 +642,14 @@ class tx_realurl_advanced {
 	/**
 	 * Convert a page path to an ID.
 	 *
-	 * @param	array		Array of segments from virtual path
-	 * @return	integer		Page ID
+	 * @param array $pathParts Array of segments from virtual path
+	 * @return integer Page ID
 	 * @see decodeSpURL_idFromPath()
 	 */
 	protected function pagePathtoID(&$pathParts) {
 
 		$row = $postVar = false;
+		$copy_pathParts = array();
 
 		// If pagePath cache is not disabled, look for entry:
 		if (!$this->conf['disablePathCache']) {
@@ -671,6 +663,7 @@ class tx_realurl_advanced {
 			}
 			while (count($copy_pathParts)) {
 				// Using pathq1 index!
+				/** @noinspection PhpUndefinedMethodInspection */
 				list($row) = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows(
 						'tx_realurl_pathcache.*', 'tx_realurl_pathcache,pages',
 						'tx_realurl_pathcache.page_id=pages.uid AND pages.deleted=0' .
@@ -722,6 +715,7 @@ class tx_realurl_advanced {
 				$this->pObj->devLog('pagePathToId found row', $row);
 				// 'expire' in the query is only for logging
 				// Using pathq2 index!
+				/** @noinspection PhpUndefinedMethodInspection */
 				list($newEntry) = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('pagepath,expire', 'tx_realurl_pathcache',
 						'page_id=' . intval($row['page_id']) . '
 						AND language_id=' . intval($row['language_id']) . '
@@ -774,16 +768,15 @@ class tx_realurl_advanced {
 	/**
 	 * Search recursively for the URL in the page tree and return the ID of the path ("manual" id resolve)
 	 *
-	 * @param	array		Path parts, passed by reference.
-	 * @return	array		Info array, currently with "id" set to the ID.
+	 * @param array $urlParts Path parts, passed by reference.
+	 * @return array Info array, currently with "id" set to the ID.
 	 */
 	protected function findIDByURL(array &$urlParts) {
-
 		$id = 0;
 		$GET_VARS = '';
 		$startPid = $this->getRootPid();
 		if ($startPid && count($urlParts)) {
-			list($id, $mpvar) = $this->findIDByPathOverride($startPid, $urlParts);
+			list($id) = $this->findIDByPathOverride($startPid, $urlParts);
 			if ($id != 0) {
 				$startPid = $id;
 			}
@@ -895,6 +888,7 @@ class tx_realurl_advanced {
 		$pages = array();
 		$language = intval($this->pObj->getDetectedLanguage());
 		if ($language > 0) {
+			/** @noinspection PhpUndefinedMethodInspection */
 			$pagesOverlay = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('t1.pid',
 				'pages_language_overlay t1, pages t2',
 				't1.hidden=0 AND t1.deleted=0 AND ' .
@@ -906,6 +900,7 @@ class tx_realurl_advanced {
 				'', '', '', 'pid'
 			);
 			if (count($pagesOverlay) > 0) {
+				/** @noinspection PhpUndefinedMethodInspection */
 				$pages = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('uid,pid', 'pages',
 					'hidden=0 AND deleted=0 AND uid IN (' . implode(',', array_keys($pagesOverlay)) . ')',
 					'', '', '', 'uid');
@@ -914,6 +909,7 @@ class tx_realurl_advanced {
 		// $pages has strings as keys. Therefore array_merge will ensure uniqueness.
 		// Selection from 'pages' table will override selection from
 		// pages_language_overlay.
+		/** @noinspection PhpUndefinedMethodInspection */
 		$pages2 = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('uid,pid', 'pages',
 			'hidden=0 AND deleted=0 AND tx_realurl_pathoverride=1 AND tx_realurl_pathsegment=' .
 				$GLOBALS['TYPO3_DB']->fullQuoteStr($url, 'pages'),
@@ -924,15 +920,15 @@ class tx_realurl_advanced {
 		return $pages;
 	}
 
-
 	/**
 	 * Recursively search the subpages of $pid for the first part of $urlParts
 	 *
-	 * @param	integer		Page id in which to search subpages matching first part of urlParts
-	 * @param	string		MP variable string
-	 * @param	array		Segments of the virtual path (passed by reference; items removed)
-	 * @param	array		Array with the current pid/mpvar to return if no processing is done.
-	 * @return	array		With resolved id and $mpvar
+	 * @param int $startPid Page id in which to search subpages matching first part of urlParts
+	 * @param string $mpvar MP variable string
+	 * @param array $urlParts Segments of the virtual path (passed by reference; items removed)
+	 * @param array|string $currentIdMp Array with the current pid/mpvar to return if no processing is done.
+	 * @param bool $foundUID
+	 * @return array With resolved id and $mpvar
 	 */
 	protected function findIDBySegment($startPid, $mpvar, array &$urlParts, $currentIdMp = '', $foundUID = false) {
 
@@ -987,10 +983,11 @@ class tx_realurl_advanced {
 	 * Process title search result. This is executed both when title is found and
 	 * when excluded segment is found
 	 *
-	 * @param	array	$row	Row to process
-	 * @param	array	$mpvar	MP var
-	 * @param	array	$urlParts	URL segments
-	 * @return	array	Resolved id and mpvar
+	 * @param array $row Row to process
+	 * @param array $mpvar MP var
+	 * @param array $urlParts URL segments
+	 * @param bool $foundUID
+	 * @return array Resolved id and mpvar
 	 * @see findPageBySegment()
 	 */
 	protected function processFoundPage($row, $mpvar, array &$urlParts, $foundUID) {
@@ -1016,10 +1013,9 @@ class tx_realurl_advanced {
 	/**
 	 * Search for a title in a certain PID
 	 *
-	 * @param	integer		Page id in which to search subpages matching title
-	 * @param	string		Title to search for
-	 * @return	array		First entry is uid, second entry is the row selected, including information about the page as a mount point.
-	 * @access private
+	 * @param int $searchPid Page id in which to search subpages matching title
+	 * @param string $title Title to search for
+	 * @return array First entry is uid, second entry is the row selected, including information about the page as a mount point.
 	 * @see findPageBySegment()
 	 */
 	protected function findPageBySegmentAndPid($searchPid, $title) {
@@ -1039,20 +1035,23 @@ class tx_realurl_advanced {
 		$titles = array(); // array(title => uid);
 		$exclude = array();
 		$uidTrack = array();
+		/** @noinspection PhpUndefinedMethodInspection */
 		$result = $GLOBALS['TYPO3_DB']->exec_SELECTquery($selList, 'pages',
 						'pid=' . intval($searchPid) .
 						' AND deleted=0 AND doktype!=255', '', 'sorting');
+		/** @noinspection PhpUndefinedMethodInspection */
 		while (false != ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($result))) {
-
-			// Mount points:
+			// Mount points
 			$mount_info = $sys_page->getMountPointInfo($row['uid'], $row);
 			if (is_array($mount_info)) {
 				// There is a valid mount point.
 				if ($mount_info['overlay']) {
-					// Overlay mode: Substitute WHOLE record:
+					// Overlay mode: Substitute WHOLE record
+					/** @noinspection PhpUndefinedMethodInspection */
 					$result2 = $GLOBALS['TYPO3_DB']->exec_SELECTquery($selList, 'pages',
 									'uid=' . intval($mount_info['mount_pid']) .
 									' AND deleted=0 AND doktype!=255');
+					/** @noinspection PhpUndefinedMethodInspection */
 					$mp_row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($result2);
 					if (is_array($mp_row)) {
 						$row = $mp_row;
@@ -1083,6 +1082,7 @@ class tx_realurl_advanced {
 				}
 			}
 		}
+		/** @noinspection PhpUndefinedMethodInspection */
 		$GLOBALS['TYPO3_DB']->sql_free_result($result);
 
 		// We have to search the language overlay too, if: a) the language isn't the default (0), b) if it's not set (-1)
@@ -1090,11 +1090,13 @@ class tx_realurl_advanced {
 		$language = $this->pObj->getDetectedLanguage();
 		if ($language != 0) {
 			foreach ($uidTrackKeys as $l_id) {
+				/** @noinspection PhpUndefinedMethodInspection */
 				$result = $GLOBALS['TYPO3_DB']->exec_SELECTquery(TX_REALURL_SEGTITLEFIELDLIST_PLO,
 					'pages_language_overlay',
 					'pid=' . intval($l_id) . ' AND deleted=0' .
 					($language > 0 ? ' AND sys_language_uid=' . $language : '')
 				);
+				/** @noinspection PhpUndefinedMethodInspection */
 				while (false != ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($result))) {
 					foreach ($segTitleFieldArray as $fieldName) {
 						if ($row[$fieldName]) {
@@ -1105,6 +1107,7 @@ class tx_realurl_advanced {
 						}
 					}
 				}
+				/** @noinspection PhpUndefinedMethodInspection */
 				$GLOBALS['TYPO3_DB']->sql_free_result($result);
 			}
 		}
@@ -1144,13 +1147,13 @@ class tx_realurl_advanced {
 	 * - Strip off all other symbols
 	 * Works with the character set defined as "forceCharset"
 	 *
-	 * @param	string		Input title to clean
-	 * @return	string		Encoded title, passed through rawurlencode() = ready to put in the URL.
-	 * @internal The signature or visibility of this function may change at any moment!
+	 * WARNING!!! The signature or visibility of this function may change at any moment!
+	 *
+	 * @param string $title Input title to clean
+	 * @return string Encoded title, passed through rawurlencode() = ready to put in the URL.
 	 * @see rootLineToPath()
 	 */
 	public function encodeTitle($title) {
-
 		// Fetch character set:
 		$charset = $GLOBALS['TYPO3_CONF_VARS']['BE']['forceCharset'] ? $GLOBALS['TYPO3_CONF_VARS']['BE']['forceCharset'] : $GLOBALS['TSFE']->defaultCharSet;
 
@@ -1191,8 +1194,8 @@ class tx_realurl_advanced {
 	/**
 	 * Makes expiration timestamp for SQL queries
 	 *
-	 * @param	int		$offsetFromNow	Offset to expiration
-	 * @return	int		Expiration time stamp
+	 * @param int $offsetFromNow Offset to expiration
+	 * @return int Expiration time stamp
 	 */
 	protected function makeExpirationTime($offsetFromNow = 0) {
 		if (!t3lib_extMgm::isLoaded('adodb') && (TYPO3_db_host == '127.0.0.1' || TYPO3_db_host == 'localhost')) {
@@ -1236,10 +1239,11 @@ class tx_realurl_advanced {
 	/**
 	 * Resolves shortcut to the page
 	 *
-	 * @param	array	$page	Page record
-	 * @param	bool	$disableGroupAccessCheck	Flag for getPage()
-	 * @param	array	$log	Internal log
-	 * @return	int	Found page id
+	 * @param array $page Page record
+	 * @param bool $disableGroupAccessCheck Flag for getPage()
+	 * @param array $log Internal log
+	 * @param string|null $mpvar
+	 * @return int Found page id
 	 */
 	protected function resolveShortcut($page, $disableGroupAccessCheck, $log = array(), &$mpvar = null) {
 		if (isset($log[$page['uid']])) {
@@ -1300,7 +1304,8 @@ class tx_realurl_advanced {
 	}
 }
 
+/** @noinspection PhpUndefinedVariableInspection */
 if (defined('TYPO3_MODE') && $TYPO3_CONF_VARS[TYPO3_MODE]['XCLASS']['ext/realurl/class.tx_realurl_advanced.php']) {
+	/** @noinspection PhpUndefinedMethodInspection PhpUndefinedVariableInspection PhpIncludeInspection */
 	include_once ($TYPO3_CONF_VARS[TYPO3_MODE]['XCLASS']['ext/realurl/class.tx_realurl_advanced.php']);
 }
-?>
