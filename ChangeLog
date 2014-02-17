@@ -1,3 +1,7 @@
+2014-02-17  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
+
+	* Released version 1.12.8
+
 2014-02-11  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
 	* Fixed bug #55436: findRootPageId: Infinite Loop in case of circular redirect
