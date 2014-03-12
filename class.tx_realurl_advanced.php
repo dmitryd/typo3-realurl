@@ -1227,11 +1227,11 @@ class tx_realurl_advanced {
 			elseif (isset($this->pObj->orig_paramKeyValues[$this->conf['languageGetVar']])) {
 				$lang = intval($this->pObj->orig_paramKeyValues[$this->conf['languageGetVar']]);
 			}
+		}
 
-			// Might be excepted (like you should for CJK cases which does not translate to ASCII equivalents)
-			if (t3lib_div::inList($this->conf['languageExceptionUids'], $lang)) {
-				$lang = intval($GLOBALS['TSFE']->config['config']['sys_language_uid']);
-			}
+		// Might be excepted (like you should for CJK cases which does not translate to ASCII equivalents)
+		if (isset($this->conf['languageExceptionUids']) && t3lib_div::inList($this->conf['languageExceptionUids'], $lang)) {
+			$lang = 0;
 		}
 
 		return $lang;

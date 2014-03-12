@@ -1,3 +1,7 @@
+2014-03-12  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
+
+	* Fixed bug #56778: languageExceptionUids not working with RealURL 1.12.8
+
 2014-02-17  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
 	* Released version 1.12.8
