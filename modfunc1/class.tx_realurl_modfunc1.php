@@ -837,7 +837,7 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 
 						// Delete:
 					$tCells[]='<td>'.
-							'<a href="'.$this->linkSelf('&cmd=deleteDC&entry=urlhash_'.intval($inf['url_hash'])).'">'.
+							'<a href="'.$this->linkSelf('&cmd=deleteDC&entry=urlhash_' . rawurlencode($inf['url_hash'])) . '">'.
 							'<img'.t3lib_iconWorks::skinImg($this->pObj->doc->backPath,'gfx/garbage.gif','width="11" height="12"').' title="Delete entry" alt="" />'.
 							'</a>'.
 						'</td>';
@@ -989,7 +989,7 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 
 						// Delete:
 					$tCells[]='<td>'.
-							'<a href="'.$this->linkSelf('&cmd=deleteEC&entry=urlhash_'.intval($inf['url_hash'])).'">'.
+							'<a href="'.$this->linkSelf('&cmd=deleteEC&entry=urlhash_' . rawurlencode($inf['url_hash'])) . '">'.
 							'<img'.t3lib_iconWorks::skinImg($this->pObj->doc->backPath,'gfx/garbage.gif','width="11" height="12"').' title="Delete entry" alt="" />'.
 							'</a>'.
 						'</td>';
@@ -1079,7 +1079,7 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 				$GLOBALS['TYPO3_DB']->exec_DELETEquery($table, 'page_id='.intval($id));
 			break;
 			case 'urlhash':
-				$GLOBALS['TYPO3_DB']->exec_DELETEquery($table, 'url_hash='.intval($id));
+				$GLOBALS['TYPO3_DB']->exec_DELETEquery($table, 'url_hash='.$GLOBALS['TYPO3_DB']->fullQuoteStr($id, $table));
 			break;
 			default:
 			break;
