@@ -304,11 +304,12 @@ class tx_realurl_tcemain {
 	 * @param string $tableName
 	 * @param int $recordId
 	 * @param array $databaseData
+	 * @param t3lib_TCEmain $pObj
 	 * @return void
 	 * @todo Expire unique alias cache: how to get the proper timeout value easily here?
 	 */
-	public function processDatamap_afterDatabaseOperations($status, $tableName, $recordId, array $databaseData) {
-		$this->processContentUpdates($status, $tableName, $recordId, $databaseData);
+	public function processDatamap_afterDatabaseOperations($status, $tableName, $recordId, array $databaseData, t3lib_TCEmain $pObj) {
+		$this->processContentUpdates($status, $tableName, $recordId, $databaseData, $pObj);
 		$this->clearAutoConfiguration($tableName);
 	}
 
@@ -319,22 +320,24 @@ class tx_realurl_tcemain {
 	 * @param string $tableName
 	 * @param int $recordId
 	 * @param array $databaseData
+	 * @param t3lib_TCEmain $pObj
 	 * @return void
 	 * @todo Handle changes to tx_realurl_exclude recursively
 	 */
-	protected function processContentUpdates($status, $tableName, $recordId, array $databaseData) {
-		if ($status == 'update' && tx_realurl::testInt($recordId)) {
-			list($pageId, $languageId) = $this->getPageData($tableName, $recordId);
-			$this->fetchRealURLConfiguration($pageId);
-			if ($this->shouldFixCaches($tableName, $databaseData)) {
-				if (isset($databaseData['alias'])) {
-					$this->expirePathCacheForAllLanguages($pageId);
-				}
-				else {
-					$this->expirePathCache($pageId, $languageId);
-				}
-				$this->clearOtherCaches($pageId);
+	protected function processContentUpdates($status, $tableName, $recordId, array $databaseData, t3lib_TCEmain $pObj) {
+		if (!tx_realurl::testInt($recordId)) {
+			$recordId = intval($pObj->substNEWwithIDs[$recordId]);
+		}
+		list($pageId, $languageId) = $this->getPageData($tableName, $recordId);
+		$this->fetchRealURLConfiguration($pageId);
+		if ($this->shouldFixCaches($tableName, $databaseData)) {
+			if (isset($databaseData['alias'])) {
+				$this->expirePathCacheForAllLanguages($pageId);
 			}
+			else {
+				$this->expirePathCache($pageId, $languageId);
+			}
+			$this->clearOtherCaches($pageId);
 		}
 	}
 
