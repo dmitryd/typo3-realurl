@@ -340,6 +340,7 @@ class tx_realurl_tcemain {
 				}
 				$this->clearOtherCaches($pageId);
 			}
+			$this->clearOtherCaches($pageId);
 		}
 	}
 
