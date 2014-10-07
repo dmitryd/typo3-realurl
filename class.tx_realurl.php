@@ -2132,10 +2132,11 @@ class tx_realurl {
 			$processedTitle = $GLOBALS['TSFE']->csConvObj->conv_case($charset, $processedTitle, 'toLower');
 		}
 
+		$processedTitle = strip_tags($processedTitle);
+
 		// Convert some special tokens to the space character
 		$space = $cfg['useUniqueCache_conf']['spaceCharacter'] ? substr($cfg['useUniqueCache_conf']['spaceCharacter'], 0, 1) : '_';
 		$processedTitle = strtr($processedTitle, ' -+_', $space . $space . $space . $space); // convert spaces
-
 
 		// Convert extended letters to ascii equivalents
 		$processedTitle = $GLOBALS['TSFE']->csConvObj->specCharsToASCII($charset, $processedTitle);
