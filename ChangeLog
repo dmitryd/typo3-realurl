@@ -1,3 +1,7 @@
+2014-10-07  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
+
+	* Fixed bug #60585: Deleting of single entries of decode/encode cache fails sometimes
+
 2014-03-12  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
 	* Fixed bug #61881: Pathcache is not cleared when creating a new translation
