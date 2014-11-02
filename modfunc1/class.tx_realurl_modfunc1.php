@@ -175,8 +175,7 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 	protected function getFunctionMenu() {
 		return $GLOBALS['LANG']->getLL('function') . ' ' .
 			t3lib_BEfunc::getFuncMenu($this->pObj->id, 'SET[type]',
-				$this->pObj->MOD_SETTINGS['type'], $this->pObj->MOD_MENU['type'],
-				'index.php');
+				$this->pObj->MOD_SETTINGS['type'], $this->pObj->MOD_MENU['type']);
 	}
 
 	/**
@@ -202,7 +201,7 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 	 */
 	protected function getDepthSelector() {
 		return $GLOBALS['LANG']->getLL('depth') .
-			t3lib_BEfunc::getFuncMenu($this->pObj->id,'SET[depth]',$this->pObj->MOD_SETTINGS['depth'],$this->pObj->MOD_MENU['depth'],'index.php');
+			t3lib_BEfunc::getFuncMenu($this->pObj->id,'SET[depth]',$this->pObj->MOD_SETTINGS['depth'],$this->pObj->MOD_MENU['depth']);
 	}
 
 	/**
@@ -545,7 +544,18 @@ class tx_realurl_modfunc1 extends t3lib_extobjbase {
 	 * @return	string		script + query
 	 */
 	function linkSelf($addParams)	{
-		return htmlspecialchars('index.php?id='.$this->pObj->id.'&showLanguage='.rawurlencode(t3lib_div::_GP('showLanguage')).$addParams);
+		if (version_compare(TYPO3_branch, '6.2', '<')) {
+			$result = htmlspecialchars('index.php?id='.$this->pObj->id.'&showLanguage='.rawurlencode(t3lib_div::_GP('showLanguage')).$addParams);
+		}
+		else {
+			$mainParams = array(
+				'id' => $this->pObj->id,
+				'showLanguage' => rawurlencode(t3lib_div::_GP('showLanguage'))
+			);
+			$result = \TYPO3\CMS\Backend\Utility\BackendUtility::getModuleUrl(\TYPO3\CMS\Core\Utility\GeneralUtility::_GP('M'), $mainParams) . $addParams;
+		}
+
+		return $result;
 	}
 
 	/**
