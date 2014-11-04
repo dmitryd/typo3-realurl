@@ -52,7 +52,7 @@ class tx_realurl_pagebrowser {
 	 * @return void
 	 */
 	public function __construct() {
-		$urlParameters = t3lib_div::array_merge_recursive_overrule($_GET, $_POST);
+		$urlParameters = tx_realurl::array_merge_recursive_overrule($_GET, $_POST);
 		$this->currentPage = max(1, intval($urlParameters['page']));
 		unset($urlParameters['page']);
 		unset($urlParameters['cmd']);

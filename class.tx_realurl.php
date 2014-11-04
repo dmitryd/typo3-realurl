@@ -1171,18 +1171,23 @@ class tx_realurl {
 			$this->decodeSpURL_throw404('"' . $speakingURIpath . '" could not be found, closest page matching is ' . substr(implode('/', $this->dirParts), 0, -strlen(implode('/', $pathParts))) . '');
 		}
 
-		// Merge Get vars together
+		// Merge GET vars together
 		$cachedInfo['GET_VARS'] = array();
-		if (is_array($pre_GET_VARS))
-			$cachedInfo['GET_VARS'] = t3lib_div::array_merge_recursive_overrule($cachedInfo['GET_VARS'], $pre_GET_VARS);
-		if (is_array($id_GET_VARS))
-			$cachedInfo['GET_VARS'] = t3lib_div::array_merge_recursive_overrule($cachedInfo['GET_VARS'], $id_GET_VARS);
-		if (is_array($fixedPost_GET_VARS))
-			$cachedInfo['GET_VARS'] = t3lib_div::array_merge_recursive_overrule($cachedInfo['GET_VARS'], $fixedPost_GET_VARS);
-		if (is_array($post_GET_VARS))
-			$cachedInfo['GET_VARS'] = t3lib_div::array_merge_recursive_overrule($cachedInfo['GET_VARS'], $post_GET_VARS);
-		if (is_array($file_GET_VARS))
-			$cachedInfo['GET_VARS'] = t3lib_div::array_merge_recursive_overrule($cachedInfo['GET_VARS'], $file_GET_VARS);
+		if (is_array($pre_GET_VARS)) {
+			$cachedInfo['GET_VARS'] = self::array_merge_recursive_overrule($cachedInfo['GET_VARS'], $pre_GET_VARS);
+		}
+		if (is_array($id_GET_VARS)) {
+			$cachedInfo['GET_VARS'] = self::array_merge_recursive_overrule($cachedInfo['GET_VARS'], $id_GET_VARS);
+		}
+		if (is_array($fixedPost_GET_VARS)) {
+			$cachedInfo['GET_VARS'] = self::array_merge_recursive_overrule($cachedInfo['GET_VARS'], $fixedPost_GET_VARS);
+		}
+		if (is_array($post_GET_VARS)) {
+			$cachedInfo['GET_VARS'] = self::array_merge_recursive_overrule($cachedInfo['GET_VARS'], $post_GET_VARS);
+		}
+		if (is_array($file_GET_VARS)) {
+			$cachedInfo['GET_VARS'] = self::array_merge_recursive_overrule($cachedInfo['GET_VARS'], $file_GET_VARS);
+		}
 
 		// cHash handling
 		if ($cHashCache) {
@@ -2849,6 +2854,26 @@ class tx_realurl {
 			$result = t3lib_utility_Math::canBeInterpretedAsInteger($value);
 		}
 		return $result;
+	}
+
+	/**
+	 * Implements array_merge_recursive_overrule() in a cross-version way.
+	 *
+	 * @param array $array1
+	 * @param array $array2
+	 * @return array
+	 */
+	static public function array_merge_recursive_overrule($array1, $array2) {
+		if (class_exists('\\TYPO3\\CMS\\Core\\Utility\\ArrayUtility')) {
+			/** @noinspection PhpUndefinedClassInspection PhpUndefinedNamespaceInspection */
+			\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule($array1, $array2);
+		}
+		else {
+			/** @noinspection PhpDeprecationInspection */
+			$array1 = t3lib_div::array_merge_recursive_overrule($array1, $array2);
+		}
+
+		return $array1;
 	}
 }
 
