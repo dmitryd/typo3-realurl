@@ -1965,13 +1965,18 @@ class tx_realurl {
 						}
 					}
 
-					$mLength = $cfg['maxLength'] ? $cfg['maxLength'] : $this->maxLookUpLgd;
+					$maximumAliasLength = min(255, (int)$cfg['maxLength'] ?: $this->maxLookUpLgd);
 
 					if ($cfg['useUniqueCache']) { // If cache is to be used, store the alias in the cache:
-						$aliasBaseValue = $row[$cfg['alias_field']];
-						return $this->lookUp_newAlias($cfg, substr($aliasBaseValue, 0, $mLength), $value, $lang);
+						$csConvObj = t3lib_div::makeInstance('t3lib_cs');
+						/** @var t3lib_cs $csConvObj */
+						$aliasValue = $row[$cfg['alias_field']];
+						if ($csConvObj->strlen('utf-8', $aliasValue) > $maximumAliasLength) {
+							$aliasValue = $csConvObj->crop('utf-8', $aliasValue, $maximumAliasLength);
+						}
+						return $this->lookUp_newAlias($cfg, $aliasValue, $value, $lang);
 					} else { // If no cache for alias, then just return whatever value is appropriate:
-						if (strlen($row[$cfg['alias_field']]) <= $mLength) {
+						if (strlen($row[$cfg['alias_field']]) <= $maximumAliasLength) {
 							return $row[$cfg['alias_field']];
 						} else {
 							return $value;

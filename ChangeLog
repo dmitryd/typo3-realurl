@@ -1,3 +1,7 @@
+2014-11-04  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
+
+	* Fixed bug #62442: Wrong cropping of multibyte URLs
+
 2014-10-07  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
 	* Fixed bug #60585: Deleting of single entries of decode/encode cache fails sometimes
