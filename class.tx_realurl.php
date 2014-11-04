@@ -804,12 +804,14 @@ class tx_realurl {
 			if ($this->rebuildCHash) {
 				$cacheHashClassExists = class_exists('t3lib_cacheHash');
 				$cacheHash = ($cacheHashClassExists ? t3lib_div::makeInstance('t3lib_cacheHash') : NULL);
+				/** @noinspection PhpUndefinedClassInspection */
 				/* @var t3lib_cacheHash $cacheHash */
 
 				$cHashParameters = array_merge($this->cHashParameters, $paramKeyValues);
 				unset($cHashParameters['cHash']);
 				$cHashParameters = t3lib_div::implodeArrayForUrl('', $cHashParameters);
 				if ($cacheHashClassExists) {
+					/** @noinspection PhpUndefinedMethodInspection */
 					$cHashParameters = $cacheHash->getRelevantParameters($cHashParameters);
 				} else {
 					/** @noinspection PhpUndefinedMethodInspection PhpDeprecationInspection */
@@ -822,6 +824,7 @@ class tx_realurl {
 				}
 				elseif (count($cHashParameters) > 1) {
 					if ($cacheHashClassExists) {
+						/** @noinspection PhpUndefinedMethodInspection */
 						$paramKeyValues['cHash'] = $cacheHash->calculateCacheHash($cHashParameters);
 					} elseif (method_exists('t3lib_div', 'calculateCHash')) {
 						/** @noinspection PhpUndefinedMethodInspection PhpDeprecationInspection */
@@ -1187,6 +1190,7 @@ class tx_realurl {
 			$cacheHashClassExists = class_exists('t3lib_cacheHash');
 			if ($cacheHashClassExists) {
 				$cacheHash = t3lib_div::makeInstance('t3lib_cacheHash');
+				/** @noinspection PhpUndefinedMethodInspection PhpUndefinedClassInspection */
 				/** @var t3lib_cacheHash $cacheHash */
 				$containsRelevantParametersForCHashCreation = count($cacheHash->getRelevantParameters(ltrim($queryString, '&'))) > 0;
 			} else {
@@ -1306,7 +1310,7 @@ class tx_realurl {
 
 			// If a get string is created, then
 			if ($GET_string) {
-				$GET_VARS = false;
+				$GET_VARS = array();
 				parse_str($GET_string, $GET_VARS);
 				return $GET_VARS;
 			}
@@ -1373,7 +1377,7 @@ class tx_realurl {
 
 			// If a get string is created, then
 			if ($GET_string) {
-				$GET_VARS = false;
+				$GET_VARS = array();
 				parse_str($GET_string, $GET_VARS);
 				$this->decodeSpURL_fixMagicQuotes($GET_VARS);
 				$this->decodeSpURL_fixBrackets($GET_VARS);
@@ -1742,7 +1746,7 @@ class tx_realurl {
 	/**
 	 * Will exit after redirect to backend (with "&edit=...") if $this->decode_editInBackend is set
 	 *
-	 * @param	integer		Page id.
+	 * @param int $pageId
 	 * @return	void
 	 */
 	protected function decodeSpURL_jumpAdmin_goBackend($pageId) {
@@ -2717,7 +2721,10 @@ class tx_realurl {
 	}
 
 	/**
-	 * Fixes empty URL
+	 * Fixes empty URL.
+	 *
+	 * @param string $newUrl
+	 * @return string
 	 */
 	protected function fixEmptyUrl($newUrl) {
 		if (!strlen($newUrl)) {
@@ -2838,7 +2845,7 @@ class tx_realurl {
 			$result = t3lib_div::testInt($value);
 		}
 		else {
-			/** @noinspection PhpDeprecationInspection */
+			/** @noinspection PhpDeprecationInspection PhpUndefinedClassInspection */
 			$result = t3lib_utility_Math::canBeInterpretedAsInteger($value);
 		}
 		return $result;
