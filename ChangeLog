@@ -1,6 +1,7 @@
 2014-11-25  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
 	* Fixed bug #62145: RealURL Backend module does not work well with SSL
+	* Fixed bug #61493: Old class is called in the Info module
 
 2014-11-04  Dmitry Dulepov  <dmitry.dulepov@gmail.com>
 
