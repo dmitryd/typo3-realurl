@@ -187,23 +187,6 @@ class UrlDecoder extends EncodeDecoderBase {
 	}
 
 	/**
-	 * Fetches the entry from cache.
-	 *
-	 * @param string $cacheKey
-	 * @return array|null
-	 */
-	protected function getFromCache($cacheKey) {
-		$result = NULL;
-		if ($this->urlCache) {
-			if ($this->urlCache->has($cacheKey)) {
-				$result = $this->urlCache->get($cacheKey);
-			}
-		}
-
-		return $result;
-	}
-
-	/**
 	 * Parses the URL and validates the result.
 	 *
 	 * @return array
@@ -227,18 +210,6 @@ class UrlDecoder extends EncodeDecoderBase {
 	}
 
 	/**
-	 * Sets the entry to cache.
-	 *
-	 * @param $cacheKey
-	 * @param array $cacheInfo
-	 */
-	protected function putToCache($cacheKey, array $cacheInfo) {
-		if ($this->urlCache && $cacheInfo['id']) {
-			$this->urlCache->set($cacheKey, $cacheInfo);
-		}
-	}
-
-	/**
 	 * Contains the actual decoding logic after $this->speakingUri is set.
 	 *
 	 * @return void
@@ -247,11 +218,11 @@ class UrlDecoder extends EncodeDecoderBase {
 		$urlParts = $this->getUrlParts();
 
 		$cacheKey = $this->getCacheKey($this->speakingUri);
-		$cacheInfo = $this->getFromCache($cacheKey);
+		$cacheInfo = $this->getFromUrlCache($cacheKey);
 		if (!is_array($cacheInfo)) {
 			$cacheInfo = $this->doDecoding($urlParts['path']);
 			$cacheInfo['url'] = $this->speakingUri;
-			$this->putToCache($cacheKey, $cacheInfo);
+			$this->putToUrlCache($cacheKey, $cacheInfo);
 		}
 		$this->setRequestVariables($cacheInfo);
 	}

@@ -99,6 +99,35 @@ abstract class EncodeDecoderBase {
 	}
 
 	/**
+	 * Fetches the entry from cache.
+	 *
+	 * @param string $cacheKey
+	 * @return array|null
+	 */
+	protected function getFromUrlCache($cacheKey) {
+		$result = NULL;
+		if ($this->urlCache) {
+			if ($this->urlCache->has($cacheKey)) {
+				$result = $this->urlCache->get($cacheKey);
+			}
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Sets the entry to cache.
+	 *
+	 * @param $cacheKey
+	 * @param array $cacheInfo
+	 */
+	protected function putToUrlCache($cacheKey, array $cacheInfo) {
+		if ($this->urlCache && $cacheInfo['id']) {
+			$this->urlCache->set($cacheKey, $cacheInfo);
+		}
+	}
+
+	/**
 	 * Sorts the array deeply.
 	 *
 	 * @param array $pathParts
