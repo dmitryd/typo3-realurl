@@ -54,8 +54,9 @@ class ConfigurationReader implements SingletonInterface {
 	 * @var array
 	 */
 	protected $defaultValues = array(
-		'fileName/defaultToHTMLsuffixOnPrev' => FALSE,
 		'fileName/acceptHTMLsuffix' => TRUE,
+		'fileName/defaultToHTMLsuffixOnPrev' => FALSE,
+		'init/appendMissingSlash' => 'ifNotFile,redirect[301]',
 	);
 
 	/**
@@ -176,6 +177,6 @@ class ConfigurationReader implements SingletonInterface {
 	 * @return mixed
 	 */
 	protected function getDefaultValue($path) {
-		return isset($this->defaultValues[$path]) ? $this->defaultValues[$path] : NULL;
+		return isset($this->defaultValues[$path]) ? $this->defaultValues[$path] : '';
 	}
 }
