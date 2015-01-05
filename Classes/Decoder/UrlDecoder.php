@@ -26,6 +26,8 @@
  ***************************************************************/
 namespace DmitryDulepov\Realurl\Decoder;
 
+use DmitryDulepov\Realurl\Configuration\ConfigurationReader;
+
 /**
  * This class contains URL decoder for the RealURL.
  *
@@ -33,6 +35,16 @@ namespace DmitryDulepov\Realurl\Decoder;
  * @author Dmitry Dulepov <dmitry.dulepov@gmail.com>
  */
 class UrlDecoder {
+
+	/** @var \DmitryDulepov\Realurl\Configuration\ConfigurationReader */
+	protected $configuration;
+
+	/**
+	 * Initializes the class.
+	 */
+	public function __construct() {
+		$this->configuration = ConfigurationReader::getInstance();
+	}
 
 	/**
 	 * Decodes the URL. This function is called from \TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController::checkAlternativeIdMethods()

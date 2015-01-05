@@ -26,6 +26,7 @@
  ***************************************************************/
 namespace DmitryDulepov\Realurl\Encoder;
 
+use DmitryDulepov\Realurl\Configuration\ConfigurationReader;
 use TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer;
 
 /**
@@ -35,6 +36,16 @@ use TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer;
  * @author Dmitry Dulepov <dmitry.dulepov@gmail.com>
  */
 class UrlEncoder {
+
+	/** @var \DmitryDulepov\Realurl\Configuration\ConfigurationReader */
+	protected $configuration;
+
+	/**
+	 * Initializes the class.
+	 */
+	public function __construct() {
+		$this->configuration = ConfigurationReader::getInstance();
+	}
 
 	/**
 	 * Entry point for the URL encoder.
