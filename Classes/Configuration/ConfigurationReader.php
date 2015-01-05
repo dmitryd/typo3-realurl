@@ -242,7 +242,8 @@ class ConfigurationReader implements SingletonInterface {
 	 */
 	protected function setRootPageIdFromTopLevelPages() {
 		/** @noinspection PhpUndefinedMethodInspection */
-		$rows = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('uid', 'pages', 'pid=0 AND deleted=0 AND hidden=0');
+		$rows = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('uid', 'pages',
+			'pid=0 AND doktype IN (1,2,4) AND deleted=0 AND hidden=0');
 		if (count($rows) !== 1) {
 			// Cannot be done: too many of them!
 			throw new \Exception('RealURL was not able to find the root page id for the domain "' . $this->utility->getCurrentHost() . '"', 1420480982);
