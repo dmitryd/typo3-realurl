@@ -26,8 +26,9 @@
  ***************************************************************/
 namespace DmitryDulepov\Realurl\Configuration;
 
-use TYPO3\CMS\Core\SingletonInterface;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
+use \DmitryDulepov\Realurl\Utility;
+use \TYPO3\CMS\Core\SingletonInterface;
+use \TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * This class provides configuration loading and access for the rest of the
@@ -44,6 +45,9 @@ class ConfigurationReader implements SingletonInterface {
 	/** @var array */
 	protected $extConfiguration = array();
 
+	/** @var \DmitryDulepov\Realurl\Utility */
+	protected $utility;
+
 	/**
 	 * Default values for some configuration options.
 	 *
@@ -58,6 +62,8 @@ class ConfigurationReader implements SingletonInterface {
 	 * Initializes the class.
 	 */
 	public function __construct() {
+		$this->utility = Utility::getInstance();
+
 		$this->loadExtConfiguration();
 		$this->setConfigurationForTheCurentDomain();
 	}
@@ -120,19 +126,6 @@ class ConfigurationReader implements SingletonInterface {
 	}
 
 	/**
-	 * Obtains the current host.
-	 *
-	 * @return string
-	 */
-	protected function getCurrentHost() {
-		$currentHost = GeneralUtility::getIndpEnv('HTTP_HOST');
-
-		// TODO Add a hook here to modify the host (for command line tools, for example)
-
-		return $currentHost;
-	}
-
-	/**
 	 * Loads extension configuration.
 	 *
 	 * @return void
@@ -153,7 +146,7 @@ class ConfigurationReader implements SingletonInterface {
 		$globalConfig = &$GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl'];
 		if (is_array($globalConfig)) {
 			$configuration = NULL;
-			$hostName = $this->getCurrentHost();
+			$hostName = $this->utility->getCurrentHost();
 			if (isset($globalConfig[$hostName])) {
 				$configuration = $globalConfig[$hostName];
 			} elseif (substr($hostName, 0, 4) === 'www.') {

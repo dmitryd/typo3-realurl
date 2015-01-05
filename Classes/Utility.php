@@ -27,6 +27,7 @@
 namespace DmitryDulepov\Realurl;
 
 use \TYPO3\CMS\Core\SingletonInterface;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * This class provides common helper functions for EXT:realurl. Funcions here
@@ -69,5 +70,27 @@ class Utility implements SingletonInterface {
 		$processedTitle = strtolower($processedTitle);
 
 		return $processedTitle;
+	}
+
+	/**
+	 * Obtains the current host.
+	 *
+	 * @return string
+	 */
+	public function getCurrentHost() {
+		$currentHost = GeneralUtility::getIndpEnv('HTTP_HOST');
+
+		// TODO Add a hook here to modify the host (for command line tools, for example)
+
+		return $currentHost;
+	}
+
+	/**
+	 * Obtains the instance of the class.
+	 *
+	 * @return object
+	 */
+	static public function getInstance() {
+		return GeneralUtility::makeInstance(__CLASS__);
 	}
 }
