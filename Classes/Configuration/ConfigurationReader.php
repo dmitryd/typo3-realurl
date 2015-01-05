@@ -27,6 +27,7 @@
 namespace DmitryDulepov\Realurl\Configuration;
 
 use \DmitryDulepov\Realurl\Utility;
+use \TYPO3\CMS\Backend\Utility\BackendUtility;
 use \TYPO3\CMS\Core\SingletonInterface;
 use \TYPO3\CMS\Core\Utility\GeneralUtility;
 
@@ -85,6 +86,16 @@ class ConfigurationReader implements SingletonInterface {
 		}
 
 		return $value;
+	}
+
+	/**
+	 * Obtains the default value for the option.
+	 *
+	 * @param string $path
+	 * @return mixed
+	 */
+	protected function getDefaultValue($path) {
+		return isset($this->defaultValues[$path]) ? $this->defaultValues[$path] : '';
 	}
 
 	/**
@@ -167,16 +178,77 @@ class ConfigurationReader implements SingletonInterface {
 			if (is_array($configuration)) {
 				$this->configuration = $configuration;
 			}
+
+			$this->setRootPageId();
 		}
 	}
 
 	/**
-	 * Obtains the default value for the option.
+	 * Sets the root page id from the current host if that is not set already.
 	 *
-	 * @param string $path
-	 * @return mixed
+	 * @return void
 	 */
-	protected function getDefaultValue($path) {
-		return isset($this->defaultValues[$path]) ? $this->defaultValues[$path] : '';
+	protected function setRootPageId() {
+		if (!isset($this->configuration['pagePath']['rootpage_id'])) {
+			$this->setRootPageIdFromDomainRecord() || $this->setRootPageIdFromRootFlag() || $this->setRootPageIdFromTopLevelPages();
+		}
+	}
+
+	/**
+	 * Sets the root page id from domain records.
+	 *
+	 * @return bool
+	 */
+	protected function setRootPageIdFromDomainRecord() {
+		$result = FALSE;
+
+		$domainRecord = BackendUtility::getDomainStartPage($this->utility->getCurrentHost());
+		if (is_array($domainRecord)) {
+			$this->configuration['pagePath']['rootpage_id'] = (int)$domainRecord['pid'];
+			$result = TRUE;
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Sets the root page id from pages with the root flag.
+	 *
+	 * @return bool
+	 * @throws \Exception
+	 */
+	protected function setRootPageIdFromRootFlag() {
+		$result = FALSE;
+
+		/** @noinspection PhpUndefinedMethodInspection */
+		$rows = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('uid', 'pages', 'is_siteroot=1 AND deleted=0 AND hidden=0');
+		if (count($rows) > 1) {
+			// Cannot be done: too many of them!
+			throw new \Exception('RealURL was not able to find the root page id for the domain "' . $this->utility->getCurrentHost() . '"', 1420480928);
+		}
+		elseif (count($rows) !== 0) {
+			$this->configuration['pagePath']['rootpage_id'] = (int)$rows[0]['uid'];
+			$result = TRUE;
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Sets the root page id from the top level pages.
+	 *
+	 * @return bool
+	 * @throws \Exception
+	 */
+	protected function setRootPageIdFromTopLevelPages() {
+		/** @noinspection PhpUndefinedMethodInspection */
+		$rows = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('uid', 'pages', 'pid=0 AND deleted=0 AND hidden=0');
+		if (count($rows) !== 1) {
+			// Cannot be done: too many of them!
+			throw new \Exception('RealURL was not able to find the root page id for the domain "' . $this->utility->getCurrentHost() . '"', 1420480982);
+		}
+		$this->configuration['pagePath']['rootpage_id'] = (int)$rows[0]['uid'];
+
+		return TRUE;
 	}
 }
