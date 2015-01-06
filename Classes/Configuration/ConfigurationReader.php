@@ -202,6 +202,7 @@ class ConfigurationReader implements SingletonInterface {
 	protected function setRootPageIdFromDomainRecord() {
 		$result = FALSE;
 
+		// TODO Consider using PageRepository::getDomainStartPage()
 		$domainRecord = BackendUtility::getDomainStartPage($this->utility->getCurrentHost());
 		if (is_array($domainRecord)) {
 			$this->configuration['pagePath']['rootpage_id'] = (int)$domainRecord['pid'];

@@ -47,6 +47,9 @@ class UrlDecoder extends EncodeDecoderBase {
 	/** @var string */
 	protected $mimeType = '';
 
+	/** @var array */
+	static protected $pageTitleFields = array('tx_realurl_pathsegment', 'alias', 'nav_title', 'title', 'uid');
+
 	/** @var string */
 	protected $siteScript;
 
@@ -177,13 +180,50 @@ class UrlDecoder extends EncodeDecoderBase {
 	}
 
 	/**
+	 * Decodes the path.
+	 *
+	 * @param array $pathSegments
+	 * @return int
+	 */
+	protected function decodePath(array &$pathSegments) {
+		$remainingPathSegments = $pathSegments;
+		$result = $this->getFromPathCache($remainingPathSegments);
+
+		if ($result !== 0) {
+			$processedPathSegments = array_diff($pathSegments, $remainingPathSegments);
+			$currentPid = $result;
+		} else {
+			$processedPathSegments = array();
+			$currentPid = $this->configuration->get('pagePath/rootpage_id');
+		}
+		while ($currentPid !== 0 && count($remainingPathSegments) > 0) {
+			$segment = array_shift($remainingPathSegments);
+			$currentPid = $this->searchPages($currentPid, $segment);
+			if ($currentPid !== 0) {
+				$result = $currentPid;
+				$processedPathSegments[] = $segment;
+			}
+		}
+
+//		$this->putToPathCache($result, implode('/', $processedPathSegments));
+
+		return $result;
+	}
+
+	/**
 	 * Decodes the URL.
 	 *
 	 * @param string $path
 	 * @return array with keys 'id' and 'GET_VARS';
 	 */
-	protected function doDecoding(/** @noinspection PhpUnusedParameterInspection */ $path) {
-		return array('id' => 1, 'GET_VARS' => array());
+	protected function doDecoding($path) {
+		$result = array('id' => 1, 'GET_VARS' => array());
+
+		$pathSegments = explode('/', trim($path, '/'));
+//		$result['GET_VARS'] = $this->decodeVariables($pathSegments, (array)$this->configuration->get('preVars'));
+		$result['id'] = $this->decodePath($pathSegments);
+
+		return $result;
 	}
 
 	/**
@@ -228,20 +268,43 @@ class UrlDecoder extends EncodeDecoderBase {
 	}
 
 	/**
+	 * Searches pages for the match to the segment
+	 *
+	 * @param int $currentPid
+	 * @param string $segment
+	 * @return int
+	 */
+	protected function searchPages($currentPid, $segment) {
+		/** @noinspection PhpUndefinedMethodInspection */
+		$pages = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('*', 'pages', 'pid=' . (int)$currentPid . ' AND doktype IN (1,2,4) AND deleted=0 AND hidden=0');
+		foreach ($pages as $page) {
+			foreach (self::$pageTitleFields as $field) {
+				if ($this->utility->convertToSafeString($page[$field]) == $segment) {
+					return (int)$page['uid'];
+				}
+			}
+		}
+
+		return 0;
+	}
+
+	/**
 	 * Sets variables after the decoding.
 	 *
 	 * @param array $cacheInfo
 	 */
 	private function setRequestVariables(array $cacheInfo) {
-		$_SERVER['QUERY_STRING'] = $this->createQueryString($cacheInfo['GET_VARS']);
+		if ($cacheInfo['id']) {
+			$_SERVER['QUERY_STRING'] = $this->createQueryString($cacheInfo['GET_VARS']);
 
-		// Setting info in TSFE
-		$this->caller->mergingWithGetVars($cacheInfo['GET_VARS']);
-		$this->caller->id = $cacheInfo['id'];
+			// Setting info in TSFE
+			$this->caller->mergingWithGetVars($cacheInfo['GET_VARS']);
+			$this->caller->id = $cacheInfo['id'];
 
-		if ($this->mimeType) {
-			header('Content-type: ' . $this->mimeType);
-			$this->mimeType = null;
+			if ($this->mimeType) {
+				header('Content-type: ' . $this->mimeType);
+				$this->mimeType = null;
+			}
 		}
 	}
 

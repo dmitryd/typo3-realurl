@@ -41,6 +41,9 @@ abstract class EncodeDecoderBase {
 	const URL_CACHE_ID = 'realurl_url_cache';
 
 	/** @var \TYPO3\CMS\Core\Cache\Frontend\FrontendInterface */
+	protected $pathCache = NULL;
+
+	/** @var \TYPO3\CMS\Core\Cache\Frontend\FrontendInterface */
 	protected $urlCache = NULL;
 
 	/** @var \DmitryDulepov\Realurl\Configuration\ConfigurationReader */
@@ -78,6 +81,9 @@ abstract class EncodeDecoderBase {
 		if ($cacheManager->hasCache(self::URL_CACHE_ID)) {
 			$this->urlCache = $cacheManager->getCache(self::URL_CACHE_ID);
 		}
+		if ($cacheManager->hasCache(self::PATH_CACHE_ID)) {
+			$this->pathCache = $cacheManager->getCache(self::PATH_CACHE_ID);
+		}
 	}
 
 	/**
@@ -96,6 +102,33 @@ abstract class EncodeDecoderBase {
 		}
 
 		return $sortedUrl;
+	}
+
+	/**
+	 * Fetches the entry from the RealURL path cache.
+	 *
+	 * @param array $pathSegments
+	 * @return int
+	 */
+	protected function getFromPathCache(array &$pathSegments) {
+		$result = 0;
+		$removedSegments = array();
+
+		while ($result === 0 && count($pathSegments) > 0) {
+			$path = implode('/', $pathSegments);
+			/** @noinspection PhpUndefinedMethodInspection */
+			$row = $GLOBALS['TYPO3_DB']->exec_SELECTgetSingleRow('*', 'tx_realurl_pathcache',
+				'pagepath=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($path, 'tx_realurl_pathcache') . ' AND rootpage_id=' . (int)$this->configuration->get('pagePath/rootpage_id'),
+				'', 'expires'
+			);
+			if (is_array($row)) {
+				$result = $row['page_id'];
+			}
+			array_unshift($removedSegments, array_pop($pathSegments));
+		}
+		$pathSegments = $removedSegments;
+
+		return $result;
 	}
 
 	/**
