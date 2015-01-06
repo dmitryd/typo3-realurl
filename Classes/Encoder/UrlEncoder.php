@@ -26,9 +26,11 @@
  ***************************************************************/
 namespace DmitryDulepov\Realurl\Encoder;
 
-use DmitryDulepov\Realurl\Configuration\ConfigurationReader;
-use DmitryDulepov\Realurl\Utility;
+use DmitryDulepov\Realurl\EncodeDecoderBase;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Core\Utility\MathUtility;
 use TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer;
+use TYPO3\CMS\Frontend\Page\PageRepository;
 
 /**
  * This class contains encoder for the RealURL.
@@ -36,20 +38,29 @@ use TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer;
  * @package DmitryDulepov\Realurl\Encoder
  * @author Dmitry Dulepov <dmitry.dulepov@gmail.com>
  */
-class UrlEncoder {
+class UrlEncoder extends EncodeDecoderBase {
 
-	/** @var \DmitryDulepov\Realurl\Configuration\ConfigurationReader */
-	protected $configuration;
+	/** @var string */
+	protected $encodedUrl = '';
 
-	/** @var \DmitryDulepov\Realurl\Utility */
-	protected $utility;
+	/** @var PageRepository */
+	protected $pageRepository;
+
+	/** @var int */
+	protected $sysLanguageUid;
+
+	/** @var string */
+	protected $urlToEncode;
+
+	/** @var array */
+	protected $urlParameters = array();
 
 	/**
 	 * Initializes the class.
 	 */
 	public function __construct() {
-		$this->configuration = ConfigurationReader::getInstance();
-		$this->utility = Utility::getInstance();
+		parent::__construct();
+		$this->pageRepository = $GLOBALS['TSFE']->sys_page;
 	}
 
 	/**
@@ -59,7 +70,13 @@ class UrlEncoder {
 	 * @return void
 	 */
 	public function encodeUrl(array &$encoderParameters) {
-		// Nothing for now
+		$this->urlToEncode = $encoderParameters['LD']['totalURL'];
+		if ($this->canEncoderExecute()) {
+			$this->executeEncoder();
+			if ($this->encodedUrl) {
+				$encoderParameters['LD']['totalURL'] = $this->encodedUrl;
+			}
+		}
 	}
 
 	/**
@@ -71,5 +88,214 @@ class UrlEncoder {
 	 */
 	public function postProcessEncodedUrl(array &$parameters, ContentObjectRenderer $pObj) {
 		// Nothing for now
+	}
+
+	/**
+	 * Adds remaining parameters to the generated URL.
+	 *
+	 * @return void
+	 */
+	protected function addRemainingUrlParameters() {
+		unset($this->urlParameters['id']);
+		if (count($this->urlParameters) == 1 && isset($this->urlParameters['cHash'])) {
+			unset($this->urlParameters['cHash']);
+		}
+		elseif (count($this->urlParameters) > 0) {
+			$this->encodedUrl .= '?' . ltrim(GeneralUtility::implodeArrayForUrl('', $this->urlParameters), '&');
+		}
+	}
+
+	/**
+	 * Adds an entry to the path cache.
+	 *
+	 * @param string $pagePath
+	 * @return void
+	 */
+	protected function addToPathCache($pagePath) {
+		/** @noinspection PhpUndefinedMethodInspection */
+		$GLOBALS['TYPO3_DB']->exec_INSERTquery('tx_realurl_pathcache', array(
+			'page_id' => $this->urlParameters['id'],
+			'language_id' => $this->sysLanguageUid,
+			'rootpage_id' => $this->rootPageId,
+			'mpvar' => '',
+			'pagepath' => $pagePath,
+			'expire' => 0,
+		));
+	}
+
+	/**
+	 * Appends a string to $this->encodedUrl properly handling slashes in between.
+	 *
+	 * @param string $stringToAppend
+	 * @param bool $addSlash
+	 * @return void
+	 */
+	protected function appendToEncodedUrl($stringToAppend, $addSlash = TRUE) {
+		if ($stringToAppend) {
+			$this->encodedUrl = ($this->encodedUrl ? rtrim($this->encodedUrl, '/') . '/' : '') . trim($stringToAppend, '/');
+			if ($addSlash) {
+				$this->encodedUrl .= '/';
+			}
+		}
+	}
+
+	/**
+	 * Checks if RealURL can encode URLs.
+	 *
+	 * @return bool
+	 */
+	protected function canEncoderExecute() {
+		return $this->isRealURLEnabled() && !$this->isBackendMode() && !$this->isInWorkspace() && $this->isTypo3Url();
+	}
+
+	/**
+	 * Creates a path part of the URL.
+	 *
+	 * @return void
+	 */
+	protected function createPathComponent() {
+		$rooLineUtility = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Utility\\RootlineUtility', $this->urlParameters['id']);
+		$rootLine = $rooLineUtility->get();
+
+		array_pop($rootLine);
+
+		$components = array();
+		foreach (array_reverse($rootLine) as $page) {
+			foreach (self::$pageTitleFields as $field) {
+				if ($page[$field]) {
+					$segment = $this->utility->convertToSafeString($page[$field]);
+					if ($segment) {
+						$components[] = $segment;
+						$this->appendToEncodedUrl($segment);
+						continue 2;
+					}
+				}
+			}
+		}
+
+		if (count($components) > 0) {
+			$this->addToPathCache(implode('/', $components));
+		}
+	}
+
+	/**
+	 * Encodes the path to the page.
+	 *
+	 * @return void
+	 */
+	protected function encodePathComponents() {
+		$cacheRecord = $this->getFromPathCache();
+		if (is_array($cacheRecord)) {
+			$this->appendToEncodedUrl($cacheRecord['pagepath']);
+		}
+		else {
+			$this->createPathComponent();
+		}
+	}
+
+	/**
+	 * Encodes the URL.
+	 *
+	 * @return void
+	 */
+	protected function executeEncoder() {
+		$this->parseUrlParameters();
+		$this->setLanguage();
+
+		// TODO Encode preVars
+		$this->encodePathComponents();
+		// TODO Encode fixedPostVars
+		// TODO Encode postVarSets
+		// TODO Handle file name
+
+		$this->addRemainingUrlParameters();
+
+		// TODO Handle cHash
+
+	}
+
+	/**
+	 * Fetches the record from the patch cache.
+	 *
+	 * @return array|null
+	 */
+	protected function getFromPathCache() {
+		/** @noinspection PhpUndefinedMethodInspection */
+		return $GLOBALS['TYPO3_DB']->exec_SELECTgetSingleRow('*', 'tx_realurl_pathcache',
+			'page_id=' . (int)$this->urlParameters['id'] . ' AND language_id=' . $this->sysLanguageUid .
+				' AND rootpage_id=' . (int)$this->rootPageId . ' AND expire=0'
+		);
+	}
+
+	/**
+	 * Checks if system runs in non-live workspace
+	 *
+	 * @return boolean
+	 */
+	protected function isBackendMode() {
+		return (TYPO3_MODE == 'BE');
+	}
+
+	/**
+	 * Checks if system runs in non-live workspace
+	 *
+	 * @return boolean
+	 */
+	protected function isInWorkspace() {
+		$result = false;
+		if ($GLOBALS['TSFE']->beUserLogin) {
+			$result = ($GLOBALS['BE_USER']->workspace !== 0);
+		}
+		return $result;
+	}
+
+	/**
+	 * Checks if RealURl is enabled.
+	 *
+	 * @return bool
+	 */
+	protected function isRealURLEnabled() {
+		return (bool)$GLOBALS['TSFE']->config['config']['tx_realurl_enable'];
+	}
+
+	/**
+	 * Checks if a TYPO3 URL is going to be encoded.
+	 *
+	 * @return bool
+	 */
+	protected function isTypo3Url() {
+		$prefix = $GLOBALS['TSFE']->absRefPrefix . 'index.php';
+		return substr($this->urlToEncode, 0, strlen($prefix)) === $prefix;
+	}
+
+	/**
+	 * Parses query string to a set of key/value inside $this->urlParameters.
+	 *
+	 * @return void
+	 */
+	protected function parseUrlParameters() {
+		$urlParts = parse_url($this->urlToEncode);
+		if ($urlParts['query']) {
+			// Can use parse_str() here because we do not need deep arrays here.
+			$parts = GeneralUtility::trimExplode('&', $urlParts['query']);
+			foreach ($parts as $part) {
+				list($parameter, $value) = explode('=', $part);
+				$this->urlParameters[$parameter] = $value;
+			}
+		}
+	}
+
+	/**
+	 * Sets language for the encoder either from the URl or from the TSFE.
+	 *
+	 * @return void
+	 */
+	protected function setLanguage() {
+		if (isset($this->urlParameters['L']) && MathUtility::canBeInterpretedAsInteger($this->urlParameters['L'])) {
+			$this->sysLanguageUid = (int)$this->urlParameters['L'];
+		}
+		else {
+			$this->sysLanguageUid = (int)$GLOBALS['TSFE']->sys_language_uid;
+		}
 	}
 }

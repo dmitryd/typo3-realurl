@@ -27,7 +27,6 @@
 namespace DmitryDulepov\Realurl\Decoder;
 
 use DmitryDulepov\Realurl\EncodeDecoderBase;
-use TYPO3\CMS\Core\Utility\ArrayUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController;
 use TYPO3\CMS\Frontend\Page\PageRepository;
@@ -51,9 +50,6 @@ class UrlDecoder extends EncodeDecoderBase {
 
 	/** @var PageRepository */
 	protected $pageRepository = NULL;
-
-	/** @var array */
-	static protected $pageTitleFields = array('tx_realurl_pathsegment', 'alias', 'nav_title', 'title', 'uid');
 
 	/** @var string */
 	protected $siteScript;
@@ -346,6 +342,8 @@ class UrlDecoder extends EncodeDecoderBase {
 	 */
 	protected function runDecoding() {
 		$urlParts = $this->getUrlParts();
+
+		// TODO Handle file name
 
 		$cacheKey = $this->getCacheKey($this->speakingUri);
 		$cacheInfo = $this->getFromUrlCache($cacheKey);

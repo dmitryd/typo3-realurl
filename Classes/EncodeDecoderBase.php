@@ -45,6 +45,9 @@ abstract class EncodeDecoderBase {
 	/** @var \DmitryDulepov\Realurl\Configuration\ConfigurationReader */
 	protected $configuration;
 
+	/** @var array */
+	static protected $pageTitleFields = array('tx_realurl_pathsegment', 'alias', 'nav_title', 'title', 'uid');
+
 	/** @var int */
 	protected $rootPageId;
 

@@ -47,4 +47,7 @@ if (!function_exists('includeRealurlConfiguration')) {
 			),
 		);
 	}
+
+	$GLOBALS['TYPO3_CONF_VARS']['FE']['addRootLineFields'] .= ',tx_realurl_pathsegment,tx_realurl_exclude,tx_realurl_pathoverride';
+	$GLOBALS['TYPO3_CONF_VARS']['FE']['pageOverlayFields'] .= ',tx_realurl_pathsegment';
 }
