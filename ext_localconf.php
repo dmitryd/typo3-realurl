@@ -41,7 +41,10 @@ if (!function_exists('includeRealurlConfiguration')) {
 		$GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations'][\DmitryDulepov\Realurl\EncodeDecoderBase::URL_CACHE_ID] = array(
 			'backend' => 'TYPO3\\CMS\\Core\\Cache\\Backend\\Typo3DatabaseBackend',
 			'frontend' => 'TYPO3\\CMS\\Core\\Cache\\Frontend\\VariableFrontend',
-			'groups' => array('realurl')
+			'groups' => array('all', 'realurl'),
+			'options' => array(
+				'defaultLifetime' => 31*24*60*60, // 31 days
+			),
 		);
 	}
 }
