@@ -45,6 +45,9 @@ abstract class EncodeDecoderBase {
 	/** @var \DmitryDulepov\Realurl\Configuration\ConfigurationReader */
 	protected $configuration;
 
+	/** @var int */
+	protected $rootPageId;
+
 	/** @var \DmitryDulepov\Realurl\Utility */
 	protected $utility;
 
@@ -53,6 +56,7 @@ abstract class EncodeDecoderBase {
 	 */
 	public function __construct() {
 		$this->configuration = ConfigurationReader::getInstance();
+		$this->rootPageId = (int)$this->configuration->get('pagePath/rootpage_id');
 		$this->utility = Utility::getInstance();
 		$this->initializeCaches();
 	}
@@ -64,7 +68,7 @@ abstract class EncodeDecoderBase {
 	 * @return string
 	 */
 	public function getCacheKey($path) {
-		return (int)$this->configuration->get('pagePath/rootpage_id') . '_' . sha1($this->getSortedUrl($path));
+		return $this->rootPageId . '_' . sha1($this->getSortedUrl($path));
 	}
 
 	/**
@@ -95,33 +99,6 @@ abstract class EncodeDecoderBase {
 		}
 
 		return $sortedUrl;
-	}
-
-	/**
-	 * Fetches the entry from the RealURL path cache.
-	 *
-	 * @param array $pathSegments
-	 * @return int
-	 */
-	protected function getFromPathCache(array &$pathSegments) {
-		$result = 0;
-		$removedSegments = array();
-
-		while ($result === 0 && count($pathSegments) > 0) {
-			$path = implode('/', $pathSegments);
-			/** @noinspection PhpUndefinedMethodInspection */
-			$row = $GLOBALS['TYPO3_DB']->exec_SELECTgetSingleRow('*', 'tx_realurl_pathcache',
-				'pagepath=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($path, 'tx_realurl_pathcache') . ' AND rootpage_id=' . (int)$this->configuration->get('pagePath/rootpage_id'),
-				'', 'expires'
-			);
-			if (is_array($row)) {
-				$result = $row['page_id'];
-			}
-			array_unshift($removedSegments, array_pop($pathSegments));
-		}
-		$pathSegments = $removedSegments;
-
-		return $result;
 	}
 
 	/**

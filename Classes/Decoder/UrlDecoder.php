@@ -27,8 +27,10 @@
 namespace DmitryDulepov\Realurl\Decoder;
 
 use DmitryDulepov\Realurl\EncodeDecoderBase;
+use TYPO3\CMS\Core\Utility\ArrayUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController;
+use TYPO3\CMS\Frontend\Page\PageRepository;
 
 /**
  * This class contains URL decoder for the RealURL.
@@ -47,6 +49,9 @@ class UrlDecoder extends EncodeDecoderBase {
 	/** @var string */
 	protected $mimeType = '';
 
+	/** @var PageRepository */
+	protected $pageRepository = NULL;
+
 	/** @var array */
 	static protected $pageTitleFields = array('tx_realurl_pathsegment', 'alias', 'nav_title', 'title', 'uid');
 
@@ -55,6 +60,9 @@ class UrlDecoder extends EncodeDecoderBase {
 
 	/** @var string */
 	protected $speakingUri;
+
+	/** @var int */
+	protected $sysLanguageUid = 0;
 
 	/**
 	 * Initializes the class.
@@ -77,6 +85,7 @@ class UrlDecoder extends EncodeDecoderBase {
 			$this->setSpeakingUriFromSiteScript();
 			$this->checkMissingSlash();
 			if ($this->speakingUri) {
+				$this->setLanguageFromQueryString();
 				$this->runDecoding();
 			}
 		}
@@ -121,6 +130,18 @@ class UrlDecoder extends EncodeDecoderBase {
 					}
 				}
 			}
+		}
+	}
+
+	/**
+	 * Creates a page repository object if it does not exist yet.
+	 *
+	 * @return void
+	 */
+	protected function createPageRepository() {
+		if (is_null($this->pageRepository)) {
+			$this->pageRepository = GeneralUtility::makeInstance('TYPO3\\CMS\\Frontend\\Page\\PageRepository');
+			$this->pageRepository->init(FALSE);
 		}
 	}
 
@@ -187,25 +208,46 @@ class UrlDecoder extends EncodeDecoderBase {
 	 */
 	protected function decodePath(array &$pathSegments) {
 		$remainingPathSegments = $pathSegments;
-		$result = $this->getFromPathCache($remainingPathSegments);
+		$result = $this->searchPathInCache($remainingPathSegments);
 
-		if ($result !== 0) {
-			$processedPathSegments = array_diff($pathSegments, $remainingPathSegments);
-			$currentPid = $result;
-		} else {
-			$processedPathSegments = array();
-			$currentPid = $this->configuration->get('pagePath/rootpage_id');
-		}
-		while ($currentPid !== 0 && count($remainingPathSegments) > 0) {
-			$segment = array_shift($remainingPathSegments);
-			$currentPid = $this->searchPages($currentPid, $segment);
-			if ($currentPid !== 0) {
-				$result = $currentPid;
-				$processedPathSegments[] = $segment;
+		if ($result === 0 || count($remainingPathSegments) > 0) {
+			// Here we are if one of the following is true:
+			// - nothing is in the cache
+			// - there is an entry in the cache for the partial path
+			// We see what it is:
+			// - if a postVar exists for the next segment, it is a full path
+			// - if no path segments left, we found the path
+			// - otherwise we have to search
+
+			reset($pathSegments);
+			if (!$this->isPostVar(current($pathSegments))) {
+				$this->createPageRepository();
+
+				if ($result !== 0) {
+					$processedPathSegments = array_diff($pathSegments, $remainingPathSegments);
+					$currentPid = $result;
+				} else {
+					$processedPathSegments = array();
+					$currentPid = $this->rootPageId;
+				}
+				while ($currentPid !== 0 && count($remainingPathSegments) > 0) {
+					$segment = array_shift($remainingPathSegments);
+					$currentPid = $this->searchPages($currentPid, $segment);
+					if ($currentPid !== 0) {
+						$result = $lastPidInCache = $currentPid;
+						$processedPathSegments[] = $segment;
+						// Path is valid so far, so we cache it
+						$this->putToPathCache($result, implode('/', $processedPathSegments));
+					}
+					else {
+						array_unshift($remainingPathSegments, $segment);
+					}
+				}
 			}
 		}
-
-//		$this->putToPathCache($result, implode('/', $processedPathSegments));
+		if ($result !== 0) {
+			$pathSegments = $remainingPathSegments;
+		}
 
 		return $result;
 	}
@@ -222,6 +264,14 @@ class UrlDecoder extends EncodeDecoderBase {
 		$pathSegments = explode('/', trim($path, '/'));
 //		$result['GET_VARS'] = $this->decodeVariables($pathSegments, (array)$this->configuration->get('preVars'));
 		$result['id'] = $this->decodePath($pathSegments);
+		// TODO fixedPostVars are only valid for some pages, correct it on the line below!
+//		ArrayUtility::mergeRecursiveWithOverrule($result['GET_VARS'], $this->decodeVariables($pathSegments, (array)$this->configuration->get('fixedPostVars')));
+//		ArrayUtility::mergeRecursiveWithOverrule($result['GET_VARS'], $this->decodeVariables($pathSegments, (array)$this->configuration->get('postVarSets')));
+
+		if (count($pathSegments) > 0) {
+			reset($pathSegments);
+			$this->throw404('"' . current($pathSegments) . '" could not be decoded from path.');
+		}
 
 		return $result;
 	}
@@ -241,12 +291,52 @@ class UrlDecoder extends EncodeDecoderBase {
 	}
 
 	/**
+	 * Checks if the given segment is a name of the postVar.
+	 *
+	 * @param string $segment
+	 * @return bool
+	 */
+	protected function isPostVar($segment) {
+		$postVarNames = array_filter(array_keys((array)$this->configuration->get('postVarSets')));
+		return in_array($segment, $postVarNames);
+	}
+
+
+	/**
 	 * Checks if the current URL is a speaking URL.
 	 *
 	 * @return bool
 	 */
 	protected function isSpeakingUrl() {
 		return $this->siteScript && substr($this->siteScript, 0, 9) !== 'index.php' && substr($this->siteScript, 0, 1) !== '?';
+	}
+
+	/**
+	 * Adds data to the path cache.
+	 *
+	 * @param int $pageId
+	 * @param string $pagePath
+	 * @return void
+	 */
+	protected function putToPathCache($pageId, $pagePath) {
+		$rootPageId = $this->configuration->get('pagePath/rootpage_id');
+		/** @noinspection PhpUndefinedMethodInspection */
+		$cacheEntry = $GLOBALS['TYPO3_DB']->exec_SELECTgetSingleRow('*', 'tx_realurl_pathcache',
+			'page_id=' . (int)$pageId . ' AND language_id=' . (int)$this->sysLanguageUid .
+				' AND rootpage_id=' . $rootPageId .
+				' AND expire=0'
+		);
+		if (!is_array($cacheEntry) || $pagePath !== $cacheEntry['pagepath']) {
+			/** @noinspection PhpUndefinedMethodInspection */
+			$GLOBALS['TYPO3_DB']->exec_INSERTquery('tx_realurl_pathcache', array(
+				'page_id' => $pageId,
+				'language_id' => $this->sysLanguageUid,
+				'rootpage_id' => $rootPageId,
+				'mpvar' => '',
+				'pagepath' => $pagePath,
+				'expire' => 0,
+			));
+		}
 	}
 
 	/**
@@ -275,8 +365,9 @@ class UrlDecoder extends EncodeDecoderBase {
 	 * @return int
 	 */
 	protected function searchPages($currentPid, $segment) {
+		$pagesEnableFields = $this->pageRepository->enableFields('pages');
 		/** @noinspection PhpUndefinedMethodInspection */
-		$pages = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('*', 'pages', 'pid=' . (int)$currentPid . ' AND doktype IN (1,2,4) AND deleted=0 AND hidden=0');
+		$pages = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('*', 'pages', 'pid=' . (int)$currentPid . ' AND doktype IN (1,2,4)' . $pagesEnableFields);
 		foreach ($pages as $page) {
 			foreach (self::$pageTitleFields as $field) {
 				if ($this->utility->convertToSafeString($page[$field]) == $segment) {
@@ -286,6 +377,46 @@ class UrlDecoder extends EncodeDecoderBase {
 		}
 
 		return 0;
+	}
+
+	/**
+	 * Fetches the entry from the RealURL path cache. This would start stripping
+	 * segments if the entry is not found until none is left. Effectively it is
+	 * a search for the largest caching path for those segments.
+	 *
+	 * @param array $pathSegments
+	 * @return int
+	 */
+	protected function searchPathInCache(array &$pathSegments) {
+		$result = 0;
+		$removedSegments = array();
+
+		while ($result === 0 && count($pathSegments) > 0) {
+			$path = implode('/', $pathSegments);
+			/** @noinspection PhpUndefinedMethodInspection */
+			$row = $GLOBALS['TYPO3_DB']->exec_SELECTgetSingleRow('*', 'tx_realurl_pathcache',
+				'rootpage_id=' . (int)$this->rootPageId . ' AND pagepath=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($path, 'tx_realurl_pathcache'),
+				'', 'expire'
+			);
+			if (is_array($row)) {
+				$result = $row['page_id'];
+			}
+			else {
+				array_unshift($removedSegments, array_pop($pathSegments));
+			}
+		}
+		$pathSegments = $removedSegments;
+
+		return $result;
+	}
+
+	/**
+	 * Sets current language from the query string variable ('L').
+	 *
+	 * @return void
+	 */
+	protected function setLanguageFromQueryString() {
+		$this->sysLanguageUid = (int)GeneralUtility::_GP('L');
 	}
 
 	/**
