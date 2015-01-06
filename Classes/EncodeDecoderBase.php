@@ -37,11 +37,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  */
 abstract class EncodeDecoderBase {
 
-	const PATH_CACHE_ID = 'realurl_path_cache';
 	const URL_CACHE_ID = 'realurl_url_cache';
-
-	/** @var \TYPO3\CMS\Core\Cache\Frontend\FrontendInterface */
-	protected $pathCache = NULL;
 
 	/** @var \TYPO3\CMS\Core\Cache\Frontend\FrontendInterface */
 	protected $urlCache = NULL;
@@ -80,9 +76,6 @@ abstract class EncodeDecoderBase {
 		/** @var \TYPO3\CMS\Core\Cache\CacheManager $cacheManager */
 		if ($cacheManager->hasCache(self::URL_CACHE_ID)) {
 			$this->urlCache = $cacheManager->getCache(self::URL_CACHE_ID);
-		}
-		if ($cacheManager->hasCache(self::PATH_CACHE_ID)) {
-			$this->pathCache = $cacheManager->getCache(self::PATH_CACHE_ID);
 		}
 	}
 
