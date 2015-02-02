@@ -273,6 +273,21 @@ class UrlDecoder extends EncodeDecoderBase {
 	}
 
 	/**
+	 * Gets the entry from cache.
+	 *
+	 * @param string $speakingUrl
+	 * @return array|null
+	 */
+	protected function getFromUrlCache($speakingUrl) {
+		$row = $this->databaseConnection->exec_SELECTgetSingleRow('*', 'tx_realurl_urlcache',
+			'rootpage_id=' . $this->rootPageId . ' AND ' .
+				'speaking_url=' . $this->databaseConnection->fullQuoteStr($speakingUrl, 'tx_realurl_urlcache')
+		);
+
+		return is_array($row) ? (array)@json_decode($row['speaking_url_data']) : NULL;
+	}
+
+	/**
 	 * Parses the URL and validates the result.
 	 *
 	 * @return array
@@ -316,15 +331,13 @@ class UrlDecoder extends EncodeDecoderBase {
 	 */
 	protected function putToPathCache($pageId, $pagePath) {
 		$rootPageId = $this->configuration->get('pagePath/rootpage_id');
-		/** @noinspection PhpUndefinedMethodInspection */
-		$cacheEntry = $GLOBALS['TYPO3_DB']->exec_SELECTgetSingleRow('*', 'tx_realurl_pathcache',
+		$cacheEntry = $this->databaseConnection->exec_SELECTgetSingleRow('*', 'tx_realurl_pathcache',
 			'page_id=' . (int)$pageId . ' AND language_id=' . (int)$this->sysLanguageUid .
 				' AND rootpage_id=' . $rootPageId .
 				' AND expire=0'
 		);
 		if (!is_array($cacheEntry) || $pagePath !== $cacheEntry['pagepath']) {
-			/** @noinspection PhpUndefinedMethodInspection */
-			$GLOBALS['TYPO3_DB']->exec_INSERTquery('tx_realurl_pathcache', array(
+			$this->databaseConnection->exec_INSERTquery('tx_realurl_pathcache', array(
 				'page_id' => $pageId,
 				'language_id' => $this->sysLanguageUid,
 				'rootpage_id' => $rootPageId,
@@ -333,6 +346,27 @@ class UrlDecoder extends EncodeDecoderBase {
 				'expire' => 0,
 			));
 		}
+	}
+
+	/**
+	 * Adds data to the url cache. This must run after $this->setRequestVariables().
+	 *
+	 * @param array $cacheInfo
+	 * @return void
+	 */
+	protected function putToUrlCache(array $cacheInfo) {
+		$getVars = $_GET;
+		$getVars['id'] = $this->caller->id;
+		$this->sortArrayDeep($getVars);
+		$originalUrl = trim(GeneralUtility::implodeArrayForUrl('', $getVars), '&');
+		$this->databaseConnection->exec_INSERTquery('tx_realurl_urlcache', array(
+			'crdate' => time(),
+			'page_id' => $this->caller->id,
+			'rootpage_id' => $this->rootPageId,
+			'original_url' => $originalUrl,
+			'speaking_url' => $this->speakingUri,
+			'speaking_url_data' => json_encode($cacheInfo)
+		));
 	}
 
 	/**
@@ -345,14 +379,16 @@ class UrlDecoder extends EncodeDecoderBase {
 
 		// TODO Handle file name
 
-		$cacheKey = $this->getCacheKey($this->speakingUri);
-		$cacheInfo = $this->getFromUrlCache($cacheKey);
+		$cacheInfo = $this->getFromUrlCache($this->speakingUri);
 		if (!is_array($cacheInfo)) {
 			$cacheInfo = $this->doDecoding($urlParts['path']);
-			$cacheInfo['url'] = $this->speakingUri;
-			$this->putToUrlCache($cacheKey, $cacheInfo);
 		}
 		$this->setRequestVariables($cacheInfo);
+
+		// If it is still not there (could have been added by other process!), than update
+		if (!$this->getFromUrlCache($this->speakingUri)) {
+			$this->putToUrlCache($cacheInfo);
+		}
 	}
 
 	/**
@@ -364,8 +400,7 @@ class UrlDecoder extends EncodeDecoderBase {
 	 */
 	protected function searchPages($currentPid, $segment) {
 		$pagesEnableFields = $this->pageRepository->enableFields('pages');
-		/** @noinspection PhpUndefinedMethodInspection */
-		$pages = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('*', 'pages', 'pid=' . (int)$currentPid . ' AND doktype IN (1,2,4)' . $pagesEnableFields);
+		$pages = $this->databaseConnection->exec_SELECTgetRows('*', 'pages', 'pid=' . (int)$currentPid . ' AND doktype IN (1,2,4)' . $pagesEnableFields);
 		foreach ($pages as $page) {
 			foreach (self::$pageTitleFields as $field) {
 				if ($this->utility->convertToSafeString($page[$field]) == $segment) {
@@ -391,9 +426,8 @@ class UrlDecoder extends EncodeDecoderBase {
 
 		while ($result === 0 && count($pathSegments) > 0) {
 			$path = implode('/', $pathSegments);
-			/** @noinspection PhpUndefinedMethodInspection */
-			$row = $GLOBALS['TYPO3_DB']->exec_SELECTgetSingleRow('*', 'tx_realurl_pathcache',
-				'rootpage_id=' . (int)$this->rootPageId . ' AND pagepath=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($path, 'tx_realurl_pathcache'),
+			$row = $this->databaseConnection->exec_SELECTgetSingleRow('*', 'tx_realurl_pathcache',
+				'rootpage_id=' . (int)$this->rootPageId . ' AND pagepath=' . $this->databaseConnection->fullQuoteStr($path, 'tx_realurl_pathcache'),
 				'', 'expire'
 			);
 			if (is_array($row)) {

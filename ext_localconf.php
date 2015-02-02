@@ -32,22 +32,6 @@ if (!function_exists('includeRealurlConfiguration')) {
 
 	includeRealurlConfiguration();
 
-	/*
-	 * Note: cache initialization below allows extensions to set their own RealURL caches.
-	 * For that extensions had to be loaded before RealURL.
-	 */
-
-	if (!is_array($GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations'][\DmitryDulepov\Realurl\EncodeDecoderBase::URL_CACHE_ID])) {
-		$GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations'][\DmitryDulepov\Realurl\EncodeDecoderBase::URL_CACHE_ID] = array(
-			'backend' => 'TYPO3\\CMS\\Core\\Cache\\Backend\\Typo3DatabaseBackend',
-			'frontend' => 'TYPO3\\CMS\\Core\\Cache\\Frontend\\VariableFrontend',
-			'groups' => array('all', 'realurl'),
-			'options' => array(
-				'defaultLifetime' => 31*24*60*60, // 31 days
-			),
-		);
-	}
-
-	$GLOBALS['TYPO3_CONF_VARS']['FE']['addRootLineFields'] .= ',tx_realurl_pathsegment,tx_realurl_exclude,tx_realurl_pathoverride';
-	$GLOBALS['TYPO3_CONF_VARS']['FE']['pageOverlayFields'] .= ',tx_realurl_pathsegment';
+//	$GLOBALS['TYPO3_CONF_VARS']['FE']['addRootLineFields'] .= ',tx_realurl_pathsegment,tx_realurl_exclude,tx_realurl_pathoverride';
+//	$GLOBALS['TYPO3_CONF_VARS']['FE']['pageOverlayFields'] .= ',tx_realurl_pathsegment';
 }

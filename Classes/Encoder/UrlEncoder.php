@@ -43,6 +43,14 @@ class UrlEncoder extends EncodeDecoderBase {
 	/** @var string */
 	protected $encodedUrl = '';
 
+	/**
+	 * This is the URL with sorted GET parameters. It is used for cache
+	 * manipulation.
+	 *
+	 * @var string
+	 */
+	protected $originalUrl;
+
 	/** @var PageRepository */
 	protected $pageRepository;
 
@@ -73,9 +81,7 @@ class UrlEncoder extends EncodeDecoderBase {
 		$this->urlToEncode = $encoderParameters['LD']['totalURL'];
 		if ($this->canEncoderExecute()) {
 			$this->executeEncoder();
-			if ($this->encodedUrl) {
-				$encoderParameters['LD']['totalURL'] = $this->encodedUrl;
-			}
+			$encoderParameters['LD']['totalURL'] = $this->encodedUrl;
 		}
 	}
 
@@ -96,12 +102,13 @@ class UrlEncoder extends EncodeDecoderBase {
 	 * @return void
 	 */
 	protected function addRemainingUrlParameters() {
-		unset($this->urlParameters['id']);
-		if (count($this->urlParameters) == 1 && isset($this->urlParameters['cHash'])) {
-			unset($this->urlParameters['cHash']);
+		$urlParameters = $this->urlParameters;
+		unset($urlParameters['id']);
+		if (count($urlParameters) == 1 && isset($urlParameters['cHash'])) {
+			unset($urlParameters['cHash']);
 		}
-		elseif (count($this->urlParameters) > 0) {
-			$this->encodedUrl .= '?' . ltrim(GeneralUtility::implodeArrayForUrl('', $this->urlParameters), '&');
+		elseif (count($urlParameters) > 0) {
+			$this->encodedUrl .= '?' . trim(GeneralUtility::implodeArrayForUrl('', $urlParameters), '&');
 		}
 	}
 
@@ -200,18 +207,47 @@ class UrlEncoder extends EncodeDecoderBase {
 	 */
 	protected function executeEncoder() {
 		$this->parseUrlParameters();
-		$this->setLanguage();
 
-		// TODO Encode preVars
-		$this->encodePathComponents();
-		// TODO Encode fixedPostVars
-		// TODO Encode postVarSets
-		// TODO Handle file name
+		if (!$this->fetchFromtUrlCache()) {
+			$this->setLanguage();
 
-		$this->addRemainingUrlParameters();
+			// TODO Encode preVars
+			$this->encodePathComponents();
+			// TODO Encode fixedPostVars
+			// TODO Encode postVarSets
+			// TODO Handle file name
 
-		// TODO Handle cHash
+			$this->addRemainingUrlParameters();
 
+			// TODO Handle cHash
+
+			if ($this->encodedUrl === '') {
+				$emptyUrlReturnValue = $this->configuration->get('init/emptyUrlReturnValue') ?: '/';
+				$this->encodedUrl = $emptyUrlReturnValue;
+			}
+			$this->storeInUrlCache();
+		}
+	}
+
+	/**
+	 * Attempts to fetch the speaking URL from the url cache.
+	 *
+	 * @return bool
+	 */
+	protected function fetchFromtUrlCache() {
+		$result = FALSE;
+
+		$row = $this->databaseConnection->exec_SELECTgetSingleRow('*', 'tx_realurl_urlcache',
+			'rootpage_id=' . $this->rootPageId . ' AND ' .
+				'original_url=' . $this->databaseConnection->fullQuoteStr($this->originalUrl, 'tx_realurl_urlcache')
+		);
+
+		if (is_array($row)) {
+			$this->encodedUrl = $row['speaking_url'];
+			$result = TRUE;
+		}
+
+		return $result;
 	}
 
 	/**
@@ -276,13 +312,14 @@ class UrlEncoder extends EncodeDecoderBase {
 	protected function parseUrlParameters() {
 		$urlParts = parse_url($this->urlToEncode);
 		if ($urlParts['query']) {
-			// Can use parse_str() here because we do not need deep arrays here.
+			// Cannot use parse_str() here because we do not need deep arrays here.
 			$parts = GeneralUtility::trimExplode('&', $urlParts['query']);
 			foreach ($parts as $part) {
 				list($parameter, $value) = explode('=', $part);
 				$this->urlParameters[$parameter] = $value;
 			}
 		}
+		$this->originalUrl = trim(GeneralUtility::implodeArrayForUrl('', $this->urlParameters), '&');
 	}
 
 	/**
@@ -296,6 +333,33 @@ class UrlEncoder extends EncodeDecoderBase {
 		}
 		else {
 			$this->sysLanguageUid = (int)$GLOBALS['TSFE']->sys_language_uid;
+		}
+	}
+
+	/**
+	 * Stores data in the URL cache.
+	 *
+	 * @return void
+	 */
+	protected function storeInUrlCache() {
+		$existingRowCount = $this->databaseConnection->exec_SELECTcountRows('*', 'tx_realurl_urlcache',
+			'rootpage_id=' . $this->rootPageId . ' AND ' .
+				'original_url=' . $this->databaseConnection->fullQuoteStr($this->originalUrl, 'tx_realurl_urlcache')
+		);
+		if ($existingRowCount == 0) {
+			$cacheInfo = array(
+				'id' => $this->urlParameters['id'],
+				'GET_VARS' => $this->urlParameters
+			);
+			unset($cacheInfo['GET_VARS']['id']);
+			$this->databaseConnection->exec_INSERTquery('tx_realurl_urlcache', array(
+				'crdate' => time(),
+				'page_id' => $this->urlParameters['id'],
+				'rootpage_id' => $this->rootPageId,
+				'original_url' => $this->originalUrl,
+				'speaking_url' => $this->encodedUrl,
+				'speaking_url_data' => json_encode($cacheInfo)
+			));
 		}
 	}
 }

@@ -45,6 +45,9 @@ abstract class EncodeDecoderBase {
 	/** @var \DmitryDulepov\Realurl\Configuration\ConfigurationReader */
 	protected $configuration;
 
+	/** @var \TYPO3\CMS\Core\Database\DatabaseConnection */
+	protected $databaseConnection;
+
 	/** @var array */
 	static protected $pageTitleFields = array('tx_realurl_pathsegment', 'alias', 'nav_title', 'title', 'uid');
 
@@ -58,6 +61,7 @@ abstract class EncodeDecoderBase {
 	 * Initializes the class.
 	 */
 	public function __construct() {
+		$this->databaseConnection = $GLOBALS['TYPO3_DB'];
 		$this->configuration = ConfigurationReader::getInstance();
 		$this->rootPageId = (int)$this->configuration->get('pagePath/rootpage_id');
 		$this->utility = Utility::getInstance();
@@ -75,7 +79,9 @@ abstract class EncodeDecoderBase {
 	}
 
 	/**
-	 * Initializes the cache for URLs
+	 * Initializes the cache for URLs.
+	 *
+	 * @return void
 	 */
 	protected function initializeCaches() {
 		// TODO Disable caches if BE user is logged in
@@ -105,26 +111,9 @@ abstract class EncodeDecoderBase {
 	}
 
 	/**
-	 * Fetches the entry from cache.
-	 *
-	 * @param string $cacheKey
-	 * @return array|null
-	 */
-	protected function getFromUrlCache($cacheKey) {
-		$result = NULL;
-		if ($this->urlCache) {
-			if ($this->urlCache->has($cacheKey)) {
-				$result = $this->urlCache->get($cacheKey);
-			}
-		}
-
-		return $result;
-	}
-
-	/**
 	 * Sets the entry to cache.
 	 *
-	 * @param $cacheKey
+	 * @param string $cacheKey
 	 * @param array $cacheInfo
 	 */
 	protected function putToUrlCache($cacheKey, array $cacheInfo) {
@@ -140,7 +129,9 @@ abstract class EncodeDecoderBase {
 	 * @return void
 	 */
 	protected function sortArrayDeep(array &$pathParts) {
-		ksort($pathParts);
+		if (count($pathParts) > 1) {
+			ksort($pathParts);
+		}
 		foreach ($pathParts as &$part) {
 			if (is_array($part)) {
 				$this->sortArrayDeep($part);
