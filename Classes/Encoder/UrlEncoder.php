@@ -215,7 +215,7 @@ class UrlEncoder extends EncodeDecoderBase {
 			$this->encodePathComponents();
 			// TODO Encode fixedPostVars
 			// TODO Encode postVarSets
-			// TODO Handle file name
+			$this->handleFileName();
 
 			$this->addRemainingUrlParameters();
 
@@ -261,6 +261,67 @@ class UrlEncoder extends EncodeDecoderBase {
 			'page_id=' . (int)$this->urlParameters['id'] . ' AND language_id=' . $this->sysLanguageUid .
 				' AND rootpage_id=' . (int)$this->rootPageId . ' AND expire=0'
 		);
+	}
+
+	/**
+	 * Appends file name and suffix if necessary.
+	 *
+	 * @return void
+	 */
+	protected function handleFileName() {
+		if (!$this->handleFileNameUsingGetVars()) {
+			$this->handleFileNameSetDefaultSuffix();
+		}
+	}
+
+	/**
+	 * Sets the default suffix to the URL if configured so.
+	 *
+	 * @return void
+	 */
+	protected function handleFileNameSetDefaultSuffix() {
+		$suffixValue = $this->configuration->get('fileName/defaultToHTMLsuffixOnPrev');
+		if ($suffixValue) {
+			if (!is_string($suffixValue) || strpos($suffixValue, '.') === FALSE) {
+				$suffixValue = '.html';
+			}
+			if ($this->encodedUrl !== '') {
+				$this->encodedUrl = rtrim($this->encodedUrl, '/');
+			}
+			$this->encodedUrl .= $suffixValue;
+		}
+	}
+
+	/**
+	 * Checks if the file name like 'rss.xml' should be produced according to _GET vars.
+	 *
+	 * @return bool
+	 */
+	protected function handleFileNameUsingGetVars() {
+		$result = FALSE;
+		$fileNameConfigurations = (array)$this->configuration->get('fileName/index');
+		foreach ($fileNameConfigurations as $fileName => $fileNameConfiguration) {
+			if (strpos($fileName, '.') !== FALSE && is_array($fileNameConfiguration) && is_array($fileNameConfiguration['keyValues'])) {
+				$useThisConfiguration = TRUE;
+				$variablesToRemove = array();
+				foreach ($fileNameConfiguration['keyValues'] as $getVarName => $getVarValue) {
+					if (!isset($this->urlParameters[$getVarName]) || (string)$this->urlParameters[$getVarName] !== (string)$getVarValue) {
+						$useThisConfiguration = FALSE;
+						break;
+					}
+					$variablesToRemove[$getVarName] = '';
+				}
+
+				if ($useThisConfiguration) {
+					$this->appendToEncodedUrl($fileName, FALSE);
+					$this->urlParameters = array_diff_key($this->urlParameters, $variablesToRemove);
+					$result = TRUE;
+					break;
+				}
+			}
+		}
+
+		return $result;
 	}
 
 	/**

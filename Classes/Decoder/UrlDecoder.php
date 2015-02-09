@@ -27,6 +27,7 @@
 namespace DmitryDulepov\Realurl\Decoder;
 
 use DmitryDulepov\Realurl\EncodeDecoderBase;
+use TYPO3\CMS\Core\Utility\ArrayUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController;
 use TYPO3\CMS\Frontend\Page\PageRepository;
@@ -258,7 +259,10 @@ class UrlDecoder extends EncodeDecoderBase {
 		$result = array('id' => 1, 'GET_VARS' => array());
 
 		$pathSegments = explode('/', trim($path, '/'));
-//		$result['GET_VARS'] = $this->decodeVariables($pathSegments, (array)$this->configuration->get('preVars'));
+
+		ArrayUtility::mergeRecursiveWithOverrule($result['GET_VARS'], $this->handleFileName($pathSegments));
+
+//		ArrayUtility::mergeRecursiveWithOverrule($result['GET_VARS'], $this->decodeVariables($pathSegments, (array)$this->configuration->get('preVars')));
 		$result['id'] = $this->decodePath($pathSegments);
 		// TODO fixedPostVars are only valid for some pages, correct it on the line below!
 //		ArrayUtility::mergeRecursiveWithOverrule($result['GET_VARS'], $this->decodeVariables($pathSegments, (array)$this->configuration->get('fixedPostVars')));
@@ -299,6 +303,72 @@ class UrlDecoder extends EncodeDecoderBase {
 		}
 
 		return $uParts;
+	}
+
+	/**
+	 * Processes the file name component. There can be several scenarios:
+	 * 1. File name is mapped to a _GET var. We set a _GET var and discard the segment.
+	 * 2. File name is a segment with suffix appended. We discard the suffix.
+	 *
+	 * @param array $urlParts
+	 * @return array
+	 */
+	protected function handleFileName(array &$urlParts) {
+		$getVars = array();
+		if (count($urlParts) > 0) {
+			$putBack = TRUE;
+			$fileNameSegment = array_pop($urlParts);
+			if ($fileNameSegment && strpos($fileNameSegment, '.') !== FALSE) {
+				if (!$this->handleFileNameMappingToGetVar($fileNameSegment, $getVars)) {
+					$validExtensions = array();
+
+					foreach (array('acceptHTMLsuffix', 'defaultToHTMLsuffixOnPrev') as $option) {
+						$acceptSuffix = $this->configuration->get('fileName/' . $option);
+						if (is_string($acceptSuffix) && strpos($acceptSuffix, '.') !== FALSE) {
+							$validExtensions[] = $acceptSuffix;
+						} elseif ($acceptSuffix) {
+							$validExtensions[] = '.html';
+						}
+					}
+
+					$extension = '.' . pathinfo($fileNameSegment, PATHINFO_EXTENSION);
+					if (in_array($extension, $validExtensions)) {
+						$fileNameSegment = pathinfo($fileNameSegment, PATHINFO_FILENAME);
+					}
+					// If no match, we leave it as is => 404.
+				}
+				else {
+					$putBack = FALSE;
+				}
+			}
+			if ($putBack) {
+				$urlParts[] = $fileNameSegment;
+			}
+		}
+
+		return $getVars;
+	}
+
+	/**
+	 * Handles mapping of file names to GET vars (like 'print.html' => 'type=98')
+	 *
+	 * @param string $fileNameSegment
+	 * @param array $getVars
+	 * @return bool
+	 */
+	protected function handleFileNameMappingToGetVar($fileNameSegment, array &$getVars) {
+		$result = FALSE;
+		if ($fileNameSegment) {
+			$fileNameConfiguration = $this->configuration->get('fileName/index/' . $fileNameSegment);
+			if (is_array($fileNameConfiguration)) {
+				$result = TRUE;
+				if (isset($fileNameConfiguration['keyValues'])) {
+					$getVars = $fileNameConfiguration['keyValues'];
+				}
+			}
+		}
+
+		return $result;
 	}
 
 	/**
@@ -376,8 +446,6 @@ class UrlDecoder extends EncodeDecoderBase {
 	 */
 	protected function runDecoding() {
 		$urlParts = $this->getUrlParts();
-
-		// TODO Handle file name
 
 		$cacheInfo = $this->getFromUrlCache($this->speakingUri);
 		if (!is_array($cacheInfo)) {
