@@ -69,16 +69,6 @@ abstract class EncodeDecoderBase {
 	}
 
 	/**
-	 * Creates a cache key for the given path.
-	 *
-	 * @param string $path
-	 * @return string
-	 */
-	public function getCacheKey($path) {
-		return $this->rootPageId . '_' . sha1($this->getSortedUrl($path));
-	}
-
-	/**
 	 * Initializes the cache for URLs.
 	 *
 	 * @return void
