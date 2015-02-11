@@ -28,6 +28,7 @@ namespace DmitryDulepov\Realurl;
 
 use DmitryDulepov\Realurl\Configuration\ConfigurationReader;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController;
 
 /**
  * This class contains common methods for RealURL encoder and decoder.
@@ -38,9 +39,6 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 abstract class EncodeDecoderBase {
 
 	const URL_CACHE_ID = 'realurl_url_cache';
-
-	/** @var \TYPO3\CMS\Core\Cache\Frontend\FrontendInterface */
-	protected $urlCache = NULL;
 
 	/** @var \DmitryDulepov\Realurl\Configuration\ConfigurationReader */
 	protected $configuration;
@@ -54,6 +52,12 @@ abstract class EncodeDecoderBase {
 	/** @var int */
 	protected $rootPageId;
 
+	/** @var TypoScriptFrontendController */
+	protected $tsfe;
+
+	/** @var \TYPO3\CMS\Core\Cache\Frontend\FrontendInterface */
+	protected $urlCache = NULL;
+
 	/** @var \DmitryDulepov\Realurl\Utility */
 	protected $utility;
 
@@ -62,6 +66,7 @@ abstract class EncodeDecoderBase {
 	 */
 	public function __construct() {
 		$this->databaseConnection = $GLOBALS['TYPO3_DB'];
+		$this->tsfe = $GLOBALS['TSFE'];
 		$this->configuration = ConfigurationReader::getInstance();
 		$this->rootPageId = (int)$this->configuration->get('pagePath/rootpage_id');
 		$this->utility = Utility::getInstance();
@@ -80,6 +85,27 @@ abstract class EncodeDecoderBase {
 		if ($cacheManager->hasCache(self::URL_CACHE_ID)) {
 			$this->urlCache = $cacheManager->getCache(self::URL_CACHE_ID);
 		}
+	}
+
+	/**
+	 * Looks up an ID value (integer) in lookup-table based on input alias value.
+	 * (The lookup table for id<->alias is meant to contain UNIQUE alias strings for id integers)
+	 * In the lookup table 'tx_realurl_uniqalias' the field "value_alias" should be unique (per combination of field_alias+field_id+tablename)! However the "value_id" field doesn't have to; that is a feature which allows more aliases to point to the same id. The alias selected for converting id to alias will be the first inserted at the moment. This might be more intelligent in the future, having an order column which can be controlled from the backend for instance!
+	 *
+	 * @param array $configuration
+	 * @param string $aliasValue
+	 * @param boolean $onlyNonExpired
+	 * @return int ID integer. If none is found: false
+	 */
+	protected function getFromAliasCacheByAliasValue(array $configuration, $aliasValue, $onlyNonExpired) {
+		/** @noinspection PhpUndefinedMethodInspection */
+		$row = $this->databaseConnection->exec_SELECTgetSingleRow('value_id', 'tx_realurl_uniqalias',
+				'value_alias=' . $this->databaseConnection->fullQuoteStr($aliasValue, 'tx_realurl_uniqalias') .
+				' AND field_alias=' . $this->databaseConnection->fullQuoteStr($configuration['alias_field'], 'tx_realurl_uniqalias') .
+				' AND field_id=' . $this->databaseConnection->fullQuoteStr($configuration['id_field'], 'tx_realurl_uniqalias') .
+				' AND tablename=' . $this->databaseConnection->fullQuoteStr($configuration['table'], 'tx_realurl_uniqalias') .
+				' AND ' . ($onlyNonExpired ? 'expire=0' : '(expire=0 OR expire>' . time() . ')'));
+		return (is_array($row) ? $row['value_id'] : false);
 	}
 
 	/**

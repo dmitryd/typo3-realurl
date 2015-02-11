@@ -40,6 +40,8 @@ use TYPO3\CMS\Frontend\Page\PageRepository;
  */
 class UrlEncoder extends EncodeDecoderBase {
 
+	const MAX_ALIAS_LENGTH = 100;
+
 	/** @var string */
 	protected $encodedUrl = '';
 
@@ -50,6 +52,9 @@ class UrlEncoder extends EncodeDecoderBase {
 	 * @var string
 	 */
 	protected $originalUrl;
+
+	/** @var array */
+	protected $originalUrlParameters = array();
 
 	/** @var PageRepository */
 	protected $pageRepository;
@@ -68,7 +73,7 @@ class UrlEncoder extends EncodeDecoderBase {
 	 */
 	public function __construct() {
 		parent::__construct();
-		$this->pageRepository = $GLOBALS['TSFE']->sys_page;
+		$this->pageRepository = $this->tsfe->sys_page;
 	}
 
 	/**
@@ -120,7 +125,7 @@ class UrlEncoder extends EncodeDecoderBase {
 	 */
 	protected function addToPathCache($pagePath) {
 		/** @noinspection PhpUndefinedMethodInspection */
-		$GLOBALS['TYPO3_DB']->exec_INSERTquery('tx_realurl_pathcache', array(
+		$this->databaseConnection->exec_INSERTquery('tx_realurl_pathcache', array(
 			'page_id' => $this->urlParameters['id'],
 			'language_id' => $this->sysLanguageUid,
 			'rootpage_id' => $this->rootPageId,
@@ -139,7 +144,7 @@ class UrlEncoder extends EncodeDecoderBase {
 	 */
 	protected function appendToEncodedUrl($stringToAppend, $addSlash = TRUE) {
 		if ($stringToAppend) {
-			$this->encodedUrl = ($this->encodedUrl ? rtrim($this->encodedUrl, '/') . '/' : '') . trim($stringToAppend, '/');
+			$this->encodedUrl = ($this->encodedUrl ? rtrim($this->encodedUrl, '/') . '/' : '') . $stringToAppend;
 			if ($addSlash) {
 				$this->encodedUrl .= '/';
 			}
@@ -153,6 +158,116 @@ class UrlEncoder extends EncodeDecoderBase {
 	 */
 	protected function canEncoderExecute() {
 		return $this->isRealURLEnabled() && !$this->isBackendMode() && !$this->isInWorkspace() && $this->isTypo3Url();
+	}
+
+	/**
+	 * Cleans up the alias
+	 *
+	 * @param array $configuration Configuration array
+	 * @param string $newAliasValue Alias value to clean up
+	 * @return string
+	 */
+	public function cleanUpAlias(array $configuration, $newAliasValue) {
+		$processedTitle = $this->utility->convertToSafeString($newAliasValue);
+
+		if ($configuration['useUniqueCache_conf']['encodeTitle_userProc']) {
+			$encodingConfiguration = array('strtolower' => $configuration['useUniqueCache_conf']['strtolower'], 'spaceCharacter' => $configuration['useUniqueCache_conf']['spaceCharacter']);
+			$parameters = array(
+				'pObj' => $this,
+				'title' => $newAliasValue,
+				'processedTitle' => $processedTitle,
+				'encodingConfiguration' => $encodingConfiguration
+			);
+			$processedTitle = GeneralUtility::callUserFunction($configuration['useUniqueCache_conf']['encodeTitle_userProc'], $parameters, $this);
+		}
+
+		return $processedTitle;
+	}
+
+	/**
+	 * Converts value to the alias
+	 *
+	 * @param string $getVarValue
+	 * @param array $configuration 'lookUpTable' configuration
+	 * @return string
+	 */
+	protected function createAliasForValue($getVarValue, array $configuration) {
+		$result = $getVarValue;
+
+		$languageEnabled = FALSE;
+		$fieldList = array();
+		if ($configuration['transOrigPointerField'] && $configuration['languageField']) {
+			$fieldList[] = 'uid';
+			$fieldList[] = $configuration['transOrigPointerField'];
+			$fieldList[] = $configuration['languageField'];
+			$languageEnabled = TRUE;
+		}
+
+		// Define the language for the alias
+		$languageUrlParameter = $configuration['languageGetVar'] ?: 'L';
+		$languageUid = isset($this->originalUrlParameters[$languageUrlParameter]) ? (int)$this->originalUrlParameters[$languageUrlParameter] : 0;
+		if (GeneralUtility::inList($configuration['languageExceptionUids'], $languageUid)) {
+			$languageUid = 0;
+		}
+
+		// First, test if there is an entry in cache for the id
+		if (!$configuration['useUniqueCache'] || $configuration['autoUpdate'] || !($result = $this->getFromAliasCache($configuration, $getVarValue, $languageUid))) {
+			$fieldList[] = $configuration['alias_field'];
+			$row = $this->databaseConnection->exec_SELECTgetSingleRow(implode(',', $fieldList), $configuration['table'],
+						$configuration['id_field'] . '=' . $this->databaseConnection->fullQuoteStr($getVarValue, $configuration['table']) .
+						' ' . $configuration['addWhereClause']);
+			if (is_array($row)) {
+				// Looking for localized version
+				if ($languageEnabled && $languageUid !== 0) {
+					/** @noinspection PhpUndefinedMethodInspection */
+					$localizedRow = $this->databaseConnection->exec_SELECTgetSingleRow($configuration['alias_field'], $configuration['table'],
+							$configuration['transOrigPointerField'] . '=' . (int)$row['uid'] . '
+							AND ' . $configuration['languageField'] . '=' . $languageUid . '
+							' . (isset($configuration['addWhereClause']) ? $configuration['addWhereClause'] : ''));
+					if (is_array($localizedRow)) {
+						$row = $localizedRow;
+					}
+				}
+
+				$maxAliasLengthLength = isset($configuration['maxLength']) ? (int)$configuration['maxLength'] : self::MAX_ALIAS_LENGTH;
+				$aliasValue = substr($row[$configuration['alias_field']], 0, $maxAliasLengthLength);
+
+				if ($configuration['useUniqueCache']) { // If cache is to be used, store the alias in the cache:
+					$result = $this->storeInAliasCache($configuration, $aliasValue, $getVarValue, $languageUid);
+				} else { // If no cache for alias, then just return whatever value is appropriate:
+					$result = $aliasValue;
+				}
+			}
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Creates a unique alias.
+	 *
+	 * @param array $configuration
+	 * @param $newAliasValue
+	 * @param $idValue
+	 * @return string
+	 */
+	protected function createUniqueAlias(array $configuration, $newAliasValue, $idValue) {
+		$uniqueAlias = '';
+		$counter = 0;
+		$maxTry = 100;
+		$testNewAliasValue = $newAliasValue;
+		while ($counter < $maxTry) {
+			// If the test-alias did NOT exist, it must be unique and we break out
+			$foundId = $this->getFromAliasCacheByAliasValue($configuration, $testNewAliasValue, TRUE);
+			if (!$foundId || $foundId == $idValue) {
+				$uniqueAlias = $testNewAliasValue;
+				break;
+			}
+			$counter++;
+			$testNewAliasValue = $newAliasValue . '-' . $counter;
+		}
+
+		return $uniqueAlias;
 	}
 
 	/**
@@ -201,6 +316,187 @@ class UrlEncoder extends EncodeDecoderBase {
 	}
 
 	/**
+	 * Encodes 'preVars' into URL segments.
+	 *
+	 * @return void
+	 */
+	protected function encodePreVars() {
+		$segments = $this->encodeUrlParameterBlock((array)$this->configuration->get('preVars'));
+		if (count($segments) > 0) {
+			$this->appendToEncodedUrl(implode('/', $segments));
+		}
+	}
+
+	/**
+	 * Encodes pre- or postVars according to the given configuration.
+	 *
+	 * @param array $configurationArray
+	 * @return string
+	 */
+	protected function encodeUrlParameterBlock(array $configurationArray) {
+		static $varProcessingFunctions = array(
+			'encodeUrlParameterBlockUsingValueMap',
+			'encodeUrlParameterBlockUsingNoMatch',
+			'encodeUrlParameterBlockUsingUserFunc',
+			//'encodeUrlParameterBlockUsingLookupTable',
+			'encodeUrlParameterBlockUsingValueDefault',
+			// Allways the last one!
+			'encodeUrlParameterBlockUseAsIs',
+		);
+		$segments = array();
+
+		if ($this->hasUrlParameters($configurationArray)) {
+			foreach ($configurationArray as $configuration) {
+				$getVarName = $configuration['GETvar'];
+				$getVarValue = isset($this->urlParameters[$getVarName]) ? $this->urlParameters[$getVarName] : '';
+
+				// TODO Possible hook here before any other function? Pass name, value, segments and config
+
+				foreach ($varProcessingFunctions as $varProcessingFunction) {
+					if ($this->$varProcessingFunction($getVarName, $getVarValue, $configuration, $segments)) {
+						break;
+					}
+				}
+
+				// Unset to prevent further processing
+				// TODO Intorudce a 'keep' option here and descibe consequences in the manual???
+				unset($this->urlParameters[$getVarName]);
+			}
+		}
+
+		return $segments;
+	}
+
+	/**
+	 * Just sets the value to the segment as is.
+	 *
+	 * @param string $getVarName
+	 * @param string $getVarValue
+	 * @param array $configuration
+	 * @param array $segments
+	 * @return bool
+	 */
+	protected function encodeUrlParameterBlockUseAsIs(/** @noinspection PhpUnusedParameterInspection */ $getVarName, $getVarValue, array $configuration, array &$segments) {
+		$segments[] = rawurlencode($getVarValue);
+		return TRUE;
+	}
+
+	/**
+	 * Uses lookUpMap to set the segment.
+	 *
+	 * @param string $getVarName
+	 * @param string $getVarValue
+	 * @param array $configuration
+	 * @param array $segments
+	 * @return bool
+	 */
+	protected function encodeUrlParameterBlockUsingLookupTable(/** @noinspection PhpUnusedParameterInspection */ $getVarName, $getVarValue, array $configuration, array &$segments) {
+		$result = FALSE;
+
+		if (isset($configuration['lookUpTable'])) {
+			$segments[] = rawurlencode($this->createAliasForValue($getVarValue, $configuration['lookUpTable']));
+			$result = TRUE;
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Uses 'noMatch' options to set the segment.
+	 *
+	 * @param string $getVarName
+	 * @param string $getVarValue
+	 * @param array $configuration
+	 * @param array $segments
+	 * @return bool
+	 */
+	protected function encodeUrlParameterBlockUsingNoMatch(/** @noinspection PhpUnusedParameterInspection */ $getVarName, $getVarValue, array $configuration, array &$segments) {
+		$result = FALSE;
+
+		if (isset($configuration['noMatch'])) {
+			if ($configuration['noMatch'] === 'bypass') {
+				$result = TRUE;
+			} elseif ($configuration['noMatch'] === 'null') {
+				$segments[] = '';
+				$result = TRUE;
+			}
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Calls the userFunc for the value to get the segment.
+	 *
+	 * @param string $getVarName
+	 * @param string $getVarValue
+	 * @param array $configuration
+	 * @param array $segments
+	 * @return bool
+	 */
+	protected function encodeUrlParameterBlockUsingUserFunc(/** @noinspection PhpUnusedParameterInspection */ $getVarName, $getVarValue, array $configuration, array &$segments) {
+		$result = FALSE;
+
+		if (isset($configuration['userFunc'])) {
+			$userFuncParameters = array(
+				'pObj' => &$this,
+				'value' => $getVarValue,
+				'decodeAlias' => false,
+				'pathParts' => &$segments,
+				'setup' => $configuration,
+			);
+			$getVarValue = GeneralUtility::callUserFunction($configuration['userFunc'], $userFuncParameters, $this);
+			$segments[] = rawurlencode($getVarValue);
+			$result = TRUE;
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Just sets the default value to the segment.
+	 *
+	 * @param string $getVarName
+	 * @param string $getVarValue
+	 * @param array $configuration
+	 * @param array $segments
+	 * @return bool
+	 */
+	protected function encodeUrlParameterBlockUsingValueDefault(/** @noinspection PhpUnusedParameterInspection */ $getVarName, $getVarValue, array $configuration, array &$segments) {
+		$result = FALSE;
+
+		if (isset($configuration['valueDefault'])) {
+			$segments[] = rawurlencode((string)$configuration['valueDefault']);
+			$result = TRUE;
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Uses the value map to determine the segment value.
+	 *
+	 * @param string $getVarName
+	 * @param string $getVarValue
+	 * @param array $configuration
+	 * @param array $segments
+	 * @return bool
+	 */
+	protected function encodeUrlParameterBlockUsingValueMap(/** @noinspection PhpUnusedParameterInspection */ $getVarName, $getVarValue, array $configuration, array &$segments) {
+		$result = FALSE;
+
+		if (isset($configuration['valueMap']) && is_array($configuration['valueMap'])) {
+			$segmentValue = array_search($getVarValue, $configuration['valueMap']);
+			if ($segmentValue !== FALSE) {
+				$segments[] = rawurlencode((string)$segmentValue);
+				$result = TRUE;
+			}
+		}
+
+		return $result;
+	}
+
+	/**
 	 * Encodes the URL.
 	 *
 	 * @return void
@@ -211,7 +507,7 @@ class UrlEncoder extends EncodeDecoderBase {
 		if (!$this->fetchFromtUrlCache()) {
 			$this->setLanguage();
 
-			// TODO Encode preVars
+			$this->encodePreVars();
 			$this->encodePathComponents();
 			// TODO Encode fixedPostVars
 			// TODO Encode postVarSets
@@ -226,6 +522,7 @@ class UrlEncoder extends EncodeDecoderBase {
 				$this->encodedUrl = $emptyUrlReturnValue;
 			}
 			$this->storeInUrlCache();
+			$this->reapplyAbsRefPrefix();
 		}
 	}
 
@@ -251,13 +548,35 @@ class UrlEncoder extends EncodeDecoderBase {
 	}
 
 	/**
+	 * Obtains the value from the alias cache.
+	 *
+	 * @param array $configuration
+	 * @param string $getVarValue
+	 * @param int $languageUid
+	 * @param string $onlyThisAlias
+	 * @return string|null
+	 */
+	protected function getFromAliasCache(array $configuration, $getVarValue, $languageUid, $onlyThisAlias = '') {
+		$row = $this->databaseConnection->exec_SELECTgetSingleRow('value_alias', 'tx_realurl_uniqalias',
+				'value_id=' . $this->databaseConnection->fullQuoteStr($getVarValue, 'tx_realurl_uniqalias') .
+				' AND field_alias=' . $this->databaseConnection->fullQuoteStr($configuration['alias_field'], 'tx_realurl_uniqalias') .
+				' AND field_id=' . $this->databaseConnection->fullQuoteStr($configuration['id_field'], 'tx_realurl_uniqalias') .
+				' AND tablename=' . $this->databaseConnection->fullQuoteStr($configuration['table'], 'tx_realurl_uniqalias') .
+				' AND lang=' . intval($languageUid) .
+				($onlyThisAlias ? ' AND value_alias=' . $this->databaseConnection->fullQuoteStr($onlyThisAlias, 'tx_realurl_uniqalias') : '') .
+				' AND expire=0'
+		);
+		return is_array($row) ? $row['value_alias'] : NULL;
+	}
+
+	/**
 	 * Fetches the record from the patch cache.
 	 *
 	 * @return array|null
 	 */
 	protected function getFromPathCache() {
 		/** @noinspection PhpUndefinedMethodInspection */
-		return $GLOBALS['TYPO3_DB']->exec_SELECTgetSingleRow('*', 'tx_realurl_pathcache',
+		return $this->databaseConnection->exec_SELECTgetSingleRow('*', 'tx_realurl_pathcache',
 			'page_id=' . (int)$this->urlParameters['id'] . ' AND language_id=' . $this->sysLanguageUid .
 				' AND rootpage_id=' . (int)$this->rootPageId . ' AND expire=0'
 		);
@@ -325,6 +644,25 @@ class UrlEncoder extends EncodeDecoderBase {
 	}
 
 	/**
+	 * Checks if any GETvar from the parameter block is present in $this->urlParameters.
+	 *
+	 * @param array $configurationArray
+	 * @return bool
+	 */
+	protected function hasUrlParameters(array $configurationArray) {
+		$result = FALSE;
+
+		foreach ($configurationArray as $configuration) {
+			if (isset($this->urlParameters[$configuration['GETvar']])) {
+				$result = TRUE;
+				break;
+			}
+		}
+
+		return $result;
+	}
+
+	/**
 	 * Checks if system runs in non-live workspace
 	 *
 	 * @return boolean
@@ -340,7 +678,7 @@ class UrlEncoder extends EncodeDecoderBase {
 	 */
 	protected function isInWorkspace() {
 		$result = false;
-		if ($GLOBALS['TSFE']->beUserLogin) {
+		if ($this->tsfe->beUserLogin) {
 			$result = ($GLOBALS['BE_USER']->workspace !== 0);
 		}
 		return $result;
@@ -352,7 +690,7 @@ class UrlEncoder extends EncodeDecoderBase {
 	 * @return bool
 	 */
 	protected function isRealURLEnabled() {
-		return (bool)$GLOBALS['TSFE']->config['config']['tx_realurl_enable'];
+		return (bool)$this->tsfe->config['config']['tx_realurl_enable'];
 	}
 
 	/**
@@ -361,7 +699,7 @@ class UrlEncoder extends EncodeDecoderBase {
 	 * @return bool
 	 */
 	protected function isTypo3Url() {
-		$prefix = $GLOBALS['TSFE']->absRefPrefix . 'index.php';
+		$prefix = $this->tsfe->absRefPrefix . 'index.php';
 		return substr($this->urlToEncode, 0, strlen($prefix)) === $prefix;
 	}
 
@@ -372,6 +710,7 @@ class UrlEncoder extends EncodeDecoderBase {
 	 */
 	protected function parseUrlParameters() {
 		$urlParts = parse_url($this->urlToEncode);
+		$this->urlParameters = array();
 		if ($urlParts['query']) {
 			// Cannot use parse_str() here because we do not need deep arrays here.
 			$parts = GeneralUtility::trimExplode('&', $urlParts['query']);
@@ -380,7 +719,24 @@ class UrlEncoder extends EncodeDecoderBase {
 				$this->urlParameters[$parameter] = $value;
 			}
 		}
+		$this->originalUrlParameters = $this->urlParameters;
 		$this->originalUrl = trim(GeneralUtility::implodeArrayForUrl('', $this->urlParameters), '&');
+	}
+
+	/**
+	 * Reapplies absRefPrefix if necessary.
+	 *
+	 * @return void
+	 */
+	protected function reapplyAbsRefPrefix() {
+		$reapplyAbsRefPrefix = (bool)$this->configuration->get('init/reapplyAbsRefPrefix');
+		if (!isset($reapplyAbsRefPrefix) || $reapplyAbsRefPrefix && $this->tsfe->absRefPrefix) {
+			// Prevent // in case of absRefPrefix ending with / and emptyUrlReturnValue=/
+			if (substr($this->tsfe->absRefPrefix, -1, 1) == '/' && substr($this->encodedUrl, 0, 1) == '/') {
+				$this->encodedUrl = substr($this->encodedUrl, 1);
+			}
+			$this->encodedUrl = $this->tsfe->absRefPrefix . $this->encodedUrl;
+		}
 	}
 
 	/**
@@ -393,8 +749,64 @@ class UrlEncoder extends EncodeDecoderBase {
 			$this->sysLanguageUid = (int)$this->urlParameters['L'];
 		}
 		else {
-			$this->sysLanguageUid = (int)$GLOBALS['TSFE']->sys_language_uid;
+			$this->sysLanguageUid = (int)$this->tsfe->sys_language_uid;
 		}
+	}
+
+	/**
+	 * Adds the value to the alias cache.
+	 *
+	 * @param array $configuration
+	 * @param string $newAliasValue
+	 * @param string $idValue
+	 * @param int $languageUid
+	 * @return string
+	 */
+	protected function storeInAliasCache(array $configuration, $newAliasValue, $idValue, $languageUid) {
+		$newAliasValue = $this->cleanUpAlias($configuration, $newAliasValue);
+
+		if ($configuration['autoUpdate'] && $this->getFromAliasCache($configuration, $idValue, $languageUid, $newAliasValue)) {
+			return $newAliasValue;
+		}
+
+		$uniqueAlias = $this->createUniqueAlias($configuration, $newAliasValue, $idValue);
+
+		// if no unique alias was found in the process above, just suffix a hash string and assume that is unique...
+		if (!$uniqueAlias) {
+			$newAliasValue .= '-' . GeneralUtility::shortMD5(microtime());
+			$uniqueAlias = $newAliasValue;
+		}
+
+		// Checking that this alias hasn't been stored since we looked last time
+		$returnAlias = $this->getFromAliasCache($configuration, $idValue, $languageUid, $uniqueAlias);
+		if ($returnAlias) {
+			// If we are here it is because another process managed to create this alias in the time between we looked the first time and now when we want to put it in database.
+			$uniqueAlias = $returnAlias;
+		}
+		else {
+			// Expire all other aliases
+			// Look for an alias based on ID
+			$this->databaseConnection->exec_UPDATEquery('tx_realurl_uniqalias', 'value_id=' . $this->databaseConnection->fullQuoteStr($idValue, 'tx_realurl_uniqalias') . '
+					AND field_alias=' . $this->databaseConnection->fullQuoteStr($configuration['alias_field'], 'tx_realurl_uniqalias') . '
+					AND field_id=' . $this->databaseConnection->fullQuoteStr($configuration['id_field'], 'tx_realurl_uniqalias') . '
+					AND tablename=' . $this->databaseConnection->fullQuoteStr($configuration['table'], 'tx_realurl_uniqalias') . '
+					AND lang=' . intval($languageUid) . '
+					AND expire=0', array('expire' => time() + 24 * 3600 * ($configuration['expireDays'] ? $configuration['expireDays'] : 60)));
+
+			// Store new alias
+			$insertArray = array(
+				'tstamp' => time(),
+				'tablename' => $configuration['table'],
+				'field_alias' => $configuration['alias_field'],
+				'field_id' => $configuration['id_field'],
+				'value_alias' => $uniqueAlias,
+				'value_id' => $idValue,
+				'lang' => $languageUid
+			);
+			$this->databaseConnection->exec_INSERTquery('tx_realurl_uniqalias', $insertArray);
+		}
+
+		return $uniqueAlias;
 	}
 
 	/**

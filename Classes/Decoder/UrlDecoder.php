@@ -259,6 +259,7 @@ class UrlDecoder extends EncodeDecoderBase {
 		$result = array('id' => 1, 'GET_VARS' => array());
 
 		$pathSegments = explode('/', trim($path, '/'));
+		array_walk($pathSegments, 'urldecode');
 
 		ArrayUtility::mergeRecursiveWithOverrule($result['GET_VARS'], $this->handleFileName($pathSegments));
 
