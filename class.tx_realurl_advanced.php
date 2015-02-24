@@ -46,6 +46,9 @@
  */
 class tx_realurl_advanced {
 
+	/** @var tx_realurl_apiwrapper */
+	protected $apiWrapper;
+
 	/**
 	 * t3lib_page object for finding rootline on the fly
 	 *
@@ -74,6 +77,10 @@ class tx_realurl_advanced {
 	 */
 	protected $extConf;
 
+	public function __construct() {
+		$this->apiWrapper = tx_realurl_apiwrapper::getInstance();
+	}
+
 	/**
 	 * Main function, called for both encoding and deconding of URLs.
 	 * Based on the "mode" key in the $params array it branches out to either decode or encode functions.
@@ -83,8 +90,6 @@ class tx_realurl_advanced {
 	 * @return mixed Depends on branching.
 	 */
 	public function main(array $params, tx_realurl $parent) {
-		/* @var $ref tx_realurl */
-
 		// Setting internal variables
 		$this->pObj = $parent;
 		$this->conf = $params['conf'];
@@ -180,7 +185,7 @@ class tx_realurl_advanced {
 	 * @return boolean
 	 */
 	protected function isExcludedPage($pageId) {
-		return $this->conf['excludePageIds'] && t3lib_div::inList($this->conf['excludePageIds'], $pageId);
+		return $this->conf['excludePageIds'] && $this->apiWrapper->inList($this->conf['excludePageIds'], $pageId);
 	}
 
 	/**
@@ -363,7 +368,7 @@ class tx_realurl_advanced {
 			else {
 				$message = sprintf('Path override is set for page=%d (language=%d) but no segment defined!',
 					$id, $lang);
-				t3lib_div::sysLog($message, 'realurl', 3);
+				$this->apiWrapper->sysLog($message, 'realurl', 3);
 				$this->pObj->devLog($message, false, 2);
 			}
 		}
@@ -617,7 +622,7 @@ class tx_realurl_advanced {
 				// Building up the path from page title etc.
 				if (!$page['tx_realurl_exclude'] || count($rl) == 0) {
 					// List of "pages" fields to traverse for a "directory title" in the speaking URL (only from RootLine!!)
-					$segTitleFieldArray = t3lib_div::trimExplode(',', $this->conf['segTitleFieldList'] ? $this->conf['segTitleFieldList'] : TX_REALURL_SEGTITLEFIELDLIST_DEFAULT, 1);
+					$segTitleFieldArray = $this->apiWrapper->trimExplode(',', $this->conf['segTitleFieldList'] ? $this->conf['segTitleFieldList'] : TX_REALURL_SEGTITLEFIELDLIST_DEFAULT, 1);
 					$theTitle = '';
 					foreach ($segTitleFieldArray as $fieldName) {
 						if ($page[$fieldName]) {
@@ -741,7 +746,7 @@ class tx_realurl_advanced {
 					$redirectUrl = implode('/', $newUrlSegments);
 
 					header('HTTP/1.1 301 TYPO3 RealURL Redirect A' . __LINE__);
-					header('Location: ' . t3lib_div::locationHeaderUrl($redirectUrl));
+					header('Location: ' . $this->apiWrapper->locationHeaderUrl($redirectUrl));
 					exit();
 				}
 				$this->pObj->disableDecodeCache = true;	// Do not cache this!
@@ -1023,12 +1028,12 @@ class tx_realurl_advanced {
 
 		// List of "pages" fields to traverse for a "directory title" in the speaking URL (only from RootLine!!)
 		$segTitleFieldList = $this->conf['segTitleFieldList'] ? $this->conf['segTitleFieldList'] : TX_REALURL_SEGTITLEFIELDLIST_DEFAULT;
-		$selList = t3lib_div::uniqueList('uid,pid,doktype,mount_pid,mount_pid_ol,tx_realurl_exclude,' . $segTitleFieldList);
-		$segTitleFieldArray = t3lib_div::trimExplode(',', $segTitleFieldList, 1);
+		$selList = $this->apiWrapper->uniqueList('uid,pid,doktype,mount_pid,mount_pid_ol,tx_realurl_exclude,' . $segTitleFieldList);
+		$segTitleFieldArray = $this->apiWrapper->trimExplode(',', $segTitleFieldList, 1);
 
 		// page select object - used to analyse mount points.
-		$sys_page = t3lib_div::makeInstance('t3lib_pageSelect');
-		/** @var t3lib_pageSelect $sys_page */
+		$pageRepository = $this->apiWrapper->getPageRepository();
+		/** @var t3lib_pageSelect $pageRepository */
 
 		// Build an array with encoded values from the segTitleFieldArray of the subpages
 		// First we find field values from the default language
@@ -1043,7 +1048,7 @@ class tx_realurl_advanced {
 		/** @noinspection PhpUndefinedMethodInspection */
 		while (false != ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($result))) {
 			// Mount points
-			$mount_info = $sys_page->getMountPointInfo($row['uid'], $row);
+			$mount_info = $pageRepository->getMountPointInfo($row['uid'], $row);
 			if (is_array($mount_info)) {
 				// There is a valid mount point.
 				if ($mount_info['overlay']) {
@@ -1118,7 +1123,7 @@ class tx_realurl_advanced {
 		$allTitles = array();
 		foreach ($segTitleFieldArray as $fieldName) {
 			if (is_array($titles[$fieldName])) {
-				$allTitles = t3lib_div::array_merge($allTitles, $titles[$fieldName]);
+				$allTitles = $this->apiWrapper->array_merge($allTitles, $titles[$fieldName]);
 			}
 		}
 
@@ -1185,7 +1190,7 @@ class tx_realurl_advanced {
 		if ($this->conf['encodeTitle_userProc']) {
 			$encodingConfiguration = array('strtolower' => true, 'spaceCharacter' => $this->conf['spaceCharacter']);
 			$params = array('pObj' => &$this, 'title' => $title, 'processedTitle' => $processedTitle, 'encodingConfiguration' => $encodingConfiguration);
-			$processedTitle = t3lib_div::callUserFunction($this->conf['encodeTitle_userProc'], $params, $this);
+			$processedTitle = $this->apiWrapper->callUserFunction($this->conf['encodeTitle_userProc'], $params, $this);
 		}
 
 		// Return encoded URL
@@ -1199,7 +1204,7 @@ class tx_realurl_advanced {
 	 * @return int Expiration time stamp
 	 */
 	protected function makeExpirationTime($offsetFromNow = 0) {
-		if (!t3lib_extMgm::isLoaded('adodb') && (TYPO3_db_host == '127.0.0.1' || TYPO3_db_host == 'localhost')) {
+		if (!$this->apiWrapper->isExtLoaded('adodb') && (TYPO3_db_host == '127.0.0.1' || TYPO3_db_host == 'localhost')) {
 			// Same host, same time, optimize
 			return $offsetFromNow ? '(UNIX_TIMESTAMP()+(' . $offsetFromNow . '))' : 'UNIX_TIMESTAMP()';
 		}
@@ -1230,7 +1235,7 @@ class tx_realurl_advanced {
 		}
 
 		// Might be excepted (like you should for CJK cases which does not translate to ASCII equivalents)
-		if (isset($this->conf['languageExceptionUids']) && t3lib_div::inList($this->conf['languageExceptionUids'], $lang)) {
+		if (isset($this->conf['languageExceptionUids']) && $this->apiWrapper->inList($this->conf['languageExceptionUids'], $lang)) {
 			$lang = 0;
 		}
 
@@ -1299,7 +1304,7 @@ class tx_realurl_advanced {
 	 */
 	protected function createSysPageIfNecessary() {
 		if (!is_object($this->sysPage)) {
-			$this->sysPage = t3lib_div::makeInstance('t3lib_pageSelect');
+			$this->sysPage = $this->apiWrapper->getPageRepository();
 			$this->sysPage->init($GLOBALS['TSFE']->showHiddenPage || $this->pObj->isBEUserLoggedIn());
 		}
 	}

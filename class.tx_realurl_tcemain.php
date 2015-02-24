@@ -326,7 +326,7 @@ class tx_realurl_tcemain {
 	 */
 	protected function processContentUpdates($status, $tableName, $recordId, array $databaseData, t3lib_TCEmain $pObj) {
 		if ($tableName !== 'pages' || $status == 'update') {
-			if (!tx_realurl::testInt($recordId)) {
+			if (is_numeric($recordId)) {
 				$recordId = intval($pObj->substNEWwithIDs[$recordId]);
 			}
 			list($pageId, $languageId) = $this->getPageData($tableName, $recordId);
