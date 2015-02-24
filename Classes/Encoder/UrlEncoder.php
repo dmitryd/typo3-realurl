@@ -29,6 +29,7 @@ namespace DmitryDulepov\Realurl\Encoder;
 use DmitryDulepov\Realurl\EncodeDecoderBase;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
+use TYPO3\CMS\Core\Utility\RootlineUtility;
 use TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer;
 use TYPO3\CMS\Frontend\Page\PageRepository;
 
@@ -58,6 +59,9 @@ class UrlEncoder extends EncodeDecoderBase {
 
 	/** @var PageRepository */
 	protected $pageRepository;
+
+	/** @var RootlineUtility */
+	protected $rootlineUtility = NULL;
 
 	/** @var int */
 	protected $sysLanguageUid;
@@ -276,8 +280,10 @@ class UrlEncoder extends EncodeDecoderBase {
 	 * @return void
 	 */
 	protected function createPathComponent() {
-		$rooLineUtility = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Utility\\RootlineUtility', $this->urlParameters['id']);
-		$rootLine = $rooLineUtility->get();
+		if (!$this->rootlineUtility) {
+			$this->rootlineUtility = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Utility\\RootlineUtility', $this->urlParameters['id']);
+		}
+		$rootLine = $this->rootlineUtility->get();
 
 		array_pop($rootLine);
 
