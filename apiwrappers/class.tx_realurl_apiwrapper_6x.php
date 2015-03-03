@@ -328,7 +328,7 @@ class tx_realurl_apiwrapper_6x extends tx_realurl_apiwrapper implements \TYPO3\C
 	 * @see fixVersioningPid()
 	 */
 	public function workspaceOL($table, &$row, $wsid = -99, $unsetMovePointers = FALSE) {
-		BackendUtility::workspaceOL($table, &$row, $wsid, $unsetMovePointers);
+		BackendUtility::workspaceOL($table, $row, $wsid, $unsetMovePointers);
 	}
 
 	/**
