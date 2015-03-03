@@ -380,7 +380,7 @@ class tx_realurl_apiwrapper_4x extends tx_realurl_apiwrapper implements t3lib_Si
 	 */
 	public function workspaceOL($table, &$row, $wsid = -99, $unsetMovePointers = FALSE) {
 		/** @noinspection PhpDeprecationInspection PhpUndefinedClassInspection */
-		t3lib_BEfunc::workspaceOL($table, &$row, $wsid, $unsetMovePointers);
+		t3lib_BEfunc::workspaceOL($table, $row, $wsid, $unsetMovePointers);
 	}
 
 	/**
