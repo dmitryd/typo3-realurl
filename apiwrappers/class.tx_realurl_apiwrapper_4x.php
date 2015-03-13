@@ -575,4 +575,23 @@ class tx_realurl_apiwrapper_4x extends tx_realurl_apiwrapper implements t3lib_Si
 		/** @noinspection PhpDeprecationInspection PhpUndefinedClassInspection PhpUndefinedMethodInspection */
 		return t3lib_iconWorks::getIconImage($table, $row, $backPath, $params, $shaded);
 	}
+
+	/**
+	 * @param int $uid
+	 * @param string $clause
+	 * @param boolean $workspaceOL
+	 * @return array
+	 */
+	public function BEgetRootLine($uid, $clause = '', $workspaceOL = FALSE) {
+		return t3lib_BEfunc::BEgetRootLine($uid, $clause, $workspaceOL);
+	}
+
+	/**
+	 * Makes the page tree class instance.
+	 *
+	 * @return t3lib_pageTree|\TYPO3\CMS\Backend\Tree\View\PageTreeView
+	 */
+	public function makePageTreeInstance() {
+		return t3lib_div::makeInstance('t3lib_pageTree');
+	}
 }
