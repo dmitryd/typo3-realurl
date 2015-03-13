@@ -199,7 +199,7 @@ class tx_realurl_tcemain {
 		/** @var $tree t3lib_pageTree */
 		$tree = t3lib_div::makeInstance('t3lib_pageTree');
 		$tree->init('AND ' . $GLOBALS['BE_USER']->getPagePermsClause(1));
-		$this->makeHTML = FALSE;
+		$tree->makeHTML = FALSE;
 		$tree->getTree($pageId, 99, '');
 
 		foreach ($tree->tree as $data) {
