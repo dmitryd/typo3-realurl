@@ -35,12 +35,19 @@
  */
 class tx_realurl_tcemain {
 
+	/** @var tx_realurl_apiwrapper */
+	protected $apiWrapper;
+
 	/**
 	 * RealURL configuration for the current host
 	 *
 	 * @var array
 	 */
 	protected $config;
+
+	public function __construct() {
+		$this->apiWrapper = tx_realurl_apiwrapper::getInstance();
+	}
 
 	/**
 	 * Removes autoconfiguration file if table name is sys_domain
@@ -168,7 +175,7 @@ class tx_realurl_tcemain {
 	 * @return void
 	 */
 	protected function fetchRealURLConfiguration($pageId) {
-		$rootLine = t3lib_BEfunc::BEgetRootLine($pageId);
+		$rootLine = $this->apiWrapper->BEgetRootLine($pageId);
 		$rootPageId = $rootLine[1]['uid'];
 		$this->config = array();
 		if (isset($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl'])) {
@@ -183,7 +190,7 @@ class tx_realurl_tcemain {
 			}
 		}
 		else {
-			t3lib_div::sysLog('RealURL is not configured! Please, configure it or uninstall.', 'RealURL', 3);
+			$this->apiWrapper->sysLog('RealURL is not configured! Please, configure it or uninstall.', 'RealURL', 3);
 		}
 	}
 
@@ -196,8 +203,8 @@ class tx_realurl_tcemain {
 	protected function getChildPages($pageId) {
 		$children  = array();
 
-		/** @var $tree t3lib_pageTree */
-		$tree = t3lib_div::makeInstance('t3lib_pageTree');
+		$tree = $this->apiWrapper->makePageTreeInstance();
+		/** @var $tree t3lib_pageTree|\TYPO3\CMS\Backend\Tree\View\PageTreeView */
 		$tree->init('AND ' . $GLOBALS['BE_USER']->getPagePermsClause(1));
 		$tree->makeHTML = FALSE;
 		$tree->getTree($pageId, 99, '');
@@ -256,7 +263,7 @@ class tx_realurl_tcemain {
 			}
 		}
 		$fieldList .= ',hidden';
-		return array_unique(t3lib_div::trimExplode(',', $fieldList, true));
+		return array_unique($this->apiWrapper->trimExplode(',', $fieldList, true));
 	}
 
 	/**
@@ -308,7 +315,7 @@ class tx_realurl_tcemain {
 	 * @return void
 	 * @todo Expire unique alias cache: how to get the proper timeout value easily here?
 	 */
-	public function processDatamap_afterDatabaseOperations($status, $tableName, $recordId, array $databaseData, t3lib_TCEmain $pObj) {
+	public function processDatamap_afterDatabaseOperations($status, $tableName, $recordId, array $databaseData, $pObj) {
 		$this->processContentUpdates($status, $tableName, $recordId, $databaseData, $pObj);
 		$this->clearAutoConfiguration($tableName);
 	}
@@ -324,7 +331,7 @@ class tx_realurl_tcemain {
 	 * @return void
 	 * @todo Handle changes to tx_realurl_exclude recursively
 	 */
-	protected function processContentUpdates($status, $tableName, $recordId, array $databaseData, t3lib_TCEmain $pObj) {
+	protected function processContentUpdates($status, $tableName, $recordId, array $databaseData, $pObj) {
 		if ($tableName !== 'pages' || $status == 'update') {
 			if (is_numeric($recordId)) {
 				$recordId = intval($pObj->substNEWwithIDs[$recordId]);

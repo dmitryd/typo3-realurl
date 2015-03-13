@@ -515,4 +515,23 @@ class tx_realurl_apiwrapper_6x extends tx_realurl_apiwrapper implements \TYPO3\C
 		$str .= ' />';
 		return $str;
 	}
+
+	/**
+	 * @param int $uid
+	 * @param string $clause
+	 * @param boolean $workspaceOL
+	 * @return array
+	 */
+	public function BEgetRootLine($uid, $clause = '', $workspaceOL = FALSE) {
+		return BackendUtility::BEgetRootLine($uid, $clause, $workspaceOL);
+	}
+
+	/**
+	 * Makes the page tree class instance.
+	 *
+	 * @return t3lib_pageTree|\TYPO3\CMS\Backend\Tree\View\PageTreeView
+	 */
+	public function makePageTreeInstance() {
+		return GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Tree\\View\\PageTreeView');
+	}
 }

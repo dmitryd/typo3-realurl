@@ -404,4 +404,20 @@ abstract class tx_realurl_apiwrapper {
 	 * @see getIcon()
 	 */
 	abstract public function getIconImage($table, $row = array(), $backPath, $params = '', $shaded = FALSE);
+
+	/**
+	 * @param int $uid
+	 * @param string $clause
+	 * @param boolean $workspaceOL
+	 * @return array
+	 */
+	abstract public function BEgetRootLine($uid, $clause = '', $workspaceOL = FALSE);
+
+
+	/**
+	 * Makes the page tree class instance.
+	 *
+	 * @return t3lib_pageTree|\TYPO3\CMS\Backend\Tree\View\PageTreeView
+	 */
+	abstract public function makePageTreeInstance();
 }
