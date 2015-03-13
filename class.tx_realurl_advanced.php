@@ -1044,7 +1044,7 @@ class tx_realurl_advanced {
 		/** @noinspection PhpUndefinedMethodInspection */
 		$result = $GLOBALS['TYPO3_DB']->exec_SELECTquery($selList, 'pages',
 						'pid=' . intval($searchPid) .
-						' AND deleted=0 AND doktype!=255', '', 'sorting');
+						' AND deleted=0 AND doktype<>255', '', 'sorting');
 		/** @noinspection PhpUndefinedMethodInspection */
 		while (false != ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($result))) {
 			// Mount points
@@ -1056,7 +1056,7 @@ class tx_realurl_advanced {
 					/** @noinspection PhpUndefinedMethodInspection */
 					$result2 = $GLOBALS['TYPO3_DB']->exec_SELECTquery($selList, 'pages',
 									'uid=' . intval($mount_info['mount_pid']) .
-									' AND deleted=0 AND doktype!=255');
+									' AND deleted=0 AND doktype<>255');
 					/** @noinspection PhpUndefinedMethodInspection */
 					$mp_row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($result2);
 					if (is_array($mp_row)) {
