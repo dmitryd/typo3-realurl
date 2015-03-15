@@ -19,13 +19,15 @@ $_realurl_conf = @unserialize($_EXTCONF);
 if (is_array($_realurl_conf)) {
 	$_realurl_conf_file = trim($_realurl_conf['configFile']);
 	if ($_realurl_conf_file && @file_exists(PATH_site . $_realurl_conf_file)) {
+		/** @noinspection PhpIncludeInspection */
 		require_once(PATH_site . $_realurl_conf_file);
 	}
 	unset($_realurl_conf_file);
 }
 
 define('TX_REALURL_AUTOCONF_FILE', 'typo3conf/realurl_autoconf.php');
-if (!isset($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl'])) {
+if ($_realurl_conf['enableAutoConf'] && !isset($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl'])) {
+	/** @noinspection PhpIncludeInspection */
 	@include_once(PATH_site . TX_REALURL_AUTOCONF_FILE);
 }
 unset($_realurl_conf);
