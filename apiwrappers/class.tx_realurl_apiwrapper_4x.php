@@ -307,7 +307,7 @@ class tx_realurl_apiwrapper_4x extends tx_realurl_apiwrapper implements t3lib_Si
 	}
 
 	/**
-	 * @return object
+	 * @return t3lib_pageSelect|\TYPO3\CMS\Frontend\Page\PageRepository
 	 */
 	public function getPageRepository() {
 		/** @noinspection PhpDeprecationInspection PhpUndefinedClassInspection */
@@ -593,5 +593,54 @@ class tx_realurl_apiwrapper_4x extends tx_realurl_apiwrapper implements t3lib_Si
 	 */
 	public function makePageTreeInstance() {
 		return t3lib_div::makeInstance('t3lib_pageTree');
+	}
+
+	/**
+	 * Obtains the lock object with a given name.
+	 *
+	 * @param string $lockObjectName
+	 * @return t3lib_lock|\TYPO3\CMS\Core\Locking\Locker
+	 */
+	public function getLockObject($lockObjectName) {
+		$lockObject = t3lib_div::makeInstance('t3lib_lock', $lockObjectName, $GLOBALS['TYPO3_CONF_VARS']['SYS']['lockingMode']);
+		/** @var t3lib_lock $lockObject */
+		$lockObject->setEnableLogging(FALSE);
+		$lockObject->acquire();
+
+		return $lockObject;
+	}
+
+	/**
+	 * Sets the file system mode and group ownership of a file or a folder.
+	 *
+	 * @param string $path Path of file or folder, must not be escaped. Path can be absolute or relative
+	 * @param bool $recursive If set, also fixes permissions of files and folders in the folder (if $path is a folder)
+	 * @return mixed TRUE on success, FALSE on error, always TRUE on Windows OS
+	 */
+	public function fixPermissions($path, $recursive = FALSE) {
+		return t3lib_div::fixPermissions($path, $recursive);
+	}
+
+	/**
+	 * Creates a database connection if it is not exist.
+	 *
+	 * @return NULL|t3lib_db|\TYPO3\CMS\Core\Database\DatabaseConnection
+	 */
+	public function getDatabaseConnection() {
+		$db = NULL;
+		if (!isset($GLOBALS['TYPO3_DB'])) {
+			if (TYPO3_db)	{
+				$db = t3lib_div::makeInstance('t3lib_db');
+				if (!$db->sql_pconnect(TYPO3_db_host, TYPO3_db_username, TYPO3_db_password) || !$db->sql_select_db(TYPO3_db)) {
+					// Cannot connect to database
+					$db = NULL;
+				}
+			}
+		}
+		else {
+			$db = &$GLOBALS['TYPO3_DB'];
+		}
+
+		return $db;
 	}
 }

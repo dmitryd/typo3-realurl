@@ -202,9 +202,9 @@ abstract class tx_realurl_apiwrapper {
 	abstract public function uniqueList($in_list, $secondParameter = NULL);
 
 	/**
-	 * @return t3lib_pageSelect
+	 * @return t3lib_pageSelect|\TYPO3\CMS\Frontend\Page\PageRepository
 	 */
-	abstract public function getPageRepository(); //t3lib_div::makeInstance('t3lib_pageSelect')
+	abstract public function getPageRepository();
 
 	/**
 	 * @param array $arr1 First array
@@ -420,4 +420,28 @@ abstract class tx_realurl_apiwrapper {
 	 * @return t3lib_pageTree|\TYPO3\CMS\Backend\Tree\View\PageTreeView
 	 */
 	abstract public function makePageTreeInstance();
+
+	/**
+	 * Obtains the lock object with a given name.
+	 *
+	 * @param string $lockObjectName
+	 * @return t3lib_lock|\TYPO3\CMS\Core\Locking\Locker
+	 */
+	abstract public function getLockObject($lockObjectName);
+
+	/**
+	 * Sets the file system mode and group ownership of a file or a folder.
+	 *
+	 * @param string $path Path of file or folder, must not be escaped. Path can be absolute or relative
+	 * @param bool $recursive If set, also fixes permissions of files and folders in the folder (if $path is a folder)
+	 * @return mixed TRUE on success, FALSE on error, always TRUE on Windows OS
+	 */
+	abstract public function fixPermissions($path, $recursive = FALSE);
+
+	/**
+	 * Creates a database connection if it is not exist.
+	 *
+	 * @return t3lib_db|\TYPO3\CMS\Core\Database\DatabaseConnection
+	 */
+	abstract public function getDatabaseConnection();
 }

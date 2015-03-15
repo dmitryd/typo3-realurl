@@ -21,10 +21,6 @@
 *
 *  This copyright notice MUST APPEAR in all copies of the script!
 ***************************************************************/
-/**
- * $Id$
- *
- */
 
  /**
   * This class is a page browser for the RealURL backend module.
@@ -46,18 +42,22 @@ class tx_realurl_pagebrowser {
 	protected $baseURL;
 	protected $resultsPerPage;
 
+	/** @var tx_realurl_apiwrapper */
+	protected $apiWrapper;
+
 	/**
 	 * Creates an isntance of this class.
 	 *
 	 * @return void
 	 */
 	public function __construct() {
-		$urlParameters = tx_realurl::array_merge_recursive_overrule($_GET, $_POST);
+		$this->apiWrapper = tx_realurl_apiwrapper::getInstance();
+		$urlParameters = $this->apiWrapper->array_merge_recursive_overrule($_GET, $_POST);
 		$this->currentPage = max(1, intval($urlParameters['page']));
 		unset($urlParameters['page']);
 		unset($urlParameters['cmd']);
-		$this->baseURL = t3lib_div::getIndpEnv('TYPO3_REQUEST_SCRIPT') .
-			'?' . t3lib_div::implodeArrayForUrl('', $urlParameters);
+		$this->baseURL = $this->apiWrapper->getIndpEnv('TYPO3_REQUEST_SCRIPT') .
+			'?' . $this->apiWrapper->implodeArrayForUrl('', $urlParameters);
 		$this->resultsPerPage = self::RESULTS_PER_PAGE_DEFAULT;
 	}
 
@@ -92,6 +92,8 @@ class tx_realurl_pagebrowser {
 	}
 
 	protected function generatePageBrowser() {
+		$markup = '';
+
 		for ($page = 1; $page <= min($this->totalPages, $this->currentPage, self::PAGES_AFTER_START + 1); $page++) {
 			$markup .= $this->createCell($page);
 		}
@@ -123,6 +125,7 @@ class tx_realurl_pagebrowser {
 				'<a href="' . $this->baseURL . '&amp;page=' . $pageNumber . '">',
 				'</a>'
 			);
+			$extraClass = '';
 		}
 		else {
 			$link = array('', '');
@@ -146,5 +149,3 @@ class tx_realurl_pagebrowser {
 if (defined('TYPO3_MODE') && $TYPO3_CONF_VARS[TYPO3_MODE]['XCLASS']['ext/realurl/modfunc1/class.tx_realurl_pagebrowser.php'])	{
 	include_once($TYPO3_CONF_VARS[TYPO3_MODE]['XCLASS']['ext/realurl/modfunc1/class.tx_realurl_pagebrowser.php']);
 }
-
-?>

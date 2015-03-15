@@ -2799,49 +2799,6 @@ class tx_realurl {
 	public function getDetectedLanguage() {
 		return intval($this->detectedLanguage);
 	}
-
-	/**
-	 * Tests if the value represents an integer number.
-	 *
-	 * @param mixed $value
-	 * @return bool
-	 */
-	static public function testInt($value) {
-		static $useOldGoodTestInt = null;
-
-		if (is_null($useOldGoodTestInt)) {
-			$useOldGoodTestInt = !class_exists('t3lib_utility_Math');
-		}
-		if ($useOldGoodTestInt) {
-			/** @noinspection PhpDeprecationInspection PhpUndefinedMethodInspection */
-			$result = t3lib_div::testInt($value);
-		}
-		else {
-			/** @noinspection PhpDeprecationInspection PhpUndefinedClassInspection */
-			$result = t3lib_utility_Math::canBeInterpretedAsInteger($value);
-		}
-		return $result;
-	}
-
-	/**
-	 * Implements array_merge_recursive_overrule() in a cross-version way.
-	 *
-	 * @param array $array1
-	 * @param array $array2
-	 * @return array
-	 */
-	static public function array_merge_recursive_overrule($array1, $array2) {
-		if (class_exists('\\TYPO3\\CMS\\Core\\Utility\\ArrayUtility')) {
-			/** @noinspection PhpUndefinedClassInspection PhpUndefinedNamespaceInspection */
-			\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule($array1, $array2);
-		}
-		else {
-			/** @noinspection PhpDeprecationInspection */
-			$array1 = t3lib_div::array_merge_recursive_overrule($array1, $array2);
-		}
-
-		return $array1;
-	}
 }
 
 /** @noinspection PhpUndefinedVariableInspection */

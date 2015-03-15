@@ -203,7 +203,7 @@ class tx_realurl_apiwrapper_6x extends tx_realurl_apiwrapper implements \TYPO3\C
 	 * @return object the created instance
 	 */
 	public function makeInstance($className) {
-		return call_user_func_array(array('t3lib_div', 'makeInstance'), func_get_args());
+		return call_user_func_array(array('TYPO3\\CMS\\Core\\Utility\\GeneralUtility', 'makeInstance'), func_get_args());
 	}
 
 	/**
@@ -259,10 +259,10 @@ class tx_realurl_apiwrapper_6x extends tx_realurl_apiwrapper implements \TYPO3\C
 	}
 
 	/**
-	 * @return object
+	 * @return t3lib_pageSelect|\TYPO3\CMS\Frontend\Page\PageRepository
 	 */
 	public function getPageRepository() {
-		return GeneralUtility::makeInstance('t3lib_pageSelect');
+		return GeneralUtility::makeInstance('TYPO3\\CMS\\Frontend\\Page\\PageRepository');
 	}
 
 	/**
@@ -304,7 +304,7 @@ class tx_realurl_apiwrapper_6x extends tx_realurl_apiwrapper implements \TYPO3\C
 	 */
 	public function getPageTree() {
 		/** @noinspection PhpDeprecationInspection PhpUndefinedClassInspection */
-		return t3lib_div::makeInstance('TYPO3\\CMS\\Backend\\Tree\\View\\PageTreeView');
+		return GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Tree\\View\\PageTreeView');
 	}
 
 	/**
@@ -533,5 +533,54 @@ class tx_realurl_apiwrapper_6x extends tx_realurl_apiwrapper implements \TYPO3\C
 	 */
 	public function makePageTreeInstance() {
 		return GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Tree\\View\\PageTreeView');
+	}
+
+	/**
+	 * Obtains the lock object with a given name.
+	 *
+	 * @param string $lockObjectName
+	 * @return t3lib_lock|\TYPO3\CMS\Core\Locking\Locker
+	 */
+	public function getLockObject($lockObjectName) {
+		$lockObject = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Locking\\Locker', $lockObjectName, $GLOBALS['TYPO3_CONF_VARS']['SYS']['lockingMode']);
+		/** @var t3lib_lock $lockObject */
+		$lockObject->setEnableLogging(FALSE);
+		$lockObject->acquireExclusiveLock();
+
+		return $lockObject;
+	}
+
+	/**
+	 * Sets the file system mode and group ownership of a file or a folder.
+	 *
+	 * @param string $path Path of file or folder, must not be escaped. Path can be absolute or relative
+	 * @param bool $recursive If set, also fixes permissions of files and folders in the folder (if $path is a folder)
+	 * @return mixed TRUE on success, FALSE on error, always TRUE on Windows OS
+	 */
+	public function fixPermissions($path, $recursive = FALSE) {
+		return GeneralUtility::fixPermissions($path, $recursive);
+	}
+
+	/**
+	 * Creates a database connection if it is not exist.
+	 *
+	 * @return NULL|t3lib_db|\TYPO3\CMS\Core\Database\DatabaseConnection
+	 */
+	public function getDatabaseConnection() {
+		$db = NULL;
+		if (!isset($GLOBALS['TYPO3_DB'])) {
+			if (TYPO3_db)	{
+				$db = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Database\\DatabaseConnection');
+				if (!$db->sql_pconnect(TYPO3_db_host, TYPO3_db_username, TYPO3_db_password) || !$db->sql_select_db(TYPO3_db)) {
+					// Cannot connect to database
+					$db = NULL;
+				}
+			}
+		}
+		else {
+			$db = &$GLOBALS['TYPO3_DB'];
+		}
+
+		return $db;
 	}
 }

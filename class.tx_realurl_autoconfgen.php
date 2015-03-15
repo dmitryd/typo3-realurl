@@ -58,7 +58,21 @@ class tx_realurl_autoconfgen {
 
 	/* @var $db t3lib_DB */
 	var $db;
+
+	/** @var bool */
 	var $hasStaticInfoTables;
+
+	/** @var tx_realurl_apiwrapper */
+	protected $apiWrapper;
+
+	/**
+	 * Initializes the class.
+	 */
+	public function __construct() {
+		$this->apiWrapper = tx_realurl_apiwrapper::getInstance();
+		$this->db = $this->apiWrapper->getDatabaseConnection();
+		$this->hasStaticInfoTables = $this->apiWrapper->isExtLoaded('static_info_tables');
+	}
 
 	/**
 	 * Generates configuration. Locks configuration file for exclusive access to avoid collisions. Will not be stabe on Windows.
@@ -68,10 +82,7 @@ class tx_realurl_autoconfgen {
 	public function generateConfiguration() {
 		$fileName = PATH_site . TX_REALURL_AUTOCONF_FILE;
 
-		$lockObject = t3lib_div::makeInstance('t3lib_lock', $fileName, $GLOBALS['TYPO3_CONF_VARS']['SYS']['lockingMode']);
-		/** @var t3lib_lock $lockObject */
-		$lockObject->setEnableLogging(FALSE);
-		$lockObject->acquire();
+		$lockObject = $this->apiWrapper->getLockObject($fileName);
 		$fd = @fopen($fileName, 'a+');
 		if ($fd) {
 			// Check size
@@ -80,7 +91,7 @@ class tx_realurl_autoconfgen {
 				$this->doGenerateConfiguration($fd);
 			}
 			fclose($fd);
-			t3lib_div::fixPermissions($fileName);
+			$this->apiWrapper->fixPermissions($fileName);
 		}
 		$lockObject->release();
 	}
@@ -92,24 +103,6 @@ class tx_realurl_autoconfgen {
 	 * @return	void
 	 */
 	protected function doGenerateConfiguration(&$fd) {
-
-		if (!isset($GLOBALS['TYPO3_DB'])) {
-			if (!TYPO3_db)	{
-				return;
-			}
-			$this->db = t3lib_div::makeInstance('t3lib_db');
-			if (!$this->db->sql_pconnect(TYPO3_db_host, TYPO3_db_username, TYPO3_db_password) ||
-				!$this->db->sql_select_db(TYPO3_db)) {
-					// Cannot connect to database
-					return;
-			}
-		}
-		else {
-			$this->db = &$GLOBALS['TYPO3_DB'];
-		}
-
-		$this->hasStaticInfoTables = t3lib_extMgm::isLoaded('static_info_tables');
-
 		$conf = array();
 		$template = $this->getTemplate();
 
@@ -118,7 +111,7 @@ class tx_realurl_autoconfgen {
 				'', '', '', 'domainName');
 		if (count($domains) == 0) {
 			$conf['_DEFAULT'] = $template;
-			$rows = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('uid', 'pages',
+			$rows = $this->db->exec_SELECTgetRows('uid', 'pages',
 						'deleted=0 AND hidden=0 AND is_siteroot=1', '', '', '1');
 			if (count($rows) > 0) {
 				$conf['_DEFAULT']['pagePath']['rootpage_id'] = $rows[0]['uid'];
@@ -150,12 +143,12 @@ class tx_realurl_autoconfgen {
 				$parameters = array(
 					'config' => &$conf,
 				);
-				t3lib_div::callUserFunction($userFunc, $parameters, $this);
+				$this->apiWrapper->callUserFunction($userFunc, $parameters, $this);
 			}
 		}
 
-		$_realurl_conf = @unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['realurl']);
-		if ($_realurl_conf['autoConfFormat'] == 0) {
+		$realurlConf = @unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['realurl']);
+		if ($realurlConf['autoConfFormat'] == 0) {
 			fwrite($fd, '<' . '?php' . chr(10) . '$GLOBALS[\'TYPO3_CONF_VARS\'][\'EXTCONF\'][\'realurl\']=' .
 				'unserialize(\'' . str_replace('\'', '\\\'', serialize($conf)) . '\');' . chr(10)
 			);
@@ -180,7 +173,7 @@ class tx_realurl_autoconfgen {
 				'adminJumpToBackend' => true,
 				'enableUrlDecodeCache' => true,
 				'enableUrlEncodeCache' => true,
-				'emptyUrlReturnValue' => t3lib_div::getIndpEnv('TYPO3_SITE_PATH')
+				'emptyUrlReturnValue' => $this->apiWrapper->getIndpEnv('TYPO3_SITE_PATH')
 			),
 			'pagePath' => array(
 				'type' => 'user',
@@ -195,7 +188,7 @@ class tx_realurl_autoconfgen {
 		);
 
 		// Add print feature if TemplaVoila is not loaded
-		if (!t3lib_extMgm::isLoaded('templavoila')) {
+		if (!$this->apiWrapper->isExtLoaded('templavoila')) {
 			$confTemplate['fileName']['index']['print'] = array(
 					'keyValues' => array(
 						'type' => 98,
@@ -204,7 +197,7 @@ class tx_realurl_autoconfgen {
 		}
 
 		// Add respectSimulateStaticURLs if SimulateStatic is loaded
-		if(t3lib_extMgm::isLoaded('simulatestatic')) {
+		if($this->apiWrapper->isExtLoaded('simulatestatic')) {
 			$confTemplate['init']['respectSimulateStaticURLs'] = true;
 		}
 
@@ -217,7 +210,7 @@ class tx_realurl_autoconfgen {
 					'config' => $confTemplate,
 					'extKey' => $extKey
 				);
-				$var = t3lib_div::callUserFunction($userFunc, $params, $this);
+				$var = $this->apiWrapper->callUserFunction($userFunc, $params, $this);
 				if ($var) {
 					$confTemplate = $var;
 				}
@@ -259,4 +252,3 @@ class tx_realurl_autoconfgen {
 if (defined('TYPO3_MODE') && $TYPO3_CONF_VARS[TYPO3_MODE]['XCLASS']['ext/realurl/class.tx_realurl_autoconfgen.php'])	{
 	include_once($TYPO3_CONF_VARS[TYPO3_MODE]['XCLASS']['ext/realurl/class.tx_realurl_autoconfgen.php']);
 }
-?>
