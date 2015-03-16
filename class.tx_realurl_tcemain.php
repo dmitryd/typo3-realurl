@@ -204,7 +204,7 @@ class tx_realurl_tcemain {
 		$children  = array();
 
 		$tree = $this->apiWrapper->makePageTreeInstance();
-		/** @var $tree t3lib_pageTree|\TYPO3\CMS\Backend\Tree\View\PageTreeView */
+		/** @noinspection PhpUndefinedMethodInspection */
 		$tree->init('AND ' . $GLOBALS['BE_USER']->getPagePermsClause(1));
 		$tree->makeHTML = FALSE;
 		$tree->getTree($pageId, 99, '');
@@ -369,8 +369,7 @@ class tx_realurl_tcemain {
 
 }
 
-if (defined('TYPO3_MODE') && $TYPO3_CONF_VARS[TYPO3_MODE]['XCLASS']['ext/realurl/class.tx_realurl_tcemain.php'])	{
-	include_once($TYPO3_CONF_VARS[TYPO3_MODE]['XCLASS']['ext/realurl/class.tx_realurl_tcemain.php']);
+if (defined('TYPO3_MODE') && $GLOBALS['TYPO3_CONF_VARS'][TYPO3_MODE]['XCLASS']['ext/realurl/class.tx_realurl_tcemain.php'])	{
+	/** @noinspection PhpIncludeInspection */
+	include_once($GLOBALS['TYPO3_CONF_VARS'][TYPO3_MODE]['XCLASS']['ext/realurl/class.tx_realurl_tcemain.php']);
 }
-
-?>

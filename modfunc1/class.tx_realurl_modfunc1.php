@@ -27,6 +27,7 @@
 $GLOBALS['LANG']->includeLLfile('EXT:realurl/modfunc1/locallang.xml');
 
 if (version_compare(TYPO3_branch, '6.0', '<')) {
+	/** @noinspection PhpDeprecationInspection */
 	class modfunc_base extends t3lib_extobjbase {};
 }
 else {

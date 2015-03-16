@@ -47,8 +47,6 @@ class tx_realurl_pagebrowser {
 
 	/**
 	 * Creates an isntance of this class.
-	 *
-	 * @return void
 	 */
 	public function __construct() {
 		$this->apiWrapper = tx_realurl_apiwrapper::getInstance();
@@ -146,6 +144,7 @@ class tx_realurl_pagebrowser {
 
 }
 
-if (defined('TYPO3_MODE') && $TYPO3_CONF_VARS[TYPO3_MODE]['XCLASS']['ext/realurl/modfunc1/class.tx_realurl_pagebrowser.php'])	{
-	include_once($TYPO3_CONF_VARS[TYPO3_MODE]['XCLASS']['ext/realurl/modfunc1/class.tx_realurl_pagebrowser.php']);
+if (defined('TYPO3_MODE') && $GLOBALS['TYPO3_CONF_VARS'][TYPO3_MODE]['XCLASS']['ext/realurl/modfunc1/class.tx_realurl_pagebrowser.php'])	{
+	/** @noinspection PhpIncludeInspection */
+	include_once($GLOBALS['TYPO3_CONF_VARS'][TYPO3_MODE]['XCLASS']['ext/realurl/modfunc1/class.tx_realurl_pagebrowser.php']);
 }
