@@ -2399,7 +2399,7 @@ class tx_realurl {
 								$this->ignoreGETvar = $GETvar;
 								$this->setConfigurationByReference($disposal['useConfiguration']);
 							}
-							$this->additionalParametersForChash[$GETvar] = $this->testInt($urlParams[$GETvar]) ? intval($urlParams[$GETvar]) : $urlParams[$GETvar];
+							$this->additionalParametersForChash[$GETvar] = $this->apiWrapper->testInt($urlParams[$GETvar]) ? intval($urlParams[$GETvar]) : $urlParams[$GETvar];
 							return $disposal;
 						}
 						else {
@@ -2442,7 +2442,7 @@ class tx_realurl {
 					foreach ($hostConfiguration['GETvars'] as $key => $value) {
 						if (empty($_GET[$key])) {
 							$_GET[$key] = $value;
-							$this->additionalParametersForChash[$key] = $this->testInt($value) ? intval($value) : $value;
+							$this->additionalParametersForChash[$key] = $this->apiWrapper->testInt($value) ? intval($value) : $value;
 						}
 					}
 					if (isset($hostConfiguration['useConfiguration'])) {
