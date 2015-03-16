@@ -52,7 +52,7 @@ class tx_realurl_advanced {
 	/**
 	 * t3lib_page object for finding rootline on the fly
 	 *
-	 * @var	t3lib_pageSelect
+	 * @var	t3lib_pageSelect|\TYPO3\CMS\Frontend\Page\PageRepository
 	 */
 	protected $sysPage;
 
@@ -1033,7 +1033,6 @@ class tx_realurl_advanced {
 
 		// page select object - used to analyse mount points.
 		$pageRepository = $this->apiWrapper->getPageRepository();
-		/** @var t3lib_pageSelect $pageRepository */
 
 		// Build an array with encoded values from the segTitleFieldArray of the subpages
 		// First we find field values from the default language
