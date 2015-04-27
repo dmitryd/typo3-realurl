@@ -109,11 +109,10 @@ class UrlEncoder extends EncodeDecoderBase {
 	protected function addRemainingUrlParameters() {
 		$urlParameters = $this->urlParameters;
 		unset($urlParameters['id']);
-// TODO Uncomment when cHash cache is implemented
-//		if (count($urlParameters) == 1 && isset($urlParameters['cHash'])) {
-//			unset($urlParameters['cHash']);
-//		}
-//		else
+		if (count($urlParameters) == 1 && isset($urlParameters['cHash'])) {
+			unset($urlParameters['cHash']);
+		}
+		else
 		if (count($urlParameters) > 0) {
 			$this->encodedUrl .= '?' . trim(GeneralUtility::implodeArrayForUrl('', $urlParameters), '&');
 		}
@@ -565,8 +564,6 @@ class UrlEncoder extends EncodeDecoderBase {
 			$this->encodeFixedPostVars();
 			$this->encodePostVarSets();
 			$this->handleFileName();
-
-			// TODO Handle cHash
 
 			$this->addRemainingUrlParameters();
 

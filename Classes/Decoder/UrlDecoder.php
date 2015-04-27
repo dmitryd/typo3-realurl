@@ -90,6 +90,29 @@ class UrlDecoder extends EncodeDecoderBase {
 	}
 
 	/**
+	 * Calculates and adds cHash to the entry. This function is only called
+	 * if we had to decode the entry, which was not in the cache. Even if we
+	 * had cHash in the URL, we force to recalculate it because we could have
+	 * decoded parameters differently than the original URL had (for example,
+	 * skipped some noMatch parameters).
+	 *
+	 * @param UrlCacheEntry $cacheEntry
+	 * @return void
+	 */
+	protected function calculateChash(UrlCacheEntry $cacheEntry) {
+		$requestVariables = $cacheEntry->getRequestVariables();
+
+		$cacheHashCalculator = GeneralUtility::makeInstance('TYPO3\\CMS\\Frontend\\Page\\CacheHashCalculator');
+		/* @var \TYPO3\CMS\Frontend\Page\CacheHashCalculator $cacheHashCalculator */
+		$cHashParameters = $cacheHashCalculator->getRelevantParameters(GeneralUtility::implodeArrayForUrl('', $requestVariables));
+
+		if (count($cHashParameters) > 0) {
+			$requestVariables['cHash'] = $cacheHashCalculator->calculateCacheHash($cHashParameters);
+			$cacheEntry->setRequestVariables($requestVariables);
+		}
+	}
+
+	/**
 	 * Checks if the missing slash should be corrected.
 	 *
 	 * @return void
@@ -251,7 +274,8 @@ class UrlDecoder extends EncodeDecoderBase {
 	}
 
 	/**
-	 * Decodes the URL.
+	 * Decodes the URL. This function is called only if the URL is not in the
+	 * URL cache.
 	 *
 	 * @param string $path
 	 * @return UrlCacheEntry with onli pageId and requestVariables filled in
@@ -280,6 +304,8 @@ class UrlDecoder extends EncodeDecoderBase {
 		}
 
 		$cacheEntry->setRequestVariables($requestVariables);
+
+		$this->calculateChash($cacheEntry);
 
 		return $cacheEntry;
 	}
