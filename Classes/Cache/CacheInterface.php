@@ -1,0 +1,92 @@
+<?php
+/***************************************************************
+ *  Copyright notice
+ *
+ *  (c) 2015 Dmitry Dulepov (dmitry.dulepov@gmail.com)
+ *  All rights reserved
+ *
+ *  This script is part of the Typo3 project. The Typo3 project is
+ *  free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  The GNU General Public License can be found at
+ *  http://www.gnu.org/copyleft/gpl.html.
+ *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  from the author is found in LICENSE.txt distributed with these scripts.
+ *
+ *
+ *  This script is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  This copyright notice MUST APPEAR in all copies of the script!
+ ***************************************************************/
+namespace DmitryDulepov\Realurl\Cache;
+
+/**
+ * This interface defines cache functionality as required by RealURL. Other
+ * extensions can implement this interface and provide their own cache
+ * implementations. The implementation class is set in the RealURL configuration.
+ *
+ * @package DmitryDulepov\Realurl\Cache
+ */
+interface CacheInterface {
+
+	/**
+	 * Gets the entry from cache.
+	 *
+	 * @param int $rootPageId
+	 * @param string $originalUrl
+	 * @return UrlCacheEntry|null
+	 */
+	public function getUrlFromCacheByOriginalUrl($rootPageId, $originalUrl);
+
+	/**
+	 * Gets the entry from cache.
+	 *
+	 * @param int $rootPageId
+	 * @param string $speakingUrl
+	 * @return UrlCacheEntry|null
+	 */
+	public function getUrlFromCacheBySpeakingUrl($rootPageId, $speakingUrl);
+
+	/**
+	 * Obtains non-expired (!) path from the path cache.
+	 *
+	 * @param int $rootPageId
+	 * @param int $languageId
+	 * @param int $pageId
+	 * @return PathCacheEntry|null
+	 */
+	public function getPathFromCacheByPageId($rootPageId, $languageId, $pageId);
+
+	/**
+	 * Obtains path from the path cache.
+	 *
+	 * @param int $rootPageId
+	 * @param string $mountPoint
+	 * @param string $pagePath
+	 * @return PathCacheEntry|null
+	 */
+	public function getPathFromCacheByPagePath($rootPageId, $mountPoint, $pagePath);
+
+	/**
+	 * Puts path to the cache. This must override existing entry if cache id is set in the cache entry.
+	 *
+	 * @param PathCacheEntry $cacheEntry
+	 * @return void
+	 */
+	public function putPathToCache(PathCacheEntry $cacheEntry);
+
+	/**
+	 * Sets the entry to cache. This must override existing entry if cache id is set in the cache entry.
+	 *
+	 * @param UrlCacheEntry $cacheEntry
+	 * @return void
+	 */
+	public function putUrlToCache(UrlCacheEntry $cacheEntry);
+
+}

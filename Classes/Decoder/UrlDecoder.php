@@ -26,6 +26,7 @@
  ***************************************************************/
 namespace DmitryDulepov\Realurl\Decoder;
 
+use DmitryDulepov\Realurl\Cache\UrlCacheEntry;
 use DmitryDulepov\Realurl\EncodeDecoderBase;
 use TYPO3\CMS\Core\Utility\ArrayUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -253,43 +254,44 @@ class UrlDecoder extends EncodeDecoderBase {
 	 * Decodes the URL.
 	 *
 	 * @param string $path
-	 * @return array with keys 'id' and 'GET_VARS';
+	 * @return UrlCacheEntry with onli pageId and requestVariables filled in
 	 */
 	protected function doDecoding($path) {
-		$result = array('id' => 1, 'GET_VARS' => array());
+		$cacheEntry = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\Cache\\UrlCacheEntry');
+		/** @var \DmitryDulepov\Realurl\Cache\UrlCacheEntry $cacheEntry */
+		$cacheEntry->setPageId(1);
 
 		$pathSegments = explode('/', trim($path, '/'));
 		array_walk($pathSegments, 'urldecode');
 
-		ArrayUtility::mergeRecursiveWithOverrule($result['GET_VARS'], $this->handleFileName($pathSegments));
+		$requestVariables = array();
 
-//		ArrayUtility::mergeRecursiveWithOverrule($result['GET_VARS'], $this->decodeVariables($pathSegments, (array)$this->configuration->get('preVars')));
-		$result['id'] = $this->decodePath($pathSegments);
+		ArrayUtility::mergeRecursiveWithOverrule($requestVariables, $this->handleFileName($pathSegments));
+
+//		ArrayUtility::mergeRecursiveWithOverrule($requestVariables, $this->decodeVariables($pathSegments, (array)$this->configuration->get('preVars')));
+		$cacheEntry->setPageId($this->decodePath($pathSegments));
 		// TODO fixedPostVars are only valid for some pages, correct it on the line below!
-//		ArrayUtility::mergeRecursiveWithOverrule($result['GET_VARS'], $this->decodeVariables($pathSegments, (array)$this->configuration->get('fixedPostVars')));
-//		ArrayUtility::mergeRecursiveWithOverrule($result['GET_VARS'], $this->decodeVariables($pathSegments, (array)$this->configuration->get('postVarSets')));
+//		ArrayUtility::mergeRecursiveWithOverrule($requestVariables, $this->decodeVariables($pathSegments, (array)$this->configuration->get('fixedPostVars')));
+//		ArrayUtility::mergeRecursiveWithOverrule($requestVariables, $this->decodeVariables($pathSegments, (array)$this->configuration->get('postVarSets')));
 
 		if (count($pathSegments) > 0) {
 			reset($pathSegments);
 			$this->throw404('"' . current($pathSegments) . '" could not be decoded from path.');
 		}
 
-		return $result;
+		$cacheEntry->setRequestVariables($requestVariables);
+
+		return $cacheEntry;
 	}
 
 	/**
 	 * Gets the entry from cache.
 	 *
 	 * @param string $speakingUrl
-	 * @return array|null
+	 * @return UrlCacheEntry|null
 	 */
 	protected function getFromUrlCache($speakingUrl) {
-		$row = $this->databaseConnection->exec_SELECTgetSingleRow('*', 'tx_realurl_urlcache',
-			'rootpage_id=' . $this->rootPageId . ' AND ' .
-				'speaking_url=' . $this->databaseConnection->fullQuoteStr($speakingUrl, 'tx_realurl_urlcache')
-		);
-
-		return is_array($row) ? (array)@json_decode($row['speaking_url_data']) : NULL;
+		return $this->cache->getUrlFromCacheBySpeakingUrl($this->rootPageId, $speakingUrl);
 	}
 
 	/**
@@ -401,43 +403,42 @@ class UrlDecoder extends EncodeDecoderBase {
 	 * @return void
 	 */
 	protected function putToPathCache($pageId, $pagePath) {
-		$rootPageId = $this->configuration->get('pagePath/rootpage_id');
-		$cacheEntry = $this->databaseConnection->exec_SELECTgetSingleRow('*', 'tx_realurl_pathcache',
-			'page_id=' . (int)$pageId . ' AND language_id=' . (int)$this->sysLanguageUid .
-				' AND rootpage_id=' . $rootPageId .
-				' AND expire=0'
-		);
-		if (!is_array($cacheEntry) || $pagePath !== $cacheEntry['pagepath']) {
-			$this->databaseConnection->exec_INSERTquery('tx_realurl_pathcache', array(
-				'page_id' => $pageId,
-				'language_id' => $this->sysLanguageUid,
-				'rootpage_id' => $rootPageId,
-				'mpvar' => '',
-				'pagepath' => $pagePath,
-				'expire' => 0,
-			));
+		$cacheEntry = $this->cache->getPathFromCacheByPagePath($this->rootPageId, '', $pagePath);
+		if (!$cacheEntry || $cacheEntry->getExpiration() !== 0 || $cacheEntry->getPagePath() !== $pagePath) {
+			$cacheEntry = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\Cache\\PathCacheEntry');
+			/** @var \DmitryDulepov\Realurl\Cache\PathCacheEntry $cacheEntry */
+			$cacheEntry->setExpiration(0);
+			$cacheEntry->setLanguageId($this->sysLanguageUid);
+			$cacheEntry->setMountPoint('');
+			$cacheEntry->setPageId($pageId);
+			$cacheEntry->setPagePath($pagePath);
+			$cacheEntry->setRootPageId($this->rootPageId);
+
+			$this->cache->putPathToCache($cacheEntry);
 		}
 	}
 
 	/**
 	 * Adds data to the url cache. This must run after $this->setRequestVariables().
 	 *
-	 * @param array $cacheInfo
+	 * @param UrlCacheEntry $cacheEntry
 	 * @return void
 	 */
-	protected function putToUrlCache(array $cacheInfo) {
-		$getVars = $_GET;
-		$getVars['id'] = $this->caller->id;
-		$this->sortArrayDeep($getVars);
-		$originalUrl = trim(GeneralUtility::implodeArrayForUrl('', $getVars), '&');
-		$this->databaseConnection->exec_INSERTquery('tx_realurl_urlcache', array(
-			'crdate' => time(),
-			'page_id' => $this->caller->id,
-			'rootpage_id' => $this->rootPageId,
-			'original_url' => $originalUrl,
-			'speaking_url' => $this->speakingUri,
-			'speaking_url_data' => json_encode($cacheInfo)
-		));
+	protected function putToUrlCache(UrlCacheEntry $cacheEntry) {
+		$requestVariables = $cacheEntry->getRequestVariables();
+		$requestVariables['id'] = $cacheEntry->getPageId();
+		$this->sortArrayDeep($requestVariables);
+
+		$originalUrl = trim(GeneralUtility::implodeArrayForUrl('', $requestVariables), '&');
+
+		if ($this->canCacheUrl($originalUrl)) {
+			$cacheEntry->setOriginalUrl($originalUrl);
+			$cacheEntry->setRequestVariables($requestVariables);
+			$cacheEntry->setRootPageId($this->rootPageId);
+			$cacheEntry->setSpeakingUrl($this->speakingUri);
+
+			$this->cache->putUrlToCache($cacheEntry);
+		}
 	}
 
 	/**
@@ -448,15 +449,15 @@ class UrlDecoder extends EncodeDecoderBase {
 	protected function runDecoding() {
 		$urlParts = $this->getUrlParts();
 
-		$cacheInfo = $this->getFromUrlCache($this->speakingUri);
-		if (!is_array($cacheInfo)) {
-			$cacheInfo = $this->doDecoding($urlParts['path']);
+		$cacheEntry = $this->getFromUrlCache($this->speakingUri);
+		if (!$cacheEntry) {
+			$cacheEntry = $this->doDecoding($urlParts['path']);
 		}
-		$this->setRequestVariables($cacheInfo);
+		$this->setRequestVariables($cacheEntry);
 
 		// If it is still not there (could have been added by other process!), than update
 		if (!$this->getFromUrlCache($this->speakingUri)) {
-			$this->putToUrlCache($cacheInfo);
+			$this->putToUrlCache($cacheEntry);
 		}
 	}
 
@@ -495,12 +496,9 @@ class UrlDecoder extends EncodeDecoderBase {
 
 		while ($result === 0 && count($pathSegments) > 0) {
 			$path = implode('/', $pathSegments);
-			$row = $this->databaseConnection->exec_SELECTgetSingleRow('*', 'tx_realurl_pathcache',
-				'rootpage_id=' . (int)$this->rootPageId . ' AND pagepath=' . $this->databaseConnection->fullQuoteStr($path, 'tx_realurl_pathcache'),
-				'', 'expire'
-			);
-			if (is_array($row)) {
-				$result = $row['page_id'];
+			$cacheEntry = $this->cache->getPathFromCacheByPagePath($this->rootPageId, '', $path);
+			if ($cacheEntry) {
+				$result = $cacheEntry->getPageId();
 			}
 			else {
 				array_unshift($removedSegments, array_pop($pathSegments));
@@ -523,15 +521,17 @@ class UrlDecoder extends EncodeDecoderBase {
 	/**
 	 * Sets variables after the decoding.
 	 *
-	 * @param array $cacheInfo
+	 * @param UrlCacheEntry $cacheEntry
 	 */
-	private function setRequestVariables(array $cacheInfo) {
-		if ($cacheInfo['id']) {
-			$_SERVER['QUERY_STRING'] = $this->createQueryString($cacheInfo['GET_VARS']);
+	private function setRequestVariables(UrlCacheEntry $cacheEntry) {
+		if ($cacheEntry) {
+			$requestVariables = $cacheEntry->getRequestVariables();
+			$requestVariables['id'] = $cacheEntry->getPageId();
+			$_SERVER['QUERY_STRING'] = $this->createQueryString($requestVariables);
 
 			// Setting info in TSFE
-			$this->caller->mergingWithGetVars($cacheInfo['GET_VARS']);
-			$this->caller->id = $cacheInfo['id'];
+			$this->caller->mergingWithGetVars($requestVariables);
+			$this->caller->id = $cacheEntry->getPageId();
 
 			if ($this->mimeType) {
 				header('Content-type: ' . $this->mimeType);

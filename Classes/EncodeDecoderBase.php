@@ -26,6 +26,7 @@
  ***************************************************************/
 namespace DmitryDulepov\Realurl;
 
+use DmitryDulepov\Realurl\Cache\CacheInterface;
 use DmitryDulepov\Realurl\Configuration\ConfigurationReader;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController;
@@ -38,7 +39,8 @@ use TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController;
  */
 abstract class EncodeDecoderBase {
 
-	const URL_CACHE_ID = 'realurl_url_cache';
+	/** @var CacheInterface */
+	protected $cache;
 
 	/** @var \DmitryDulepov\Realurl\Configuration\ConfigurationReader */
 	protected $configuration;
@@ -55,9 +57,6 @@ abstract class EncodeDecoderBase {
 	/** @var TypoScriptFrontendController */
 	protected $tsfe;
 
-	/** @var \TYPO3\CMS\Core\Cache\Frontend\FrontendInterface */
-	protected $urlCache = NULL;
-
 	/** @var \DmitryDulepov\Realurl\Utility */
 	protected $utility;
 
@@ -70,21 +69,20 @@ abstract class EncodeDecoderBase {
 		$this->configuration = ConfigurationReader::getInstance();
 		$this->rootPageId = (int)$this->configuration->get('pagePath/rootpage_id');
 		$this->utility = Utility::getInstance();
-		$this->initializeCaches();
+		$this->cache = $this->utility->getCache();
 	}
 
 	/**
-	 * Initializes the cache for URLs.
+	 * Checks if the URL can be cached. This function may prevent RealURL cache
+	 * pollution with Solr or Indexed search URLs.
 	 *
-	 * @return void
+	 * @param string $url
+	 * @return bool
 	 */
-	protected function initializeCaches() {
-		// TODO Disable caches if BE user is logged in
-		$cacheManager = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Cache\\CacheManager');
-		/** @var \TYPO3\CMS\Core\Cache\CacheManager $cacheManager */
-		if ($cacheManager->hasCache(self::URL_CACHE_ID)) {
-			$this->urlCache = $cacheManager->getCache(self::URL_CACHE_ID);
-		}
+	protected function canCacheUrl($url) {
+		$bannedUrlsRegExp = $this->configuration->get('cache/banUrlsRegExp');
+
+		return (!$bannedUrlsRegExp || !preg_match($bannedUrlsRegExp, $url));
 	}
 
 	/**
@@ -124,18 +122,6 @@ abstract class EncodeDecoderBase {
 		}
 
 		return $sortedUrl;
-	}
-
-	/**
-	 * Sets the entry to cache.
-	 *
-	 * @param string $cacheKey
-	 * @param array $cacheInfo
-	 */
-	protected function putToUrlCache($cacheKey, array $cacheInfo) {
-		if ($this->urlCache && $cacheInfo['id']) {
-			$this->urlCache->set($cacheKey, $cacheInfo);
-		}
 	}
 
 	/**

@@ -124,15 +124,15 @@ class UrlEncoder extends EncodeDecoderBase {
 	 * @return void
 	 */
 	protected function addToPathCache($pagePath) {
-		/** @noinspection PhpUndefinedMethodInspection */
-		$this->databaseConnection->exec_INSERTquery('tx_realurl_pathcache', array(
-			'page_id' => $this->urlParameters['id'],
-			'language_id' => $this->sysLanguageUid,
-			'rootpage_id' => $this->rootPageId,
-			'mpvar' => '',
-			'pagepath' => $pagePath,
-			'expire' => 0,
-		));
+		$cacheEntry = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\Cache\\PathCacheEntry');
+		/** @var \DmitryDulepov\Realurl\Cache\PathCacheEntry $cacheEntry */
+		$cacheEntry->setExpiration(0);
+		$cacheEntry->setLanguageId($this->sysLanguageUid);
+		$cacheEntry->setRootPageId($this->rootPageId);
+		$cacheEntry->setMountPoint('');
+		$cacheEntry->setPageId($this->urlParameters['id']);
+		$cacheEntry->setPagePath($pagePath);
+		$this->cache->putPathToCache($cacheEntry);
 	}
 
 	/**
@@ -306,9 +306,9 @@ class UrlEncoder extends EncodeDecoderBase {
 	 * @return void
 	 */
 	protected function encodePathComponents() {
-		$cacheRecord = $this->getFromPathCache();
-		if (is_array($cacheRecord)) {
-			$this->appendToEncodedUrl($cacheRecord['pagepath']);
+		$cacheEntry = $this->cache->getPathFromCacheByPageId($this->rootPageId, $this->sysLanguageUid, $this->urlParameters['id']);
+		if ($cacheEntry) {
+			$this->appendToEncodedUrl($cacheEntry->getPagePath());
 		}
 		else {
 			$this->createPathComponent();
@@ -534,13 +534,9 @@ class UrlEncoder extends EncodeDecoderBase {
 	protected function fetchFromtUrlCache() {
 		$result = FALSE;
 
-		$row = $this->databaseConnection->exec_SELECTgetSingleRow('*', 'tx_realurl_urlcache',
-			'rootpage_id=' . $this->rootPageId . ' AND ' .
-				'original_url=' . $this->databaseConnection->fullQuoteStr($this->originalUrl, 'tx_realurl_urlcache')
-		);
-
-		if (is_array($row)) {
-			$this->encodedUrl = $row['speaking_url'];
+		$cacheEntry = $this->cache->getUrlFromCacheByOriginalUrl($this->rootPageId, $this->originalUrl);
+		if ($cacheEntry) {
+			$this->encodedUrl = $cacheEntry->getSpeakingUrl();
 			$result = TRUE;
 		}
 
@@ -567,19 +563,6 @@ class UrlEncoder extends EncodeDecoderBase {
 				' AND expire=0'
 		);
 		return is_array($row) ? $row['value_alias'] : NULL;
-	}
-
-	/**
-	 * Fetches the record from the patch cache.
-	 *
-	 * @return array|null
-	 */
-	protected function getFromPathCache() {
-		/** @noinspection PhpUndefinedMethodInspection */
-		return $this->databaseConnection->exec_SELECTgetSingleRow('*', 'tx_realurl_pathcache',
-			'page_id=' . (int)$this->urlParameters['id'] . ' AND language_id=' . $this->sysLanguageUid .
-				' AND rootpage_id=' . (int)$this->rootPageId . ' AND expire=0'
-		);
 	}
 
 	/**
@@ -815,24 +798,18 @@ class UrlEncoder extends EncodeDecoderBase {
 	 * @return void
 	 */
 	protected function storeInUrlCache() {
-		$existingRowCount = $this->databaseConnection->exec_SELECTcountRows('*', 'tx_realurl_urlcache',
-			'rootpage_id=' . $this->rootPageId . ' AND ' .
-				'original_url=' . $this->databaseConnection->fullQuoteStr($this->originalUrl, 'tx_realurl_urlcache')
-		);
-		if ($existingRowCount == 0) {
-			$cacheInfo = array(
-				'id' => $this->urlParameters['id'],
-				'GET_VARS' => $this->urlParameters
-			);
-			unset($cacheInfo['GET_VARS']['id']);
-			$this->databaseConnection->exec_INSERTquery('tx_realurl_urlcache', array(
-				'crdate' => time(),
-				'page_id' => $this->urlParameters['id'],
-				'rootpage_id' => $this->rootPageId,
-				'original_url' => $this->originalUrl,
-				'speaking_url' => $this->encodedUrl,
-				'speaking_url_data' => json_encode($cacheInfo)
-			));
+		if ($this->canCacheUrl($this->originalUrl)) {
+			$cacheEntry = $this->cache->getUrlFromCacheByOriginalUrl($this->rootPageId, $this->originalUrl);
+			if (!$cacheEntry || $cacheEntry->getSpeakingUrl() !== $this->encodedUrl) {
+				$cacheEntry = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\Cache\\UrlCacheEntry');
+				/** @var \DmitryDulepov\Realurl\Cache\UrlCacheEntry $cacheEntry */
+				$cacheEntry->setPageId($this->originalUrlParameters['id']);
+				$cacheEntry->setRequestVariables($this->originalUrlParameters);
+				$cacheEntry->setRootPageId($this->rootPageId);
+				$cacheEntry->setOriginalUrl($this->originalUrl);
+				$cacheEntry->setSpeakingUrl($this->encodedUrl);
+				$this->cache->putUrlToCache($cacheEntry);
+			}
 		}
 	}
 }

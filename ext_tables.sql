@@ -24,11 +24,12 @@ CREATE TABLE tx_realurl_uniqalias (
 CREATE TABLE tx_realurl_urlcache (
 	cache_id int(11) NOT NULL auto_increment,
 	crdate int(11) DEFAULT '0' NOT NULL,
+	tstamp int(11) DEFAULT '0' NOT NULL,
 	page_id int(11) DEFAULT '0' NOT NULL,
 	rootpage_id int(11) DEFAULT '0' NOT NULL,
 	original_url text,
 	speaking_url text,
-	speaking_url_data text,
+	request_variables text,
 
 	PRIMARY KEY (cache_id),
 	KEY pathq1 (rootpage_id,original_url(32)),

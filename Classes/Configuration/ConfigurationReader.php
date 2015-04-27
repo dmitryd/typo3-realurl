@@ -55,6 +55,9 @@ class ConfigurationReader implements SingletonInterface {
 	 * @var array
 	 */
 	protected $defaultValues = array(
+		'cache/banUrlsRegExp' => '/tx_solr|tx_indexed_search|(?:^|\?|&)q=/',
+		'cache/implementation' => 'DmitryDulepov\\Realurl\\Cache\\DatabaseCache',
+		'cache/disable' => FALSE,
 		'fileName/acceptHTMLsuffix' => TRUE,
 		'fileName/defaultToHTMLsuffixOnPrev' => FALSE,
 		'init/appendMissingSlash' => 'ifNotFile,redirect[301]',
