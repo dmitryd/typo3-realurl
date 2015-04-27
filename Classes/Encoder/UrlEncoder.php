@@ -303,6 +303,23 @@ class UrlEncoder extends EncodeDecoderBase {
 	}
 
 	/**
+	 * Encodes fixed postVars.
+	 *
+	 * @return void
+	 */
+	protected function encodeFixedPostVars() {
+		$configuration = (array)$this->configuration->get('postVarSets');
+		$configurationBlocks = $this->getConfigirationBlocksForPostVars($configuration);
+
+		foreach ($configurationBlocks as $postVarSetConfiguration) {
+			$segments = $this->encodeUrlParameterBlock($postVarSetConfiguration);
+			if (count($segments) > 0) {
+				$this->appendToEncodedUrl(implode('/', $segments));
+			}
+		}
+	}
+
+	/**
 	 * Encodes the path to the page.
 	 *
 	 * @return void
@@ -545,7 +562,7 @@ class UrlEncoder extends EncodeDecoderBase {
 
 			$this->encodePreVars();
 			$this->encodePathComponents();
-			// TODO Encode fixedPostVars
+			$this->encodeFixedPostVars();
 			$this->encodePostVarSets();
 			$this->handleFileName();
 
