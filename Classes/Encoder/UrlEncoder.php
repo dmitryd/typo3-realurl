@@ -538,7 +538,7 @@ class UrlEncoder extends EncodeDecoderBase {
 		$result = FALSE;
 
 		if (isset($configuration['valueMap']) && is_array($configuration['valueMap'])) {
-			$segmentValue = array_search($getVarValue, $configuration['valueMap']);
+			$segmentValue = array_search($getVarValue, array_flip($configuration['valueMap']));
 			if ($segmentValue !== FALSE) {
 				$segments[] = rawurlencode((string)$segmentValue);
 				$result = TRUE;
