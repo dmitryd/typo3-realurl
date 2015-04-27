@@ -109,10 +109,12 @@ class UrlEncoder extends EncodeDecoderBase {
 	protected function addRemainingUrlParameters() {
 		$urlParameters = $this->urlParameters;
 		unset($urlParameters['id']);
-		if (count($urlParameters) == 1 && isset($urlParameters['cHash'])) {
-			unset($urlParameters['cHash']);
-		}
-		elseif (count($urlParameters) > 0) {
+// TODO Uncomment when cHash cache is implemented
+//		if (count($urlParameters) == 1 && isset($urlParameters['cHash'])) {
+//			unset($urlParameters['cHash']);
+//		}
+//		else
+		if (count($urlParameters) > 0) {
 			$this->encodedUrl .= '?' . trim(GeneralUtility::implodeArrayForUrl('', $urlParameters), '&');
 		}
 	}
@@ -328,6 +330,26 @@ class UrlEncoder extends EncodeDecoderBase {
 	}
 
 	/**
+	 * Encodes 'postVarSets' into URL segments.
+	 *
+	 * @return void
+	 */
+	protected function encodePostVarSets() {
+		$configuration = (array)$this->configuration->get('postVarSets');
+		$configurationBlocks = $this->getConfigirationBlocksForPostVars($configuration);
+
+		foreach ($configurationBlocks as $configurationBlock) {
+			foreach ($configurationBlock as $postVar => $postVarSetConfiguration) {
+				$segments = $this->encodeUrlParameterBlock($postVarSetConfiguration);
+				if (count($segments) > 0) {
+					array_unshift($segments, $postVar);
+					$this->appendToEncodedUrl(implode('/', $segments));
+				}
+			}
+		}
+	}
+
+	/**
 	 * Encodes pre- or postVars according to the given configuration.
 	 *
 	 * @param array $configurationArray
@@ -338,7 +360,7 @@ class UrlEncoder extends EncodeDecoderBase {
 			'encodeUrlParameterBlockUsingValueMap',
 			'encodeUrlParameterBlockUsingNoMatch',
 			'encodeUrlParameterBlockUsingUserFunc',
-			//'encodeUrlParameterBlockUsingLookupTable',
+			'encodeUrlParameterBlockUsingLookupTable',
 			'encodeUrlParameterBlockUsingValueDefault',
 			// Allways the last one!
 			'encodeUrlParameterBlockUseAsIs',
@@ -510,12 +532,12 @@ class UrlEncoder extends EncodeDecoderBase {
 			$this->encodePreVars();
 			$this->encodePathComponents();
 			// TODO Encode fixedPostVars
-			// TODO Encode postVarSets
+			$this->encodePostVarSets();
 			$this->handleFileName();
 
-			$this->addRemainingUrlParameters();
-
 			// TODO Handle cHash
+
+			$this->addRemainingUrlParameters();
 
 			if ($this->encodedUrl === '') {
 				$emptyUrlReturnValue = $this->configuration->get('init/emptyUrlReturnValue') ?: '/';
@@ -541,6 +563,33 @@ class UrlEncoder extends EncodeDecoderBase {
 		}
 
 		return $result;
+	}
+
+	/**
+	 * Sets configuration blocks for fixedPostVars and postVarSets according
+	 * to priority: current page id first, _DEFAULT last. Also resolves aliases
+	 * for configuration.
+	 *
+	 * @param array $configuration
+	 * @return array
+	 */
+	private function getConfigirationBlocksForPostVars(array $configuration) {
+		$configurationBlocks = array();
+		$pageId = $this->urlParameters['id'];
+		if (isset($configuration[$pageId])) {
+			$loopCount = 10;
+			while ($loopCount-- && isset($configuration[$pageId]) && !is_array($configuration[$pageId])) {
+				$pageId = $configuration[$pageId];
+			}
+			if (is_array($configuration[$pageId])) {
+				$configurationBlocks[] = $configuration[$pageId];
+			}
+		}
+		if (isset($configuration['_DEFAULT'])) {
+			$configurationBlocks[] = $configuration['_DEFAULT'];
+		}
+
+		return $configurationBlocks;
 	}
 
 	/**
@@ -699,7 +748,7 @@ class UrlEncoder extends EncodeDecoderBase {
 			$parts = GeneralUtility::trimExplode('&', $urlParts['query']);
 			foreach ($parts as $part) {
 				list($parameter, $value) = explode('=', $part);
-				$this->urlParameters[$parameter] = $value;
+				$this->urlParameters[urldecode($parameter)] = urldecode($value);
 			}
 		}
 		$this->originalUrlParameters = $this->urlParameters;
