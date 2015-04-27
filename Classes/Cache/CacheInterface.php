@@ -36,6 +36,21 @@ namespace DmitryDulepov\Realurl\Cache;
 interface CacheInterface {
 
 	/**
+	 * Empties the URL cache.
+	 *
+	 * @return void
+	 */
+	public function clearUrlCache();
+
+	/**
+	 * Empties the URL cache for one page.
+	 *
+	 * @param int $pageId
+	 * @return void
+	 */
+	public function clearUrlCacheForPage($pageId);
+
+	/**
 	 * Gets the entry from cache.
 	 *
 	 * @param int $rootPageId

@@ -47,6 +47,25 @@ class DatabaseCache implements CacheInterface, SingletonInterface {
 	}
 
 	/**
+	 * Empties the URL cache.
+	 *
+	 * @return mixed
+	 */
+	public function clearUrlCache() {
+		$this->databaseConnection->exec_TRUNCATEquery('tx_realurl_urlcache');
+	}
+
+	/**
+	 * Empties the URL cache for one page.
+	 *
+	 * @param int $pageId
+	 * @return void
+	 */
+	public function clearUrlCacheForPage($pageId) {
+		$this->databaseConnection->exec_DELETEquery('tx_realurl_urlcache', 'page_id=' . (int)$pageId);
+	}
+
+	/**
 	 * Gets the entry from cache.
 	 *
 	 * @param int $rootPageId

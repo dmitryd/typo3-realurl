@@ -37,6 +37,25 @@ use TYPO3\CMS\Core\SingletonInterface;
 class NullCache implements CacheInterface, SingletonInterface {
 
 	/**
+	 * Empties the URL cache.
+	 *
+	 * @return mixed
+	 */
+	public function clearUrlCache() {
+		// Do nothing
+	}
+
+	/**
+	 * Empties the URL cache for one page.
+	 *
+	 * @param int $pageId
+	 * @return void
+	 */
+	public function clearUrlCacheForPage($pageId) {
+		// Do nothing
+	}
+
+	/**
 	 * Gets the entry from cache.
 	 *
 	 * @param int $rootPageId
