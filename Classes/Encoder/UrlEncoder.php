@@ -783,7 +783,10 @@ class UrlEncoder extends EncodeDecoderBase {
 			}
 		}
 		$this->originalUrlParameters = $this->urlParameters;
-		$this->originalUrl = trim(GeneralUtility::implodeArrayForUrl('', $this->urlParameters), '&');
+
+		$sortedUrlParameters = $this->urlParameters;
+		$this->sortArrayDeep($sortedUrlParameters);
+		$this->originalUrl = trim(GeneralUtility::implodeArrayForUrl('', $sortedUrlParameters), '&');
 	}
 
 	/**
