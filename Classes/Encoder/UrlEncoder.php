@@ -386,6 +386,20 @@ class UrlEncoder extends EncodeDecoderBase {
 			}
 		}
 
+		// If all segments are empty, do not set them
+		if (count($segments) > 0) {
+			$allSegmentsAreEmpty = TRUE;
+			foreach ($segments as $segment) {
+				if ($segment) {
+					$allSegmentsAreEmpty = FALSE;
+					break;
+				}
+			}
+			if ($allSegmentsAreEmpty) {
+				$segments = array();
+			}
+		}
+
 		return $segments;
 	}
 
