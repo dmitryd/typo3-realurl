@@ -162,6 +162,28 @@ class UrlEncoder extends EncodeDecoderBase {
 	}
 
 	/**
+	 * Checks if all segments are empty and makes the empty array in such case.
+	 *
+	 * @param array $segments
+	 * @return void
+	 */
+	protected function checkForAllEmptySegments(&$segments) {
+		// If all segments are empty, do not set them. No, array_filter() is not a better solution!
+		if (count($segments) > 0) {
+			$allSegmentsAreEmpty = TRUE;
+			foreach ($segments as $segment) {
+				if ($segment) {
+					$allSegmentsAreEmpty = FALSE;
+					break;
+				}
+			}
+			if ($allSegmentsAreEmpty) {
+				$segments = array();
+			}
+		}
+	}
+
+	/**
 	 * Cleans up the alias
 	 *
 	 * @param array $configuration Configuration array
@@ -367,12 +389,13 @@ class UrlEncoder extends EncodeDecoderBase {
 	}
 
 	/**
-	 * Encodes pre- or postVars according to the given configuration.
+	 * Encodes a single variable for xxxVars.
 	 *
-	 * @param array $configurationArray
-	 * @return string
+	 * @param array $configuration
+	 * @param string $previousValue
+	 * @param array $segments
 	 */
-	protected function encodeUrlParameterBlock(array $configurationArray) {
+	protected function encodeSingleVariable(array $configuration, &$previousValue, array &$segments) {
 		static $varProcessingFunctions = array(
 			'encodeUrlParameterBlockUsingValueMap',
 			'encodeUrlParameterBlockUsingNoMatch',
@@ -382,43 +405,42 @@ class UrlEncoder extends EncodeDecoderBase {
 			// Allways the last one!
 			'encodeUrlParameterBlockUseAsIs',
 		);
+
+		$getVarName = $configuration['GETvar'];
+		$getVarValue = isset($this->urlParameters[$getVarName]) ? $this->urlParameters[$getVarName] : '';
+
+		if (!isset($configuration['cond']) || $this->checkLegacyCondition($configuration['cond'], $previousValue)) {
+
+			// TODO Possible hook here before any other function? Pass name, value, segments and config
+
+			foreach ($varProcessingFunctions as $varProcessingFunction) {
+				if ($this->$varProcessingFunction($getVarName, $getVarValue, $configuration, $segments, $previousValue)) {
+					break;
+				}
+			}
+
+			// Unset to prevent further processing
+			unset($this->urlParameters[$getVarName]);
+		}
+	}
+
+	/**
+	 * Encodes pre- or postVars according to the given configuration.
+	 *
+	 * @param array $configurationArray
+	 * @return string
+	 */
+	protected function encodeUrlParameterBlock(array $configurationArray) {
 		$segments = array();
 
 		if ($this->hasUrlParameters($configurationArray)) {
 			$previousValue = '';
 			foreach ($configurationArray as $configuration) {
-				$getVarName = $configuration['GETvar'];
-				$getVarValue = isset($this->urlParameters[$getVarName]) ? $this->urlParameters[$getVarName] : '';
-
-				if (!isset($configuration['cond']) || $this->checkLegacyCondition($configuration['cond'], $previousValue)) {
-
-					// TODO Possible hook here before any other function? Pass name, value, segments and config
-
-					foreach ($varProcessingFunctions as $varProcessingFunction) {
-						if ($this->$varProcessingFunction($getVarName, $getVarValue, $configuration, $segments, $previousValue)) {
-							break;
-						}
-					}
-
-					// Unset to prevent further processing
-					unset($this->urlParameters[$getVarName]);
-				}
+				$this->encodeSingleVariable($configuration, $previousValue, $segments);
 			}
 		}
 
-		// If all segments are empty, do not set them
-		if (count($segments) > 0) {
-			$allSegmentsAreEmpty = TRUE;
-			foreach ($segments as $segment) {
-				if ($segment) {
-					$allSegmentsAreEmpty = FALSE;
-					break;
-				}
-			}
-			if ($allSegmentsAreEmpty) {
-				$segments = array();
-			}
-		}
+		$this->checkForAllEmptySegments($segments);
 
 		return $segments;
 	}
