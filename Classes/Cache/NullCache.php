@@ -56,6 +56,17 @@ class NullCache implements CacheInterface, SingletonInterface {
 	}
 
 	/**
+	 * Expires path cache for the given page and language.
+	 *
+	 * @param int $pageId
+	 * @param int $languageId
+	 * @return void
+	 */
+	public function expirePathCache($pageId, $languageId) {
+		// Do nothing
+	}
+
+	/**
 	 * Gets the entry from cache.
 	 *
 	 * @param int $rootPageId

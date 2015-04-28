@@ -66,6 +66,20 @@ class DatabaseCache implements CacheInterface, SingletonInterface {
 	}
 
 	/**
+	 * Expires path cache for the given page and language.
+	 *
+	 * @param int $pageId
+	 * @param int $languageId
+	 * @return void
+	 */
+	public function expirePathCache($pageId, $languageId) {
+		$this->databaseConnection->exec_UPDATEquery('tx_realurl_pathcache',
+			'page_id=' . (int)$pageId . ' AND language_id=' . (int)$languageId . ' AND expire=0',
+			array('expire' => time() + 30*24*60*60)
+		);
+	}
+
+	/**
 	 * Gets the entry from cache.
 	 *
 	 * @param int $rootPageId

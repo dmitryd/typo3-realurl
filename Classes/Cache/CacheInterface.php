@@ -51,6 +51,15 @@ interface CacheInterface {
 	public function clearUrlCacheForPage($pageId);
 
 	/**
+	 * Expires path cache for the given page and language.
+	 *
+	 * @param int $pageId
+	 * @param int $languageId
+	 * @return void
+	 */
+	public function expirePathCache($pageId, $languageId);
+
+	/**
 	 * Gets the entry from cache.
 	 *
 	 * @param int $rootPageId

@@ -49,7 +49,7 @@ abstract class EncodeDecoderBase {
 	protected $databaseConnection;
 
 	/** @var array */
-	static protected $pageTitleFields = array('tx_realurl_pathsegment', 'alias', 'nav_title', 'title', 'uid');
+	static public $pageTitleFields = array('tx_realurl_pathsegment', 'alias', 'nav_title', 'title', 'uid');
 
 	/** @var int */
 	protected $rootPageId;
