@@ -233,6 +233,11 @@ class UrlEncoder extends EncodeDecoderBase {
 				$maxAliasLengthLength = isset($configuration['maxLength']) ? (int)$configuration['maxLength'] : self::MAX_ALIAS_LENGTH;
 				$aliasValue = substr($row[$configuration['alias_field']], 0, $maxAliasLengthLength);
 
+				# Do not allow aliases to be empty (see issue #1)
+				if (empty($aliasValue)) {
+					$aliasValue = md5($configuration['table'] . '-' . $row[$configuration['id_field']] . '-' . $languageUid);
+				}
+
 				if ($configuration['useUniqueCache']) { // If cache is to be used, store the alias in the cache:
 					$result = $this->storeInAliasCache($configuration, $aliasValue, $getVarValue, $languageUid);
 				} else { // If no cache for alias, then just return whatever value is appropriate:
@@ -308,13 +313,11 @@ class UrlEncoder extends EncodeDecoderBase {
 	 */
 	protected function encodeFixedPostVars() {
 		$configuration = (array)$this->configuration->get('postVarSets');
-		$configurationBlocks = $this->getConfigirationBlocksForPostVars($configuration);
+		$postVarSetConfiguration = $this->getConfigirationForPostVars($configuration, $this->urlParameters['id']);
 
-		foreach ($configurationBlocks as $postVarSetConfiguration) {
-			$segments = $this->encodeUrlParameterBlock($postVarSetConfiguration);
-			if (count($segments) > 0) {
-				$this->appendToEncodedUrl(implode('/', $segments));
-			}
+		$segments = $this->encodeUrlParameterBlock($postVarSetConfiguration);
+		if (count($segments) > 0) {
+			$this->appendToEncodedUrl(implode('/', $segments));
 		}
 	}
 
@@ -352,15 +355,13 @@ class UrlEncoder extends EncodeDecoderBase {
 	 */
 	protected function encodePostVarSets() {
 		$configuration = (array)$this->configuration->get('postVarSets');
-		$configurationBlocks = $this->getConfigirationBlocksForPostVars($configuration);
+		$postVarSetConfigurations = $this->getConfigirationForPostVars($configuration, $this->urlParameters['id']);
 
-		foreach ($configurationBlocks as $configurationBlock) {
-			foreach ($configurationBlock as $postVar => $postVarSetConfiguration) {
-				$segments = $this->encodeUrlParameterBlock($postVarSetConfiguration);
-				if (count($segments) > 0) {
-					array_unshift($segments, $postVar);
-					$this->appendToEncodedUrl(implode('/', $segments));
-				}
+		foreach ($postVarSetConfigurations as $postVar => $postVarSetConfiguration) {
+			$segments = $this->encodeUrlParameterBlock($postVarSetConfiguration);
+			if (count($segments) > 0) {
+				array_unshift($segments, $postVar);
+				$this->appendToEncodedUrl(implode('/', $segments));
 			}
 		}
 	}
@@ -538,7 +539,7 @@ class UrlEncoder extends EncodeDecoderBase {
 		$result = FALSE;
 
 		if (isset($configuration['valueMap']) && is_array($configuration['valueMap'])) {
-			$segmentValue = array_search($getVarValue, array_flip($configuration['valueMap']));
+			$segmentValue = array_search($getVarValue, $configuration['valueMap']);
 			if ($segmentValue !== FALSE) {
 				$segments[] = rawurlencode((string)$segmentValue);
 				$result = TRUE;
@@ -591,33 +592,6 @@ class UrlEncoder extends EncodeDecoderBase {
 		}
 
 		return $result;
-	}
-
-	/**
-	 * Sets configuration blocks for fixedPostVars and postVarSets according
-	 * to priority: current page id first, _DEFAULT last. Also resolves aliases
-	 * for configuration.
-	 *
-	 * @param array $configuration
-	 * @return array
-	 */
-	private function getConfigirationBlocksForPostVars(array $configuration) {
-		$configurationBlocks = array();
-		$pageId = $this->urlParameters['id'];
-		if (isset($configuration[$pageId])) {
-			$loopCount = 10;
-			while ($loopCount-- && isset($configuration[$pageId]) && !is_array($configuration[$pageId])) {
-				$pageId = $configuration[$pageId];
-			}
-			if (is_array($configuration[$pageId])) {
-				$configurationBlocks[] = $configuration[$pageId];
-			}
-		}
-		if (isset($configuration['_DEFAULT'])) {
-			$configurationBlocks[] = $configuration['_DEFAULT'];
-		}
-
-		return $configurationBlocks;
 	}
 
 	/**

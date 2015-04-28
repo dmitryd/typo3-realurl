@@ -86,6 +86,33 @@ abstract class EncodeDecoderBase {
 	}
 
 	/**
+	 * Sets configuration blocks for fixedPostVars and postVarSets according
+	 * to priority: current page id first, _DEFAULT last. Also resolves aliases
+	 * for configuration.
+	 *
+	 * @param array $configuration
+	 * @param int $pageId
+	 * @return array
+	 */
+	protected function getConfigirationForPostVars(array $configuration, $pageId) {
+		$configurationBlock = NULL;
+		if (isset($configuration[$pageId])) {
+			$maxTries = 10;
+			while ($maxTries-- && isset($configuration[$pageId]) && !is_array($configuration[$pageId])) {
+				$pageId = $configuration[$pageId];
+			}
+			if (is_array($configuration[$pageId])) {
+				$configurationBlock = $configuration[$pageId];
+			}
+		}
+		if (is_null($configurationBlock) && isset($configuration['_DEFAULT'])) {
+			$configurationBlock = $configuration['_DEFAULT'];
+		}
+
+		return $configurationBlock;
+	}
+
+	/**
 	 * Looks up an ID value (integer) in lookup-table based on input alias value.
 	 * (The lookup table for id<->alias is meant to contain UNIQUE alias strings for id integers)
 	 * In the lookup table 'tx_realurl_uniqalias' the field "value_alias" should be unique (per combination of field_alias+field_id+tablename)! However the "value_id" field doesn't have to; that is a feature which allows more aliases to point to the same id. The alias selected for converting id to alias will be the first inserted at the moment. This might be more intelligent in the future, having an order column which can be controlled from the backend for instance!
@@ -103,7 +130,7 @@ abstract class EncodeDecoderBase {
 				' AND field_id=' . $this->databaseConnection->fullQuoteStr($configuration['id_field'], 'tx_realurl_uniqalias') .
 				' AND tablename=' . $this->databaseConnection->fullQuoteStr($configuration['table'], 'tx_realurl_uniqalias') .
 				' AND ' . ($onlyNonExpired ? 'expire=0' : '(expire=0 OR expire>' . time() . ')'));
-		return (is_array($row) ? $row['value_id'] : false);
+		return (is_array($row) ? (int)$row['value_id'] : false);
 	}
 
 	/**
