@@ -5,22 +5,3 @@ This is version 2.x of the famous RealURL extension for TYPO3 CMS. This version 
 Repository, bug reporting, pull requests, etc is handled via https://github.com/dmitryd/typo3-realurl/
 
 [Documentation](https://github.com/dmitryd/typo3-realurl/wiki)
-
-## Plan for implementation
-
-* [+] Encoder hook class
-* [+] Decoder hook class
-* [+] Cache for decoding
-* [+] Decoder for paths
-* [+] Language handling for decoding
-* [+] Encoder for paths
-* [+] Language handling for encoding
-* [+] Cache for encoding
-* [+] Path cache
-* [*] preVars
-* [-] fixedPostVars
-* [-] postVarSets
-* [-] File name segment
-* [-] Unique aliases
-* [-] Separate language domains
-* [-] Mount points
