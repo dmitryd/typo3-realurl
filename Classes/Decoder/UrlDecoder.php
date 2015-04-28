@@ -421,11 +421,13 @@ class UrlDecoder extends EncodeDecoderBase {
 		// TODO Possible hook here before any other function? Pass name, value, segments and config
 
 		$handled = FALSE;
-		foreach ($varProcessingFunctions as $varProcessingFunction) {
-			if ($this->$varProcessingFunction($varConfiguration, $getVarValue, $requestVariables, $pathSegments)) {
-				$previousValue = (string)end($requestVariables);
-				$handled = TRUE;
-				break;
+		if (!isset($varConfiguration['cond']) || $this->checkLegacyCondition($varConfiguration['cond'], $previousValue)) {
+			foreach ($varProcessingFunctions as $varProcessingFunction) {
+				if ($this->$varProcessingFunction($varConfiguration, $getVarValue, $requestVariables, $pathSegments)) {
+					$previousValue = (string)end($requestVariables);
+					$handled = TRUE;
+					break;
+				}
 			}
 		}
 		if (!$handled) {

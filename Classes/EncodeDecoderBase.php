@@ -86,6 +86,25 @@ abstract class EncodeDecoderBase {
 	}
 
 	/**
+	 * Checks conditions for xxxVar.
+	 *
+	 * @param array $conditionConfiguration
+	 * @param string $previousValue
+	 * @return bool
+	 */
+	protected function checkLegacyCondition(array $conditionConfiguration, $previousValue) {
+		$result = true;
+
+		// Check previous value
+		if (isset($conditionConfiguration['prevValueInList'])) {
+			if (!GeneralUtility::inList($conditionConfiguration['prevValueInList'], $previousValue))
+			$result = false;
+		}
+
+		return $result;
+	}
+
+	/**
 	 * Sets configuration blocks for fixedPostVars and postVarSets according
 	 * to priority: current page id first, _DEFAULT last. Also resolves aliases
 	 * for configuration.
