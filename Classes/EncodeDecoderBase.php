@@ -130,7 +130,7 @@ abstract class EncodeDecoderBase {
 				' AND field_id=' . $this->databaseConnection->fullQuoteStr($configuration['id_field'], 'tx_realurl_uniqalias') .
 				' AND tablename=' . $this->databaseConnection->fullQuoteStr($configuration['table'], 'tx_realurl_uniqalias') .
 				' AND ' . ($onlyNonExpired ? 'expire=0' : '(expire=0 OR expire>' . time() . ')'));
-		return (is_array($row) ? $row['value_id'] : false);
+		return (is_array($row) ? (int)$row['value_id'] : false);
 	}
 
 	/**

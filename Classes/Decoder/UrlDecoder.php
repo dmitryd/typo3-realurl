@@ -30,6 +30,7 @@ use DmitryDulepov\Realurl\Cache\UrlCacheEntry;
 use DmitryDulepov\Realurl\EncodeDecoderBase;
 use TYPO3\CMS\Core\Utility\ArrayUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Core\Utility\MathUtility;
 use TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController;
 use TYPO3\CMS\Frontend\Page\PageRepository;
 
@@ -152,6 +153,58 @@ class UrlDecoder extends EncodeDecoderBase {
 				}
 			}
 		}
+	}
+
+	/**
+	 * Converts alias to id.
+	 *
+	 * @param array $configuration
+	 * @param string $value
+	 * @return int|string
+	 */
+	protected function convertAliasToId(array $configuration, $value) {
+		$result = (string)$value;
+
+		// Assemble list of fields to look up. This includes localization related fields
+		$translationEnabled = FALSE;
+		$fieldList = array();
+		if ($configuration['languageGetVar'] && $configuration['transOrigPointerField'] && $configuration['languageField']) {
+			$fieldList[] = 'uid';
+			$fieldList[] = $configuration['transOrigPointerField'];
+			$fieldList[] = $configuration['languageField'];
+			$translationEnabled = TRUE;
+		}
+
+		// First, test if there is an entry in cache for the alias
+		if ($configuration['useUniqueCache']) {
+			$cachedId = $this->getFromAliasCacheByAliasValue($configuration, $value, FALSE);
+			if (MathUtility::canBeInterpretedAsInteger($cachedId)) {
+				$result = (int)$cachedId;
+			}
+		}
+
+		if (!is_int($result)) {
+			// If no cached entry, look it up directly in the table. Note: this will
+			// most likely fail. When encoding we convert alias field to a nice
+			// looking URL segment, which usually looks differently from the field.
+			// But this is the only thing we can do without fetching each record and
+			// re-encoding the field to find the match.
+			$fieldList[] = $configuration['id_field'];
+			$row = $this->databaseConnection->exec_SELECTgetSingleRow(implode(',', $fieldList),
+				$configuration['table'],
+				$configuration['alias_field'] . '=' . $this->databaseConnection->fullQuoteStr($value, $configuration['table']) .
+				' ' . $configuration['addWhereClause']);
+			if (is_array($row)) {
+				$result = (int)$row[$configuration['id_field']];
+
+				// If localization is enabled, check if this record is a localized version and if so, find uid of the original version.
+				if ($translationEnabled && $row[$configuration['languageField']] > 0) {
+					$result = (int)$row[$configuration['transOrigPointerField']];
+				}
+			}
+		}
+
+		return $result;
 	}
 
 	/**
@@ -361,20 +414,22 @@ class UrlDecoder extends EncodeDecoderBase {
 			'decodeUrlParameterBlockUseAsIs',
 		);
 
-		$previousValue = '';
-		foreach ($varConfiguration as $configuration) {
-			$getVarValue = count($pathSegments) > 0 ? array_shift($pathSegments) : '';
+		$getVarValue = count($pathSegments) > 0 ? array_shift($pathSegments) : '';
 
-			// TODO Check conditions here
+		// TODO Check conditions here
 
-			// TODO Possible hook here before any other function? Pass name, value, segments and config
+		// TODO Possible hook here before any other function? Pass name, value, segments and config
 
-			foreach ($varProcessingFunctions as $varProcessingFunction) {
-				if ($this->$varProcessingFunction($configuration, $getVarValue, $requestVariables, $pathSegments)) {
-					$previousValue = end($requestVariables);
-					break;
-				}
+		$handled = FALSE;
+		foreach ($varProcessingFunctions as $varProcessingFunction) {
+			if ($this->$varProcessingFunction($varConfiguration, $getVarValue, $requestVariables, $pathSegments)) {
+				$previousValue = (string)end($requestVariables);
+				$handled = TRUE;
+				break;
 			}
+		}
+		if (!$handled) {
+			array_unshift($pathSegments, $getVarValue);
 		}
 	}
 
@@ -402,6 +457,22 @@ class UrlDecoder extends EncodeDecoderBase {
 	 * @return bool
 	 */
 	protected function decodeUrlParameterBlockUsingLookupTable(array $configuration, $getVarValue, array &$requestVariables) {
+		$result = FALSE;
+
+		if (isset($configuration['lookUpTable'])) {
+			$value = $this->convertAliasToId($configuration['lookUpTable'], $getVarValue);
+			if (!MathUtility::canBeInterpretedAsInteger($value) && $value === $getVarValue) {
+				if ($configuration['lookUpTable']['enable404forInvalidAlias']) {
+					$this->tsfe->pageNotFoundAndExit('Could not map alias "' . $value . '" to an id.');
+				}
+			}
+			else {
+				$requestVariables[$configuration['GETvar']] = $value;
+				$result = TRUE;
+			}
+		}
+
+		return $result;
 	}
 
 	/**
@@ -440,18 +511,20 @@ class UrlDecoder extends EncodeDecoderBase {
 	protected function decodeUrlParameterBlockUsingUserFunc(array $configuration, $getVarValue, array &$requestVariables, array &$pathSegments) {
 		$result = FALSE;
 
-		$parameters = array(
-			'decodeAlias' => true,
-			'origValue' => $getVarValue,
-			'pathParts' => &$pathSegments,
-			'pObj' => &$this,
-			'value' => $getVarValue,
-			'setup' => $configuration
-		);
-		$value = GeneralUtility::callUserFunction($configuration['userFunc'], $parameters, $this);
-		if (!is_null($value)) {
-			$requestVariables[$configuration['GETvar']] = $value;
-			$result = TRUE;
+		if (isset($configuration['userFunc'])) {
+			$parameters = array(
+				'decodeAlias' => true,
+				'origValue' => $getVarValue,
+				'pathParts' => &$pathSegments,
+				'pObj' => &$this,
+				'value' => $getVarValue,
+				'setup' => $configuration
+			);
+			$value = GeneralUtility::callUserFunction($configuration['userFunc'], $parameters, $this);
+			if (!is_numeric($value) || is_string($value)) {
+				$requestVariables[$configuration['GETvar']] = $value;
+				$result = TRUE;
+			}
 		}
 
 		return $result;
@@ -486,8 +559,8 @@ class UrlDecoder extends EncodeDecoderBase {
 	 */
 	protected function decodeUrlParameterBlockUsingValueMap(array $configuration, $getVarValue, array &$requestVariables) {
 		$result = FALSE;
-		if (isset($setup['valueMap'][$getVarValue])) {
-			$requestVariables[$configuration['GETvar']] = $setup['valueMap'][$getVarValue];
+		if (isset($configuration['valueMap'][$getVarValue])) {
+			$requestVariables[$configuration['GETvar']] = $configuration['valueMap'][$getVarValue];
 			$result = TRUE;
 		}
 
@@ -526,6 +599,42 @@ class UrlDecoder extends EncodeDecoderBase {
 		$this->calculateChash($cacheEntry);
 
 		return $cacheEntry;
+	}
+
+	/**
+	 * Fixes magic_quotes_gpc if somebody still has them turned on.
+	 *
+	 * @param array $array
+	 */
+	protected function fixMagicQuotesGpc(&$array) {
+		if (get_magic_quotes_gpc() && is_array($array)) {
+			GeneralUtility::stripSlashesOnArray($array);
+		}
+	}
+
+	/**
+	 * Fixes a problem with parse_str that returns `a[b[c]` instead of `a[b[c]]` when parsing `a%5Bb%5Bc%5D%5D`
+	 *
+	 * @param array $array
+	 * @return	void
+	 */
+	protected function fixBracketsAfterParseStr(array &$array) {
+		$badKeys = array();
+		foreach ($array as $key => $value) {
+			if (is_array($value)) {
+				$this->fixBracketsAfterParseStr($array[$key]);
+			} else {
+				if (strchr($key, '[') && !strchr($key, ']')) {
+					$badKeys[] = $key;
+				}
+			}
+		}
+		if (count($badKeys) > 0) {
+			foreach ($badKeys as $key) {
+				$arr[$key . ']'] = $array[$key];
+				unset($array[$key]);
+			}
+		}
 	}
 
 	/**
@@ -637,6 +746,22 @@ class UrlDecoder extends EncodeDecoderBase {
 	 */
 	protected function isSpeakingUrl() {
 		return $this->siteScript && substr($this->siteScript, 0, 9) !== 'index.php' && substr($this->siteScript, 0, 1) !== '?';
+	}
+
+	/**
+	 * Converts array('tx_ext[var1]' => 1, 'tx_ext[var2]' => 2) to array('tx_ext' => array('var1' => 1, 'var2' => 2)).
+	 *
+	 * @param array $requestVariables
+	 * @return array
+	 */
+	protected function makeRealPhpArrayFromRequestVars(array $requestVariables) {
+		$result = array();
+
+		parse_str(trim(GeneralUtility::implodeArrayForUrl('', $requestVariables), '&'), $result);
+		$this->fixMagicQuotesGpc($result);
+		$this->fixBracketsAfterParseStr($result);
+
+		return $result;
 	}
 
 	/**
@@ -767,14 +892,14 @@ class UrlDecoder extends EncodeDecoderBase {
 	 *
 	 * @param UrlCacheEntry $cacheEntry
 	 */
-	private function setRequestVariables(UrlCacheEntry $cacheEntry) {
+	protected function setRequestVariables(UrlCacheEntry $cacheEntry) {
 		if ($cacheEntry) {
 			$requestVariables = $cacheEntry->getRequestVariables();
 			$requestVariables['id'] = $cacheEntry->getPageId();
 			$_SERVER['QUERY_STRING'] = $this->createQueryString($requestVariables);
 
 			// Setting info in TSFE
-			$this->caller->mergingWithGetVars($requestVariables);
+			$this->caller->mergingWithGetVars($this->makeRealPhpArrayFromRequestVars($requestVariables));
 			$this->caller->id = $cacheEntry->getPageId();
 
 			if ($this->mimeType) {
