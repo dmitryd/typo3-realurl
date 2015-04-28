@@ -26,6 +26,7 @@
  ***************************************************************/
 namespace DmitryDulepov\Realurl;
 
+use DmitryDulepov\Realurl\Cache\CacheFactory;
 use DmitryDulepov\Realurl\Cache\CacheInterface;
 use DmitryDulepov\Realurl\Configuration\ConfigurationReader;
 use \TYPO3\CMS\Core\SingletonInterface;
@@ -80,14 +81,13 @@ class Utility implements SingletonInterface {
 	 * @return CacheInterface
 	 */
 	public function getCache() {
-		$configurationReader = ConfigurationReader::getInstance();
-		if (TYPO3_MODE !== 'FE' || is_object($GLOBALS['BE_USER']) || $configurationReader->get('cache/disable')) {
-			$cacheClassName = 'DmitryDulepov\\Realurl\\NullCache';
+		if (TYPO3_MODE !== 'FE' || is_object($GLOBALS['BE_USER']) || ConfigurationReader::getInstance()->get('cache/disable')) {
+			$cache = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\NullCache');
 		}
 		else {
-			$cacheClassName = $configurationReader->get('cache/implementation');
+			$cache = CacheFactory::getCache();
 		}
-		return GeneralUtility::makeInstance($cacheClassName);
+		return $cache;
 	}
 
 	/**

@@ -26,9 +26,7 @@
  ***************************************************************/
 namespace DmitryDulepov\Realurl\Hooks;
 
-use DmitryDulepov\Realurl\Cache\CacheInterface;
-use DmitryDulepov\Realurl\Configuration\ConfigurationReader;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
+use DmitryDulepov\Realurl\Cache\CacheFactory;
 use TYPO3\CMS\Core\Utility\MathUtility;
 
 /**
@@ -47,7 +45,7 @@ class Cache {
 	public function clearUrlCache(array $parameters) {
 		$cacheCommand = $parameters['cacheCmd'];
 		if ($cacheCommand == 'pages' || $cacheCommand == 'all' || MathUtility::canBeInterpretedAsFloat($cacheCommand)) {
-			$cacheInstance = $this->getCache();
+			$cacheInstance = CacheFactory::getCache();
 			if ($cacheCommand == 'pages' || $cacheCommand == 'all') {
 				$cacheInstance->clearUrlCache();
 			}
@@ -68,20 +66,8 @@ class Cache {
 	 */
 	public function clearUrlCacheForRecords(array $parameters) {
 		if ($parameters['table'] == 'pages' && MathUtility::canBeInterpretedAsInteger($parameters['uid'])) {
-			$cacheInstance = $this->getCache();
+			$cacheInstance = CacheFactory::getCache();
 			$cacheInstance->clearUrlCacheForPage($parameters['uid']);
 		}
-	}
-
-	/**
-	 * Obtains a cache instance. Note that it read the configuration and
-	 * creates a cache without Utility class because Utility class will
-	 * create a NullCache for the Backend.
-	 *
-	 * @return CacheInterface
-	 */
-	protected function getCache() {
-		$cacheClass = ConfigurationReader::getInstance()->get('cache/implementation');
-		return GeneralUtility::makeInstance($cacheClass);
 	}
 }
