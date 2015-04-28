@@ -182,12 +182,6 @@ class UrlDecoder extends EncodeDecoderBase {
 			$parameters = array_merge($parameters, $this->createQueryStringParameter($value, $var));
 		}
 
-		// If cHash is provided in the query string, replace it in $getVars
-		$cHashOverride = GeneralUtility::_GET('cHash');
-		if ($cHashOverride) {
-			$getVars['cHash'] = $cHashOverride;
-		}
-
 		$queryString = GeneralUtility::getIndpEnv('QUERY_STRING');
 		if ($queryString) {
 			array_push($parameters, $queryString);
