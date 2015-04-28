@@ -233,6 +233,11 @@ class UrlEncoder extends EncodeDecoderBase {
 				$maxAliasLengthLength = isset($configuration['maxLength']) ? (int)$configuration['maxLength'] : self::MAX_ALIAS_LENGTH;
 				$aliasValue = substr($row[$configuration['alias_field']], 0, $maxAliasLengthLength);
 
+				# Do not allow aliases to be empty (see issue #1)
+				if (empty($aliasValue)) {
+					$aliasValue = md5($configuration['table'] . '-' . $row[$configuration['id_field']] . '-' . $languageUid);
+				}
+
 				if ($configuration['useUniqueCache']) { // If cache is to be used, store the alias in the cache:
 					$result = $this->storeInAliasCache($configuration, $aliasValue, $getVarValue, $languageUid);
 				} else { // If no cache for alias, then just return whatever value is appropriate:
