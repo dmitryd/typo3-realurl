@@ -385,21 +385,24 @@ class UrlEncoder extends EncodeDecoderBase {
 		$segments = array();
 
 		if ($this->hasUrlParameters($configurationArray)) {
+			$previousValue = '';
 			foreach ($configurationArray as $configuration) {
 				$getVarName = $configuration['GETvar'];
 				$getVarValue = isset($this->urlParameters[$getVarName]) ? $this->urlParameters[$getVarName] : '';
 
-				// TODO Possible hook here before any other function? Pass name, value, segments and config
+				if (!isset($configuration['cond']) || $this->checkLegacyCondition($configuration['cond'], $previousValue)) {
 
-				foreach ($varProcessingFunctions as $varProcessingFunction) {
-					if ($this->$varProcessingFunction($getVarName, $getVarValue, $configuration, $segments)) {
-						break;
+					// TODO Possible hook here before any other function? Pass name, value, segments and config
+
+					foreach ($varProcessingFunctions as $varProcessingFunction) {
+						if ($this->$varProcessingFunction($getVarName, $getVarValue, $configuration, $segments, $previousValue)) {
+							break;
+						}
 					}
-				}
 
-				// Unset to prevent further processing
-				// TODO Intorudce a 'keep' option here and descibe consequences in the manual???
-				unset($this->urlParameters[$getVarName]);
+					// Unset to prevent further processing
+					unset($this->urlParameters[$getVarName]);
+				}
 			}
 		}
 
@@ -427,9 +430,11 @@ class UrlEncoder extends EncodeDecoderBase {
 	 * @param string $getVarValue
 	 * @param array $configuration
 	 * @param array $segments
+	 * @param string $previousValue
 	 * @return bool
 	 */
-	protected function encodeUrlParameterBlockUseAsIs(/** @noinspection PhpUnusedParameterInspection */ $getVarName, $getVarValue, array $configuration, array &$segments) {
+	protected function encodeUrlParameterBlockUseAsIs(/** @noinspection PhpUnusedParameterInspection */ $getVarName, $getVarValue, array $configuration, array &$segments, &$previousValue) {
+		$previousValue = $getVarValue;
 		$segments[] = rawurlencode($getVarValue);
 		return TRUE;
 	}
@@ -441,12 +446,14 @@ class UrlEncoder extends EncodeDecoderBase {
 	 * @param string $getVarValue
 	 * @param array $configuration
 	 * @param array $segments
+	 * @param string $previousValue
 	 * @return bool
 	 */
-	protected function encodeUrlParameterBlockUsingLookupTable(/** @noinspection PhpUnusedParameterInspection */ $getVarName, $getVarValue, array $configuration, array &$segments) {
+	protected function encodeUrlParameterBlockUsingLookupTable(/** @noinspection PhpUnusedParameterInspection */ $getVarName, $getVarValue, array $configuration, array &$segments, &$previousValue) {
 		$result = FALSE;
 
 		if (isset($configuration['lookUpTable'])) {
+			$previousValue = $getVarValue;
 			$segments[] = rawurlencode($this->createAliasForValue($getVarValue, $configuration['lookUpTable']));
 			$result = TRUE;
 		}
@@ -461,15 +468,17 @@ class UrlEncoder extends EncodeDecoderBase {
 	 * @param string $getVarValue
 	 * @param array $configuration
 	 * @param array $segments
+	 * @param string $previousValue
 	 * @return bool
 	 */
-	protected function encodeUrlParameterBlockUsingNoMatch(/** @noinspection PhpUnusedParameterInspection */ $getVarName, $getVarValue, array $configuration, array &$segments) {
+	protected function encodeUrlParameterBlockUsingNoMatch(/** @noinspection PhpUnusedParameterInspection */ $getVarName, $getVarValue, array $configuration, array &$segments, &$previousValue) {
 		$result = FALSE;
 
 		if (isset($configuration['noMatch'])) {
 			if ($configuration['noMatch'] === 'bypass') {
 				$result = TRUE;
 			} elseif ($configuration['noMatch'] === 'null') {
+				$previousValue = '';
 				$segments[] = '';
 				$result = TRUE;
 			}
@@ -485,12 +494,14 @@ class UrlEncoder extends EncodeDecoderBase {
 	 * @param string $getVarValue
 	 * @param array $configuration
 	 * @param array $segments
+	 * @param string $previousValue
 	 * @return bool
 	 */
-	protected function encodeUrlParameterBlockUsingUserFunc(/** @noinspection PhpUnusedParameterInspection */ $getVarName, $getVarValue, array $configuration, array &$segments) {
+	protected function encodeUrlParameterBlockUsingUserFunc(/** @noinspection PhpUnusedParameterInspection */ $getVarName, $getVarValue, array $configuration, array &$segments, &$previousValue) {
 		$result = FALSE;
 
 		if (isset($configuration['userFunc'])) {
+			$previousValue = $getVarValue;
 			$userFuncParameters = array(
 				'pObj' => &$this,
 				'value' => $getVarValue,
@@ -513,12 +524,14 @@ class UrlEncoder extends EncodeDecoderBase {
 	 * @param string $getVarValue
 	 * @param array $configuration
 	 * @param array $segments
+	 * @param string $previousValue
 	 * @return bool
 	 */
-	protected function encodeUrlParameterBlockUsingValueDefault(/** @noinspection PhpUnusedParameterInspection */ $getVarName, $getVarValue, array $configuration, array &$segments) {
+	protected function encodeUrlParameterBlockUsingValueDefault(/** @noinspection PhpUnusedParameterInspection */ $getVarName, $getVarValue, array $configuration, array &$segments, &$previousValue) {
 		$result = FALSE;
 
 		if (isset($configuration['valueDefault'])) {
+			$previousValue = (string)$configuration['valueDefault'];
 			$segments[] = rawurlencode((string)$configuration['valueDefault']);
 			$result = TRUE;
 		}
@@ -533,14 +546,16 @@ class UrlEncoder extends EncodeDecoderBase {
 	 * @param string $getVarValue
 	 * @param array $configuration
 	 * @param array $segments
+	 * @param string $previousValue
 	 * @return bool
 	 */
-	protected function encodeUrlParameterBlockUsingValueMap(/** @noinspection PhpUnusedParameterInspection */ $getVarName, $getVarValue, array $configuration, array &$segments) {
+	protected function encodeUrlParameterBlockUsingValueMap(/** @noinspection PhpUnusedParameterInspection */ $getVarName, $getVarValue, array $configuration, array &$segments, &$previousValue) {
 		$result = FALSE;
 
 		if (isset($configuration['valueMap']) && is_array($configuration['valueMap'])) {
 			$segmentValue = array_search($getVarValue, $configuration['valueMap']);
 			if ($segmentValue !== FALSE) {
+				$previousValue = $getVarValue;
 				$segments[] = rawurlencode((string)$segmentValue);
 				$result = TRUE;
 			}
