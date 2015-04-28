@@ -308,13 +308,11 @@ class UrlEncoder extends EncodeDecoderBase {
 	 */
 	protected function encodeFixedPostVars() {
 		$configuration = (array)$this->configuration->get('postVarSets');
-		$configurationBlocks = $this->getConfigirationBlocksForPostVars($configuration);
+		$postVarSetConfiguration = $this->getConfigirationForPostVars($configuration, $this->urlParameters['id']);
 
-		foreach ($configurationBlocks as $postVarSetConfiguration) {
-			$segments = $this->encodeUrlParameterBlock($postVarSetConfiguration);
-			if (count($segments) > 0) {
-				$this->appendToEncodedUrl(implode('/', $segments));
-			}
+		$segments = $this->encodeUrlParameterBlock($postVarSetConfiguration);
+		if (count($segments) > 0) {
+			$this->appendToEncodedUrl(implode('/', $segments));
 		}
 	}
 
@@ -352,15 +350,13 @@ class UrlEncoder extends EncodeDecoderBase {
 	 */
 	protected function encodePostVarSets() {
 		$configuration = (array)$this->configuration->get('postVarSets');
-		$configurationBlocks = $this->getConfigirationBlocksForPostVars($configuration);
+		$postVarSetConfigurations = $this->getConfigirationForPostVars($configuration, $this->urlParameters['id']);
 
-		foreach ($configurationBlocks as $configurationBlock) {
-			foreach ($configurationBlock as $postVar => $postVarSetConfiguration) {
-				$segments = $this->encodeUrlParameterBlock($postVarSetConfiguration);
-				if (count($segments) > 0) {
-					array_unshift($segments, $postVar);
-					$this->appendToEncodedUrl(implode('/', $segments));
-				}
+		foreach ($postVarSetConfigurations as $postVar => $postVarSetConfiguration) {
+			$segments = $this->encodeUrlParameterBlock($postVarSetConfiguration);
+			if (count($segments) > 0) {
+				array_unshift($segments, $postVar);
+				$this->appendToEncodedUrl(implode('/', $segments));
 			}
 		}
 	}
@@ -591,33 +587,6 @@ class UrlEncoder extends EncodeDecoderBase {
 		}
 
 		return $result;
-	}
-
-	/**
-	 * Sets configuration blocks for fixedPostVars and postVarSets according
-	 * to priority: current page id first, _DEFAULT last. Also resolves aliases
-	 * for configuration.
-	 *
-	 * @param array $configuration
-	 * @return array
-	 */
-	private function getConfigirationBlocksForPostVars(array $configuration) {
-		$configurationBlocks = array();
-		$pageId = $this->urlParameters['id'];
-		if (isset($configuration[$pageId])) {
-			$loopCount = 10;
-			while ($loopCount-- && isset($configuration[$pageId]) && !is_array($configuration[$pageId])) {
-				$pageId = $configuration[$pageId];
-			}
-			if (is_array($configuration[$pageId])) {
-				$configurationBlocks[] = $configuration[$pageId];
-			}
-		}
-		if (isset($configuration['_DEFAULT'])) {
-			$configurationBlocks[] = $configuration['_DEFAULT'];
-		}
-
-		return $configurationBlocks;
 	}
 
 	/**

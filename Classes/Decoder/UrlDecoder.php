@@ -222,6 +222,31 @@ class UrlDecoder extends EncodeDecoderBase {
 	}
 
 	/**
+	 * Decodes fixedPostVars into request variables.
+	 *
+	 * @param int $pageId
+	 * @param array $pathSegments
+	 * @return array
+	 */
+	protected function decodeFixedPostVars($pageId, array &$pathSegments) {
+		$requestVariables = array();
+
+		$allPostVars = array_filter((array)$this->configuration->get('fixedPostVars'));
+		$postVars = $this->getConfigirationForPostVars($allPostVars, $pageId);
+
+		$previousValue = '';
+		foreach ($postVars as $postVarConfiguration) {
+			$this->decodeSingleVariable($postVarConfiguration, $pathSegments, $requestVariables, $previousValue);
+			if (count($pathSegments) == 0) {
+				// TODO Is it correct to break here? fixedPostVars should all present!
+				break;
+			}
+		}
+
+		return $requestVariables;
+	}
+
+	/**
 	 * Decodes the path.
 	 *
 	 * @param array $pathSegments
@@ -274,35 +299,234 @@ class UrlDecoder extends EncodeDecoderBase {
 	}
 
 	/**
+	 * Decodes preVars into request variables.
+	 *
+	 * @param array $pathSegments
+	 * @return array
+	 */
+	protected function decodePreVars(array &$pathSegments) {
+		$requestVariables = array();
+
+		$preVarsList = array_filter((array)$this->configuration->get('preVars'));
+
+		$previousValue = '';
+		foreach ($preVarsList as $preVarConfiguration) {
+			$this->decodeSingleVariable($preVarConfiguration, $pathSegments, $requestVariables, $previousValue);
+		}
+
+		return $requestVariables;
+	}
+
+	/**
+	 * Decodes postVarSets into request variables.
+	 *
+	 * @param int $pageId
+	 * @param array $pathSegments
+	 * @return array
+	 */
+	protected function decodePostVarSets($pageId, array &$pathSegments) {
+		$requestVariables = array();
+
+		$allPostVarSets = array_filter((array)$this->configuration->get('postVarSets'));
+		$postVarSets = $this->getConfigirationForPostVars($allPostVarSets, $pageId);
+
+		$previousValue = '';
+		foreach ($postVarSets as $postVar => $postVarSetConfiguration) {
+			reset($pathSegments);
+			if (current($pathSegments) == $postVar) {
+				array_shift($pathSegments);
+				foreach ($postVarSetConfiguration as $postVarConfiguration) {
+					$this->decodeSingleVariable($postVarConfiguration, $pathSegments, $requestVariables, $previousValue);
+				}
+			}
+			if (count($pathSegments) == 0) {
+				break;
+			}
+		}
+
+		return $requestVariables;
+	}
+
+	/**
+	 * Decodes a single variable and adds it to the list of request variables.
+	 *
+	 * @param array $varConfiguration
+	 * @param array $pathSegments
+	 * @param array $requestVariables
+	 * @param $previousValue
+	 * @return void
+	 */
+	protected function decodeSingleVariable(array $varConfiguration, array &$pathSegments, array &$requestVariables, &$previousValue) {
+		static $varProcessingFunctions = array(
+			'decodeUrlParameterBlockUsingValueMap',
+			'decodeUrlParameterBlockUsingNoMatch',
+			'decodeUrlParameterBlockUsingUserFunc',
+			'decodeUrlParameterBlockUsingLookupTable',
+			'decodeUrlParameterBlockUsingValueDefault',
+			// Allways the last one!
+			'decodeUrlParameterBlockUseAsIs',
+		);
+
+		$previousValue = '';
+		foreach ($varConfiguration as $configuration) {
+			$getVarValue = count($pathSegments) > 0 ? array_shift($pathSegments) : '';
+
+			// TODO Check conditions here
+
+			// TODO Possible hook here before any other function? Pass name, value, segments and config
+
+			foreach ($varProcessingFunctions as $varProcessingFunction) {
+				if ($this->$varProcessingFunction($configuration, $getVarValue, $requestVariables, $pathSegments)) {
+					$previousValue = end($requestVariables);
+					break;
+				}
+			}
+		}
+	}
+
+	/**
+	 * Sets segment value as is to the request variables
+	 *
+	 * @param array $configuration
+	 * @param $getVarValue
+	 * @param array $requestVariables
+	 * @return bool
+	 */
+	protected function decodeUrlParameterBlockUseAsIs(array $configuration, $getVarValue, array &$requestVariables) {
+		// TODO Possible conditions: if int, if notEmpty, etc
+		$requestVariables[$configuration['GETvar']] = $getVarValue;
+
+		return TRUE;
+	}
+
+	/**
+	 * Sets segment value as is to the request variables
+	 *
+	 * @param array $configuration
+	 * @param $getVarValue
+	 * @param array $requestVariables
+	 * @return bool
+	 */
+	protected function decodeUrlParameterBlockUsingLookupTable(array $configuration, $getVarValue, array &$requestVariables) {
+	}
+
+	/**
+	 * Sets segment value as is to the request variables
+	 *
+	 * @param array $configuration
+	 * @param $getVarValue
+	 * @param array $requestVariables
+	 * @param array $pathSegments
+	 * @return bool
+	 */
+	protected function decodeUrlParameterBlockUsingNoMatch(array $configuration, $getVarValue, /** @noinspection PhpUnusedParameterInspection */ array &$requestVariables, array &$pathSegments) {
+		$result = FALSE;
+		if ($configuration['noMatch'] == 'bypass') {
+			// If no match and "bypass" is set, then return the value to $pathSegments and break
+			array_unshift($pathSegments, $getVarValue);
+			$result = TRUE;
+		}
+		elseif ($configuration['noMatch'] == 'null') {
+			// If no match and "null" is set, then break (without setting any value!)
+			$result = TRUE;
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Sets segment value as is to the request variables
+	 *
+	 * @param array $configuration
+	 * @param $getVarValue
+	 * @param array $requestVariables
+	 * @param array $pathSegments
+	 * @return bool
+	 */
+	protected function decodeUrlParameterBlockUsingUserFunc(array $configuration, $getVarValue, array &$requestVariables, array &$pathSegments) {
+		$result = FALSE;
+
+		$parameters = array(
+			'decodeAlias' => true,
+			'origValue' => $getVarValue,
+			'pathParts' => &$pathSegments,
+			'pObj' => &$this,
+			'value' => $getVarValue,
+			'setup' => $configuration
+		);
+		$value = GeneralUtility::callUserFunction($configuration['userFunc'], $parameters, $this);
+		if (!is_null($value)) {
+			$requestVariables[$configuration['GETvar']] = $value;
+			$result = TRUE;
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Sets segment value as is to the request variables
+	 *
+	 * @param array $configuration
+	 * @param $getVarValue
+	 * @param array $requestVariables
+	 * @return bool
+	 */
+	protected function decodeUrlParameterBlockUsingValueDefault(array $configuration, /** @noinspection PhpUnusedParameterInspection */ $getVarValue, array &$requestVariables) {
+		$result = FALSE;
+		if (isset($configuration['valueDefault'])) {
+			$defaultValue = $configuration['valueDefault'];
+			$requestVariables[$configuration['GETvar']] = isset($configuration['valueMap'][$defaultValue]) ? $configuration['valueMap'][$defaultValue] : $defaultValue;
+			$result = TRUE;
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Sets segment value as is to the request variables
+	 *
+	 * @param array $configuration
+	 * @param $getVarValue
+	 * @param array $requestVariables
+	 * @return bool
+	 */
+	protected function decodeUrlParameterBlockUsingValueMap(array $configuration, $getVarValue, array &$requestVariables) {
+		$result = FALSE;
+		if (isset($setup['valueMap'][$getVarValue])) {
+			$requestVariables[$configuration['GETvar']] = $setup['valueMap'][$getVarValue];
+			$result = TRUE;
+		}
+
+		return $result;
+	}
+
+	/**
 	 * Decodes the URL. This function is called only if the URL is not in the
 	 * URL cache.
 	 *
 	 * @param string $path
-	 * @return UrlCacheEntry with onli pageId and requestVariables filled in
+	 * @return UrlCacheEntry with only pageId and requestVariables filled in
 	 */
 	protected function doDecoding($path) {
-		$cacheEntry = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\Cache\\UrlCacheEntry');
-		/** @var \DmitryDulepov\Realurl\Cache\UrlCacheEntry $cacheEntry */
-		$cacheEntry->setPageId(1);
-
 		$pathSegments = explode('/', trim($path, '/'));
 		array_walk($pathSegments, 'urldecode');
 
 		$requestVariables = array();
 
 		ArrayUtility::mergeRecursiveWithOverrule($requestVariables, $this->handleFileName($pathSegments));
-
-//		ArrayUtility::mergeRecursiveWithOverrule($requestVariables, $this->decodeVariables($pathSegments, (array)$this->configuration->get('preVars')));
-		$cacheEntry->setPageId($this->decodePath($pathSegments));
-		// TODO fixedPostVars are only valid for some pages, correct it on the line below!
-//		ArrayUtility::mergeRecursiveWithOverrule($requestVariables, $this->decodeVariables($pathSegments, (array)$this->configuration->get('fixedPostVars')));
-//		ArrayUtility::mergeRecursiveWithOverrule($requestVariables, $this->decodeVariables($pathSegments, (array)$this->configuration->get('postVarSets')));
+		ArrayUtility::mergeRecursiveWithOverrule($requestVariables, $this->decodePreVars($pathSegments));
+		$pageId = $this->decodePath($pathSegments);
+		ArrayUtility::mergeRecursiveWithOverrule($requestVariables, $this->decodeFixedPostVars($pageId, $pathSegments));
+		ArrayUtility::mergeRecursiveWithOverrule($requestVariables, $this->decodePostVarSets($pageId, $pathSegments));
 
 		if (count($pathSegments) > 0) {
 			reset($pathSegments);
 			$this->throw404('"' . current($pathSegments) . '" could not be decoded from path.');
 		}
 
+		$cacheEntry = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\Cache\\UrlCacheEntry');
+		/** @var \DmitryDulepov\Realurl\Cache\UrlCacheEntry $cacheEntry */
+		$cacheEntry->setPageId($pageId);
 		$cacheEntry->setRequestVariables($requestVariables);
 
 		$this->calculateChash($cacheEntry);
