@@ -26,6 +26,7 @@
  ***************************************************************/
 namespace DmitryDulepov\Realurl\Decoder;
 
+use DmitryDulepov\Realurl\Cache\PathCacheEntry;
 use DmitryDulepov\Realurl\Cache\UrlCacheEntry;
 use DmitryDulepov\Realurl\EncodeDecoderBase;
 use TYPO3\CMS\Core\Utility\ArrayUtility;
@@ -47,6 +48,13 @@ class UrlDecoder extends EncodeDecoderBase {
 
 	/** @var TypoScriptFrontendController */
 	protected $caller;
+
+	/**
+	 * Holds information about expired path for the SEO redirect.
+	 *
+	 * @var string
+	 */
+	protected $expiredPath = '';
 
 	/** @var string */
 	protected $mimeType = '';
@@ -139,7 +147,7 @@ class UrlDecoder extends EncodeDecoderBase {
 					$matches = array();
 					if (preg_match('/^redirect(\[(30[1237])\])?$/', $option, $matches)) {
 						$code = count($matches) > 1 ? $matches[2] : 301;
-						$status = 'HTTP/1.1 ' . $code . ' TYPO3 RealURL redirect M' . __LINE__;
+						$status = 'HTTP/1.1 ' . $code . ' TYPO3 RealURL redirect for missing slash';
 
 						// Check path segment to be relative for the current site.
 						// parse_url() does not work with relative URLs, so we use it to test
@@ -303,7 +311,7 @@ class UrlDecoder extends EncodeDecoderBase {
 		$remainingPathSegments = $pathSegments;
 		$result = $this->searchPathInCache($remainingPathSegments);
 
-		if ($result === 0 || count($remainingPathSegments) > 0) {
+		if (is_null($result) || count($remainingPathSegments) > 0) {
 			// Here we are if one of the following is true:
 			// - nothing is in the cache
 			// - there is an entry in the cache for the partial path
@@ -316,29 +324,44 @@ class UrlDecoder extends EncodeDecoderBase {
 			if (!$this->isPostVar(current($pathSegments))) {
 				$this->createPageRepository();
 
-				if ($result !== 0) {
+				if ($result) {
 					$processedPathSegments = array_diff($pathSegments, $remainingPathSegments);
-					$currentPid = $result;
+					$currentPid = $result->getPageId();
 				} else {
 					$processedPathSegments = array();
 					$currentPid = $this->rootPageId;
 				}
 				while ($currentPid !== 0 && count($remainingPathSegments) > 0) {
 					$segment = array_shift($remainingPathSegments);
-					$currentPid = $this->searchPages($currentPid, $segment);
-					if ($currentPid !== 0) {
-						$result = $lastPidInCache = $currentPid;
+					$nextResult = $this->searchPages($currentPid, $segment);
+					if ($nextResult) {
+						$result = $nextResult;
+						$currentPid = $result->getPageId();
+						$result->setPagePath(implode('/', $processedPathSegments));
 						$processedPathSegments[] = $segment;
 						// Path is valid so far, so we cache it
-						$this->putToPathCache($result, implode('/', $processedPathSegments));
+						$this->putToPathCache($result);
 					}
 					else {
+						$currentPid = 0;
 						array_unshift($remainingPathSegments, $segment);
 					}
 				}
 			}
 		}
-		if ($result !== 0) {
+		if ($this->expiredPath) {
+			$startPosition = (int)strpos($this->speakingUri, $this->expiredPath);
+			if ($startPosition !== FALSE) {
+				$newUrl = substr($this->speakingUri, 0, $startPosition) .
+					$result->getPagePath() .
+					substr($this->speakingUri, $startPosition + strlen($this->expiredPath));
+				@ob_end_clean();
+				header('HTTP/1.1 302 TYPO3 RealURL redirect for expired page path');
+				header('Location: ' . GeneralUtility::locationHeaderUrl($newUrl));
+				die;
+			}
+		}
+		if ($result) {
 			$pathSegments = $remainingPathSegments;
 		}
 
@@ -767,22 +790,19 @@ class UrlDecoder extends EncodeDecoderBase {
 	}
 
 	/**
-	 * Adds data to the path cache.
+	 * Adds data to the path cache. Cache ntry should have page path, language id and page id set.
 	 *
-	 * @param int $pageId
-	 * @param string $pagePath
+	 * @param PathCacheEntry $newCacheEntry
 	 * @return void
 	 */
-	protected function putToPathCache($pageId, $pagePath) {
+	protected function putToPathCache(PathCacheEntry $newCacheEntry) {
+		$pagePath = $newCacheEntry->getPagePath();
 		$cacheEntry = $this->cache->getPathFromCacheByPagePath($this->rootPageId, '', $pagePath);
 		if (!$cacheEntry || $cacheEntry->getExpiration() !== 0 || $cacheEntry->getPagePath() !== $pagePath) {
 			$cacheEntry = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\Cache\\PathCacheEntry');
 			/** @var \DmitryDulepov\Realurl\Cache\PathCacheEntry $cacheEntry */
 			$cacheEntry->setExpiration(0);
-			$cacheEntry->setLanguageId($this->sysLanguageUid);
 			$cacheEntry->setMountPoint('');
-			$cacheEntry->setPageId($pageId);
-			$cacheEntry->setPagePath($pagePath);
 			$cacheEntry->setRootPageId($this->rootPageId);
 
 			$this->cache->putPathToCache($cacheEntry);
@@ -837,20 +857,24 @@ class UrlDecoder extends EncodeDecoderBase {
 	 *
 	 * @param int $currentPid
 	 * @param string $segment
-	 * @return int
+	 * @return PathCacheEntry
 	 */
 	protected function searchPages($currentPid, $segment) {
+		$result = NULL;
+
 		$pagesEnableFields = $this->pageRepository->enableFields('pages');
 		$pages = $this->databaseConnection->exec_SELECTgetRows('*', 'pages', 'pid=' . (int)$currentPid . ' AND doktype IN (1,2,4)' . $pagesEnableFields);
 		foreach ($pages as $page) {
 			foreach (self::$pageTitleFields as $field) {
 				if ($this->utility->convertToSafeString($page[$field]) == $segment) {
-					return (int)$page['uid'];
+					$result = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\Cache\\PathCacheEntry');
+					/** @var \DmitryDulepov\Realurl\Cache\PathCacheEntry $cacheEntry */
+					$result->setPageId((int)$page['uid']);
 				}
 			}
 		}
 
-		return 0;
+		return $result;
 	}
 
 	/**
@@ -859,17 +883,24 @@ class UrlDecoder extends EncodeDecoderBase {
 	 * a search for the largest caching path for those segments.
 	 *
 	 * @param array $pathSegments
-	 * @return int
+	 * @return PathCacheEntry|null
 	 */
 	protected function searchPathInCache(array &$pathSegments) {
-		$result = 0;
+		$result = NULL;
 		$removedSegments = array();
 
-		while ($result === 0 && count($pathSegments) > 0) {
+		while (is_null($result) && count($pathSegments) > 0) {
 			$path = implode('/', $pathSegments);
 			$cacheEntry = $this->cache->getPathFromCacheByPagePath($this->rootPageId, '', $path);
 			if ($cacheEntry) {
-				$result = $cacheEntry->getPageId();
+				if ((int)$cacheEntry->getExpiration() !== 0) {
+					$nonExpiredCacheEntry = $this->cache->getPathFromCacheByPageId($cacheEntry->getRootPageId(), $cacheEntry->getLanguageId(), $cacheEntry->getPageId());
+					if ($nonExpiredCacheEntry) {
+						$this->expiredPath = $cacheEntry->getPagePath();
+						$cacheEntry = $nonExpiredCacheEntry;
+					}
+				}
+				$result = $cacheEntry;
 			}
 			else {
 				array_unshift($removedSegments, array_pop($pathSegments));
