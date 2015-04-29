@@ -36,7 +36,7 @@ class CacheFactory {
 	 * @return CacheInterface
 	 */
 	static public function getCache() {
-		$cacheClassName = $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['cacheImplementation'];
+		$cacheClassName = $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['realurl']['cacheImplementation'];
 		if (!class_exists($cacheClassName)) {
 			$cacheClassName = 'DmitryDulepov\\Realurl\\Cache\\NullCache';
 		}

@@ -69,6 +69,7 @@ class ConfigurationReader implements SingletonInterface {
 		$this->utility = Utility::getInstance();
 
 		$this->loadExtConfiguration();
+		$this->performAutomaticConfiguration();
 		$this->setConfigurationForTheCurentDomain();
 	}
 
@@ -148,6 +149,22 @@ class ConfigurationReader implements SingletonInterface {
 		$configuration = @unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['realurl']);
 		if (is_array($configuration)) {
 			$this->extConfiguration = $configuration;
+		}
+	}
+
+	/**
+	 * Performs automatic configuration if necessary.
+	 *
+	 * @return void
+	 */
+	protected function performAutomaticConfiguration() {
+		if (!isset($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']) && $this->extConfiguration['enableAutoConf']) {
+			$autoconfigurator = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\Configuration\\AutomaticConfigurator');
+			/** @var \DmitryDulepov\Realurl\Configuration\AutomaticConfigurator $autoconfigurator */
+			$autoconfigurator->configure();
+
+			/** @noinspection PhpIncludeInspection */
+			require_once(PATH_site . TX_REALURL_AUTOCONF_FILE);
 		}
 	}
 
