@@ -321,8 +321,21 @@ class UrlDecoder extends EncodeDecoderBase {
 	 * @return int
 	 */
 	protected function decodePath(array &$pathSegments) {
+		$savedRemainingPathSegments = array();
 		$remainingPathSegments = $pathSegments;
+
+		$savedResult = NULL;
 		$result = $this->searchPathInCache($remainingPathSegments);
+
+		$allPathsAreExpired = $this->isExpiredPath && $result && !$this->expiredPath;
+		if ($allPathsAreExpired) {
+			// Special case: all paths are expired. We will try to unexpire the actual entry.
+			$savedRemainingPathSegments = $remainingPathSegments;
+			$remainingPathSegments = $pathSegments;
+
+			$savedResult = $result;
+			$result = NULL;
+		}
 
 		if (is_null($result) || count($remainingPathSegments) > 0) {
 			// Here we are if one of the following is true:
@@ -361,6 +374,11 @@ class UrlDecoder extends EncodeDecoderBase {
 					}
 				}
 			}
+		}
+		if ($allPathsAreExpired && !$result) {
+			// We could not resolve the new path, use the expired one :(
+			$result = $savedResult;
+			$remainingPathSegments = $savedRemainingPathSegments;
 		}
 		if ($result && $this->expiredPath) {
 			$startPosition = (int)strpos($this->speakingUri, $this->expiredPath);
