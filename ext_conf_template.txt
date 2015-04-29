@@ -9,6 +9,3 @@ autoConfFormat = 0
 
 # cat=basic/enable; type=boolean; label=Enable devLog:Debugging-only! Required any 3rd party devLog extension
 enableDevLog = 0
-
-# cat=basic/enable; type=boolean; label=Store URL for cHash cache:Allows to store full URL in the cHash cache table for debugging purposes. Normally should be off.
-enableChashUrlDebug = 0
