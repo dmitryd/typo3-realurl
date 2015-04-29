@@ -89,7 +89,7 @@ class DataHandler {
 				}
 			}
 			if ($expireCache) {
-				$this->expirePathCacheForPageAndSubpages($pageId, $languageId);
+				$this->expireCachesForPageAndSubpages($pageId, $languageId);
 			}
 		}
 	}
@@ -101,8 +101,9 @@ class DataHandler {
 	 * @param int $languageId
 	 * @return void
 	 */
-	protected function expirePathCacheForPageAndSubpages($pageId, $languageId) {
+	protected function expireCachesForPageAndSubpages($pageId, $languageId) {
 		$this->cache->expirePathCache($pageId, $languageId);
+		$this->cache->clearUrlCacheForPage($pageId);
 		$subpages = BackendUtility::getRecordsByField('pages', 'pid', $pageId);
 		$uidList = array();
 		foreach ($subpages as $subpage) {
@@ -111,7 +112,7 @@ class DataHandler {
 		unset($subpages);
 		foreach ($uidList as $uid) {
 			$this->cache->expirePathCache($uid, $languageId);
-			$this->expirePathCacheForPageAndSubpages($uid, $languageId);
+			$this->expireCachesForPageAndSubpages($uid, $languageId);
 		}
 	}
 }

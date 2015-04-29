@@ -337,8 +337,8 @@ class UrlDecoder extends EncodeDecoderBase {
 					if ($nextResult) {
 						$result = $nextResult;
 						$currentPid = $result->getPageId();
-						$result->setPagePath(implode('/', $processedPathSegments));
 						$processedPathSegments[] = $segment;
+						$result->setPagePath(implode('/', $processedPathSegments));
 						// Path is valid so far, so we cache it
 						$this->putToPathCache($result);
 					}
@@ -364,8 +364,11 @@ class UrlDecoder extends EncodeDecoderBase {
 		if ($result) {
 			$pathSegments = $remainingPathSegments;
 		}
+		else {
+			$this->throw404('Cannot decode "' . implode('/', $remainingPathSegments) . '"');
+		}
 
-		return $result;
+		return $result ? $result->getPageId() : 0;
 	}
 
 	/**
@@ -488,7 +491,7 @@ class UrlDecoder extends EncodeDecoderBase {
 			$value = $this->convertAliasToId($configuration['lookUpTable'], $getVarValue);
 			if (!MathUtility::canBeInterpretedAsInteger($value) && $value === $getVarValue) {
 				if ($configuration['lookUpTable']['enable404forInvalidAlias']) {
-					$this->tsfe->pageNotFoundAndExit('Could not map alias "' . $value . '" to an id.');
+					$this->throw404('Could not map alias "' . $value . '" to an id.');
 				}
 			}
 			else {
@@ -798,15 +801,20 @@ class UrlDecoder extends EncodeDecoderBase {
 	protected function putToPathCache(PathCacheEntry $newCacheEntry) {
 		$pagePath = $newCacheEntry->getPagePath();
 		$cacheEntry = $this->cache->getPathFromCacheByPagePath($this->rootPageId, '', $pagePath);
-		if (!$cacheEntry || $cacheEntry->getExpiration() !== 0 || $cacheEntry->getPagePath() !== $pagePath) {
+		if (!$cacheEntry) {
 			$cacheEntry = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\Cache\\PathCacheEntry');
 			/** @var \DmitryDulepov\Realurl\Cache\PathCacheEntry $cacheEntry */
-			$cacheEntry->setExpiration(0);
+			$cacheEntry->setLanguageId($newCacheEntry->getLanguageId());
 			$cacheEntry->setMountPoint('');
 			$cacheEntry->setRootPageId($this->rootPageId);
-
-			$this->cache->putPathToCache($cacheEntry);
 		}
+		if ($cacheEntry->getExpiration() !== 0) {
+			$cacheEntry->setExpiration(0);
+		}
+		if ($cacheEntry->getPagePath() !== $pagePath) {
+			$cacheEntry->setPagePath($pagePath);
+		}
+		$this->cache->putPathToCache($cacheEntry);
 	}
 
 	/**
@@ -887,6 +895,7 @@ class UrlDecoder extends EncodeDecoderBase {
 	 */
 	protected function searchPathInCache(array &$pathSegments) {
 		$result = NULL;
+		/** @var PathCacheEntry $result */
 		$removedSegments = array();
 
 		while (is_null($result) && count($pathSegments) > 0) {
@@ -899,6 +908,9 @@ class UrlDecoder extends EncodeDecoderBase {
 						$this->expiredPath = $cacheEntry->getPagePath();
 						$cacheEntry = $nonExpiredCacheEntry;
 					}
+					else {
+						break;
+					}
 				}
 				$result = $cacheEntry;
 			}
@@ -906,7 +918,9 @@ class UrlDecoder extends EncodeDecoderBase {
 				array_unshift($removedSegments, array_pop($pathSegments));
 			}
 		}
-		$pathSegments = $removedSegments;
+		if ($result) {
+			$pathSegments = $removedSegments;
+		}
 
 		return $result;
 	}
