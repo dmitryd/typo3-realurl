@@ -30,6 +30,7 @@ use DmitryDulepov\Realurl\Cache\CacheInterface;
 use DmitryDulepov\Realurl\Configuration\ConfigurationReader;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController;
+use TYPO3\CMS\Frontend\Page\PageRepository;
 
 /**
  * This class contains common methods for RealURL encoder and decoder.
@@ -47,6 +48,12 @@ abstract class EncodeDecoderBase {
 
 	/** @var \TYPO3\CMS\Core\Database\DatabaseConnection */
 	protected $databaseConnection;
+
+	/** @var array */
+	static public $pageOverlayTitleFields = array('tx_realurl_pathsegment', 'nav_title', 'title', 'uid');
+
+	/** @var PageRepository */
+	protected $pageRepository = NULL;
 
 	/** @var array */
 	static public $pageTitleFields = array('tx_realurl_pathsegment', 'alias', 'nav_title', 'title', 'uid');
@@ -70,6 +77,9 @@ abstract class EncodeDecoderBase {
 		$this->rootPageId = (int)$this->configuration->get('pagePath/rootpage_id');
 		$this->utility = Utility::getInstance();
 		$this->cache = $this->utility->getCache();
+
+		$this->pageRepository = GeneralUtility::makeInstance('TYPO3\\CMS\\Frontend\\Page\\PageRepository');
+		$this->pageRepository->init(FALSE);
 	}
 
 	/**
@@ -168,6 +178,98 @@ abstract class EncodeDecoderBase {
 		}
 
 		return $sortedUrl;
+	}
+
+	/**
+	 * Resolves a shortcut to its target page if possible. If not, returns the shortcut itself.
+	 *
+	 * @param array $page
+	 * @return array
+	 */
+	protected function resolveShortcut(array $page) {
+		$processedPages = array();
+		return $this->resolveShortcutProcess($page, $processedPages);
+	}
+
+	/**
+	 * Resolvines shortcuts and watches for circular loops.
+	 *
+	 * @param array $page
+	 * @param array $processedPages
+	 * @return array
+	 */
+	private function resolveShortcutProcess(array $page, array &$processedPages) {
+		if (!isset($processedPages[$page['uid']])) {
+			$processedPages[$page['uid']] = '';
+			switch ($page['shortcut_mode']) {
+				case PageRepository::SHORTCUT_MODE_NONE:
+					$page = $this->resolveShortcutModeNone($page, $processedPages);
+					break;
+				case PageRepository::SHORTCUT_MODE_FIRST_SUBPAGE:
+					$page = $this->resolveShortcutFirstSubpage($page, $processedPages);
+					break;
+				case PageRepository::SHORTCUT_MODE_PARENT_PAGE:
+					$page = $this->resolveShortcutParentPage($page, $processedPages);
+					break;
+			}
+		}
+
+		return $page;
+	}
+
+	/**
+	 * Resolves shortcuts for the shortcur of type PageRepository::SHORTCUT_MODE_NONE.
+	 *
+	 * @param array $page
+	 * @param array $processedPages
+	 * @return array
+	 */
+	private function resolveShortcutModeNone(array $page, array &$processedPages) {
+		if ($page['shortcut']) {
+			$pageId = (int)$page['shortcut'];
+			$page = $this->pageRepository->getPage($pageId, FALSE);
+			if (is_array($page) && $page['doktype'] == PageRepository::DOKTYPE_SHORTCUT) {
+				$page = $this->resolveShortcutProcess($page, $processedPages);
+			}
+		}
+
+		return $page;
+	}
+
+	/**
+	 * Resolves shortcuts for the shortcur of type PageRepository::SHORTCUT_MODE_FIRST_SUBPAGE.
+	 *
+	 * @param array $page
+	 * @param array $processedPages
+	 * @return array
+	 */
+	private function resolveShortcutFirstSubpage(array $page, array &$processedPages) {
+		$rows = $this->pageRepository->getMenu($page['uid']);
+		if (count($rows) > 0) {
+			reset($rows);
+			$page = current($rows);
+			if ($page['doktype'] == PageRepository::DOKTYPE_SHORTCUT) {
+				$page = $this->resolveShortcutProcess($page, $processedPages);
+			}
+		}
+
+		return $page;
+	}
+
+	/**
+	 * Resolves shortcuts for the shortcur of type PageRepository::SHORTCUT_MODE_PARENT_PAGE.
+	 *
+	 * @param array $page
+	 * @param array $processedPages
+	 * @return array
+	 */
+	private function resolveShortcutParentPage(array $page, array &$processedPages) {
+		$page = $GLOBALS['TSFE']->sys_page->getPage($page['pid'], FALSE);
+		if ($page && $page['doktype'] == PageRepository::DOKTYPE_SHORTCUT) {
+			$page = $this->resolveShortcutProcess($page, $processedPages);
+		}
+
+		return $page;
 	}
 
 	/**

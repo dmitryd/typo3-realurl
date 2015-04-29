@@ -309,9 +309,25 @@ class UrlEncoder extends EncodeDecoderBase {
 
 		array_pop($rootLine);
 
+		if ((int)$this->originalUrlParameters['L'] > 0) {
+			$enableLanguageOverlay = TRUE;
+			$fieldList = self::$pageOverlayTitleFields;
+		}
+		else {
+			$enableLanguageOverlay = FALSE;
+			$fieldList = self::$pageTitleFields;
+		}
+
 		$components = array();
 		foreach (array_reverse($rootLine) as $page) {
-			foreach (self::$pageTitleFields as $field) {
+			if ($enableLanguageOverlay) {
+				$overlay = $this->pageRepository->getPageOverlay($page, (int)$this->originalUrlParameters['L']);
+				if (is_array($overlay)) {
+					$page = $overlay;
+					unset($overlay);
+				}
+			}
+			foreach ($fieldList as $field) {
 				if ($page[$field]) {
 					$segment = $this->utility->convertToSafeString($page[$field]);
 					if ($segment) {
