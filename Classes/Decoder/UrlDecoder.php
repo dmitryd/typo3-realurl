@@ -49,6 +49,19 @@ class UrlDecoder extends EncodeDecoderBase {
 	/** @var TypoScriptFrontendController */
 	protected $caller;
 
+	/** @var int */
+	protected $detectedLanguageId = 0;
+
+	/**
+	 * Indicates that the path is expired but we could not redirect because
+	 * non-expired path is missing from the path cache. In such case we do not
+	 * cache the entry in the URL cache to force resolving of the path when
+	 * the current URL is fetched.
+	 *
+	 * @var bool
+	 */
+	protected $isExpiredPath = FALSE;
+
 	/**
 	 * Holds information about expired path for the SEO redirect.
 	 *
@@ -349,7 +362,7 @@ class UrlDecoder extends EncodeDecoderBase {
 				}
 			}
 		}
-		if ($this->expiredPath) {
+		if ($result && $this->expiredPath) {
 			$startPosition = (int)strpos($this->speakingUri, $this->expiredPath);
 			if ($startPosition !== FALSE) {
 				$newUrl = substr($this->speakingUri, 0, $startPosition) .
@@ -365,7 +378,7 @@ class UrlDecoder extends EncodeDecoderBase {
 			$pathSegments = $remainingPathSegments;
 		}
 		else {
-			$this->throw404('Cannot decode "' . implode('/', $remainingPathSegments) . '"');
+			$this->throw404('Cannot decode "' . implode('/', $pathSegments) . '"');
 		}
 
 		return $result ? $result->getPageId() : 0;
@@ -802,18 +815,14 @@ class UrlDecoder extends EncodeDecoderBase {
 		$pagePath = $newCacheEntry->getPagePath();
 		$cacheEntry = $this->cache->getPathFromCacheByPagePath($this->rootPageId, '', $pagePath);
 		if (!$cacheEntry) {
-			$cacheEntry = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\Cache\\PathCacheEntry');
-			/** @var \DmitryDulepov\Realurl\Cache\PathCacheEntry $cacheEntry */
-			$cacheEntry->setLanguageId($newCacheEntry->getLanguageId());
+			$cacheEntry = $newCacheEntry;
 			$cacheEntry->setMountPoint('');
 			$cacheEntry->setRootPageId($this->rootPageId);
 		}
 		if ($cacheEntry->getExpiration() !== 0) {
 			$cacheEntry->setExpiration(0);
 		}
-		if ($cacheEntry->getPagePath() !== $pagePath) {
-			$cacheEntry->setPagePath($pagePath);
-		}
+		$cacheEntry->setPagePath($pagePath);
 		$this->cache->putPathToCache($cacheEntry);
 	}
 
@@ -824,19 +833,21 @@ class UrlDecoder extends EncodeDecoderBase {
 	 * @return void
 	 */
 	protected function putToUrlCache(UrlCacheEntry $cacheEntry) {
-		$requestVariables = $cacheEntry->getRequestVariables();
-		$requestVariables['id'] = $cacheEntry->getPageId();
-		$this->sortArrayDeep($requestVariables);
+		if (!$this->isExpiredPath) {
+			$requestVariables = $cacheEntry->getRequestVariables();
+			$requestVariables['id'] = $cacheEntry->getPageId();
+			$this->sortArrayDeep($requestVariables);
 
-		$originalUrl = trim(GeneralUtility::implodeArrayForUrl('', $requestVariables), '&');
+			$originalUrl = trim(GeneralUtility::implodeArrayForUrl('', $requestVariables), '&');
 
-		if ($this->canCacheUrl($originalUrl)) {
-			$cacheEntry->setOriginalUrl($originalUrl);
-			$cacheEntry->setRequestVariables($requestVariables);
-			$cacheEntry->setRootPageId($this->rootPageId);
-			$cacheEntry->setSpeakingUrl($this->speakingUri);
+			if ($this->canCacheUrl($originalUrl)) {
+				$cacheEntry->setOriginalUrl($originalUrl);
+				$cacheEntry->setRequestVariables($requestVariables);
+				$cacheEntry->setRootPageId($this->rootPageId);
+				$cacheEntry->setSpeakingUrl($this->speakingUri);
 
-			$this->cache->putUrlToCache($cacheEntry);
+				$this->cache->putUrlToCache($cacheEntry);
+			}
 		}
 	}
 
@@ -855,7 +866,7 @@ class UrlDecoder extends EncodeDecoderBase {
 		$this->setRequestVariables($cacheEntry);
 
 		// If it is still not there (could have been added by other process!), than update
-		if (!$this->getFromUrlCache($this->speakingUri)) {
+		if (!$this->isExpiredPath && !$this->getFromUrlCache($this->speakingUri)) {
 			$this->putToUrlCache($cacheEntry);
 		}
 	}
@@ -903,13 +914,11 @@ class UrlDecoder extends EncodeDecoderBase {
 			$cacheEntry = $this->cache->getPathFromCacheByPagePath($this->rootPageId, '', $path);
 			if ($cacheEntry) {
 				if ((int)$cacheEntry->getExpiration() !== 0) {
+					$this->isExpiredPath = TRUE;
 					$nonExpiredCacheEntry = $this->cache->getPathFromCacheByPageId($cacheEntry->getRootPageId(), $cacheEntry->getLanguageId(), $cacheEntry->getPageId());
 					if ($nonExpiredCacheEntry) {
 						$this->expiredPath = $cacheEntry->getPagePath();
 						$cacheEntry = $nonExpiredCacheEntry;
-					}
-					else {
-						break;
 					}
 				}
 				$result = $cacheEntry;
@@ -918,9 +927,7 @@ class UrlDecoder extends EncodeDecoderBase {
 				array_unshift($removedSegments, array_pop($pathSegments));
 			}
 		}
-		if ($result) {
-			$pathSegments = $removedSegments;
-		}
+		$pathSegments = $removedSegments;
 
 		return $result;
 	}
