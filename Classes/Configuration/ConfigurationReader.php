@@ -70,7 +70,7 @@ class ConfigurationReader implements SingletonInterface {
 
 		$this->loadExtConfiguration();
 		$this->performAutomaticConfiguration();
-		$this->setConfigurationForTheCurentDomain();
+		$this->setConfigurationForTheCurrentDomain();
 	}
 
 	/**
@@ -219,7 +219,7 @@ class ConfigurationReader implements SingletonInterface {
 	 *
 	 * @return void
 	 */
-	protected function setConfigurationForTheCurentDomain() {
+	protected function setConfigurationForTheCurrentDomain() {
 		$globalConfig = &$GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl'];
 		if (is_array($globalConfig)) {
 			$configurationKey = $this->getConfigurationKey();
