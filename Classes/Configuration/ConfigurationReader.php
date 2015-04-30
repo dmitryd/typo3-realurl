@@ -92,6 +92,31 @@ class ConfigurationReader implements SingletonInterface {
 	}
 
 	/**
+	 * Obtains the configuration key to use.
+	 *
+	 * @return string
+	 */
+	protected function getConfigurationKey() {
+		$result = '_DEFAULT';
+
+		$globalConfig = &$GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl'];
+		if (is_array($globalConfig)) {
+			$configuration = NULL;
+			$hostName = $this->utility->getCurrentHost();
+			if (isset($globalConfig[$hostName])) {
+				$result = $hostName;
+			} elseif (substr($hostName, 0, 4) === 'www.') {
+				$alternativeHostName = substr($hostName, 4);
+				if (isset($globalConfig[$alternativeHostName])) {
+					$result = $alternativeHostName;
+				}
+			}
+		}
+
+		return $this->resolveConfigurationKey($result);
+	}
+
+	/**
 	 * Obtains the default value for the option.
 	 *
 	 * @param string $path
@@ -169,6 +194,27 @@ class ConfigurationReader implements SingletonInterface {
 	}
 
 	/**
+	 * Resolves configuration aliases. For example:
+	 * 'domain1' => 'domain2',
+	 * 'domain2' => 'domain3',
+	 * 'domain3' => array(....)
+	 * will resolve 'domain1' and 'domain2' to 'domain3'.
+	 *
+	 * @param string $keyAlias
+	 * @return string
+	 */
+	protected function resolveConfigurationKey($keyAlias) {
+		$globalConfig = &$GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl'];
+		$maxLoops = 30;
+		do {
+			$lastKey = $keyAlias;
+			$keyAlias = $globalConfig[$keyAlias];
+		} while ($maxLoops-- && is_string($keyAlias));
+
+		return is_array($keyAlias) ? $lastKey : '_DEFAULT';
+	}
+
+	/**
 	 * Sets the configuration from the current domain.
 	 *
 	 * @return void
@@ -176,30 +222,42 @@ class ConfigurationReader implements SingletonInterface {
 	protected function setConfigurationForTheCurentDomain() {
 		$globalConfig = &$GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl'];
 		if (is_array($globalConfig)) {
-			$configuration = NULL;
-			$hostName = $this->utility->getCurrentHost();
-			if (isset($globalConfig[$hostName])) {
-				$configuration = $globalConfig[$hostName];
-			} elseif (substr($hostName, 0, 4) === 'www.') {
-				$alternativeHostName = substr($hostName, 4);
-				if (isset($globalConfig[$alternativeHostName])) {
-					$configuration = $globalConfig[$alternativeHostName];
-				}
-			} elseif (isset($globalConfig['_DEFAULT'])) {
-				$configuration = $globalConfig['_DEFAULT'];
-			}
-
-			$maxLoops = 30;
-			while ($maxLoops-- && is_string($configuration)) {
-				$configuration = $globalConfig[$configuration];
-			}
-
+			$configurationKey = $this->getConfigurationKey();
+			$configuration = $globalConfig[$configurationKey];
 			if (is_array($configuration)) {
 				$this->configuration = $configuration;
 			}
 
 			$this->setRootPageId();
+
+			if (isset($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['_DOMAINS'])) {
+				$this->configuration['domains'] = $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['_DOMAINS'];
+				$this->mergeDomainsConfiguration($configurationKey);
+			}
 		}
+	}
+
+	/**
+	 * Updates _DOMAINS configuration to include only relevant entries and remove
+	 * rootpage_id option.
+	 *
+	 * @param string $configurationKey
+	 * @return void
+	 */
+	protected function mergeDomainsConfiguration($configurationKey) {
+		$newEncodeConfiguration = array();
+		foreach ($this->configuration['domains']['encode'] as $key => $value) {
+			if (isset($value['useConfiguration']) && $this->resolveConfigurationKey($value['useConfiguration']) !== $configurationKey) {
+				// Not applicable to this configuration
+				continue;
+			}
+			if (isset($value['rootpage_id']) && (int)$value['rootpage_id'] !== (int)$this->configuration['pagePath']['rootpage_id']) {
+				// Not applicable for this root page
+				continue;
+			}
+			$newEncodeConfiguration[$key] = $value;
+		}
+		$this->configuration['domains']['encode'] = $newEncodeConfiguration;
 	}
 
 	/**
