@@ -68,6 +68,12 @@ class UrlEncoder extends EncodeDecoderBase {
 	/** @var array */
 	protected $urlParameters = array();
 
+	/** @var string */
+	protected $urlPrepend = '';
+
+	/** @var array */
+	static protected $urlPrependRegister = array();
+
 	/**
 	 * Initializes the class.
 	 */
@@ -98,7 +104,40 @@ class UrlEncoder extends EncodeDecoderBase {
 	 * @return void
 	 */
 	public function postProcessEncodedUrl(array &$parameters, ContentObjectRenderer $pObj) {
-		// Nothing for now
+		if (isset($parameters['finalTagParts']['url'])) {
+
+			// We must check for absolute URLs here because typolink can force
+			// absolute URLs for pages with restricted access. It prepends
+			// current host always. See http://bugs.typo3.org/view.php?id=18200
+			$testUrl = $parameters['finalTagParts']['url'];
+			if (preg_match('/^https?:\/\/[^\/]+\//', $testUrl)) {
+				$testUrl = preg_replace('/https?:\/\/[^\/]+\/(.+)$/', '\1', $testUrl);
+			}
+
+			// Remove absRefPrefix if necessary
+			$absRefPrefixLength = strlen($this->tsfe->absRefPrefix);
+			if ($absRefPrefixLength !== 0 && substr($testUrl, 0, $absRefPrefixLength) === $this->tsfe->absRefPrefix) {
+				$testUrl = substr($testUrl, $absRefPrefixLength);
+			}
+
+			if (isset(self::$urlPrependRegister[$testUrl])) {
+				$urlKey = $url = $testUrl;
+
+
+				$url = self::$urlPrependRegister[$urlKey] . ($url{0} != '/' ? '/' : '') . $url;
+
+				unset(self::$urlPrependRegister[$testUrl]);
+
+				// Adjust the URL
+				$parameters['finalTag'] = str_replace(
+					'"' . htmlspecialchars($parameters['finalTagParts']['url']) . '"',
+					'"' . htmlspecialchars($url) . '"',
+					$parameters['finalTag']
+				);
+				$parameters['finalTagParts']['url'] = $url;
+				$pObj->lastTypoLinkUrl = $url;
+			}
+		}
 	}
 
 	/**
@@ -431,12 +470,11 @@ class UrlEncoder extends EncodeDecoderBase {
 
 			foreach ($varProcessingFunctions as $varProcessingFunction) {
 				if ($this->$varProcessingFunction($getVarName, $getVarValue, $configuration, $segments, $previousValue)) {
+					// Unset to prevent further processing
+					unset($this->urlParameters[$getVarName]);
 					break;
 				}
 			}
-
-			// Unset to prevent further processing
-			unset($this->urlParameters[$getVarName]);
 		}
 	}
 
@@ -610,9 +648,9 @@ class UrlEncoder extends EncodeDecoderBase {
 	protected function executeEncoder() {
 		$this->parseUrlParameters();
 
+		$this->setLanguage();
+		$this->initializeUrlPrepend();
 		if (!$this->fetchFromtUrlCache()) {
-			$this->setLanguage();
-
 			$this->encodePreVars();
 			$this->encodePathComponents();
 			$this->encodeFixedPostVars();
@@ -628,6 +666,7 @@ class UrlEncoder extends EncodeDecoderBase {
 			$this->storeInUrlCache();
 			$this->reapplyAbsRefPrefix();
 		}
+		$this->prepareUrlPrepend();
 	}
 
 	/**
@@ -814,6 +853,17 @@ class UrlEncoder extends EncodeDecoderBase {
 	}
 
 	/**
+	 * Prepares the URL to use with _DOMAINS configuration.
+	 *
+	 * @return void
+	 */
+	protected function prepareUrlPrepend() {
+		if ($this->urlPrepend !== '') {
+			self::$urlPrependRegister[$this->encodedUrl] = $this->urlPrepend;
+		}
+	}
+
+	/**
 	 * Reapplies absRefPrefix if necessary.
 	 *
 	 * @return void
@@ -826,6 +876,25 @@ class UrlEncoder extends EncodeDecoderBase {
 				$this->encodedUrl = substr($this->encodedUrl, 1);
 			}
 			$this->encodedUrl = $this->tsfe->absRefPrefix . $this->encodedUrl;
+		}
+	}
+
+	/**
+	 * Checks if we should prpend URL according to _DOMAINS configuration.
+	 *
+	 * @return void
+	 */
+	protected function initializeUrlPrepend() {
+		$domainsConfiguration = $this->configuration->get('domains/encode');
+		if (is_array($domainsConfiguration)) {
+			foreach ($domainsConfiguration as $configuration) {
+				$getVarName = $configuration['GETvar'];
+				// Note: non-strict comparison here is required!
+				if ($this->urlParameters[$getVarName] == $configuration['value']) {
+					$this->urlPrepend = $configuration['urlPrepend'];
+					unset($this->urlParameters[$getVarName]);
+				}
+			}
 		}
 	}
 
