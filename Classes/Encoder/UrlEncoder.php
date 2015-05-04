@@ -842,6 +842,7 @@ class UrlEncoder extends EncodeDecoderBase {
 			$parts = GeneralUtility::trimExplode('&', $urlParts['query']);
 			foreach ($parts as $part) {
 				list($parameter, $value) = explode('=', $part);
+				// Remember: urldecode(), not rawurldecode()!
 				$this->urlParameters[urldecode($parameter)] = urldecode($value);
 			}
 		}
