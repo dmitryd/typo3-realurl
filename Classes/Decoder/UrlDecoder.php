@@ -627,12 +627,14 @@ class UrlDecoder extends EncodeDecoderBase {
 	 * @return UrlCacheEntry with only pageId and requestVariables filled in
 	 */
 	protected function doDecoding($path) {
-		$pathSegments = explode('/', trim($path, '/'));
-		array_walk($pathSegments, 'urldecode');
+		$pathSegments = explode('/', trim(urldecode($path), '/'));
+		// Remember: urldecode(), not rawurldecode()!
+		//array_walk($pathSegments, 'urldecode');
 
 		$requestVariables = array();
 
 		ArrayUtility::mergeRecursiveWithOverrule($requestVariables, $this->handleFileName($pathSegments));
+		ArrayUtility::mergeRecursiveWithOverrule($requestVariables, $this->getVarsFromDomainConfiguration());
 		ArrayUtility::mergeRecursiveWithOverrule($requestVariables, $this->decodePreVars($pathSegments));
 		$pageId = $this->decodePath($pathSegments);
 		ArrayUtility::mergeRecursiveWithOverrule($requestVariables, $this->decodeFixedPostVars($pageId, $pathSegments));
@@ -711,6 +713,25 @@ class UrlDecoder extends EncodeDecoderBase {
 		}
 
 		return $uParts;
+	}
+
+	/**
+	 * Obtains variables from the domain confuguration.
+	 *
+	 * @return array
+	 */
+	protected function getVarsFromDomainConfiguration() {
+		$requestVariables = array();
+
+		$domainConfuguration = $this->configuration->get('domains/decode');
+		if (is_array($domainConfuguration) && isset($domainConfuguration['GETvars'])) {
+			reset($domainConfuguration['GETvars']);
+			$getVarName = key($domainConfuguration['GETvars']);
+			$getVarValue = $domainConfuguration['GETvars'][$getVarName];
+			$requestVariables[$getVarName] = $getVarValue;
+		}
+
+		return $requestVariables;
 	}
 
 	/**
