@@ -576,7 +576,7 @@ class UrlDecoder extends EncodeDecoderBase {
 				'setup' => $configuration
 			);
 			$value = GeneralUtility::callUserFunction($configuration['userFunc'], $parameters, $this);
-			if (!is_numeric($value) || is_string($value)) {
+			if (is_numeric($value) || is_string($value)) {
 				$requestVariables[$configuration['GETvar']] = $value;
 				$result = TRUE;
 			}
