@@ -5,6 +5,9 @@
  *  (c) 2015 Dmitry Dulepov (dmitry.dulepov@gmail.com)
  *  All rights reserved
  *
+ *  You may not remove or change the name of the author above. See:
+ *  http://www.gnu.org/licenses/gpl-faq.html#IWantCredit
+ *
  *  This script is part of the Typo3 project. The Typo3 project is
  *  free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
