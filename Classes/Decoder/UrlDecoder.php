@@ -75,6 +75,13 @@ class UrlDecoder extends EncodeDecoderBase {
 	/** @var string */
 	protected $mimeType = '';
 
+	/**
+	 * This variable is set to the speaking path only if he decoding has to run.
+	 *
+	 * @var string
+	 */
+	protected $originalPath;
+
 	/** @var string */
 	protected $siteScript;
 
@@ -431,16 +438,17 @@ class UrlDecoder extends EncodeDecoderBase {
 		$postVarSets = $this->getConfigirationForPostVars($allPostVarSets, $pageId);
 
 		$previousValue = '';
-		foreach ($postVarSets as $postVar => $postVarSetConfiguration) {
-			reset($pathSegments);
-			if (current($pathSegments) == $postVar) {
-				array_shift($pathSegments);
+
+		while (count($pathSegments) > 0) {
+			$postVarSetKey = array_shift($pathSegments);
+			if (!isset($postVarSets[$postVarSetKey])) {
+				$this->handleNonExistingPostVarSet($pageId, $postVarSetKey, $pathSegments);
+			}
+			else {
+				$postVarSetConfiguration = $postVarSets[$postVarSetKey];
 				foreach ($postVarSetConfiguration as $postVarConfiguration) {
 					$this->decodeSingleVariable($postVarConfiguration, $pathSegments, $requestVariables, $previousValue);
 				}
-			}
-			if (count($pathSegments) == 0) {
-				break;
 			}
 		}
 
@@ -643,11 +651,6 @@ class UrlDecoder extends EncodeDecoderBase {
 		ArrayUtility::mergeRecursiveWithOverrule($requestVariables, $this->decodeFixedPostVars($pageId, $pathSegments));
 		ArrayUtility::mergeRecursiveWithOverrule($requestVariables, $this->decodePostVarSets($pageId, $pathSegments));
 
-		if (count($pathSegments) > 0) {
-			reset($pathSegments);
-			$this->throw404('"' . current($pathSegments) . '" could not be decoded from path.');
-		}
-
 		$cacheEntry = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\Cache\\UrlCacheEntry');
 		/** @var \DmitryDulepov\Realurl\Cache\UrlCacheEntry $cacheEntry */
 		$cacheEntry->setPageId($pageId);
@@ -804,6 +807,40 @@ class UrlDecoder extends EncodeDecoderBase {
 	}
 
 	/**
+	 * Handles non-existing postVarSet according to configuration.
+	 *
+	 * @param int $pageId
+	 * @param string $postVarSetKey
+	 * @param array $pathSegments
+	 */
+	protected function handleNonExistingPostVarSet($pageId, $postVarSetKey, array &$pathSegments) {
+		$failureMode = $this->configuration->get('init/postVarSet_failureMode');
+		if ($failureMode == 'redirect_goodUpperDir') {
+			$nonProcessedArray = array($postVarSetKey) + $pathSegments;
+			$badPathPart = implode('/', $nonProcessedArray);
+			$badPathPartPos = strpos($this->originalPath, $badPathPart);
+			$badPathPartLength = strlen($badPathPart);
+			if ($badPathPartPos > 0) {
+				// We also want to get rid of one slash
+				$badPathPartPos--;
+				$badPathPartLength++;
+			}
+			$goodPath = substr($this->originalPath, 0, $badPathPartPos) . substr($this->originalPath, $badPathPartPos + $badPathPartLength);
+			@ob_end_clean();
+			header('HTTP/1.1 301 RealURL postVarSet_failureMode redirect');
+			header('X-TYPO3-RealURL-Info: ' . $postVarSetKey);
+			header('Location: ' . GeneralUtility::locationHeaderUrl($goodPath));
+			exit;
+		}
+		elseif ($failureMode == 'ignore') {
+			$pathSegments = array();
+		}
+		else {
+			$this->throw404('Segment "' . $postVarSetKey . '" was not a keyword for a postVarSet as expected on page with id=' . $pageId . '.');
+		}
+	}
+
+	/**
 	 * Checks if the given segment is a name of the postVar.
 	 *
 	 * @param string $segment
@@ -896,6 +933,7 @@ class UrlDecoder extends EncodeDecoderBase {
 
 		$cacheEntry = $this->getFromUrlCache($this->speakingUri);
 		if (!$cacheEntry) {
+			$this->originalPath = $urlParts['path'];
 			$cacheEntry = $this->doDecoding($urlParts['path']);
 		}
 		$this->setRequestVariables($cacheEntry);
