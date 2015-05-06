@@ -638,9 +638,8 @@ class UrlDecoder extends EncodeDecoderBase {
 	 * @return UrlCacheEntry with only pageId and requestVariables filled in
 	 */
 	protected function doDecoding($path) {
-		$pathSegments = explode('/', trim(urldecode($path), '/'));
 		// Remember: urldecode(), not rawurldecode()!
-		//array_walk($pathSegments, 'urldecode');
+		$pathSegments = explode('/', trim(urldecode($path), '/'));
 
 		$requestVariables = array();
 
