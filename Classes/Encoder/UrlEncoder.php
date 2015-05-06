@@ -372,11 +372,12 @@ class UrlEncoder extends EncodeDecoderBase {
 			foreach ($fieldList as $field) {
 				if ($page[$field]) {
 					$segment = $this->utility->convertToSafeString($page[$field]);
-					if ($segment) {
-						$components[] = $segment;
-						$this->appendToEncodedUrl($segment);
-						continue 2;
+					if ($segment === '') {
+						$segment = $this->emptySegmentValue;
 					}
+					$components[] = $segment;
+					$this->appendToEncodedUrl($segment);
+					continue 2;
 				}
 			}
 		}
@@ -498,6 +499,7 @@ class UrlEncoder extends EncodeDecoderBase {
 		}
 
 		$this->checkForAllEmptySegments($segments);
+		$this->fixEmptySegments($segments);
 
 		return $segments;
 	}
@@ -687,6 +689,22 @@ class UrlEncoder extends EncodeDecoderBase {
 		}
 
 		return $result;
+	}
+
+	/**
+	 * Changes empty segments to the value of $this->emptySegmentValue.
+	 *
+	 * @param array $segments
+	 * @retun void
+	 */
+	protected function fixEmptySegments(array &$segments) {
+		if ($this->emptySegmentValue !== '') {
+			foreach ($segments as &$segment) {
+				if ($segment === '') {
+					$segment = $this->emptySegmentValue;
+				}
+			}
+		}
 	}
 
 	/**

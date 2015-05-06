@@ -52,6 +52,9 @@ abstract class EncodeDecoderBase {
 	/** @var \TYPO3\CMS\Core\Database\DatabaseConnection */
 	protected $databaseConnection;
 
+	/** @var string */
+	protected $emptySegmentValue;
+
 	/** @var array */
 	static public $pageOverlayTitleFields = array('tx_realurl_pathsegment', 'nav_title', 'title', 'uid');
 
@@ -77,6 +80,7 @@ abstract class EncodeDecoderBase {
 		$this->databaseConnection = $GLOBALS['TYPO3_DB'];
 		$this->tsfe = $GLOBALS['TSFE'];
 		$this->configuration = ConfigurationReader::getInstance();
+		$this->emptySegmentValue = $this->configuration->get('init/emptySegmentValue');
 		$this->rootPageId = (int)$this->configuration->get('pagePath/rootpage_id');
 		$this->utility = Utility::getInstance();
 		$this->cache = $this->utility->getCache();
