@@ -352,6 +352,19 @@ class UrlDecoder extends EncodeDecoderBase {
 				}
 				while ($currentPid !== 0 && count($remainingPathSegments) > 0) {
 					$segment = array_shift($remainingPathSegments);
+					/*
+					 * On one hand we should check here for empty segments,
+					 * on the other hand it does not make sense to have empty
+					 * segments in the page path because they cannot be decoded.
+					 * If such thing happens, our only hope is cache
+					 * and we should not be here.
+					 *
+					 * Code below is just for the idea what could have been done here.
+					 *
+					if ($this->emptySegmentValue !== '' && $segment === $this->emptySegmentValue) {
+						$segment = '';
+					}
+					*/
 					$nextResult = $this->searchPages($currentPid, $segment);
 					if ($nextResult) {
 						$result = $nextResult;
@@ -476,8 +489,9 @@ class UrlDecoder extends EncodeDecoderBase {
 		);
 
 		$getVarValue = count($pathSegments) > 0 ? array_shift($pathSegments) : '';
-
-		// TODO Check conditions here
+		if ($this->emptySegmentValue !== '' && $getVarValue === $this->emptySegmentValue) {
+			$getVarValue = '';
+		}
 
 		// TODO Possible hook here before any other function? Pass name, value, segments and config
 
@@ -638,9 +652,8 @@ class UrlDecoder extends EncodeDecoderBase {
 	 * @return UrlCacheEntry with only pageId and requestVariables filled in
 	 */
 	protected function doDecoding($path) {
-		$pathSegments = explode('/', trim(urldecode($path), '/'));
 		// Remember: urldecode(), not rawurldecode()!
-		//array_walk($pathSegments, 'urldecode');
+		$pathSegments = explode('/', trim(urldecode($path), '/'));
 
 		$requestVariables = array();
 

@@ -69,6 +69,7 @@ class ConfigurationReader implements SingletonInterface {
 		'fileName/acceptHTMLsuffix' => TRUE,
 		'fileName/defaultToHTMLsuffixOnPrev' => FALSE,
 		'init/appendMissingSlash' => 'ifNotFile,redirect[301]',
+		'init/emptySegmentValue' => '',
 	);
 
 	/**
