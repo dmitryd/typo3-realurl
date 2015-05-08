@@ -61,8 +61,7 @@ class Cache {
 			$cacheInstance = CacheFactory::getCache();
 			if ($cacheCommand == 'pages' || $cacheCommand == 'all') {
 				$cacheInstance->clearUrlCache();
-			}
-			else {
+			} else {
 				$cacheInstance->clearUrlCacheForPage((int)$cacheCommand);
 			}
 		}

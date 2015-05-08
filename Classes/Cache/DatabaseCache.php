@@ -263,8 +263,7 @@ class DatabaseCache implements CacheInterface, SingletonInterface {
 				'cache_id=' . $this->databaseConnection->fullQuoteStr($cacheEntry->getCacheId(), 'tx_realurl_pathcache'),
 				$data
 			);
-		}
-		else {
+		} else {
 			$this->databaseConnection->exec_INSERTquery('tx_realurl_pathcache', $data);
 			$cacheEntry->setCacheId($this->databaseConnection->sql_insert_id());
 		}
@@ -290,8 +289,7 @@ class DatabaseCache implements CacheInterface, SingletonInterface {
 				'cache_id=' . $this->databaseConnection->fullQuoteStr($cacheEntry->getCacheId(), 'tx_realurl_urlcache'),
 				$data
 			);
-		}
-		else {
+		} else {
 			$data['crdate'] = $data['tstamp'];
 			$this->databaseConnection->exec_INSERTquery('tx_realurl_urlcache', $data);
 			$cacheEntry->setCacheId($this->databaseConnection->sql_insert_id());

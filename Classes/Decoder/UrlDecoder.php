@@ -157,8 +157,7 @@ class UrlDecoder extends EncodeDecoderBase {
 					$this->speakingUri = preg_replace($regexp, '\1/\2', $this->speakingUri);
 					$this->appendedSlash = true;
 				}
-			}
-			else {
+			} else {
 				$this->speakingUri = preg_replace($regexp, '\1/\2', $this->speakingUri);
 				$this->appendedSlash = true;
 			}
@@ -317,6 +316,7 @@ class UrlDecoder extends EncodeDecoderBase {
 	 */
 	protected function decodePath(array &$pathSegments) {
 		$savedRemainingPathSegments = array();
+		$currentPid = 0;
 		$remainingPathSegments = $pathSegments;
 
 		$savedResult = NULL;
@@ -373,8 +373,7 @@ class UrlDecoder extends EncodeDecoderBase {
 						$result->setPagePath(implode('/', $processedPathSegments));
 						// Path is valid so far, so we cache it
 						$this->putToPathCache($result);
-					}
-					else {
+					} else {
 						if ((int)$currentPid !== (int)$this->rootPageId) {
 							$currentPid = 0;
 						}
@@ -403,8 +402,7 @@ class UrlDecoder extends EncodeDecoderBase {
 		}
 		if ($result || (int)$currentPid === (int)$this->rootPageId) {
 			$pathSegments = $remainingPathSegments;
-		}
-		else {
+		} else {
 			$this->throw404('Cannot decode "' . implode('/', $pathSegments) . '"');
 		}
 
@@ -456,8 +454,7 @@ class UrlDecoder extends EncodeDecoderBase {
 			$postVarSetKey = array_shift($pathSegments);
 			if (!isset($postVarSets[$postVarSetKey])) {
 				$this->handleNonExistingPostVarSet($pageId, $postVarSetKey, $pathSegments);
-			}
-			else {
+			} else {
 				$postVarSetConfiguration = $postVarSets[$postVarSetKey];
 				foreach ($postVarSetConfiguration as $postVarConfiguration) {
 					$this->decodeSingleVariable($postVarConfiguration, $pathSegments, $requestVariables, $previousValue);
@@ -542,8 +539,7 @@ class UrlDecoder extends EncodeDecoderBase {
 				if ($configuration['lookUpTable']['enable404forInvalidAlias']) {
 					$this->throw404('Could not map alias "' . $value . '" to an id.');
 				}
-			}
-			else {
+			} else {
 				$requestVariables[$configuration['GETvar']] = $value;
 				$result = TRUE;
 			}
@@ -567,8 +563,7 @@ class UrlDecoder extends EncodeDecoderBase {
 			// If no match and "bypass" is set, then return the value to $pathSegments and break
 			array_unshift($pathSegments, $getVarValue);
 			$result = TRUE;
-		}
-		elseif ($configuration['noMatch'] == 'null') {
+		} elseif ($configuration['noMatch'] == 'null') {
 			// If no match and "null" is set, then break (without setting any value!)
 			$result = TRUE;
 		}
@@ -784,8 +779,7 @@ class UrlDecoder extends EncodeDecoderBase {
 						$fileNameSegment = pathinfo($fileNameSegment, PATHINFO_FILENAME);
 					}
 					// If no match, we leave it as is => 404.
-				}
-				else {
+				} else {
 					$putBack = FALSE;
 				}
 			}
@@ -844,11 +838,9 @@ class UrlDecoder extends EncodeDecoderBase {
 			header('X-TYPO3-RealURL-Info: ' . $postVarSetKey);
 			header('Location: ' . GeneralUtility::locationHeaderUrl($goodPath));
 			exit;
-		}
-		elseif ($failureMode == 'ignore') {
+		} elseif ($failureMode == 'ignore') {
 			$pathSegments = array();
-		}
-		else {
+		} else {
 			$this->throw404('Segment "' . $postVarSetKey . '" was not a keyword for a postVarSet as expected on page with id=' . $pageId . '.');
 		}
 	}
@@ -986,8 +978,7 @@ class UrlDecoder extends EncodeDecoderBase {
 						$result->setPageId((int)$page['uid']);
 						if ($this->detectedLanguageId > 0) {
 							break;
-						}
-						else {
+						} else {
 							break 2;
 						}
 					}
@@ -1044,8 +1035,7 @@ class UrlDecoder extends EncodeDecoderBase {
 					}
 				}
 				$result = $cacheEntry;
-			}
-			else {
+			} else {
 				if (count($pathSegments) > 0) {
 					array_unshift($removedSegments, array_pop($pathSegments));
 				}

@@ -116,8 +116,7 @@ class ConfigurationReader implements SingletonInterface {
 				$result = $this->hostName;
 			} elseif (isset($globalConfig[$this->alternativeHostName])) {
 				$result = $this->alternativeHostName;
-			}
-			elseif (isset($globalConfig['_DOMAINS'])) {
+			} elseif (isset($globalConfig['_DOMAINS'])) {
 				foreach ($globalConfig['_DOMAINS']['decode'] as $domainName => $configuration) {
 					if ($domainName === $this->hostName || $domainName === $this->alternativeHostName) {
 						$result = $configuration['useConfiguration'];
@@ -271,8 +270,7 @@ class ConfigurationReader implements SingletonInterface {
 	protected function mergeDomainsConfigurationForDecode() {
 		if (isset($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['_DOMAINS']['decode'][$this->hostName])) {
 			$this->configuration['domains']['decode'] = $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['_DOMAINS']['decode'][$this->hostName];
-		}
-		elseif (isset($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['_DOMAINS']['decode'][$this->alternativeHostName])) {
+		} elseif (isset($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['_DOMAINS']['decode'][$this->alternativeHostName])) {
 			$this->configuration['domains']['decode'] = $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['_DOMAINS']['decode'][$this->alternativeHostName];
 		}
 	}
@@ -310,8 +308,7 @@ class ConfigurationReader implements SingletonInterface {
 		$this->alternativeHostName = $this->hostName = $this->utility->getCurrentHost();
 		if (substr($this->hostName, 0, 4) === 'www.') {
 			$this->alternativeHostName = substr($this->hostName, 4);
-		}
-		elseif (substr_count($this->hostName, '.') === 1) {
+		} elseif (substr_count($this->hostName, '.') === 1) {
 			$this->alternativeHostName = 'www.' . $this->hostName;
 		}
 	}
@@ -359,8 +356,7 @@ class ConfigurationReader implements SingletonInterface {
 		if (count($rows) > 1) {
 			// Cannot be done: too many of them!
 			throw new \Exception('RealURL was not able to find the root page id for the domain "' . $this->utility->getCurrentHost() . '"', 1420480928);
-		}
-		elseif (count($rows) !== 0) {
+		} elseif (count($rows) !== 0) {
 			$this->configuration['pagePath']['rootpage_id'] = (int)$rows[0]['uid'];
 			$result = TRUE;
 		}

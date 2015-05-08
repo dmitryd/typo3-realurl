@@ -115,8 +115,7 @@ class DataHandler {
 			if ($tableName == 'pages') {
 				$languageId = 0;
 				$pageId = $recordId;
-			}
-			else {
+			} else {
 				$fullRecord = BackendUtility::getRecord($tableName, $recordId);
 				$pageId = $fullRecord['pid'];
 				$languageId = $fullRecord['sys_language_uid'];

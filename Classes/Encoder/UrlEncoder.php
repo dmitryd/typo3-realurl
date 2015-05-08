@@ -156,9 +156,7 @@ class UrlEncoder extends EncodeDecoderBase {
 		unset($urlParameters['id']);
 		if (count($urlParameters) == 1 && isset($urlParameters['cHash'])) {
 			unset($urlParameters['cHash']);
-		}
-		else
-		if (count($urlParameters) > 0) {
+		} elseif (count($urlParameters) > 0) {
 			$this->encodedUrl .= '?' . trim(GeneralUtility::implodeArrayForUrl('', $urlParameters), '&');
 		}
 	}
@@ -357,8 +355,7 @@ class UrlEncoder extends EncodeDecoderBase {
 		if ((int)$this->originalUrlParameters['L'] > 0) {
 			$enableLanguageOverlay = TRUE;
 			$fieldList = self::$pageOverlayTitleFields;
-		}
-		else {
+		} else {
 			$enableLanguageOverlay = FALSE;
 			$fieldList = self::$pageTitleFields;
 		}
@@ -414,8 +411,7 @@ class UrlEncoder extends EncodeDecoderBase {
 		$cacheEntry = $this->cache->getPathFromCacheByPageId($this->rootPageId, $this->sysLanguageUid, $this->urlParameters['id']);
 		if ($cacheEntry) {
 			$this->appendToEncodedUrl($cacheEntry->getPagePath());
-		}
-		else {
+		} else {
 			$this->createPathComponent();
 		}
 	}
@@ -937,8 +933,7 @@ class UrlEncoder extends EncodeDecoderBase {
 	protected function setLanguage() {
 		if (isset($this->urlParameters['L']) && MathUtility::canBeInterpretedAsInteger($this->urlParameters['L'])) {
 			$this->sysLanguageUid = (int)$this->urlParameters['L'];
-		}
-		else {
+		} else {
 			$this->sysLanguageUid = (int)$this->tsfe->sys_language_uid;
 		}
 	}
@@ -995,8 +990,7 @@ class UrlEncoder extends EncodeDecoderBase {
 		if ($returnAlias) {
 			// If we are here it is because another process managed to create this alias in the time between we looked the first time and now when we want to put it in database.
 			$uniqueAlias = $returnAlias;
-		}
-		else {
+		} else {
 			// Expire all other aliases
 			// Look for an alias based on ID
 			$this->databaseConnection->exec_UPDATEquery('tx_realurl_uniqalias', 'value_id=' . $this->databaseConnection->fullQuoteStr($idValue, 'tx_realurl_uniqalias') . '
