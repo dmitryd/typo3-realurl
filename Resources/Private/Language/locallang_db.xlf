@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<xliff version="1.0">
+	<file source-language="en" datatype="plaintext" original="messages" date="2014-06-02T11:48:25Z" product-name="realurl">
+		<header/>
+		<body>
+			<trans-unit id="pages.tx_realurl_pathsegment" xml:space="preserve">
+				<source>Speaking URL path segment:</source>
+			</trans-unit>
+			<trans-unit id="pages.tx_realurl_exclude" xml:space="preserve">
+				<source>Exclude from speaking URL:</source>
+			</trans-unit>
+			<trans-unit id="pages.tx_realurl_path_override" xml:space="preserve">
+				<source>Override the whole page path</source>
+			</trans-unit>
+			<trans-unit id="pages.tx_realurl_nocache" xml:space="preserve">
+				<source>Disable RealURL cache</source>
+			</trans-unit>
+		</body>
+	</file>
+</xliff>
