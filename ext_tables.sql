@@ -16,7 +16,17 @@ CREATE TABLE tx_realurl_uniqalias (
 	KEY tablename (tablename),
 	KEY bk_realurl01 (field_alias(20),field_id,value_id,lang,expire),
 	KEY bk_realurl02 (tablename(32),field_alias(20),field_id,value_alias(20),expire)
-);
+) ENGINE=InnoDB;
+
+#
+# Table structure for table 'tx_realurl_uniqalias_cache_map'
+#
+CREATE TABLE tx_realurl_uniqalias_cache_map (
+	alias_uid int(11) DEFAULT '0' NOT NULL,
+	url_cache_id varchar(255) DEFAULT '' NOT NULL,
+
+	KEY check_existence (alias_uid,url_cache_id(6))
+) ENGINE=InnoDB;
 
 #
 # Table structure for table 'tx_realurl_urlcache'
