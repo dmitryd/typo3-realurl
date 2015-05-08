@@ -40,6 +40,15 @@ use TYPO3\CMS\Core\SingletonInterface;
 class NullCache implements CacheInterface, SingletonInterface {
 
 	/**
+	 * Removes expired path cache entries.
+	 *
+	 * @return void
+	 */
+	public function clearExpiredPathCacheEntries() {
+		// Do nothing
+	}
+
+	/**
 	 * Empties the URL cache.
 	 *
 	 * @return mixed

@@ -50,6 +50,15 @@ class DatabaseCache implements CacheInterface, SingletonInterface {
 	}
 
 	/**
+	 * Removes expired path cache entries.
+	 *
+	 * @return void
+	 */
+	public function clearExpiredPathCacheEntries() {
+		$this->databaseConnection->exec_DELETEquery('tx_realurl_pathcache', 'expire<' . time());
+	}
+
+	/**
 	 * Empties the URL cache.
 	 *
 	 * @return mixed

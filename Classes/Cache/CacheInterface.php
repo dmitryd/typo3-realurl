@@ -39,6 +39,13 @@ namespace DmitryDulepov\Realurl\Cache;
 interface CacheInterface {
 
 	/**
+	 * Removes expired path cache entries.
+	 *
+	 * @return void
+	 */
+	public function clearExpiredPathCacheEntries();
+
+	/**
 	 * Empties the URL cache.
 	 *
 	 * @return void
