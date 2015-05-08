@@ -39,6 +39,16 @@ use TYPO3\CMS\Core\Utility\MathUtility;
  */
 class Cache {
 
+	/** @var \TYPO3\CMS\Dbal\Database\DatabaseConnection */
+	protected $databaseConnection;
+
+	/**
+	 * Initializes the class.
+	 */
+	public function __construct() {
+		$this->databaseConnection = $GLOBALS['TYPO3_DB'];
+	}
+
 	/**
 	 * Clears the URL cache according to parameters.
 	 *
@@ -53,7 +63,7 @@ class Cache {
 				$cacheInstance->clearUrlCache();
 			}
 			else {
-				$cacheInstance->clearUrlCacheForPage($cacheCommand);
+				$cacheInstance->clearUrlCacheForPage((int)$cacheCommand);
 			}
 		}
 	}
