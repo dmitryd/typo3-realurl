@@ -18,6 +18,7 @@ $EM_CONF[$_EXTKEY] = array (
 	'state' => 'alpha',
 	'uploadfolder' => 0,
 	'createDirs' => '',
+	'modify_tables' => 'pages,sys_domain,pages_language_overlay,sys_template',
 	'clearcacheonload' => 1,
 	'author' => 'Dmitry Dulepov',
 	'author_email' => 'dmitry.dulepov@gmail.com',

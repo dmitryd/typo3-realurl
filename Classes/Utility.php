@@ -85,7 +85,7 @@ class Utility implements SingletonInterface {
 	 */
 	public function getCache() {
 		if (TYPO3_MODE !== 'FE' || is_object($GLOBALS['BE_USER']) || ConfigurationReader::getInstance()->get('cache/disable')) {
-			$cache = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\NullCache');
+			$cache = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\Cache\\NullCache');
 		}
 		else {
 			$cache = CacheFactory::getCache();

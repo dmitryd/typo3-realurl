@@ -59,8 +59,9 @@ CREATE TABLE tx_realurl_pathcache (
 #
 CREATE TABLE pages (
 	tx_realurl_pathsegment varchar(255) DEFAULT '' NOT NULL,
-#	tx_realurl_pathoverride int(1) DEFAULT '0' NOT NULL,
-#	tx_realurl_exclude int(1) DEFAULT '0' NOT NULL
+	tx_realurl_pathoverride int(1) DEFAULT '0' NOT NULL,
+	tx_realurl_exclude int(1) DEFAULT '0' NOT NULL,
+	tx_realurl_nocache int(1) DEFAULT '0' NOT NULL
 );
 
 #
