@@ -77,6 +77,9 @@ class UrlEncoder extends EncodeDecoderBase {
 	/** @var array */
 	static protected $urlPrependRegister = array();
 
+	/** @var array */
+	protected $usedAliases = array();
+
 	/**
 	 * Initializes the class.
 	 */
@@ -717,7 +720,8 @@ class UrlEncoder extends EncodeDecoderBase {
 	 * @return string|null
 	 */
 	protected function getFromAliasCache(array $configuration, $getVarValue, $languageUid, $onlyThisAlias = '') {
-		$row = $this->databaseConnection->exec_SELECTgetSingleRow('value_alias', 'tx_realurl_uniqalias',
+		$result = NULL;
+		$row = $this->databaseConnection->exec_SELECTgetSingleRow('*', 'tx_realurl_uniqalias',
 				'value_id=' . $this->databaseConnection->fullQuoteStr($getVarValue, 'tx_realurl_uniqalias') .
 				' AND field_alias=' . $this->databaseConnection->fullQuoteStr($configuration['alias_field'], 'tx_realurl_uniqalias') .
 				' AND field_id=' . $this->databaseConnection->fullQuoteStr($configuration['id_field'], 'tx_realurl_uniqalias') .
@@ -726,7 +730,12 @@ class UrlEncoder extends EncodeDecoderBase {
 				($onlyThisAlias ? ' AND value_alias=' . $this->databaseConnection->fullQuoteStr($onlyThisAlias, 'tx_realurl_uniqalias') : '') .
 				' AND expire=0'
 		);
-		return is_array($row) ? $row['value_alias'] : NULL;
+		if (is_array($row)) {
+			$this->usedAliases[] = $row['uid'];
+			$result = $row['value_alias'];
+		}
+
+		return $result;
 	}
 
 	/**
@@ -935,6 +944,29 @@ class UrlEncoder extends EncodeDecoderBase {
 	}
 
 	/**
+	 * Stores mapping between used aliases and url cache id. This information is
+	 * used in the DataHandle hook to clear URl cache when record are renamed
+	 * (= aliases change).
+	 *
+	 * @param string $urlCacheId
+	 * @return void
+	 */
+	protected function storeAliasToUrlCacheMapping($urlCacheId) {
+		foreach ($this->usedAliases as $aliasId) {
+			$row = $this->databaseConnection->exec_SELECTgetSingleRow('*', 'tx_realurl_uniqalias_cache_map',
+				'alias_uid=' . (int)$aliasId . ' AND url_cache_id=' . $this->databaseConnection->fullQuoteStr($urlCacheId, 'tx_realurl_uniqalias_cache_map')
+			);
+			if (!is_array($row)) {
+				$data = array(
+					'alias_uid' => $aliasId,
+					'url_cache_id' => $urlCacheId
+				);
+				$this->databaseConnection->exec_INSERTquery('tx_realurl_uniqalias_cache_map', $data);
+			}
+		}
+	}
+
+	/**
 	 * Adds the value to the alias cache.
 	 *
 	 * @param array $configuration
@@ -985,6 +1017,9 @@ class UrlEncoder extends EncodeDecoderBase {
 				'lang' => $languageUid
 			);
 			$this->databaseConnection->exec_INSERTquery('tx_realurl_uniqalias', $insertArray);
+			$aliasRecordId = $this->databaseConnection->sql_insert_id();
+
+			$this->usedAliases[] = $aliasRecordId;
 		}
 
 		return $uniqueAlias;
@@ -1007,6 +1042,11 @@ class UrlEncoder extends EncodeDecoderBase {
 				$cacheEntry->setOriginalUrl($this->originalUrl);
 				$cacheEntry->setSpeakingUrl($this->encodedUrl);
 				$this->cache->putUrlToCache($cacheEntry);
+
+				$cacheId = $cacheEntry->getCacheId();
+				if (!empty($cacheId)) {
+					$this->storeAliasToUrlCacheMapping($cacheId);
+				}
 			}
 		}
 	}

@@ -56,6 +56,18 @@ class DatabaseCache implements CacheInterface, SingletonInterface {
 	 */
 	public function clearUrlCache() {
 		$this->databaseConnection->exec_TRUNCATEquery('tx_realurl_urlcache');
+		$this->databaseConnection->exec_TRUNCATEquery('tx_realurl_uniqalias_cache_map');
+	}
+
+	/**
+	 * Clears URL cache by cache id.
+	 *
+	 * @param string $cacheId
+	 * @return void
+	 */
+	public function clearUrlCacheById($cacheId) {
+		$this->databaseConnection->exec_DELETEquery('tx_realurl_urlcache', 'cache_id=' . (int)$cacheId);
+		$this->databaseConnection->exec_DELETEquery('tx_realurl_uniqalias_cache_map', 'url_cache_id=\'' . (int)$cacheId . '\'');
 	}
 
 	/**
@@ -65,6 +77,7 @@ class DatabaseCache implements CacheInterface, SingletonInterface {
 	 * @return void
 	 */
 	public function clearUrlCacheForPage($pageId) {
+		$this->databaseConnection->sql_query('DELETE FROM tx_realurl_uniqalias_cache_map WHERE url_cache_id IN (SELECT cache_id FROM tx_realurl_urlcache WHERE page_id=' . (int)$pageId . ')');
 		$this->databaseConnection->exec_DELETEquery('tx_realurl_urlcache', 'page_id=' . (int)$pageId);
 	}
 

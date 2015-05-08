@@ -49,6 +49,16 @@ class NullCache implements CacheInterface, SingletonInterface {
 	}
 
 	/**
+	 * Clears URL cache by cache id.
+	 *
+	 * @param string $cacheId
+	 * @return void
+	 */
+	public function clearUrlCacheById($cacheId) {
+		// Do nothing
+	}
+
+	/**
 	 * Empties the URL cache for one page.
 	 *
 	 * @param int $pageId

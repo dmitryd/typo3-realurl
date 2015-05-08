@@ -46,6 +46,14 @@ interface CacheInterface {
 	public function clearUrlCache();
 
 	/**
+	 * Clears URL cache by cache id.
+	 *
+	 * @param string $cacheId
+	 * @return void
+	 */
+	public function clearUrlCacheById($cacheId);
+
+	/**
 	 * Empties the URL cache for one page.
 	 *
 	 * @param int $pageId

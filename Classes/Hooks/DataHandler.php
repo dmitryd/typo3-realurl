@@ -39,11 +39,15 @@ class DataHandler {
 	/** @var CacheInterface */
 	protected $cache;
 
+	/** @var \TYPO3\CMS\Dbal\Database\DatabaseConnection */
+	protected $databaseConnection;
+
 	/**
 	 * Initializes the class.
 	 */
 	public function __construct() {
 		$this->cache = CacheFactory::getCache();
+		$this->databaseConnection = $GLOBALS['TYPO3_DB'];
 	}
 
 	/**
@@ -55,12 +59,46 @@ class DataHandler {
 	 * @param array $databaseData
 	 * @param \TYPO3\CMS\Core\DataHandling\DataHandler $dataHandler
 	 * @return void
-	 * @todo Expire unique alias cache: how to get the proper timeout value easily here?
 	 */
-	public function processDatamap_afterDatabaseOperations($status, $tableName, $recordId, array $databaseData, \TYPO3\CMS\Core\DataHandling\DataHandler $dataHandler) {
+	public function processDatamap_afterDatabaseOperations($status, $tableName, $recordId, array $databaseData, /** @noinspection PhpUnusedParameterInspection */ \TYPO3\CMS\Core\DataHandling\DataHandler $dataHandler) {
 		$this->expirePathCache($status, $tableName, $recordId, $databaseData);
 		//$this->processContentUpdates($status, $tableName, $recordId, $databaseData, $dataHandler);
 		//$this->clearAutoConfiguration($tableName);
+		if ($status !== 'new') {
+			$this->clearUrlCacheForAliasChanges($tableName, (int)$recordId);
+		}
+	}
+
+	/**
+	 * Clears URL cache if it is found in the alias table.
+	 *
+	 * @param string $tableName
+	 * @param int $recordId
+	 * @return void
+	 */
+	protected function clearUrlCacheForAliasChanges($tableName, $recordId) {
+		if (!preg_match('/^(?:pages|sys_|cf_)/', $tableName)) {
+			$expirationTime = time() + 30*24*60*60;
+			// This check would be sufficient for most cases but only when id_field is 'uid' in the configuration
+			$result = $this->databaseConnection->sql_query(
+				'SELECT uid,expire,url_cache_id FROM ' .
+				'tx_realurl_uniqalias LEFT JOIN tx_realurl_uniqalias_cache_map ON uid=alias_uid ' .
+				'WHERE tablename=' . $this->databaseConnection->fullQuoteStr($tableName, 'tx_realurl_uniqalias') . ' ' .
+				'AND value_id=' . $recordId
+			);
+			while (FALSE !== ($data = $this->databaseConnection->sql_fetch_assoc($result))) {
+				if ($data['url_cache_id']) {
+					$this->cache->clearUrlCacheById($data['url_cache_id']);
+					$this->databaseConnection->exec_DELETEquery('tx_realurl_uniqalias_cache_map', 'uid=' . (int)$data['uid']);
+				}
+				if ((int)$data['expire'] === 0) {
+					$this->databaseConnection->exec_UPDATEquery('tx_realurl_uniqalias', 'uid=' . (int)$data['uid'], array(
+						'expire' => $expirationTime
+					));
+				}
+			}
+			$this->databaseConnection->sql_free_result($result);
+		}
 	}
 
 	/**
