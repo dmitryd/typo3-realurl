@@ -131,7 +131,7 @@ abstract class EncodeDecoderBase {
 	 * @return array
 	 */
 	protected function getConfigirationForPostVars(array $configuration, $pageId) {
-		$configurationBlock = NULL;
+		$configurationBlock = array();
 		if (isset($configuration[$pageId])) {
 			$maxTries = 10;
 			while ($maxTries-- && isset($configuration[$pageId]) && !is_array($configuration[$pageId])) {
