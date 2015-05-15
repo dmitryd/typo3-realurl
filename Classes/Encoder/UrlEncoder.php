@@ -394,7 +394,7 @@ class UrlEncoder extends EncodeDecoderBase {
 	 */
 	protected function encodeFixedPostVars() {
 		$configuration = (array)$this->configuration->get('fixedPostVars');
-		$postVarSetConfiguration = $this->getConfigirationForPostVars($configuration, $this->urlParameters['id']);
+		$postVarSetConfiguration = $this->getConfigurationForPostVars($configuration, $this->urlParameters['id']);
 
 		$segments = $this->encodeUrlParameterBlock($postVarSetConfiguration);
 		if (count($segments) > 0) {
@@ -435,7 +435,7 @@ class UrlEncoder extends EncodeDecoderBase {
 	 */
 	protected function encodePostVarSets() {
 		$configuration = (array)$this->configuration->get('postVarSets');
-		$postVarSetConfigurations = $this->getConfigirationForPostVars($configuration, $this->urlParameters['id']);
+		$postVarSetConfigurations = $this->getConfigurationForPostVars($configuration, $this->urlParameters['id']);
 
 		foreach ($postVarSetConfigurations as $postVar => $postVarSetConfiguration) {
 			$segments = $this->encodeUrlParameterBlock($postVarSetConfiguration);
