@@ -393,7 +393,7 @@ class UrlEncoder extends EncodeDecoderBase {
 	 * @return void
 	 */
 	protected function encodeFixedPostVars() {
-		$configuration = (array)$this->configuration->get('postVarSets');
+		$configuration = (array)$this->configuration->get('fixedPostVars');
 		$postVarSetConfiguration = $this->getConfigirationForPostVars($configuration, $this->urlParameters['id']);
 
 		$segments = $this->encodeUrlParameterBlock($postVarSetConfiguration);
