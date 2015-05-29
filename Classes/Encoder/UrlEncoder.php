@@ -201,7 +201,10 @@ class UrlEncoder extends EncodeDecoderBase {
 	 * @return bool
 	 */
 	protected function canEncoderExecute() {
-		return $this->isRealURLEnabled() && !$this->isBackendMode() && !$this->isInWorkspace() && $this->isTypo3Url();
+        // added check isConfigurationEmpty
+        // to avoid errors when no configuration is set
+        // 29.05.15 14:07 by Petra Arentzen
+		return $this->isRealURLEnabled() && !$this->isBackendMode()&& !$this->configuration->isConfigurationEmpty() && !$this->isInWorkspace()  && $this->isTypo3Url();
 	}
 
 	/**

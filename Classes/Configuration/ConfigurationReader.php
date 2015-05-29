@@ -382,4 +382,44 @@ class ConfigurationReader implements SingletonInterface {
 
 		return TRUE;
 	}
+
+    /**
+     * Checks if configuration is not set
+     *
+     * #######################################################################
+     * used in \DmitryDulepov\Realurl\Encoder\UrlEncoder::canEncoderExecute()
+     * to avoid errors when no configuration is set
+     * 29.05.15 14:06 by Petra Arentzen
+     * #######################################################################
+     *
+     * @return bool
+     */
+    public function isConfigurationEmpty() {
+
+        static $isEmpty = NULL;
+        if (is_bool($isEmpty)) {
+            return $isEmpty;
+        }
+
+        // somehow tell someone that there is a problem
+        $isEmpty = empty($this->configuration);
+        if (!$isEmpty) {
+            return FALSE;
+        }
+
+        if (isset($GLOBALS['BE_USER'])) {
+            global
+                /** @var \TYPO3\CMS\Backend\FrontendBackendUserAuthentication $BE_USER */
+                $BE_USER;
+
+            $BE_USER->simplelog(
+                'Configuration not set',
+                'realurl',
+                1
+            );
+        }
+
+        return TRUE;
+    }
+
 }
