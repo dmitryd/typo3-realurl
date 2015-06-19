@@ -144,6 +144,9 @@ abstract class EncodeDecoderBase {
 		if (is_null($configurationBlock) && isset($configuration['_DEFAULT'])) {
 			$configurationBlock = $configuration['_DEFAULT'];
 		}
+		else {
+			$configurationBlock = array();
+		}
 
 		return $configurationBlock;
 	}
