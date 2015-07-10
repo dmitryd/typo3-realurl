@@ -294,7 +294,7 @@ class UrlDecoder extends EncodeDecoderBase {
 		$requestVariables = array();
 
 		$allPostVars = array_filter((array)$this->configuration->get('fixedPostVars'));
-		$postVars = $this->getConfigirationForPostVars($allPostVars, $pageId);
+		$postVars = $this->getConfigurationForPostVars($allPostVars, $pageId);
 
 		$previousValue = '';
 		foreach ($postVars as $postVarConfiguration) {
@@ -446,7 +446,7 @@ class UrlDecoder extends EncodeDecoderBase {
 		$requestVariables = array();
 
 		$allPostVarSets = array_filter((array)$this->configuration->get('postVarSets'));
-		$postVarSets = $this->getConfigirationForPostVars($allPostVarSets, $pageId);
+		$postVarSets = $this->getConfigurationForPostVars($allPostVarSets, $pageId);
 
 		$previousValue = '';
 
