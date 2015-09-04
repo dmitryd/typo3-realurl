@@ -1,7 +1,7 @@
 <?php
-$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tstemplate.php']['linkData-PostProc']['realurl'] = 'DmitryDulepov\\Realurl\\Encoder\\UrlEncoder->encodeUrl';
-$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['tslib/class.tslib_content.php']['typoLink_PostProc']['realurl'] = 'DmitryDulepov\\Realurl\\Encoder\\UrlEncoder->postProcessEncodedUrl';
-$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['tslib/class.tslib_fe.php']['checkAlternativeIdMethods-PostProc']['realurl'] = 'DmitryDulepov\\Realurl\\Decoder\\UrlDecoder->decodeUrl';
+if (!defined('TYPO3_MODE')) {
+	die ('Access denied.');
+}
 
 if (!function_exists('includeRealurlConfiguration')) {
 	/**
@@ -19,7 +19,6 @@ if (!function_exists('includeRealurlConfiguration')) {
 			}
 			unset($realurlConfigurationFile);
 
-
 			if (!isset($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']) && $configuration['enableAutoConf']) {
 				if (!defined('TX_REALURL_AUTOCONF_FILE')) {
 					define('TX_REALURL_AUTOCONF_FILE', 'typo3conf/realurl_autoconf.php');
@@ -29,6 +28,12 @@ if (!function_exists('includeRealurlConfiguration')) {
 			}
 		}
 	}
+}
+
+if (TYPO3_MODE === 'FE') {
+	$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tstemplate.php']['linkData-PostProc']['realurl'] = 'DmitryDulepov\\Realurl\\Encoder\\UrlEncoder->encodeUrl';
+	$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['tslib/class.tslib_content.php']['typoLink_PostProc']['realurl'] = 'DmitryDulepov\\Realurl\\Encoder\\UrlEncoder->postProcessEncodedUrl';
+	$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['tslib/class.tslib_fe.php']['checkAlternativeIdMethods-PostProc']['realurl'] = 'DmitryDulepov\\Realurl\\Decoder\\UrlDecoder->decodeUrl';
 
 	includeRealurlConfiguration();
 
