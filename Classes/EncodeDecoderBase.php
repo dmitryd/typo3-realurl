@@ -267,14 +267,14 @@ abstract class EncodeDecoderBase {
 	}
 
 	/**
-	 * Resolves shortcuts for the shortcur of type PageRepository::SHORTCUT_MODE_PARENT_PAGE.
+	 * Resolves shortcuts for the shortcut of type PageRepository::SHORTCUT_MODE_PARENT_PAGE.
 	 *
 	 * @param array $page
 	 * @param array $processedPages
 	 * @return array
 	 */
 	private function resolveShortcutParentPage(array $page, array &$processedPages) {
-		$page = $GLOBALS['TSFE']->sys_page->getPage($page['pid'], FALSE);
+		$page = $this->pageRepository->getPage($page['pid'], FALSE);
 		if ($page && $page['doktype'] == PageRepository::DOKTYPE_SHORTCUT) {
 			$page = $this->resolveShortcutProcess($page, $processedPages);
 		}
