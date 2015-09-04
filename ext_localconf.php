@@ -10,7 +10,11 @@ if (!function_exists('includeRealurlConfiguration')) {
 	 * @return void
 	 */
 	function includeRealurlConfiguration() {
-		$configuration = @unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['realurl']);
+		$configuration = $GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['realurl'];
+		if (is_string($configuration)) {
+			$configuration = @unserialize($configuration);
+		}
+
 		if (is_array($configuration)) {
 			$realurlConfigurationFile = trim($configuration['configFile']);
 			if ($realurlConfigurationFile && @file_exists(PATH_site . $realurlConfigurationFile)) {
