@@ -362,6 +362,10 @@ class UrlEncoder extends EncodeDecoderBase {
 
 		$components = array();
 		foreach (array_reverse($rootLine) as $page) {
+			// Skip if this page is excluded
+			if ($page['tx_realurl_exclude']) {
+				continue;
+			}
 			if ($enableLanguageOverlay) {
 				$overlay = $this->pageRepository->getPageOverlay($page, (int)$this->originalUrlParameters['L']);
 				if (is_array($overlay)) {
