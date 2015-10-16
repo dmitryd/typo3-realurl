@@ -1,7 +1,4 @@
 <?php
-if (!defined('TYPO3_MODE')) {
-	die ('Access denied.');
-}
 
 if (!function_exists('includeRealurlConfiguration')) {
 	/**
