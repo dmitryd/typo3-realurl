@@ -327,7 +327,7 @@ class tx_realurl extends tx_realurl_baseclass {
 	 * This method gets called by the typoLink_PostProc hook in tslib_content:
 	 *
 	 * @param array $parameters Array of parameters from typoLink_PostProc hook in tslib_content
-	 * @param tslib_cObj $pObj Reference to the calling tslib_content instance
+	 * @param tslib_cObj|\TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer $pObj Reference to the calling tslib_content instance
 	 * @return void
 	 */
 	public function encodeSpURL_urlPrepend(&$parameters, &$pObj) {
