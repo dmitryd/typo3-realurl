@@ -231,7 +231,11 @@ class tx_realurl_apiwrapper_6x extends tx_realurl_apiwrapper implements \TYPO3\C
 	 * @return array
 	 */
 	public function array_merge_recursive_overrule($array1, $array2) {
-		\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule($array1, $array2);
+		if (version_compare(TYPO3_branch, '6.2', '<')) {
+			$array1 = GeneralUtility::array_merge_recursive_overrule($array1, $array2);
+		} else {
+			\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule($array1, $array2);
+		}
 		return $array1;
 	}
 
