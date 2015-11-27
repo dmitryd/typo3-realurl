@@ -361,7 +361,14 @@ class UrlEncoder extends EncodeDecoderBase {
 		}
 
 		$components = array();
-		foreach (array_reverse($rootLine) as $page) {
+		$reversedRootLine = array_reverse($rootLine);
+		$rootLineMax = count($reversedRootLine) - 1;
+		for ($current = 0; $current <= $rootLineMax; $current++) {
+			$page = $reversedRootLine[$current];
+			// Skip if this page is excluded
+			if ($page['tx_realurl_exclude'] && $current !== $rootLineMax) {
+				continue;
+			}
 			if ($enableLanguageOverlay) {
 				$overlay = $this->pageRepository->getPageOverlay($page, (int)$this->originalUrlParameters['L']);
 				if (is_array($overlay)) {

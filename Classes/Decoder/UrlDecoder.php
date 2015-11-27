@@ -965,25 +965,9 @@ class UrlDecoder extends EncodeDecoderBase {
 		$pages = $this->databaseConnection->exec_SELECTgetRows('*', 'pages', 'pid=' . (int)$currentPid .
 			' AND doktype NOT IN (' . $disallowedDoktypes . ')' . $pagesEnableFields
 		);
-		foreach ($pages as $page) {
-			if ($page['doktype'] == PageRepository::DOKTYPE_SHORTCUT) {
-				$page = $this->resolveShortcut($page);
-			}
-			$collectedPageIds[] = (int)$page['uid'];
-			if (!$result) {
-				foreach (self::$pageTitleFields as $field) {
-					if ($this->utility->convertToSafeString($page[$field]) == $segment) {
-						$result = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\Cache\\PathCacheEntry');
-						/** @var \DmitryDulepov\Realurl\Cache\PathCacheEntry $cacheEntry */
-						$result->setPageId((int)$page['uid']);
-						if ($this->detectedLanguageId > 0) {
-							break;
-						} else {
-							break 2;
-						}
-					}
-				}
-			}
+		$result = $this->createPathCacheEntry($segment, $pages, $collectedPageIds);
+		if (!$result) {
+			$result = $this->getPathCacheEntryAfterExcludedPages($segment, $pages, $collectedPageIds, $disallowedDoktypes, $pagesEnableFields);
 		}
 
 		// We have to search overlay as well
@@ -1006,6 +990,78 @@ class UrlDecoder extends EncodeDecoderBase {
 			}
 		}
 
+		return $result;
+	}
+
+	/**
+	 * Find a page entry for the current segment and returns a PathCacheEntry for it.
+	 *
+	 * @param string $segment
+	 * @param array $pages
+	 * @param array $collectedPageIds
+	 * @return \DmitryDulepov\Realurl\Cache\PathCacheEntry | NULL
+	 */
+	public function createPathCacheEntry($segment, $pages, &$collectedPageIds) {
+		$result = NULL;
+		foreach ($pages as $page) {
+			if ($page['doktype'] == PageRepository::DOKTYPE_SHORTCUT) {
+				$page = $this->resolveShortcut($page);
+			}
+			$collectedPageIds[] = (int) $page['uid'];
+			foreach (self::$pageTitleFields as $field) {
+				if ($this->utility->convertToSafeString($page[$field]) == $segment) {
+					$result = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\Cache\\PathCacheEntry');
+					/** @var \DmitryDulepov\Realurl\Cache\PathCacheEntry $cacheEntry */
+					$result->setPageId((int) $page['uid']);
+					if ($this->detectedLanguageId > 0) {
+						break;
+					} else {
+						break 2;
+					}
+				}
+			}
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Searches a page below excluded pages and returns the PathCacheEntry if something was found.
+	 *
+	 * @param string $segment
+	 * @param array $pages
+	 * @param array $collectedPageIds
+	 * @param string $disallowedDoktypes
+	 * @param string $pagesEnableFields
+	 * @return \DmitryDulepov\Realurl\Cache\PathCacheEntry | NULL
+	 */
+	public function getPathCacheEntryAfterExcludedPages($segment, $pages, &$collectedPageIds, $disallowedDoktypes, $pagesEnableFields) {
+		$ids = array();
+		$result = array();
+		$newPages = $pages;
+
+		while ($newPages) {
+			foreach ($newPages as $page) {
+				if ($page['tx_realurl_exclude']) {
+					$ids[] = $page['uid'];
+				}
+			}
+			if ($ids) {
+				$children = $this->databaseConnection->exec_SELECTgetRows(
+					'*', 'pages', 'pid IN (' . implode(',', $ids) . ')' .
+					' AND doktype NOT IN (' . $disallowedDoktypes . ')' . $pagesEnableFields
+				);
+
+				$result = $this->createPathCacheEntry($segment, $children, $collectedPageIds);
+				if ($result) {
+					break;
+				}
+				$newPages = $children;
+				$ids = array();
+			} else {
+				break;
+			}
+		}
 		return $result;
 	}
 
