@@ -995,10 +995,11 @@ class UrlDecoder extends EncodeDecoderBase {
 
 	/**
 	 * Find a page entry for the current segment and returns a PathCacheEntry for it.
+	 *
 	 * @param string $segment
 	 * @param array $pages
 	 * @param array $collectedPageIds
-	 * @return \DmitryDulepov\\Realurl\\Cache\\PathCacheEntry | NULL
+	 * @return \DmitryDulepov\Realurl\Cache\PathCacheEntry | NULL
 	 */
 	public function createPathCacheEntry($segment, $pages, &$collectedPageIds) {
 		$result = NULL;
@@ -1026,12 +1027,13 @@ class UrlDecoder extends EncodeDecoderBase {
 
 	/**
 	 * Searches a page below excluded pages and returns the PathCacheEntry if something was found.
+	 *
 	 * @param string $segment
 	 * @param array $pages
 	 * @param array $collectedPageIds
 	 * @param string $disallowedDoktypes
 	 * @param string $pagesEnableFields
-	 * @return \DmitryDulepov\\Realurl\\Cache\\PathCacheEntry | NULL
+	 * @return \DmitryDulepov\Realurl\Cache\PathCacheEntry | NULL
 	 */
 	public function getPathCacheEntryAfterExcludedPages($segment, $pages, &$collectedPageIds, $disallowedDoktypes, $pagesEnableFields) {
 		$ids = array();
@@ -1046,8 +1048,8 @@ class UrlDecoder extends EncodeDecoderBase {
 			}
 			if ($ids) {
 				$children = $this->databaseConnection->exec_SELECTgetRows(
-						'*', 'pages', 'pid IN(' . implode(',', $ids) . ')' .
-						' AND doktype NOT IN (' . $disallowedDoktypes . ')' . $pagesEnableFields
+					'*', 'pages', 'pid IN (' . implode(',', $ids) . ')' .
+					' AND doktype NOT IN (' . $disallowedDoktypes . ')' . $pagesEnableFields
 				);
 
 				$result = $this->createPathCacheEntry($segment, $children, $collectedPageIds);
@@ -1162,5 +1164,4 @@ class UrlDecoder extends EncodeDecoderBase {
 		// TODO Write to our own error log here
 		$this->caller->pageNotFoundAndExit($errorMessage);
 	}
-
 }
