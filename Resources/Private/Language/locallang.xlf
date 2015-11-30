@@ -13,16 +13,28 @@
 				<source>Management for speaking URLs in TYPO3 CMS</source>
 			</trans-unit>
 			<trans-unit id="module.index">
-				<source>Information</source>
+				<source>Overview</source>
+			</trans-unit>
+			<trans-unit id="module.index.intro_functions">
+				<source>This is a RealURL administration module. It provides functions that you can select from the selector at the top. Here is the overview of the provided functions.</source>
 			</trans-unit>
 			<trans-unit id="module.aliases">
 				<source>Aliases</source>
 			</trans-unit>
+			<trans-unit id="module.aliases.intro">
+				<source>This module manages aliases that are created for items like news or addresses or any other custom types of data.</source>
+			</trans-unit>
 			<trans-unit id="module.cache">
 				<source>Cache</source>
 			</trans-unit>
+			<trans-unit id="module.cache.intro">
+				<source>This module allows you to search, edit and remove cache entries for URLs. RealURL comes with configurable cache and not all cache implementations can provide functionality to view or modify cache items.</source>
+			</trans-unit>
 			<trans-unit id="module.configuration">
 				<source>Configuration</source>
+			</trans-unit>
+			<trans-unit id="module.configuration.intro">
+				<source>This module will show you RealURL configuration as RealURL will see it (including default values).&lt;/p&gt;&lt;p&gt;&lt;strong&gt;Note:&lt;/strong&gt; your TYPO3 solution provider may use its own ways to configure RealURL at runtime. If that's the case, this module may not show confguration accurately. If you suspect that this is the case, contact your TYPO3 solution provider.</source>
 			</trans-unit>
 		</body>
 	</file>
