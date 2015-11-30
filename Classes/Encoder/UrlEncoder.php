@@ -903,11 +903,11 @@ class UrlEncoder extends EncodeDecoderBase {
 	 * @return void
 	 */
 	protected function reapplyAbsRefPrefix() {
-		$reapplyAbsRefPrefix = (bool)$this->configuration->get('init/reapplyAbsRefPrefix');
-		if (!isset($reapplyAbsRefPrefix) || $reapplyAbsRefPrefix && $this->tsfe->absRefPrefix) {
+		$reapplyAbsRefPrefix = $this->configuration->get('init/reapplyAbsRefPrefix');
+		if (($reapplyAbsRefPrefix === '' || $reapplyAbsRefPrefix) && $this->tsfe->absRefPrefix) {
 			// Prevent // in case of absRefPrefix ending with / and emptyUrlReturnValue=/
 			if (substr($this->tsfe->absRefPrefix, -1, 1) == '/' && substr($this->encodedUrl, 0, 1) == '/') {
-				$this->encodedUrl = substr($this->encodedUrl, 1);
+				$this->encodedUrl = (string)substr($this->encodedUrl, 1);
 			}
 			$this->encodedUrl = $this->tsfe->absRefPrefix . $this->encodedUrl;
 		}
