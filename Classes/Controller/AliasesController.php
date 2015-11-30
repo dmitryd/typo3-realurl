@@ -28,6 +28,8 @@ namespace DmitryDulepov\Realurl\Controller;
  *
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
+use TYPO3\CMS\Core\Messaging\AbstractMessage;
+use TYPO3\CMS\Extbase\Utility\LocalizationUtility;
 
 /**
  * This class provides a controller for aliases Backend function of RealURL.
@@ -40,7 +42,40 @@ class AliasesController extends BackendModuleController {
 	 * Performs alias management functions.
 	 */
 	public function indexAction() {
-		
+		$availableAliasTypes = $this->getAvailableAliasTypes();
+		if (count($availableAliasTypes) == 0) {
+			$this->addFlashMessage(LocalizationUtility::translate('LLL:EXT:realurl/Resources/Private/Language/locallang.xlf:module.aliases.not_available', ''), '', AbstractMessage::INFO);
+		}
+
+		$this->view->assign('availableAliasTypes', $availableAliasTypes);
 	}
-	
+
+	/**
+	 * Obtains a list of aliases.
+	 *
+	 * @return array
+	 */
+	protected function getAvailableAliasTypes() {
+		$result = array();
+
+		$rows = $this->databaseConnection->exec_SELECTgetRows('DISTINCT tablename AS tablename', 'tx_realurl_uniqalias', '');
+		array_walk($rows, function($row) use (&$result) {
+			$tableNameKey = $row['tablename'];
+			$tableName = '<' . $tableNameKey . '>';
+			if (isset($GLOBALS['TCA'][$tableNameKey]['ctrl']['title'])) {
+				if (substr($GLOBALS['TCA'][$tableNameKey]['ctrl']['title'], 0, 4) === 'LLL:') {
+					$tableName = LocalizationUtility::translate($GLOBALS['TCA'][$tableNameKey]['ctrl']['title'], '');
+				}
+				else {
+					$tableName = $GLOBALS['TCA'][$tableNameKey]['ctrl']['title'];
+				}
+			}
+			$result[$tableNameKey] = $tableName;
+		});
+
+		asort($result);
+
+		return $result;
+	}
+
 }

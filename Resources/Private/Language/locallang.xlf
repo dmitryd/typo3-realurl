@@ -24,6 +24,18 @@
 			<trans-unit id="module.aliases.intro">
 				<source>This module manages aliases that are created for items like news or addresses or any other custom types of data.</source>
 			</trans-unit>
+			<trans-unit id="module.aliases.not_available.title">
+				<source>Currently there are no aliases available.</source>
+			</trans-unit>
+			<trans-unit id="module.aliases.not_available.message">
+				<source>Currently there are no aliases available.</source>
+			</trans-unit>
+			<trans-unit id="module.aliases.available">
+				<source>Available aliases</source>
+			</trans-unit>
+			<trans-unit id="module.aliases.not_available.select">
+				<source>Select alias type:</source>
+			</trans-unit>
 			<trans-unit id="module.cache">
 				<source>Cache</source>
 			</trans-unit>

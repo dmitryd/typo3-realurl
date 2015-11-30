@@ -3,4 +3,32 @@
 <f:section name="content">
 	<h1><f:translate key="LLL:EXT:realurl/Resources/Private/Language/locallang.xlf:module.aliases"/></h1>
 	<p><f:translate key="LLL:EXT:realurl/Resources/Private/Language/locallang.xlf:module.aliases.intro"/></p>
+
+	<f:flashMessages/>
+
+	<f:if condition="{availableAliasTypes -> f:count()}">
+		<f:render section="availableAliases" arguments="{_all}"/>
+		<f:if condition="{selectedAlias}">
+			<f:render section="showSelectedAliases" arguments="{_all}"/>
+		</f:if>
+	</f:if>
+</f:section>
+
+
+<f:section name="availableAliases">
+	<h3><f:translate key="LLL:EXT:realurl/Resources/Private/Language/locallang.xlf:module.aliases.available"/></h3>
+	<p>
+		<f:translate key="LLL:EXT:realurl/Resources/Private/Language/locallang.xlf:module.aliases.available.select"/>
+		<select name="selectedAlias">
+			<option value=""></option>
+			<f:for each="{availableAliasTypes}" as="aliasTitle" key="tableName">
+				<option {f:if(condition: '{tableName}=={selectedAlias}', then: 'selected="selected"')} value="{tableName}">{aliasTitle}</option>
+			</f:for>
+		</select>
+	</p>
+</f:section>
+
+
+<f:section name="showSelectedAliases">
+
 </f:section>

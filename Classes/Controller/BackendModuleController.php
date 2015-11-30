@@ -39,6 +39,9 @@ abstract class BackendModuleController extends \TYPO3\CMS\Extbase\Mvc\Controller
 	/** @var int */
 	protected $currentPageId = 0;
 
+	/** @var \TYPO3\CMS\Core\Database\DatabaseConnection */
+	protected $databaseConnection;
+
 	/**
 	 * Initializes all actions.
 	 *
@@ -46,6 +49,7 @@ abstract class BackendModuleController extends \TYPO3\CMS\Extbase\Mvc\Controller
 	 */
 	protected function initializeAction() {
 		$this->currentPageId = (int)\TYPO3\CMS\Core\Utility\GeneralUtility::_GET('id');
+		$this->databaseConnection = $GLOBALS['TYPO3_DB'];
 		parent::initializeAction();
 	}
 }
