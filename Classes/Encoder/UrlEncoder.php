@@ -675,8 +675,8 @@ class UrlEncoder extends EncodeDecoderBase {
 				$this->encodedUrl = $emptyUrlReturnValue;
 			}
 			$this->storeInUrlCache();
-			$this->reapplyAbsRefPrefix();
 		}
+		$this->reapplyAbsRefPrefix();
 		$this->prepareUrlPrepend();
 	}
 
