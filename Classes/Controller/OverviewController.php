@@ -30,22 +30,16 @@ namespace DmitryDulepov\Realurl\Controller;
  ***************************************************************/
 
 /**
- * This class provides a controller for the Backend module of RealURL.
+ * This class provides a controller for aliases Backend function of RealURL.
  *
  * @author Dmitry Dulepov <dmitry.dulepov@gmail.com>
  */
-abstract class BackendModuleController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionController {
-
-	/** @var int */
-	protected $currentPageId = 0;
+class OverviewController extends BackendModuleController {
 
 	/**
-	 * Initializes all actions.
-	 *
-	 * @return void
+	 * Shows the overview of functions.
 	 */
-	protected function initializeAction() {
-		$this->currentPageId = (int)\TYPO3\CMS\Core\Utility\GeneralUtility::_GET('id');
-		parent::initializeAction();
+	public function indexAction() {
+		// Nothing
 	}
 }

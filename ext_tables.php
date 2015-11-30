@@ -5,7 +5,8 @@
 	'realurl',
     '',
     array(
-		'BackendModule' => 'index,aliases,cache,configuration',
+		'Overview' => 'index',//,aliases,cache,configuration',
+		'Aliases' => 'index',
 	),
 	array(
 		'access' => 'user,group',
