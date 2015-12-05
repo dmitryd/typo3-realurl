@@ -29,6 +29,7 @@ namespace DmitryDulepov\Realurl\Controller;
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
 use TYPO3\CMS\Core\Messaging\AbstractMessage;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Utility\LocalizationUtility;
 
 /**
@@ -48,6 +49,11 @@ class AliasesController extends BackendModuleController {
 		}
 
 		$this->view->assign('availableAliasTypes', $availableAliasTypes);
+
+		$selectedAlias = GeneralUtility::_GP('selectedAlias');
+		if ($selectedAlias && isset($availableAliasTypes[$selectedAlias])) {
+			$this->processSelectedAlias($selectedAlias);
+		}
 	}
 
 	/**
@@ -78,4 +84,11 @@ class AliasesController extends BackendModuleController {
 		return $result;
 	}
 
+	/**
+	 * Shows editing interface for the selected aliases.
+	 *
+	 * @param string $selectedAlias
+	 */
+	protected function processSelectedAlias($selectedAlias) {
+	}
 }
