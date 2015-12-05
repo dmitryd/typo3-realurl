@@ -5,18 +5,24 @@
     "homepage": "https://github.com/dmitryd/typo3-realurl",
     "version": "2.0.0",
     "license": "LGPL-3.0+",
+    "conflict": {
+        "bednee/cooluri": ">0.0.1",
+        "typo3-ter/cookuri": ">=0.0.1",
+        "typo3-ter/simulatestatic": ">0.0.1"
+    },
     "keywords": [
         "TYPO3",
         "CMS",
-        "Speaking URL",
-        "RealURL"
+        "RealURL",
+        "typo3",
+        "realurl"
     ],
-    "conflict": {
-        "bednee/cooluri": ">0.0.1"
-    },
     "require": {
         "typo3/cms-core": ">=6.2.1,<8.0",
         "php": ">=5.3.2"
+    },
+    "suggest": {
+      "typo3-ter/static-info-tables": ">=6.2.0"
     },
     "autoload": {
         "psr-4": {

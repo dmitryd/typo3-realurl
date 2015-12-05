@@ -21,6 +21,8 @@ $EM_CONF[$_EXTKEY] = array(
 		'conflicts' => array(
 			'cooluri' => ''
 		),
-		'suggests' => array(),
+		'suggests' => array(
+			'static_info_tables' => '6.2.0-',
+		),
 	),
 );
