@@ -7,7 +7,7 @@
     "license": "LGPL-3.0+",
     "conflict": {
         "bednee/cooluri": ">0.0.1",
-        "typo3-ter/cookuri": ">=0.0.1",
+        "typo3-ter/cooluri": ">=0.0.1",
         "typo3-ter/simulatestatic": ">0.0.1"
     },
     "keywords": [
