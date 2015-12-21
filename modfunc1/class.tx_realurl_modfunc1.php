@@ -23,6 +23,10 @@
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
 
+use TYPO3\CMS\Core\Imaging\Icon;
+use TYPO3\CMS\Core\Imaging\IconFactory;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+
 /** @noinspection PhpUndefinedMethodInspection */
 $GLOBALS['LANG']->includeLLfile('EXT:realurl/modfunc1/locallang.xml');
 
@@ -54,6 +58,11 @@ class tx_realurl_modfunc1 extends modfunc_base {
 	/** @var language */
 	protected $language;
 
+	/**
+	 * @var IconFactory
+	 */
+	protected $iconFactory;
+
 	// Internal, dynamic:
 	var $searchResultCounter = 0;
 
@@ -62,6 +71,10 @@ class tx_realurl_modfunc1 extends modfunc_base {
 		$this->beUser = $GLOBALS['BE_USER'];
 		$this->database = $GLOBALS['TYPO3_DB'];
 		$this->language = $GLOBALS['LANG'];
+
+		if (version_compare(TYPO3_branch, '7.0', '>=')) {
+			$this->iconFactory = GeneralUtility::makeInstance(IconFactory::class);
+		}
 	}
 
 	/**
@@ -281,13 +294,25 @@ class tx_realurl_modfunc1 extends modfunc_base {
 					// Add values from alternative field used to generate URL:
 					$baseRow = $row['row'];    // page row as base.
 					$onClick = $this->apiWrapper->editOnClick('&edit[pages][' . $row['row']['uid'] . ']=edit&columnsOnly=title,nav_title,alias,tx_realurl_pathsegment', $this->pObj->doc->backPath);
-					$editIcon = '<a href="#" onclick="' . htmlspecialchars($onClick) . '">' .
-						'<img' . $this->apiWrapper->skinImg($this->pObj->doc->backPath, 'gfx/edit2.gif', 'width="11" height="12"') . ' title="" alt="" />' .
-						'</a>';
+					if (version_compare(TYPO3_branch, '7.0', '<')) {
+						$editIcon = '<a href="#" onclick="' . htmlspecialchars($onClick) . '">' .
+							'<img' . $this->apiWrapper->skinImg($this->pObj->doc->backPath, 'gfx/edit2.gif', 'width="11" height="12"') . ' title="" alt="" />' .
+							'</a>';
+					} else {
+						$editIcon = '<a href="#" onclick="' . htmlspecialchars($onClick) . '">' .
+							$this->iconFactory->getIcon('actions-document-open', Icon::SIZE_SMALL)->render() .
+							'</a>';
+					}
 					$onClick = $this->apiWrapper->viewOnClick($row['row']['uid'], $this->pObj->doc->backPath, '', '', '', '');
-					$editIcon .= '<a href="#" onclick="' . htmlspecialchars($onClick) . '">' .
-						'<img' . $this->apiWrapper->skinImg($this->pObj->doc->backPath, 'gfx/zoom.gif', 'width="12" height="12"') . ' title="" alt="" />' .
-						'</a>';
+					if (version_compare(TYPO3_branch, '7.0', '<')) {
+						$editIcon .= '<a href="#" onclick="' . htmlspecialchars($onClick) . '">' .
+							'<img' . $this->apiWrapper->skinImg($this->pObj->doc->backPath, 'gfx/zoom.gif', 'width="12" height="12"') . ' title="" alt="" />' .
+							'</a>';
+					} else {
+						$editIcon .= '<a href="#" onclick="' . htmlspecialchars($onClick) . '">' .
+							$this->iconFactory->getIcon('apps-toolbar-menu-search', Icon::SIZE_SMALL)->render() .
+							'</a>';
+					}
 
 					if ($inf['language_id'] > 0) {    // For alternative languages, show another list of fields, form page overlay record:
 						$editIcon = '';
@@ -295,13 +320,25 @@ class tx_realurl_modfunc1 extends modfunc_base {
 						if (is_array($olRec)) {
 							$baseRow = array_merge($baseRow, $olRec);
 							$onClick = $this->apiWrapper->editOnClick('&edit[pages_language_overlay][' . $olRec['uid'] . ']=edit&columnsOnly=title,nav_title', $this->pObj->doc->backPath);
-							$editIcon = '<a href="#" onclick="' . htmlspecialchars($onClick) . '">' .
-								'<img' . $this->apiWrapper->skinImg($this->pObj->doc->backPath, 'gfx/edit2.gif', 'width="11" height="12"') . ' title="" alt="" />' .
-								'</a>';
+							if (version_compare(TYPO3_branch, '7.0', '<')) {
+								$editIcon = '<a href="#" onclick="' . htmlspecialchars($onClick) . '">' .
+									'<img' . $this->apiWrapper->skinImg($this->pObj->doc->backPath, 'gfx/edit2.gif', 'width="11" height="12"') . ' title="" alt="" />' .
+									'</a>';
+							} else {
+								$editIcon = '<a href="#" onclick="' . htmlspecialchars($onClick) . '">' .
+									$this->iconFactory->getIcon('actions-document-open', Icon::SIZE_SMALL)->render() .
+									'</a>';
+							}
 							$onClick = $this->apiWrapper->viewOnClick($row['row']['uid'], $this->pObj->doc->backPath, '', '', '', '&L=' . $olRec['sys_language_uid']);
-							$editIcon .= '<a href="#" onclick="' . htmlspecialchars($onClick) . '">' .
-								'<img' . $this->apiWrapper->skinImg($this->pObj->doc->backPath, 'gfx/zoom.gif', 'width="12" height="12"') . ' title="" alt="" />' .
-								'</a>';
+							if (version_compare(TYPO3_branch, '7.0', '<')) {
+								$editIcon .= '<a href="#" onclick="' . htmlspecialchars($onClick) . '">' .
+									'<img' . $this->apiWrapper->skinImg($this->pObj->doc->backPath, 'gfx/zoom.gif', 'width="12" height="12"') . ' title="" alt="" />' .
+									'</a>';
+							} else {
+								$editIcon .= '<a href="#" onclick="' . htmlspecialchars($onClick) . '">' .
+									$this->iconFactory->getIcon('apps-toolbar-menu-search', Icon::SIZE_SMALL)->render() .
+									'</a>';
+							}
 						} else {
 							$baseRow = array();
 						}
@@ -355,28 +392,55 @@ class tx_realurl_modfunc1 extends modfunc_base {
 					if ($deletedEntry) {
 						$tCells[] = '<td>&nbsp;</td>';
 					} else {
-						$tCells[] = '<td>' .
-							'<a href="' . $this->linkSelf('&cmd=delete&entry=' . $inf['cache_id']) . '">' .
-							'<img' . $this->apiWrapper->skinImg($this->pObj->doc->backPath, 'gfx/garbage.gif', 'width="11" height="12"') . ' title="Delete" alt="" />' .
-							'</a>' .
-							'<a href="' . $this->linkSelf('&cmd=edit&entry=' . $inf['cache_id']) . '">' .
-							'<img' . $this->apiWrapper->skinImg($this->pObj->doc->backPath, 'gfx/edit2.gif', 'width="11" height="12"') . ' title="Edit" alt="" />' .
-							'</a>' .
-							'<a href="' . $this->linkSelf('&pathPrefixSearch=' . rawurlencode($inf['pagepath'])) . '">' .
-							'<img' . $this->apiWrapper->skinImg($this->pObj->doc->backPath, 'gfx/napshot.gif', 'width="12" height="12"') . ' title="Use for search" alt="" />' .
-							'</a>' .
-							'<a href="' . $this->linkSelf('&cmd=copy&entry=' . $inf['cache_id']) . '">' .
-							'<img' . $this->apiWrapper->skinImg($this->pObj->doc->backPath, 'gfx/clip_copy.gif', 'width="12" height="12"') . ' title="Copy entry" alt="" />' .
-							'</a>' .
+						if (version_compare(TYPO3_branch, '7.0', '<')) {
+							$tCells[] = '<td>' .
+								'<a href="' . $this->linkSelf('&cmd=delete&entry=' . $inf['cache_id']) . '">' .
+								'<img' . $this->apiWrapper->skinImg($this->pObj->doc->backPath, 'gfx/garbage.gif', 'width="11" height="12"') . ' title="Delete" alt="" />' .
+								'</a>' .
+								'<a href="' . $this->linkSelf('&cmd=edit&entry=' . $inf['cache_id']) . '">' .
+								'<img' . $this->apiWrapper->skinImg($this->pObj->doc->backPath, 'gfx/edit2.gif', 'width="11" height="12"') . ' title="Edit" alt="" />' .
+								'</a>' .
+								'<a href="' . $this->linkSelf('&pathPrefixSearch=' . rawurlencode($inf['pagepath'])) . '">' .
+								'<img' . $this->apiWrapper->skinImg($this->pObj->doc->backPath, 'gfx/napshot.gif', 'width="12" height="12"') . ' title="Use for search" alt="" />' .
+								'</a>' .
+								'<a href="' . $this->linkSelf('&cmd=copy&entry=' . $inf['cache_id']) . '">' .
+								'<img' . $this->apiWrapper->skinImg($this->pObj->doc->backPath, 'gfx/clip_copy.gif', 'width="12" height="12"') . ' title="Copy entry" alt="" />' .
+								'</a>' .
+								'</td>';
+						} else {
+							$tCells[] = '<td>' .
+								'<a href="' . $this->linkSelf('&cmd=delete&entry=' . $inf['cache_id']) . '">' .
+								$this->iconFactory->getIcon('actions-edit-delete', Icon::SIZE_SMALL)->render() .
+								'</a>' .
+								'<a href="' . $this->linkSelf('&cmd=edit&entry=' . $inf['cache_id']) . '">' .
+								$this->iconFactory->getIcon('actions-document-open', Icon::SIZE_SMALL)->render() .
+								'</a>' .
+								'<a href="' . $this->linkSelf('&pathPrefixSearch=' . rawurlencode($inf['pagepath'])) . '">' .
+								$this->iconFactory->getIcon('actions-document-save', Icon::SIZE_SMALL)->render() .
+								'</a>' .
+								'<a href="' . $this->linkSelf('&cmd=copy&entry=' . $inf['cache_id']) . '">' .
+								$this->iconFactory->getIcon('actions-edit-copy', Icon::SIZE_SMALL)->render() .
+								'</a>' .
+								'</td>';
+						}
+					}
+					if (version_compare(TYPO3_branch, '7.0', '<')) {
+						$tCells[] = '<td' . ($inf['expire'] && $inf['expire'] < time() ? ' style="color: red;"' : '') . '>' .
+							($inf['expire'] ? htmlspecialchars($this->apiWrapper->dateTimeAge($inf['expire'], -1)) : '') .
+							($inf['expire'] ?
+								'<a href="' . $this->linkSelf('&cmd=raiseExpire&entry=' . $inf['cache_id']) . '">' .
+								'<img' . $this->apiWrapper->skinImg($this->pObj->doc->backPath, 'gfx/up.gif', 'width="14" height="14"') . ' title="Set expire time to 30 days" alt="" />' .
+								'</a>' : '') .
+							'</td>';
+					} else {
+						$tCells[] = '<td' . ($inf['expire'] && $inf['expire'] < time() ? ' style="color: red;"' : '') . '>' .
+							($inf['expire'] ? htmlspecialchars($this->apiWrapper->dateTimeAge($inf['expire'], -1)) : '') .
+							($inf['expire'] ?
+								'<a href="' . $this->linkSelf('&cmd=raiseExpire&entry=' . $inf['cache_id']) . '">' .
+								$this->iconFactory->getIcon('actions-move-up', Icon::SIZE_SMALL)->render() .
+								'</a>' : '') .
 							'</td>';
 					}
-					$tCells[] = '<td' . ($inf['expire'] && $inf['expire'] < time() ? ' style="color: red;"' : '') . '>' .
-						($inf['expire'] ? htmlspecialchars($this->apiWrapper->dateTimeAge($inf['expire'], -1)) : '') .
-						($inf['expire'] ?
-							'<a href="' . $this->linkSelf('&cmd=raiseExpire&entry=' . $inf['cache_id']) . '">' .
-							'<img' . $this->apiWrapper->skinImg($this->pObj->doc->backPath, 'gfx/up.gif', 'width="14" height="14"') . ' title="Set expire time to 30 days" alt="" />' .
-							'</a>' : '') .
-						'</td>';
 
 					// Set error msg:
 					$error = '';
@@ -418,19 +482,35 @@ class tx_realurl_modfunc1 extends modfunc_base {
 		$tCells[] = '<td>&nbsp;</td>';
 		$tCells[] = '<td>PathSegment | Alias | NavTitle | Title:</td>';
 		$tCells[] = '<td>Pagepath:</td>';
-		$tCells[] = '<td>' .
-			'<a href="' . $this->linkSelf('&cmd=delete&entry=ALL') . '" onclick="return confirm(\'Are you sure you want to flush all cached page paths?\');">' .
-			'<img' . $this->apiWrapper->skinImg($this->pObj->doc->backPath, 'gfx/garbage.gif', 'width="11" height="12"') . ' alt="" />' .
-			'</a>' .
-			'<a href="' . $this->linkSelf('&cmd=edit&entry=ALL') . '">' .
-			'<img' . $this->apiWrapper->skinImg($this->pObj->doc->backPath, 'gfx/edit2.gif', 'width="11" height="12"') . ' title="" alt="" />' .
-			'</a>' .
-			'</td>';
-		$tCells[] = '<td>Expires:' .
-			'<a href="' . $this->linkSelf('&cmd=flushExpired') . '">' .
-			'<img' . $this->apiWrapper->skinImg($this->pObj->doc->backPath, 'gfx/garbage.gif', 'width="11" height="12"') . ' title="Flush all expired" alt="" />' .
-			'</a>' .
-			'</td>';
+		if (version_compare(TYPO3_branch, '7.0', '<')) {
+			$tCells[] = '<td>' .
+				'<a href="' . $this->linkSelf('&cmd=delete&entry=ALL') . '" onclick="return confirm(\'Are you sure you want to flush all cached page paths?\');">' .
+				'<img' . $this->apiWrapper->skinImg($this->pObj->doc->backPath, 'gfx/garbage.gif', 'width="11" height="12"') . ' alt="" />' .
+				'</a>' .
+				'<a href="' . $this->linkSelf('&cmd=edit&entry=ALL') . '">' .
+				'<img' . $this->apiWrapper->skinImg($this->pObj->doc->backPath, 'gfx/edit2.gif', 'width="11" height="12"') . ' title="" alt="" />' .
+				'</a>' .
+				'</td>';
+			$tCells[] = '<td>Expires:' .
+				'<a href="' . $this->linkSelf('&cmd=flushExpired') . '">' .
+				'<img' . $this->apiWrapper->skinImg($this->pObj->doc->backPath, 'gfx/garbage.gif', 'width="11" height="12"') . ' title="Flush all expired" alt="" />' .
+				'</a>' .
+				'</td>';
+		} else {
+			$tCells[] = '<td>' .
+				'<a href="' . $this->linkSelf('&cmd=delete&entry=ALL') . '" onclick="return confirm(\'Are you sure you want to flush all cached page paths?\');">' .
+				$this->iconFactory->getIcon('actions-edit-delete', Icon::SIZE_SMALL)->render() .
+				'</a>' .
+				'<a href="' . $this->linkSelf('&cmd=edit&entry=ALL') . '">' .
+				$this->iconFactory->getIcon('actions-document-open', Icon::SIZE_SMALL)->render() .
+				'</a>' .
+				'</td>';
+			$tCells[] = '<td>Expires:' .
+				'<a href="' . $this->linkSelf('&cmd=flushExpired') . '">' .
+				$this->iconFactory->getIcon('actions-edit-delete', Icon::SIZE_SMALL)->render() .
+				'</a>' .
+				'</td>';
+		}
 		$tCells[] = '<td>Errors:</td>';
 		$tCells[] = '<td>Lang:</td>';
 		$tCells[] = '<td>&MP:</td>';
@@ -789,11 +869,19 @@ class tx_realurl_modfunc1 extends modfunc_base {
 					if (!$c) {
 						$tCells[] = '<td nowrap="nowrap" rowspan="' . count($displayRows) . '">' . $rowTitle . '</td>';
 						$tCells[] = '<td nowrap="nowrap" rowspan="' . count($displayRows) . '">' . $row['row']['uid'] . '</td>';
-						$tCells[] = '<td rowspan="' . count($displayRows) . '">' .
-							'<a href="' . $this->linkSelf('&cmd=deleteDC&entry=page_' . intval($row['row']['uid'])) . '">' .
-							'<img' . $this->apiWrapper->skinImg($this->pObj->doc->backPath, 'gfx/garbage.gif', 'width="11" height="12"') . ' title="Delete entries for page" alt="" />' .
-							'</a>' .
-							'</td>';
+						if (version_compare(TYPO3_branch, '7.0', '<')) {
+							$tCells[] = '<td rowspan="' . count($displayRows) . '">' .
+								'<a href="' . $this->linkSelf('&cmd=deleteDC&entry=page_' . intval($row['row']['uid'])) . '">' .
+								'<img' . $this->apiWrapper->skinImg($this->pObj->doc->backPath, 'gfx/garbage.gif', 'width="11" height="12"') . ' title="Delete entries for page" alt="" />' .
+								'</a>' .
+								'</td>';
+						} else {
+							$tCells[] = '<td rowspan="' . count($displayRows) . '">' .
+								'<a href="' . $this->linkSelf('&cmd=deleteDC&entry=page_' . intval($row['row']['uid'])) . '">' .
+								$this->iconFactory->getIcon('actions-edit-delete', Icon::SIZE_SMALL)->render() .
+								'</a>' .
+								'</td>';
+						}
 					}
 
 					// Path:
@@ -806,11 +894,19 @@ class tx_realurl_modfunc1 extends modfunc_base {
 					$tCells[] = '<td>' . htmlspecialchars($queryParams) . '</td>';
 
 					// Delete:
-					$tCells[] = '<td>' .
-						'<a href="' . $this->linkSelf('&cmd=deleteDC&entry=urlhash_' . rawurlencode($inf['url_hash'])) . '">' .
-						'<img' . $this->apiWrapper->skinImg($this->pObj->doc->backPath, 'gfx/garbage.gif', 'width="11" height="12"') . ' title="Delete entry" alt="" />' .
-						'</a>' .
-						'</td>';
+					if (version_compare(TYPO3_branch, '7.0', '<')) {
+						$tCells[] = '<td>' .
+							'<a href="' . $this->linkSelf('&cmd=deleteDC&entry=urlhash_' . rawurlencode($inf['url_hash'])) . '">' .
+							'<img' . $this->apiWrapper->skinImg($this->pObj->doc->backPath, 'gfx/garbage.gif', 'width="11" height="12"') . ' title="Delete entry" alt="" />' .
+							'</a>' .
+							'</td>';
+					} else {
+						$tCells[] = '<td>' .
+							'<a href="' . $this->linkSelf('&cmd=deleteDC&entry=urlhash_' . rawurlencode($inf['url_hash'])) . '">' .
+							$this->iconFactory->getIcon('actions-edit-delete', Icon::SIZE_SMALL)->render() .
+							'</a>' .
+							'</td>';
+					}
 
 					// Timestamp:
 					$tCells[] = '<td>' . htmlspecialchars($this->apiWrapper->datetime($inf['tstamp'])) . ' / ' . htmlspecialchars($this->apiWrapper->calcAge(time() - $inf['tstamp'])) . '</td>';
@@ -846,19 +942,35 @@ class tx_realurl_modfunc1 extends modfunc_base {
 			</tr>' . $output;
 
 		// Compile final table and return:
-		$output = '<br/><br/>
-		Displayed entries: <b>' . $countDisplayed . '</b> ' .
-			'<a href="' . $this->linkSelf('&cmd=deleteDC&entry=displayed') . '">' .
-			'<img' . $this->apiWrapper->skinImg($this->pObj->doc->backPath, 'gfx/garbage.gif', 'width="11" height="12"') . ' title="Delete displayed entries" alt="" />' .
-			'</a>' .
-			'<br/>
-		Total entries in decode cache: <b>' . $count_allInTable['count'] . '</b> ' .
-			'<a href="' . $this->linkSelf('&cmd=deleteDC&entry=all') . '">' .
-			'<img' . $this->apiWrapper->skinImg($this->pObj->doc->backPath, 'gfx/garbage.gif', 'width="11" height="12"') . ' title="Delete WHOLE decode cache!" alt="" />' .
-			'</a>' .
-			'<br/>
-		<table border="0" cellspacing="1" cellpadding="0" id="tx-realurl-pathcacheTable" class="lrPadding c-list">' . $output . '
-		</table>';
+		if (version_compare(TYPO3_branch, '7.0', '<')) {
+			$output = '<br/><br/>
+			Displayed entries: <b>' . $countDisplayed . '</b> ' .
+				'<a href="' . $this->linkSelf('&cmd=deleteDC&entry=displayed') . '">' .
+				'<img' . $this->apiWrapper->skinImg($this->pObj->doc->backPath, 'gfx/garbage.gif', 'width="11" height="12"') . ' title="Delete displayed entries" alt="" />' .
+				'</a>' .
+				'<br/>
+			Total entries in decode cache: <b>' . $count_allInTable['count'] . '</b> ' .
+				'<a href="' . $this->linkSelf('&cmd=deleteDC&entry=all') . '">' .
+				'<img' . $this->apiWrapper->skinImg($this->pObj->doc->backPath, 'gfx/garbage.gif', 'width="11" height="12"') . ' title="Delete WHOLE decode cache!" alt="" />' .
+				'</a>' .
+				'<br/>
+				<table border="0" cellspacing="1" cellpadding="0" id="tx-realurl-pathcacheTable" class="lrPadding c-list">' . $output . '
+				</table>';
+		} else {
+			$output = '<br/><br/>
+			Displayed entries: <b>' . $countDisplayed . '</b> ' .
+				'<a href="' . $this->linkSelf('&cmd=deleteDC&entry=displayed') . '">' .
+				$this->iconFactory->getIcon('actions-edit-delete', Icon::SIZE_SMALL)->render() .
+				'</a>' .
+				'<br/>
+			Total entries in decode cache: <b>' . $count_allInTable['count'] . '</b> ' .
+				'<a href="' . $this->linkSelf('&cmd=deleteDC&entry=all') . '">' .
+				$this->iconFactory->getIcon('actions-edit-delete', Icon::SIZE_SMALL)->render() .
+				'</a>' .
+				'<br/>
+				<table border="0" cellspacing="1" cellpadding="0" id="tx-realurl-pathcacheTable" class="lrPadding c-list">' . $output . '
+				</table>';
+		}
 
 		return $output;
 	}
@@ -940,11 +1052,19 @@ class tx_realurl_modfunc1 extends modfunc_base {
 					if (!$c) {
 						$tCells[] = '<td nowrap="nowrap" rowspan="' . count($displayRows) . '">' . $rowTitle . '</td>';
 						$tCells[] = '<td nowrap="nowrap" rowspan="' . count($displayRows) . '">' . $row['row']['uid'] . '</td>';
-						$tCells[] = '<td rowspan="' . count($displayRows) . '">' .
-							'<a href="' . $this->linkSelf('&cmd=deleteEC&entry=page_' . intval($row['row']['uid'])) . '">' .
-							'<img' . $this->apiWrapper->skinImg($this->pObj->doc->backPath, 'gfx/garbage.gif', 'width="11" height="12"') . ' title="Delete entries for page" alt="" />' .
-							'</a>' .
-							'</td>';
+						if (version_compare(TYPO3_branch, '7.0', '<')) {
+							$tCells[] = '<td rowspan="' . count($displayRows) . '">' .
+								'<a href="' . $this->linkSelf('&cmd=deleteEC&entry=page_' . intval($row['row']['uid'])) . '">' .
+								'<img' . $this->apiWrapper->skinImg($this->pObj->doc->backPath, 'gfx/garbage.gif', 'width="11" height="12"') . ' title="Delete entries for page" alt="" />' .
+								'</a>' .
+								'</td>';
+						} else {
+							$tCells[] = '<td rowspan="' . count($displayRows) . '">' .
+								'<a href="' . $this->linkSelf('&cmd=deleteEC&entry=page_' . intval($row['row']['uid'])) . '">' .
+								$this->iconFactory->getIcon('actions-edit-delete', Icon::SIZE_SMALL)->render() .
+								'</a>' .
+								'</td>';
+						}
 					}
 
 					// Get vars:
@@ -957,11 +1077,19 @@ class tx_realurl_modfunc1 extends modfunc_base {
 					$tCells[] = '<td>' . htmlspecialchars($this->apiWrapper->fixed_lgd_cs($inf['content'], 100)) . '</td>';
 
 					// Delete:
-					$tCells[] = '<td>' .
-						'<a href="' . $this->linkSelf('&cmd=deleteEC&entry=urlhash_' . rawurlencode($inf['url_hash'])) . '">' .
-						'<img' . $this->apiWrapper->skinImg($this->pObj->doc->backPath, 'gfx/garbage.gif', 'width="11" height="12"') . ' title="Delete entry" alt="" />' .
-						'</a>' .
-						'</td>';
+					if (version_compare(TYPO3_branch, '7.0', '<')) {
+						$tCells[] = '<td>' .
+							'<a href="' . $this->linkSelf('&cmd=deleteEC&entry=urlhash_' . rawurlencode($inf['url_hash'])) . '">' .
+							'<img' . $this->apiWrapper->skinImg($this->pObj->doc->backPath, 'gfx/garbage.gif', 'width="11" height="12"') . ' title="Delete entry" alt="" />' .
+							'</a>' .
+							'</td>';
+					} else {
+						$tCells[] = '<td>' .
+							'<a href="' . $this->linkSelf('&cmd=deleteEC&entry=urlhash_' . rawurlencode($inf['url_hash'])) . '">' .
+							$this->iconFactory->getIcon('actions-edit-delete', Icon::SIZE_SMALL)->render() .
+							'</a>' .
+							'</td>';
+					}
 
 					// Error:
 					$eMsg = ($duplicates[$inf['content']] && $duplicates[$inf['content']] !== $row['row']['uid'] ? $this->pObj->doc->icons(2) . 'Already used on page ID ' . $duplicates[$inf['content']] . '<br/>' : '');
@@ -1011,22 +1139,41 @@ class tx_realurl_modfunc1 extends modfunc_base {
 			</tr>' . $output;
 
 		// Compile final table and return:
-		$output = '
+		if (version_compare(TYPO3_branch, '7.0', '<')) {
+			$output = '
 
-		<br/>
-		<br/>
-		Displayed entries: <b>' . $countDisplayed . '</b> ' .
-			'<a href="' . $this->linkSelf('&cmd=deleteEC&entry=displayed') . '">' .
-			'<img' . $this->apiWrapper->skinImg($this->pObj->doc->backPath, 'gfx/garbage.gif', 'width="11" height="12"') . ' title="Delete displayed entries" alt="" />' .
-			'</a>' .
-			'<br/>
-		Total entries in encode cache: <b>' . $count_allInTable['count'] . '</b> ' .
-			'<a href="' . $this->linkSelf('&cmd=deleteEC&entry=all') . '">' .
-			'<img' . $this->apiWrapper->skinImg($this->pObj->doc->backPath, 'gfx/garbage.gif', 'width="11" height="12"') . ' title="Delete WHOLE encode cache!" alt="" />' .
-			'</a>' .
-			'<br/>
-		<table border="0" cellspacing="1" cellpadding="0" id="tx-realurl-pathcacheTable" class="lrPadding c-list">' . $output . '
-		</table>';
+			<br/>
+			<br/>
+			Displayed entries: <b>' . $countDisplayed . '</b> ' .
+				'<a href="' . $this->linkSelf('&cmd=deleteEC&entry=displayed') . '">' .
+				'<img' . $this->apiWrapper->skinImg($this->pObj->doc->backPath, 'gfx/garbage.gif', 'width="11" height="12"') . ' title="Delete displayed entries" alt="" />' .
+				'</a>' .
+				'<br/>
+			Total entries in encode cache: <b>' . $count_allInTable['count'] . '</b> ' .
+				'<a href="' . $this->linkSelf('&cmd=deleteEC&entry=all') . '">' .
+				'<img' . $this->apiWrapper->skinImg($this->pObj->doc->backPath, 'gfx/garbage.gif', 'width="11" height="12"') . ' title="Delete WHOLE encode cache!" alt="" />' .
+				'</a>' .
+				'<br/>
+			<table border="0" cellspacing="1" cellpadding="0" id="tx-realurl-pathcacheTable" class="lrPadding c-list">' . $output . '
+			</table>';
+		} else {
+			$output = '
+
+			<br/>
+			<br/>
+			Displayed entries: <b>' . $countDisplayed . '</b> ' .
+				'<a href="' . $this->linkSelf('&cmd=deleteEC&entry=displayed') . '">' .
+				$this->iconFactory->getIcon('actions-edit-delete', Icon::SIZE_SMALL)->render() .
+				'</a>' .
+				'<br/>
+			Total entries in encode cache: <b>' . $count_allInTable['count'] . '</b> ' .
+				'<a href="' . $this->linkSelf('&cmd=deleteEC&entry=all') . '">' .
+				$this->iconFactory->getIcon('actions-edit-delete', Icon::SIZE_SMALL)->render() .
+				'</a>' .
+				'<br/>
+			<table border="0" cellspacing="1" cellpadding="0" id="tx-realurl-pathcacheTable" class="lrPadding c-list">' . $output . '
+			</table>';
+		}
 
 		return $output;
 	}
@@ -1129,16 +1276,29 @@ class tx_realurl_modfunc1 extends modfunc_base {
 				$tCells[] = '<td>' . htmlspecialchars($aliasRecord['lang']) . '</td>';
 				$tCells[] = '<td' . ($aliasRecord['expire'] && $aliasRecord['expire'] < time() ? ' style="color: red;"' : '') . '>' . htmlspecialchars($this->apiWrapper->dateTimeAge($aliasRecord['expire'])) . '</td>';
 
-				$tCells[] = '<td>' .
-					// Edit link:
-					'<a href="' . $this->linkSelf('&table=' . rawurlencode($tableName) . '&cmd=edit&entry=' . $aliasRecord['uid']) . '">' .
-					'<img' . $this->apiWrapper->skinImg($this->pObj->doc->backPath, 'gfx/edit2.gif', 'width="11" height="12"') . ' title="" alt="" />' .
-					'</a>' .
-					// Delete link:
-					'<a href="' . $this->linkSelf('&table=' . rawurlencode($tableName) . '&cmd=delete&entry=' . $aliasRecord['uid']) . '">' .
-					'<img' . $this->apiWrapper->skinImg($this->pObj->doc->backPath, 'gfx/garbage.gif', 'width="11" height="12"') . ' title="" alt="" />' .
-					'</a>' .
-					'</td>';
+				if (version_compare(TYPO3_branch, '7.0', '<')) {
+					$tCells[] = '<td>' .
+						// Edit link:
+						'<a href="' . $this->linkSelf('&table=' . rawurlencode($tableName) . '&cmd=edit&entry=' . $aliasRecord['uid']) . '">' .
+						'<img' . $this->apiWrapper->skinImg($this->pObj->doc->backPath, 'gfx/edit2.gif', 'width="11" height="12"') . ' title="" alt="" />' .
+						'</a>' .
+						// Delete link:
+						'<a href="' . $this->linkSelf('&table=' . rawurlencode($tableName) . '&cmd=delete&entry=' . $aliasRecord['uid']) . '">' .
+						'<img' . $this->apiWrapper->skinImg($this->pObj->doc->backPath, 'gfx/garbage.gif', 'width="11" height="12"') . ' title="" alt="" />' .
+						'</a>' .
+						'</td>';
+				} else {
+					$tCells[] = '<td>' .
+						// Edit link:
+						'<a href="' . $this->linkSelf('&table=' . rawurlencode($tableName) . '&cmd=edit&entry=' . $aliasRecord['uid']) . '">' .
+						$this->iconFactory->getIcon('actions-document-open', Icon::SIZE_SMALL)->render() .
+						'</a>' .
+						// Delete link:
+						'<a href="' . $this->linkSelf('&table=' . rawurlencode($tableName) . '&cmd=delete&entry=' . $aliasRecord['uid']) . '">' .
+						$this->iconFactory->getIcon('actions-edit-delete', Icon::SIZE_SMALL)->render() .
+						'</a>' .
+						'</td>';
+				}
 
 				$keyForDuplicates = $aliasRecord['value_alias'] . ':::' . $aliasRecord['lang'];
 				$tCells[] = '<td>' .
@@ -1164,19 +1324,35 @@ class tx_realurl_modfunc1 extends modfunc_base {
 			$tCells[] = '<td>ID (Field: ' . $field_id . ')</td>';
 			$tCells[] = '<td>Alias (Field: ' . $field_alias . '):</td>';
 			$tCells[] = '<td>Lang:</td>';
-			$tCells[] = '<td>Expire:' .
-				(!$search ? '<a href="' . $this->linkSelf('&table=' . rawurlencode($tableName) . '&cmd=flushExpired') . '">' .
-					'<img' . $this->apiWrapper->skinImg($this->pObj->doc->backPath, 'gfx/garbage.gif', 'width="11" height="12"') . ' title="Flush expired" alt="" />' .
-					'</a>' : '') .
-				'</td>';
-			$tCells[] = '<td>' .
-				(!$search ? '<a href="' . $this->linkSelf('&table=' . rawurlencode($tableName) . '&cmd=edit&entry=ALL') . '">' .
-					'<img' . $this->apiWrapper->skinImg($this->pObj->doc->backPath, 'gfx/edit2.gif', 'width="11" height="12"') . ' title="Edit all" alt="" />' .
-					'</a>' .
-					'<a href="' . $this->linkSelf('&table=' . rawurlencode($tableName) . '&cmd=delete&entry=ALL') . '" onclick="return confirm(\'Delete all?\');">' .
-					'<img' . $this->apiWrapper->skinImg($this->pObj->doc->backPath, 'gfx/garbage.gif', 'width="11" height="12"') . ' title="Delete all" alt="" />' .
-					'</a>' : '') .
-				'</td>';
+			if (version_compare(TYPO3_branch, '7.0', '<')) {
+				$tCells[] = '<td>Expire:' .
+					(!$search ? '<a href="' . $this->linkSelf('&table=' . rawurlencode($tableName) . '&cmd=flushExpired') . '">' .
+						'<img' . $this->apiWrapper->skinImg($this->pObj->doc->backPath, 'gfx/garbage.gif', 'width="11" height="12"') . ' title="Flush expired" alt="" />' .
+						'</a>' : '') .
+					'</td>';
+				$tCells[] = '<td>' .
+					(!$search ? '<a href="' . $this->linkSelf('&table=' . rawurlencode($tableName) . '&cmd=edit&entry=ALL') . '">' .
+						'<img' . $this->apiWrapper->skinImg($this->pObj->doc->backPath, 'gfx/edit2.gif', 'width="11" height="12"') . ' title="Edit all" alt="" />' .
+						'</a>' .
+						'<a href="' . $this->linkSelf('&table=' . rawurlencode($tableName) . '&cmd=delete&entry=ALL') . '" onclick="return confirm(\'Delete all?\');">' .
+						'<img' . $this->apiWrapper->skinImg($this->pObj->doc->backPath, 'gfx/garbage.gif', 'width="11" height="12"') . ' title="Delete all" alt="" />' .
+						'</a>' : '') .
+					'</td>';
+			} else {
+				$tCells[] = '<td>Expire:' .
+					(!$search ? '<a href="' . $this->linkSelf('&table=' . rawurlencode($tableName) . '&cmd=flushExpired') . '">' .
+						$this->iconFactory->getIcon('actions-edit-delete', Icon::SIZE_SMALL)->render() .
+						'</a>' : '') .
+					'</td>';
+				$tCells[] = '<td>' .
+					(!$search ? '<a href="' . $this->linkSelf('&table=' . rawurlencode($tableName) . '&cmd=edit&entry=ALL') . '">' .
+						$this->iconFactory->getIcon('actions-document-open', Icon::SIZE_SMALL)->render() .
+						'</a>' .
+						'<a href="' . $this->linkSelf('&table=' . rawurlencode($tableName) . '&cmd=delete&entry=ALL') . '" onclick="return confirm(\'Delete all?\');">' .
+						$this->iconFactory->getIcon('actions-edit-delete', Icon::SIZE_SMALL)->render() .
+						'</a>' : '') .
+					'</td>';
+			}
 			$tCells[] = '<td>Error:</td>';
 
 			$output = '
@@ -1370,11 +1546,19 @@ class tx_realurl_modfunc1 extends modfunc_base {
 				$tCells = array();
 				$tCells[] = '<td>' . $rec['counter'] . '</td>';
 				$tCells[] = '<td>' . $this->apiWrapper->dateTimeAge($rec['tstamp']) . '</td>';
-				$tCells[] = '<td><a href="' . htmlspecialchars($host . '/' . $rec['url']) . '" target="_blank">' . ($host ? $host . '/' : '') . htmlspecialchars($rec['url']) . '</a>' .
-					' <a href="' . $this->linkSelf('&cmd=new&data[0][source]=' . rawurlencode($rec['url']) . '&SET[type]=redirects') . '">' .
-					'<img' . $this->apiWrapper->skinImg($this->pObj->doc->backPath, 'gfx/napshot.gif', 'width="12" height="12"') . ' title="Set as redirect" alt="" />' .
-					'</a>' .
-					'</td>';
+				if (version_compare(TYPO3_branch, '7.0', '<')) {
+					$tCells[] = '<td><a href="' . htmlspecialchars($host . '/' . $rec['url']) . '" target="_blank">' . ($host ? $host . '/' : '') . htmlspecialchars($rec['url']) . '</a>' .
+						' <a href="' . $this->linkSelf('&cmd=new&data[0][source]=' . rawurlencode($rec['url']) . '&SET[type]=redirects') . '">' .
+						'<img' . $this->apiWrapper->skinImg($this->pObj->doc->backPath, 'gfx/napshot.gif', 'width="12" height="12"') . ' title="Set as redirect" alt="" />' .
+						'</a>' .
+						'</td>';
+				} else {
+					$tCells[] = '<td><a href="' . htmlspecialchars($host . '/' . $rec['url']) . '" target="_blank">' . ($host ? $host . '/' : '') . htmlspecialchars($rec['url']) . '</a>' .
+						' <a href="' . $this->linkSelf('&cmd=new&data[0][source]=' . rawurlencode($rec['url']) . '&SET[type]=redirects') . '">' .
+						$this->iconFactory->getIcon('actions-document-save', Icon::SIZE_SMALL)->render() .
+						'</a>' .
+						'</td>';
+				}
 				$tCells[] = '<td>' . htmlspecialchars($rec['error']) . '</td>';
 				$tCells[] = '<td>' .
 					($rec['last_referer'] ? '<a href="' . htmlspecialchars($rec['last_referer']) . '" target="_blank">' . htmlspecialchars($rec['last_referer']) . '</a>' : '&nbsp;') .
@@ -1405,14 +1589,25 @@ class tx_realurl_modfunc1 extends modfunc_base {
 				</tr>' . $output;
 
 			// Compile final table and return:
-			$output = '
-			<br/>
-				<a href="' . $this->linkSelf('&cmd=deleteAll') . '">' .
-				'<img' . $this->apiWrapper->skinImg($this->pObj->doc->backPath, 'gfx/garbage.gif', 'width="11" height="12"') . ' title="Delete All" alt="" />' .
-				' Flush log</a>
+			if (version_compare(TYPO3_branch, '7.0', '<')) {
+				$output = '
 				<br/>
-			<table border="0" cellspacing="1" cellpadding="0" id="tx-realurl-pathcacheTable" class="lrPadding c-list">' . $output . '
-			</table>';
+					<a href="' . $this->linkSelf('&cmd=deleteAll') . '">' .
+					'<img' . $this->apiWrapper->skinImg($this->pObj->doc->backPath, 'gfx/garbage.gif', 'width="11" height="12"') . ' title="Delete All" alt="" />' .
+					' Flush log</a>
+					<br/>
+				<table border="0" cellspacing="1" cellpadding="0" id="tx-realurl-pathcacheTable" class="lrPadding c-list">' . $output . '
+				</table>';
+			} else {
+				$output = '
+				<br/>
+					<a href="' . $this->linkSelf('&cmd=deleteAll') . '">' .
+					$this->iconFactory->getIcon('actions-edit-delete', Icon::SIZE_SMALL)->render() .
+					' Flush log</a>
+					<br/>
+				<table border="0" cellspacing="1" cellpadding="0" id="tx-realurl-pathcacheTable" class="lrPadding c-list">' . $output . '
+				</table>';
+			}
 		}
 
 		return $output;
@@ -1560,14 +1755,25 @@ class tx_realurl_modfunc1 extends modfunc_base {
 	 * @return string
 	 */
 	protected function generateSingleRedirectContent(array $rec, $page) {
-		$output = '<td>' .
-			'<a href="' . $this->linkSelf('&cmd=edit&uid=' . rawurlencode($rec['uid'])) . '&page=' . $page . '">' .
-			'<img' . $this->apiWrapper->skinImg($this->pObj->doc->backPath, 'gfx/edit2.gif', 'width="11" height="12"') . ' title="Edit entry" alt="" />' .
-			'</a>' .
-			'<a href="' . $this->linkSelf('&cmd=delete&uid=' . rawurlencode($rec['uid'])) . '&page=' . $page . '">' .
-			'<img' . $this->apiWrapper->skinImg($this->pObj->doc->backPath, 'gfx/garbage.gif', 'width="11" height="12"') . ' title="Delete entry" alt="" />' .
-			'</a>' .
-			'</td>';
+		if (version_compare(TYPO3_branch, '7.0', '<')) {
+			$output = '<td>' .
+				'<a href="' . $this->linkSelf('&cmd=edit&uid=' . rawurlencode($rec['uid'])) . '&page=' . $page . '">' .
+				'<img' . $this->apiWrapper->skinImg($this->pObj->doc->backPath, 'gfx/edit2.gif', 'width="11" height="12"') . ' title="Edit entry" alt="" />' .
+				'</a>' .
+				'<a href="' . $this->linkSelf('&cmd=delete&uid=' . rawurlencode($rec['uid'])) . '&page=' . $page . '">' .
+				'<img' . $this->apiWrapper->skinImg($this->pObj->doc->backPath, 'gfx/garbage.gif', 'width="11" height="12"') . ' title="Delete entry" alt="" />' .
+				'</a>' .
+				'</td>';
+		} else {
+			$output = '<td>' .
+				'<a href="' . $this->linkSelf('&cmd=edit&uid=' . rawurlencode($rec['uid'])) . '&page=' . $page . '">' .
+				$this->iconFactory->getIcon('actions-document-open', Icon::SIZE_SMALL)->render() .
+				'</a>' .
+				'<a href="' . $this->linkSelf('&cmd=delete&uid=' . rawurlencode($rec['uid'])) . '&page=' . $page . '">' .
+				$this->iconFactory->getIcon('actions-edit-delete', Icon::SIZE_SMALL)->render() .
+				'</a>' .
+				'</td>';
+		}
 		$output .= sprintf('<td><a href="%s" target="_blank">/%s</a></td>', htmlspecialchars($this->apiWrapper->getIndpEnv('TYPO3_SITE_URL') . $rec['url']), htmlspecialchars($rec['url']));
 		$destinationURL = $this->getDestinationRedirectURL($rec['destination']);
 		$output .= sprintf('<td><a href="%1$s" target="_blank" title="%1$s">%2$s</a></td>', htmlspecialchars($destinationURL), htmlspecialchars($this->apiWrapper->fixed_lgd_cs($destinationURL, 30)));
@@ -1710,9 +1916,15 @@ class tx_realurl_modfunc1 extends modfunc_base {
 	 * @return string
 	 */
 	protected function getNewButton() {
-		$content = '<div style="margin:0 0 0.5em 3px"><a href="' . $this->linkSelf('&cmd=new') . '">' .
-			'<img' . $this->apiWrapper->skinImg($this->pObj->doc->backPath, 'gfx/new_el.gif', 'width="11" height="12"') . ' title="New entry" alt="" />' .
-			' Add new redirects</a></div>';
+		if (version_compare(TYPO3_branch, '7.0', '<')) {
+			$content = '<div style="margin:0 0 0.5em 3px"><a href="' . $this->linkSelf('&cmd=new') . '">' .
+				'<img' . $this->apiWrapper->skinImg($this->pObj->doc->backPath, 'gfx/new_el.gif', 'width="11" height="12"') . ' title="New entry" alt="" />' .
+				' Add new redirects</a></div>';
+		} else {
+			$content = '<div style="margin:0 0 0.5em 3px"><a href="' . $this->linkSelf('&cmd=new') . '">' .
+				$this->iconFactory->getIcon('actions-document-new', Icon::SIZE_SMALL)->render() .
+				' Add new redirects</a></div>';
+		}
 
 		return $content;
 	}
