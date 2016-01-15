@@ -1,0 +1,7 @@
+config.tx_extbase.persistence.classes {
+	DmitryDulepov\Realurl\Domain\Model\Alias {
+		mapping {
+			tableName = tx_realurl_uniqalias
+		}
+	}
+}

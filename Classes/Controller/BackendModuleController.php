@@ -28,6 +28,9 @@ namespace DmitryDulepov\Realurl\Controller;
  *
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
+use TYPO3\CMS\Core\Page\PageRenderer;
+use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * This class provides a controller for the Backend module of RealURL.
@@ -50,6 +53,12 @@ abstract class BackendModuleController extends \TYPO3\CMS\Extbase\Mvc\Controller
 	protected function initializeAction() {
 		$this->currentPageId = (int)\TYPO3\CMS\Core\Utility\GeneralUtility::_GET('id');
 		$this->databaseConnection = $GLOBALS['TYPO3_DB'];
+
+		$pageRenderer = GeneralUtility::makeInstance(PageRenderer::class);
+		/** @var \TYPO3\CMS\Core\Page\PageRenderer $pageRenderer */
+		$pageRenderer->addJsLibrary('jQuery', 'sysext/core/Resources/Public/JavaScript/Contrib/jquery/jquery-2.1.4.min.js');
+		$pageRenderer->addJsFile(ExtensionManagementUtility::extRelPath('realurl') . 'Resources/Public/realurl_be.js');
+
 		parent::initializeAction();
 	}
 }

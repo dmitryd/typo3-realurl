@@ -1,3 +1,5 @@
+{namespace d=DmitryDulepov\Realurl\ViewHelpers}
+
 <f:layout name="Backend" />
 
 <f:section name="content">
@@ -16,19 +18,51 @@
 
 
 <f:section name="availableAliases">
-	<h3><f:translate key="LLL:EXT:realurl/Resources/Private/Language/locallang.xlf:module.aliases.available"/></h3>
-	<p>
-		<f:translate key="LLL:EXT:realurl/Resources/Private/Language/locallang.xlf:module.aliases.available.select"/>
-		<select name="selectedAlias">
-			<option value=""></option>
-			<f:for each="{availableAliasTypes}" as="aliasTitle" key="tableName">
-				<option {f:if(condition: '{tableName}=={selectedAlias}', then: 'selected="selected"')} value="{tableName}">{aliasTitle}</option>
-			</f:for>
-		</select>
-	</p>
+	<form action="{f:uri.action(action:'{f:if(condition: action, then: action, else: \'index\')}')}" class="form-horizontal" id="realurlAliasSelectionForm" method="post">
+		<h3><f:translate key="LLL:EXT:realurl/Resources/Private/Language/locallang.xlf:module.aliases.available"/></h3>
+		<div class="form-group">
+			<label class="col-sm-2" for="realurlSelectedAlias"><f:translate key="LLL:EXT:realurl/Resources/Private/Language/locallang.xlf:module.aliases.available.select"/></label>
+			<div class="col-sm-10">
+				<select class="form-control" id="realurlSelectedAlias" name="selectedAlias">
+					<option value=""></option>
+					<f:for each="{availableAliasTypes}" as="aliasTitle" key="tableName">
+						<option {f:if(condition: '{tableName}=={selectedAlias}', then: 'selected="selected"')} value="{tableName}">{aliasTitle}</option>
+					</f:for>
+				</select>
+			</div>
+		</div>
+	</form>
 </f:section>
 
 
 <f:section name="showSelectedAliases">
-
+	<f:be.widget.paginate objects="{foundAliases}" as="aliases" configuration="{itemsPerPage: 20, insertAbove: 1, insertBelow: 1}">
+		<table class="table table-striped">
+			<tr>
+				<th class="col-sm-1"></th>
+				<th><f:translate key="module.tableHeader.alias"/></th>
+				<th class="col-sm-1"><f:translate key="module.tableHeader.id"/></th>
+				<th class="col-sm-2"><f:translate key="module.tableHeader.language"/></th>
+				<th class="col-sm-2"><f:translate key="module.tableHeader.expire"/></th>
+			</tr>
+			<f:for each="{aliases}" as="alias">
+				<tr>
+					<td class="col-sm-1">-</td>
+					<td>{alias.valueAlias}</td>
+					<td class="col-sm-1">{alias.valueId}</td>
+					<td class="col-sm-2">{d:languageFromId(language: alias.lang)}</td>
+					<td class="col-sm-2">
+						<f:if condition="{alias.expire}">
+							<f:then>
+								<f:format.date format="{f:translate(key: 'module.dateTimeFormat')}">{alias.expire}</f:format.date>
+							</f:then>
+							<f:else>
+								&ndash;
+							</f:else>
+						</f:if>
+					</td>
+				</tr>
+			</f:for>
+		</table>
+	</f:be.widget.paginate>
 </f:section>

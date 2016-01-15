@@ -33,7 +33,7 @@
 			<trans-unit id="module.aliases.available">
 				<source>Available aliases</source>
 			</trans-unit>
-			<trans-unit id="module.aliases.not_available.select">
+			<trans-unit id="module.aliases.available.select">
 				<source>Select alias type:</source>
 			</trans-unit>
 			<trans-unit id="module.cache">
@@ -47,6 +47,24 @@
 			</trans-unit>
 			<trans-unit id="module.configuration.intro">
 				<source>This module will show you RealURL configuration as RealURL will see it (including default values).&lt;/p&gt;&lt;p&gt;&lt;strong&gt;Note:&lt;/strong&gt; your TYPO3 solution provider may use its own ways to configure RealURL at runtime. If that's the case, this module may not show confguration accurately. If you suspect that this is the case, contact your TYPO3 solution provider.</source>
+			</trans-unit>
+			<trans-unit id="module.dateTimeFormat">
+				<source>d.m.Y H:i</source>
+			</trans-unit>
+			<trans-unit id="module.tableHeader.alias">
+				<source>Alias</source>
+			</trans-unit>
+			<trans-unit id="module.tableHeader.id">
+				<source>Id</source>
+			</trans-unit>
+			<trans-unit id="module.tableHeader.language">
+				<source>Language</source>
+			</trans-unit>
+			<trans-unit id="module.tableHeader.expire">
+				<source>Expires</source>
+			</trans-unit>
+			<trans-unit id="viewhelper.languageFromId.defaultLanguage">
+				<source>Default</source>
 			</trans-unit>
 		</body>
 	</file>

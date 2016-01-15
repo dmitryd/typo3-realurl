@@ -30,6 +30,7 @@ namespace DmitryDulepov\Realurl\Controller;
  ***************************************************************/
 use TYPO3\CMS\Core\Messaging\AbstractMessage;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Extbase\Persistence\QueryInterface;
 use TYPO3\CMS\Extbase\Utility\LocalizationUtility;
 
 /**
@@ -48,9 +49,13 @@ class AliasesController extends BackendModuleController {
 			$this->addFlashMessage(LocalizationUtility::translate('LLL:EXT:realurl/Resources/Private/Language/locallang.xlf:module.aliases.not_available', ''), '', AbstractMessage::INFO);
 		}
 
-		$this->view->assign('availableAliasTypes', $availableAliasTypes);
-
 		$selectedAlias = GeneralUtility::_GP('selectedAlias');
+
+		$this->view->assignMultiple(array(
+			'availableAliasTypes' => $availableAliasTypes,
+			'selectedAlias' => $selectedAlias,
+		));
+
 		if ($selectedAlias && isset($availableAliasTypes[$selectedAlias])) {
 			$this->processSelectedAlias($selectedAlias);
 		}
@@ -90,5 +95,14 @@ class AliasesController extends BackendModuleController {
 	 * @param string $selectedAlias
 	 */
 	protected function processSelectedAlias($selectedAlias) {
+		$repository = $this->objectManager->get('DmitryDulepov\\Realurl\\Domain\\Repository\\AliasRepository');
+		/** @var \DmitryDulepov\Realurl\Domain\Repository\AliasRepository $repository */
+		$query = $repository->createQuery();
+		$query->setOrderings(array(
+			'valueId' => QueryInterface::ORDER_ASCENDING,
+			'lang' => QueryInterface::ORDER_ASCENDING,
+		));
+
+		$this->view->assign('foundAliases', $query->execute());
 	}
 }

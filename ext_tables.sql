@@ -3,6 +3,7 @@
 #
 CREATE TABLE tx_realurl_uniqalias (
 	uid int(11) NOT NULL auto_increment,
+	pid int(11) DEFAULT '0' NOT NULL,
 	tstamp int(11) DEFAULT '0' NOT NULL,
 	tablename varchar(255) DEFAULT '' NOT NULL,
 	field_alias varchar(255) DEFAULT '' NOT NULL,
@@ -13,6 +14,7 @@ CREATE TABLE tx_realurl_uniqalias (
 	expire int(11) DEFAULT '0' NOT NULL,
 
 	PRIMARY KEY (uid),
+	KEY parent (pid),
 	KEY tablename (tablename),
 	KEY bk_realurl01 (field_alias(20),field_id,value_id,lang,expire),
 	KEY bk_realurl02 (tablename(32),field_alias(20),field_id,value_alias(20),expire)
