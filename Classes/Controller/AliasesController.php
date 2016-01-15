@@ -50,6 +50,10 @@ class AliasesController extends BackendModuleController {
 		}
 
 		$selectedAlias = GeneralUtility::_GP('selectedAlias');
+		if ($selectedAlias) {
+			// Fix pagination
+			GeneralUtility::_GETset($selectedAlias, 'selectedAlias');
+		}
 
 		$this->view->assignMultiple(array(
 			'availableAliasTypes' => $availableAliasTypes,
