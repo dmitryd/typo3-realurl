@@ -46,23 +46,28 @@
 				<th class="col-sm-2"><f:translate key="module.tableHeader.expire"/></th>
 			</tr>
 			<f:for each="{aliases}" as="alias">
-				<tr>
-					<td class="col-sm-1">-</td>
-					<td>{alias.valueAlias}</td>
-					<td class="col-sm-1">{alias.valueId}</td>
-					<td class="col-sm-2">{d:languageFromId(language: alias.lang)}</td>
-					<td class="col-sm-2">
-						<f:if condition="{alias.expire}">
-							<f:then>
-								<f:format.date format="{f:translate(key: 'module.dateTimeFormat')}">{alias.expire}</f:format.date>
-							</f:then>
-							<f:else>
-								&ndash;
-							</f:else>
-						</f:if>
-					</td>
-				</tr>
+				<f:render section="singleAliasRow" arguments="{alias: alias}"/>
 			</f:for>
 		</table>
 	</f:be.widget.paginate>
+</f:section>
+
+
+<f:section name="singleAliasRow">
+	<tr>
+		<td class="col-sm-1">-</td>
+		<td>{alias.valueAlias}</td>
+		<td class="col-sm-1">{alias.valueId}</td>
+		<td class="col-sm-2">{d:languageFromId(language: alias.lang)}</td>
+		<td class="col-sm-2">
+			<f:if condition="{alias.expire}">
+				<f:then>
+					<f:format.date format="{f:translate(key: 'module.dateTimeFormat')}">{alias.expire}</f:format.date>
+				</f:then>
+				<f:else>
+					&ndash;
+				</f:else>
+			</f:if>
+		</td>
+	</tr>
 </f:section>
