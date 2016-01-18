@@ -28,7 +28,6 @@ namespace DmitryDulepov\Realurl\Controller;
  *
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
-use TYPO3\CMS\Core\Messaging\AbstractMessage;
 use TYPO3\CMS\Extbase\Persistence\QueryInterface;
 use TYPO3\CMS\Extbase\Utility\LocalizationUtility;
 
@@ -62,6 +61,7 @@ class AliasesController extends BackendModuleController {
 		if ($this->request->hasArgument('@widget_0')) {
 			$arguments['@widget_0'] = $this->request->getArgument('@widget_0');
 		}
+		$this->addFlashMessage(LocalizationUtility::translate('module.aliases.deleted', 'realurl'));
 		$this->forward('index', null, null, $argments);
 	}
 
@@ -74,6 +74,7 @@ class AliasesController extends BackendModuleController {
 		$this->databaseConnection->exec_DELETEquery('tx_realurl_uniqalias',
 			'tablename=' . $this->databaseConnection->fullQuoteStr($selectedAlias, 'tx_realurl_uniqalias')
 		);
+		$this->addFlashMessage(LocalizationUtility::translate('module.aliases.all_deleted', 'realurl'));
 		$this->forward('index');
 	}
 

@@ -33,6 +33,12 @@
 			<trans-unit id="module.aliases.available.select">
 				<source>Select alias type:</source>
 			</trans-unit>
+			<trans-unit id="module.aliases.deleted">
+				<source>The alias was deleted.</source>
+			</trans-unit>
+			<trans-unit id="module.aliases.all_deleted">
+				<source>Alias were deleted.</source>
+			</trans-unit>
 			<trans-unit id="module.cache">
 				<source>Cache</source>
 			</trans-unit>
