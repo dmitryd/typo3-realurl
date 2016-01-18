@@ -48,6 +48,27 @@
 			<trans-unit id="module.aliases.edit.back">
 				<source>Cancel</source>
 			</trans-unit>
+			<trans-unit id="module.aliases.edit.alias_value">
+				<source>Alias value:</source>
+			</trans-unit>
+			<trans-unit id="module.aliases.edit.alias_info.tablename">
+				<source>Table name:</source>
+			</trans-unit>
+			<trans-unit id="module.aliases.edit.alias_info.uid">
+				<source>Record uid:</source>
+			</trans-unit>
+			<trans-unit id="module.aliases.edit.alias_info.field_value">
+				<source>Field value:</source>
+			</trans-unit>
+			<trans-unit id="module.aliases.edit.saved">
+				<source>Alias successfully updated.</source>
+			</trans-unit>
+			<trans-unit id="module.aliases.edit.error.already_exists">
+				<source>Such alias already exists for another record in this language.</source>
+			</trans-unit>
+			<trans-unit id="module.aliases.edit.error.bad_alias_value">
+				<source>Alias value may only contain the following characters: %s</source>
+			</trans-unit>
 			<trans-unit id="module.cache">
 				<source>Cache</source>
 			</trans-unit>

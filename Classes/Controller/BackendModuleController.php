@@ -28,8 +28,6 @@ namespace DmitryDulepov\Realurl\Controller;
  *
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
-use TYPO3\CMS\Core\Page\PageRenderer;
-use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
@@ -45,6 +43,9 @@ abstract class BackendModuleController extends \TYPO3\CMS\Extbase\Mvc\Controller
 	/** @var \TYPO3\CMS\Core\Database\DatabaseConnection */
 	protected $databaseConnection;
 
+	/** @var string[] */
+	protected $excludedArgments = array();
+
 	/**
 	 * Initializes all actions.
 	 *
@@ -59,7 +60,12 @@ abstract class BackendModuleController extends \TYPO3\CMS\Extbase\Mvc\Controller
 		if ($arguments && is_array($arguments)) {
 			foreach ($arguments as $argumentKey => $argumentValue) {
 				if ($argumentValue) {
-					GeneralUtility::_GETset($argumentValue, 'tx_realurl_web_realurlrealurl|' . $argumentKey);
+					if (!in_array($argumentKey, $this->excludedArgments)) {
+						GeneralUtility::_GETset($argumentValue, 'tx_realurl_web_realurlrealurl|' . $argumentKey);
+					}
+					else {
+						GeneralUtility::_GETset('', 'tx_realurl_web_realurlrealurl|' . $argumentKey);
+					}
 				}
 			}
 		}

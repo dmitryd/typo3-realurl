@@ -28,6 +28,7 @@ namespace DmitryDulepov\Realurl\Controller;
  *
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
+use TYPO3\CMS\Core\Messaging\AbstractMessage;
 use TYPO3\CMS\Extbase\Persistence\QueryInterface;
 use TYPO3\CMS\Extbase\Utility\LocalizationUtility;
 
@@ -38,11 +39,17 @@ use TYPO3\CMS\Extbase\Utility\LocalizationUtility;
  */
 class AliasesController extends BackendModuleController {
 
+	/** @var string[] */
+	protected $excludedArgments = array('uid', 'valueAlias', 'submit');
+
 	/**
 	 * @var \DmitryDulepov\Realurl\Domain\Repository\AliasRepository
 	 * @inject
 	 */
 	protected $repository;
+
+	/** @var string */
+	static protected $validAliasCahacters = 'abcdefghijklmnopqrstuvwxyz0123456789-';
 
 	/**
 	 * Deletes the selected alias.
@@ -86,13 +93,19 @@ class AliasesController extends BackendModuleController {
 		}
 
 		$alias = $this->repository->findByUid((int)$uid);
+		/** @var \DmitryDulepov\Realurl\Domain\Model\Alias $alias */
 		if (!$alias) {
 			$this->addFlashMessage(LocalizationUtility::translate('module.aliases.not_found', 'realurl'));
 			$this->forward('index', null, null, $this->makeArgumentArray());
 		}
 
+		if ($this->request->hasArgument('valueAlias')) {
+			$alias->setValueAlias($this->request->getArgument('valueAlias'));
+		}
+
 		$this->view->assignMultiple(array(
-			'alias' => $alias
+			'alias' => $alias,
+			'selectedAlias' => $selectedAlias,
 		));
 	}
 
@@ -111,6 +124,33 @@ class AliasesController extends BackendModuleController {
 		if ($selectedAlias && isset($availableAliasTypes[$selectedAlias])) {
 			$this->processSelectedAlias($selectedAlias);
 		}
+	}
+
+	/**
+	 * Checks if this alias already exists for another record.
+	 *
+	 * @param string $aliasValue
+	 * @return bool
+	 * @throws \TYPO3\CMS\Extbase\Mvc\Exception\NoSuchArgumentException
+	 */
+	protected function doesAliasExistsForAnotherRecord($aliasValue) {
+		$result = false;
+
+		$alias = $this->repository->findByUid((int)$this->request->getArgument('uid'));
+		/** @var \DmitryDulepov\Realurl\Domain\Model\Alias $alias */
+		if ($alias) {
+			$query = $this->repository->createQuery();
+			$query->matching($query->logicalAnd(array(
+				$query->equals('valueAlias', $aliasValue),
+				$query->equals('tablename', $alias->getTablename()),
+				$query->equals('lang', $alias->getLang()),
+				$query->logicalNot($query->equals('uid', (int)$alias->getUid()))
+			)));
+
+			$result = $query->count() > 0;
+		}
+
+		return $result;
 	}
 
 	/**
@@ -142,12 +182,48 @@ class AliasesController extends BackendModuleController {
 	}
 
 	/**
+	 * Checks if value alias is valid.
+	 *
+	 * @param $aliasValue
+	 * @return int
+	 */
+	protected function isValidAliasValue($aliasValue) {
+		return preg_match('/^[' . preg_quote(self::$validAliasCahacters, '/') . ']+$/', $aliasValue);
+	}
+
+	/**
 	 * Processes edit form submission. Also adds flash messages if something is not right.
 	 *
 	 * @return bool
 	 */
 	protected function processEditSubmission() {
-		return false;
+		$result = false;
+
+		$aliasValue = $this->request->getArgument('valueAlias');
+
+		if (!$this->isValidAliasValue($aliasValue)) {
+			$this->addFlashMessage(LocalizationUtility::translate('module.aliases.edit.error.bad_alias_value', 'realurl', array(self::$validAliasCahacters)), '', AbstractMessage::ERROR);
+		}
+		elseif ($this->doesAliasExistsForAnotherRecord($aliasValue)) {
+			$this->addFlashMessage(LocalizationUtility::translate('module.aliases.edit.error.already_exists', 'realurl'), '', AbstractMessage::ERROR);
+		}
+		else {
+			$alias = $this->repository->findByUid((int)$this->request->getArgument('uid'));
+			/** @var \DmitryDulepov\Realurl\Domain\Model\Alias $alias */
+			if (!$alias) {
+				$this->addFlashMessage(LocalizationUtility::translate('module.aliases.not_found', 'realurl'), '', AbstractMessage::ERROR);
+			}
+			else {
+				if ($alias->getValueAlias() != $aliasValue) {
+					$alias->setValueAlias($aliasValue);
+					$this->repository->update($alias);
+				}
+				$this->addFlashMessage(LocalizationUtility::translate('module.aliases.edit.saved', 'realurl'), '', AbstractMessage::OK);
+				$result = true;
+			}
+		}
+
+		return $result;
 	}
 
 	/**
@@ -172,14 +248,14 @@ class AliasesController extends BackendModuleController {
 	 * @return array
 	 */
 	protected function makeArgumentArray() {
-		$argments = array();
+		$arguments = array();
 		if ($this->request->hasArgument('selectedAlias')) {
-			$argments['selectedAlias'] = $this->request->getArgument('selectedAlias');
+			$arguments['selectedAlias'] = $this->request->getArgument('selectedAlias');
 		}
 		if ($this->request->hasArgument('@widget_0')) {
 			$arguments['@widget_0'] = $this->request->getArgument('@widget_0');
 		}
 
-		return $argments;
+		return $arguments;
 	}
 }

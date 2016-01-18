@@ -30,6 +30,12 @@ class Alias extends AbstractEntity {
 	/** @var int */
 	protected $expire;
 
+	/** @var string */
+	protected $fieldAlias;
+
+	/** @var string */
+	protected $fieldId;
+
 	/** @var int */
 	protected $lang;
 
@@ -54,6 +60,34 @@ class Alias extends AbstractEntity {
 	 */
 	public function setExpire($expire) {
 		$this->expire = $expire;
+	}
+
+	/**
+	 * @return string
+	 */
+	public function getFieldAlias() {
+		return $this->fieldAlias;
+	}
+
+	/**
+	 * @param string $fieldAlias
+	 */
+	public function setFieldAlias($fieldAlias) {
+		$this->fieldAlias = $fieldAlias;
+	}
+
+	/**
+	 * @return string
+	 */
+	public function getFieldId() {
+		return $this->fieldId;
+	}
+
+	/**
+	 * @param string $fieldId
+	 */
+	public function setFieldId($fieldId) {
+		$this->fieldId = $fieldId;
 	}
 
 	/**
@@ -110,6 +144,19 @@ class Alias extends AbstractEntity {
 	 */
 	public function setValueId($valueId) {
 		$this->valueId = $valueId;
+	}
+
+	/**
+	 * @return string
+	 */
+	public function getRecordFieldValue() {
+		/** @noinspection PhpUndefinedMethodInspection */
+		$row = $GLOBALS['TYPO3_DB']->exec_SELECTgetSingleRow(
+			$this->fieldAlias, $this->tablename,
+			$this->fieldId . '=' . (int)$this->valueId
+		);
+
+		return is_array($row) && isset($row[$this->fieldAlias]) ? $row[$this->fieldAlias] : '';
 	}
 
 }
