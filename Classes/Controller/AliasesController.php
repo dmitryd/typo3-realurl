@@ -49,11 +49,7 @@ class AliasesController extends BackendModuleController {
 			$this->addFlashMessage(LocalizationUtility::translate('LLL:EXT:realurl/Resources/Private/Language/locallang.xlf:module.aliases.not_available', ''), '', AbstractMessage::INFO);
 		}
 
-		$selectedAlias = GeneralUtility::_GP('selectedAlias');
-		if ($selectedAlias) {
-			// Fix pagination
-			GeneralUtility::_GETset($selectedAlias, 'selectedAlias');
-		}
+		$selectedAlias = $this->request->hasArgument('selectedAlias') ? $this->request->getArgument('selectedAlias') : '';
 
 		$this->view->assignMultiple(array(
 			'availableAliasTypes' => $availableAliasTypes,

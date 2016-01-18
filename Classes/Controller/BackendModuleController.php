@@ -59,6 +59,16 @@ abstract class BackendModuleController extends \TYPO3\CMS\Extbase\Mvc\Controller
 		$pageRenderer->addJsLibrary('jQuery', 'sysext/core/Resources/Public/JavaScript/Contrib/jquery/jquery-2.1.4.min.js');
 		$pageRenderer->addJsFile(ExtensionManagementUtility::extRelPath('realurl') . 'Resources/Public/realurl_be.js');
 
+		// Fix pagers
+		$arguments = GeneralUtility::_GPmerged('tx_realurl_web_realurlrealurl');
+		if ($arguments && is_array($arguments)) {
+			foreach ($arguments as $argumentKey => $argumentValue) {
+				if ($argumentValue) {
+					GeneralUtility::_GETset($argumentValue, 'tx_realurl_web_realurlrealurl|' . $argumentKey);
+				}
+			}
+		}
+
 		parent::initializeAction();
 	}
 }
