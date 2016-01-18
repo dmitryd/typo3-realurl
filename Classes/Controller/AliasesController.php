@@ -102,6 +102,7 @@ class AliasesController extends BackendModuleController {
 		$repository = $this->objectManager->get('DmitryDulepov\\Realurl\\Domain\\Repository\\AliasRepository');
 		/** @var \DmitryDulepov\Realurl\Domain\Repository\AliasRepository $repository */
 		$query = $repository->createQuery();
+		$query->matching($query->equals('tablename', $selectedAlias));
 		$query->setOrderings(array(
 			'valueId' => QueryInterface::ORDER_ASCENDING,
 			'lang' => QueryInterface::ORDER_ASCENDING,
