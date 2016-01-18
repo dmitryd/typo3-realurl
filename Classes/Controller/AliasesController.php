@@ -55,14 +55,8 @@ class AliasesController extends BackendModuleController {
 			'tablename=' . $this->databaseConnection->fullQuoteStr($selectedAlias, 'tx_realurl_uniqalias') .
 			' AND uid=' . (int)$uid
 		);
-		$argments = array(
-			'selectedAlias' => $selectedAlias,
-		);
-		if ($this->request->hasArgument('@widget_0')) {
-			$arguments['@widget_0'] = $this->request->getArgument('@widget_0');
-		}
 		$this->addFlashMessage(LocalizationUtility::translate('module.aliases.deleted', 'realurl'));
-		$this->forward('index', null, null, $argments);
+		$this->forward('index', null, null, $this->makeArgumentArray());
 	}
 
 	/**
@@ -85,7 +79,21 @@ class AliasesController extends BackendModuleController {
 	 * @param string $selectedAlias
 	 */
 	public function editAction($uid, $selectedAlias) {
-		// TODO Present a form to edit the alias and perform the action when submitted
+		if ($this->request->hasArgument('submit')) {
+			if ($this->processEditSubmission()) {
+				$this->forward('index', null, null, $this->makeArgumentArray());
+			}
+		}
+
+		$alias = $this->repository->findByUid((int)$uid);
+		if (!$alias) {
+			$this->addFlashMessage(LocalizationUtility::translate('module.aliases.not_found', 'realurl'));
+			$this->forward('index', null, null, $this->makeArgumentArray());
+		}
+
+		$this->view->assignMultiple(array(
+			'alias' => $alias
+		));
 	}
 
 	/**
@@ -134,6 +142,15 @@ class AliasesController extends BackendModuleController {
 	}
 
 	/**
+	 * Processes edit form submission. Also adds flash messages if something is not right.
+	 *
+	 * @return bool
+	 */
+	protected function processEditSubmission() {
+		return false;
+	}
+
+	/**
 	 * Shows editing interface for the selected aliases.
 	 *
 	 * @param string $selectedAlias
@@ -147,5 +164,22 @@ class AliasesController extends BackendModuleController {
 		));
 
 		$this->view->assign('foundAliases', $query->execute());
+	}
+
+	/**
+	 * Creates argument array for 'forward' method.
+	 *
+	 * @return array
+	 */
+	protected function makeArgumentArray() {
+		$argments = array();
+		if ($this->request->hasArgument('selectedAlias')) {
+			$argments['selectedAlias'] = $this->request->getArgument('selectedAlias');
+		}
+		if ($this->request->hasArgument('@widget_0')) {
+			$arguments['@widget_0'] = $this->request->getArgument('@widget_0');
+		}
+
+		return $argments;
 	}
 }

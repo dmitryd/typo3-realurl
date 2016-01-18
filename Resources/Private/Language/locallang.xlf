@@ -27,6 +27,9 @@
 			<trans-unit id="module.aliases.not_available">
 				<source>Currently there are no aliases available.</source>
 			</trans-unit>
+			<trans-unit id="module.aliases.not_found">
+				<source>The sellected alias is no longer available.</source>
+			</trans-unit>
 			<trans-unit id="module.aliases.available">
 				<source>Available aliases</source>
 			</trans-unit>
@@ -38,6 +41,12 @@
 			</trans-unit>
 			<trans-unit id="module.aliases.all_deleted">
 				<source>Alias were deleted.</source>
+			</trans-unit>
+			<trans-unit id="module.aliases.edit.submit">
+				<source>Save</source>
+			</trans-unit>
+			<trans-unit id="module.aliases.edit.back">
+				<source>Cancel</source>
 			</trans-unit>
 			<trans-unit id="module.cache">
 				<source>Cache</source>

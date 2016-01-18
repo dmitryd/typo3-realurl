@@ -68,11 +68,9 @@
 <f:section name="singleAliasRow">
 	<tr>
 		<td class="col-sm-1 icon-column">
-			<f:comment>
 			<f:link.action action="edit" class="btn btn-default" controller="Aliases" addQueryString="1" arguments="{uid: alias.uid}">
 				<c:icon identifier="actions-open"/>
 			</f:link.action>
-			</f:comment>
 			<a class="btn btn-default" href="javascript:void(0)" onclick="tx_realurl_confirm(tx_realurl_strings.confirmTitle, tx_realurl_strings.deleteSingleAlias,
 			 '{f:uri.action(action: 'delete', controller: 'Aliases', addQueryString: 1, arguments: {uid: alias.uid})}')">
 				<c:icon identifier="actions-delete"/>

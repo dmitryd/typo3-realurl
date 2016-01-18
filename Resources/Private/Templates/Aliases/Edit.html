@@ -1,5 +1,28 @@
-<f:layout name="Default"/>
+<f:layout name="Backend"/>
 
-<f:section name="main">
-	Stub
+<f:section name="content">
+	<h1><f:translate key="LLL:EXT:realurl/Resources/Private/Language/locallang.xlf:module.aliases"/></h1>
+	<p><f:translate key="LLL:EXT:realurl/Resources/Private/Language/locallang.xlf:module.aliases.intro"/></p>
+
+	<f:flashMessages/>
+
+	<form action="{f:uri.action(action:'{f:if(condition: action, then: action, else: \'index\')}')}" class="form-horizontal" id="realurlAliasSelectionForm" method="post">
+		<h3><f:translate key="LLL:EXT:realurl/Resources/Private/Language/locallang.xlf:module.aliases.edit"/></h3>
+<f:comment>
+		<div class="form-group">
+
+			<label class="col-sm-2" for="realurlSelectedAlias"><f:translate key="LLL:EXT:realurl/Resources/Private/Language/locallang.xlf:module.aliases.available.select"/></label>
+			<div class="col-sm-10">
+			</div>
+		</div>
+</f:comment>
+		<div class="form-group">
+			<div class="col-sm-2"></div>
+			<div class="col-sm-10">
+				<button class="btn btn-primary" type="submit"><f:translate key="module.aliases.edit.submit"/></button>
+				<a class="btn btn-default" href="{f:uri.action(action: 'index', controller: 'Aliases', arguments: {selectedAlias: alias.tablename})}" role="button"><f:translate key="module.aliases.edit.back"/></a>
+			</div>
+		</div>
+	</form>
+
 </f:section>
