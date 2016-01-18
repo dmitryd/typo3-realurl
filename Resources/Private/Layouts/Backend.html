@@ -1,4 +1,11 @@
+{namespace d=DmitryDulepov\Realurl\ViewHelpers}
+
 <f:be.container>
+	<f:be.pageRenderer includeCssFiles="{
+		1: '../typo3conf/ext/realurl/Resources/Public/realurl_be.css'
+	}" includeJsFiles="{
+		2: '../typo3conf/ext/realurl/Resources/Public/realurl_be.js'
+	}" loadJQuery="1"/>
 	<div class="typo3-fullDoc">
 		<div id="typo3-docheader">
 			<div class="typo3-docheader-functions">
@@ -31,9 +38,19 @@
 			</f:comment>
 		</div>
 		<div id="typo3-docbody">
-			<div id="typo3-inner-docbody" class="news-administration">
+			<div id="typo3-inner-docbody" class="realurl-backend">
 				<f:render section="content" />
 			</div>
 		</div>
+		<div id="realurl-dialog-confirm"></div>
+		<script>
+			var tx_realurl_strings = {
+				confirmTitle: <d:translateToJson key="module.js.confirmTitle"/>,
+				deleteAliases: <d:translateToJson key="module.js.deleteAliases"/>,
+				deleteSingleAlias: <d:translateToJson key="module.js.deleteSingleAlias"/>,
+				no: <d:translateToJson key="module.js.no"/>,
+				yes: <d:translateToJson key="module.js.yes"/>
+			};
+		</script>
 	</div>
 </f:be.container>

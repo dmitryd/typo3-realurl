@@ -1,4 +1,5 @@
 {namespace d=DmitryDulepov\Realurl\ViewHelpers}
+{namespace c=TYPO3\CMS\Core\ViewHelpers}
 
 <f:layout name="Backend" />
 
@@ -9,10 +10,15 @@
 	<f:flashMessages/>
 
 	<f:if condition="{availableAliasTypes -> f:count()}">
-		<f:render section="availableAliases" arguments="{_all}"/>
-		<f:if condition="{selectedAlias}">
-			<f:render section="showSelectedAliases" arguments="{_all}"/>
-		</f:if>
+		<f:then>
+			<f:render section="availableAliases" arguments="{_all}"/>
+			<f:if condition="{selectedAlias}">
+				<f:render section="showSelectedAliases" arguments="{_all}"/>
+			</f:if>
+		</f:then>
+		<f:else>
+			<f:be.infobox state="1"><f:translate key="module.aliases.not_available"/></f:be.infobox>
+		</f:else>
 	</f:if>
 </f:section>
 
@@ -50,12 +56,28 @@
 			</f:for>
 		</table>
 	</f:be.widget.paginate>
+
+	<a class="btn btn-default" href="javascript:void(0)" onclick="tx_realurl_confirm(tx_realurl_strings.confirmTitle, tx_realurl_strings.deleteAliases,
+			 '{f:uri.action(action: 'deleteAll', controller: 'Aliases', addQueryString: 1, arguments: {uid: alias.uid})}')">
+		<c:icon identifier="actions-delete"/>
+		<f:translate key="module.deleteAliasesOfType"/>
+	</a>
 </f:section>
 
 
 <f:section name="singleAliasRow">
 	<tr>
-		<td class="col-sm-1">-</td>
+		<td class="col-sm-1 icon-column">
+			<f:comment>
+			<f:link.action action="edit" class="btn btn-default" controller="Aliases" addQueryString="1" arguments="{uid: alias.uid}">
+				<c:icon identifier="actions-open"/>
+			</f:link.action>
+			</f:comment>
+			<a class="btn btn-default" href="javascript:void(0)" onclick="tx_realurl_confirm(tx_realurl_strings.confirmTitle, tx_realurl_strings.deleteSingleAlias,
+			 '{f:uri.action(action: 'delete', controller: 'Aliases', addQueryString: 1, arguments: {uid: alias.uid})}')">
+				<c:icon identifier="actions-delete"/>
+			</a>
+		</td>
 		<td>{alias.valueAlias}</td>
 		<td class="col-sm-1">{alias.valueId}</td>
 		<td class="col-sm-2">{d:languageFromId(language: alias.lang)}</td>

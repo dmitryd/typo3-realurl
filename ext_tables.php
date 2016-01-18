@@ -5,8 +5,8 @@
 	'realurl',
     '',
     array(
-		'Overview' => 'index',//,aliases,cache,configuration',
-		'Aliases' => 'index',
+		'Overview' => 'index',
+		'Aliases' => 'index,edit,delete,deleteAll',
 	),
 	array(
 		'access' => 'user,group',

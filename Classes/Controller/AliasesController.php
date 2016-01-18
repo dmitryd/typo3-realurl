@@ -3,7 +3,7 @@ namespace DmitryDulepov\Realurl\Controller;
 /***************************************************************
  *  Copyright notice
  *
- *  (c) 2015 Dmitry Dulepov (dmitry.dulepov@gmail.com)
+ *  (c) 2016 Dmitry Dulepov (dmitry.dulepov@gmail.com)
  *  All rights reserved
  *
  *  You may not remove or change the name of the author above. See:
@@ -29,7 +29,6 @@ namespace DmitryDulepov\Realurl\Controller;
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
 use TYPO3\CMS\Core\Messaging\AbstractMessage;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Persistence\QueryInterface;
 use TYPO3\CMS\Extbase\Utility\LocalizationUtility;
 
@@ -41,16 +40,60 @@ use TYPO3\CMS\Extbase\Utility\LocalizationUtility;
 class AliasesController extends BackendModuleController {
 
 	/**
-	 * Performs alias management functions.
+	 * @var \DmitryDulepov\Realurl\Domain\Repository\AliasRepository
+	 * @inject
 	 */
-	public function indexAction() {
-		$availableAliasTypes = $this->getAvailableAliasTypes();
-		if (count($availableAliasTypes) == 0) {
-			$this->addFlashMessage(LocalizationUtility::translate('LLL:EXT:realurl/Resources/Private/Language/locallang.xlf:module.aliases.not_available', ''), '', AbstractMessage::INFO);
+	protected $repository;
+
+	/**
+	 * Deletes the selected alias.
+	 *
+	 * @param int $uid
+	 * @param string $selectedAlias
+	 */
+	public function deleteAction($uid, $selectedAlias) {
+		$this->databaseConnection->exec_DELETEquery('tx_realurl_uniqalias',
+			'tablename=' . $this->databaseConnection->fullQuoteStr($selectedAlias, 'tx_realurl_uniqalias') .
+			' AND uid=' . (int)$uid
+		);
+		$argments = array(
+			'selectedAlias' => $selectedAlias,
+		);
+		if ($this->request->hasArgument('@widget_0')) {
+			$arguments['@widget_0'] = $this->request->getArgument('@widget_0');
 		}
+		$this->forward('index', null, null, $argments);
+	}
 
-		$selectedAlias = $this->request->hasArgument('selectedAlias') ? $this->request->getArgument('selectedAlias') : '';
+	/**
+	 * Deletes all aliases of the given kind.
+	 *
+	 * @param string $selectedAlias
+	 */
+	public function deleteAllAction($selectedAlias) {
+		$this->databaseConnection->exec_DELETEquery('tx_realurl_uniqalias',
+			'tablename=' . $this->databaseConnection->fullQuoteStr($selectedAlias, 'tx_realurl_uniqalias')
+		);
+		$this->forward('index');
+	}
 
+	/**
+	 * Shows the edit form for the selected alias.
+	 *
+	 * @param int $uid
+	 * @param string $selectedAlias
+	 */
+	public function editAction($uid, $selectedAlias) {
+		// TODO Present a form to edit the alias and perform the action when submitted
+	}
+
+	/**
+	 * Performs alias management functions.
+	 *
+	 * @param string $selectedAlias
+	 */
+	public function indexAction($selectedAlias = '') {
+		$availableAliasTypes = $this->getAvailableAliasTypes();
 		$this->view->assignMultiple(array(
 			'availableAliasTypes' => $availableAliasTypes,
 			'selectedAlias' => $selectedAlias,
@@ -95,9 +138,7 @@ class AliasesController extends BackendModuleController {
 	 * @param string $selectedAlias
 	 */
 	protected function processSelectedAlias($selectedAlias) {
-		$repository = $this->objectManager->get('DmitryDulepov\\Realurl\\Domain\\Repository\\AliasRepository');
-		/** @var \DmitryDulepov\Realurl\Domain\Repository\AliasRepository $repository */
-		$query = $repository->createQuery();
+		$query = $this->repository->createQuery();
 		$query->matching($query->equals('tablename', $selectedAlias));
 		$query->setOrderings(array(
 			'valueId' => QueryInterface::ORDER_ASCENDING,

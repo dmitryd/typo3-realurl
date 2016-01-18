@@ -54,11 +54,6 @@ abstract class BackendModuleController extends \TYPO3\CMS\Extbase\Mvc\Controller
 		$this->currentPageId = (int)\TYPO3\CMS\Core\Utility\GeneralUtility::_GET('id');
 		$this->databaseConnection = $GLOBALS['TYPO3_DB'];
 
-		$pageRenderer = GeneralUtility::makeInstance(PageRenderer::class);
-		/** @var \TYPO3\CMS\Core\Page\PageRenderer $pageRenderer */
-		$pageRenderer->addJsLibrary('jQuery', 'sysext/core/Resources/Public/JavaScript/Contrib/jquery/jquery-2.1.4.min.js');
-		$pageRenderer->addJsFile(ExtensionManagementUtility::extRelPath('realurl') . 'Resources/Public/realurl_be.js');
-
 		// Fix pagers
 		$arguments = GeneralUtility::_GPmerged('tx_realurl_web_realurlrealurl');
 		if ($arguments && is_array($arguments)) {
