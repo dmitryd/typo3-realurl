@@ -123,10 +123,12 @@ abstract class BackendModuleController extends ActionController {
 	 * Stores information about the last action of the module.
 	 */
 	protected function storeLastAction() {
-		BackendUtility::getModuleData(
-			array('controller' => '', 'action' => ''),
-			array('controller' => $this->getControllerName(), 'action' => $this->getActionName()),
-			'tx_realurl_web_realurlrealurl'
-		);
+		if (!preg_match('/^(?:edit|delete|flush)/', $this->actionMethodName)) {
+			BackendUtility::getModuleData(
+				array('controller' => '', 'action' => ''),
+				array('controller' => $this->getControllerName(), 'action' => $this->getActionName()),
+				'tx_realurl_web_realurlrealurl'
+			);
+		}
 	}
 }

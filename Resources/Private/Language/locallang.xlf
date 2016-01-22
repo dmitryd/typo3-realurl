@@ -153,6 +153,12 @@
 			<trans-unit id="module.deleteCacheEntriesForPage">
 				<source>Delete all cache entries for this page</source>
 			</trans-unit>
+			<trans-unit id="module.flushCache">
+				<source>Flush all entries</source>
+			</trans-unit>
+			<trans-unit id="module.js.flushCache">
+				<source>Do you want to remove all cached entries? This WILL cause performance issues with the web site!</source>
+			</trans-unit>
 		</body>
 	</file>
 </xliff>

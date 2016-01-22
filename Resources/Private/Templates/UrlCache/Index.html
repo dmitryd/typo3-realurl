@@ -32,6 +32,12 @@
 		<c:icon identifier="actions-delete"/>
 		<f:translate key="module.deleteCacheEntriesForPage"/>
 	</a>
+	&nbsp;
+	<a class="btn btn-danger" href="javascript:void(0)" onclick="tx_realurl_confirm(tx_realurl_strings.confirmTitle, tx_realurl_strings.flushCacheEntries,
+			 '{f:uri.action(action: 'flush', controller: 'UrlCache', addQueryString: 1)}')">
+		<c:icon identifier="actions-delete"/>
+		<f:translate key="module.flushCache"/>
+	</a>
 </f:section>
 
 

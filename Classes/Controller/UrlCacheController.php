@@ -39,6 +39,33 @@ class UrlCacheController extends BackendModuleController {
 	 */
 	protected $repository;
 
+	/**
+	 * Deletes a given entry for the given page.
+	 *
+	 * @throws \TYPO3\CMS\Extbase\Mvc\Exception\StopActionException
+	 */
+	public function deleteAction() {
+		$this->forward('index', 'UrlCache');
+	}
+
+	/**
+	 * Deletes all entries for the given page.
+	 *
+	 * @throws \TYPO3\CMS\Extbase\Mvc\Exception\StopActionException
+	 */
+	public function deleteAllAction() {
+		$this->forward('index', 'UrlCache');
+	}
+
+	/**
+	 * Deletes all entries from the cache.
+	 *
+	 * @throws \TYPO3\CMS\Extbase\Mvc\Exception\StopActionException
+	 */
+	public function flushAction() {
+		$this->forward('index', 'UrlCache');
+	}
+
 	public function indexAction() {
 		$this->view->assignMultiple(array(
 			'entries' => $this->getCacheEntries()
