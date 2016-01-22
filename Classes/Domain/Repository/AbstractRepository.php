@@ -23,6 +23,28 @@ namespace DmitryDulepov\Realurl\Domain\Repository;
 *  This copyright notice MUST APPEAR in all copies of the script!
 ***************************************************************/
 
-class AliasRepository extends AbstractRepository {
+use TYPO3\CMS\Extbase\Persistence\Repository;
+
+/**
+ * This class implements a base repository for all RealURl repositories.
+ *
+ * @author Dmitry Dulepov <support@snowflake.ch>
+ */
+abstract class AbstractRepository extends Repository {
+
+	/**
+	 * Creates query and makes sure that no Extbase magic is performed with
+	 * pid, languages, etc.
+	 *
+	 * Magic is cool but not on this case.
+	 *
+	 * @return \TYPO3\CMS\Extbase\Persistence\QueryInterface
+	 */
+	public function createQuery() {
+		$query = parent::createQuery();
+		$query->getQuerySettings()->setRespectStoragePage(false)->setIgnoreEnableFields(true)->setRespectSysLanguage(false);
+
+		return $query;
+	}
 
 }

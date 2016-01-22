@@ -22,62 +22,45 @@
 *  This copyright notice MUST APPEAR in all copies of the script!
 ***************************************************************/
 
-$GLOBALS['TCA']['tx_realurl_uniqalias'] = array(
+$GLOBALS['TCA']['tx_realurl_urlcache'] = array(
 	'ctrl' => array(
 		'label' => '',
 		'hideTable' => 1,
 	),
 	'columns' => array(
-		'expire' => array(
-			'label' => '',
-			'config' => array(
-				'type' => 'input',
-				'eval' => 'datetime',
-				'default' => 0,
-			)
-		),
-		'lang' => array(
-			'label' => '',
-			'config' => array(
-				'type' => 'input',
-				'eval' => 'int,required',
-				'default' => 0,
-			)
-		),
-		'tablename' => array(
-			'label' => '',
-			'config' => array(
-				'type' => 'input',
-				'eval' => 'required',
-			)
-		),
-		'value_alias' => array(
-			'label' => '',
-			'config' => array(
-				'type' => 'input',
-				'eval' => 'required',
-			)
-		),
-		'value_id' => array(
+		'page_id' => array(
 			'label' => '',
 			'config' => array(
 				'type' => 'input',
 				'eval' => 'int,required',
 			)
 		),
-		'field_alias' => array(
+		'rootpage_id' => array(
 			'label' => '',
 			'config' => array(
 				'type' => 'input',
-				'eval' => 'required',
+				'eval' => 'int,required',
 			)
 		),
-		'field_id' => array(
+		'original_url' => array(
 			'label' => '',
 			'config' => array(
 				'type' => 'input',
-				'eval' => 'required',
+				'eval' => 'trim,required',
 			)
 		),
-	)
+		'speaking_url' => array(
+			'label' => '',
+			'config' => array(
+				'type' => 'input',
+				'eval' => 'trim,required',
+			)
+		),
+		'request_variables' => array(
+			'label' => '',
+			'config' => array(
+				'type' => 'input',
+			)
+		),
+	),
 );

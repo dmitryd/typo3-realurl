@@ -23,6 +23,6 @@ namespace DmitryDulepov\Realurl\Domain\Repository;
 *  This copyright notice MUST APPEAR in all copies of the script!
 ***************************************************************/
 
-class AliasRepository extends AbstractRepository {
+class UrlCacheEntryRepository extends AbstractRepository {
 
 }

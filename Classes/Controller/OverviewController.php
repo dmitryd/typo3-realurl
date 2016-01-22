@@ -40,6 +40,17 @@ class OverviewController extends BackendModuleController {
 	 * Shows the overview of functions.
 	 */
 	public function indexAction() {
-		// Nothing
+		$this->view->assignMultiple(array(
+			'isCompatibleCacheImplementation' => $this->isCompatibleCacheImplementation()
+		));
+	}
+
+	/**
+	 * Checks if cache implementation is compatible with this module.
+	 *
+	 * @return bool
+	 */
+	protected function isCompatibleCacheImplementation() {
+		return $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['realurl']['cacheImplementation'] === 'DmitryDulepov\\Realurl\\Cache\\DatabaseCache';
 	}
 }

@@ -22,12 +22,47 @@
 *  This copyright notice MUST APPEAR in all copies of the script!
 ***************************************************************/
 
-$GLOBALS['TCA']['tx_realurl_uniqalias'] = array(
+$GLOBALS['TCA']['tx_realurl_pathcache'] = array(
 	'ctrl' => array(
 		'label' => '',
 		'hideTable' => 1,
 	),
 	'columns' => array(
+		'page_id' => array(
+			'label' => '',
+			'config' => array(
+				'type' => 'input',
+				'eval' => 'int,required',
+			)
+		),
+		'rootpage_id' => array(
+			'label' => '',
+			'config' => array(
+				'type' => 'input',
+				'eval' => 'int,required',
+			)
+		),
+		'language_id' => array(
+			'label' => '',
+			'config' => array(
+				'type' => 'input',
+				'eval' => 'int,required',
+			)
+		),
+		'mpvar' => array(
+			'label' => '',
+			'config' => array(
+				'type' => 'input',
+				'eval' => 'trim',
+			)
+		),
+		'pagepath' => array(
+			'label' => '',
+			'config' => array(
+				'type' => 'input',
+				'eval' => 'trim,required',
+			)
+		),
 		'expire' => array(
 			'label' => '',
 			'config' => array(
@@ -36,48 +71,5 @@ $GLOBALS['TCA']['tx_realurl_uniqalias'] = array(
 				'default' => 0,
 			)
 		),
-		'lang' => array(
-			'label' => '',
-			'config' => array(
-				'type' => 'input',
-				'eval' => 'int,required',
-				'default' => 0,
-			)
-		),
-		'tablename' => array(
-			'label' => '',
-			'config' => array(
-				'type' => 'input',
-				'eval' => 'required',
-			)
-		),
-		'value_alias' => array(
-			'label' => '',
-			'config' => array(
-				'type' => 'input',
-				'eval' => 'required',
-			)
-		),
-		'value_id' => array(
-			'label' => '',
-			'config' => array(
-				'type' => 'input',
-				'eval' => 'int,required',
-			)
-		),
-		'field_alias' => array(
-			'label' => '',
-			'config' => array(
-				'type' => 'input',
-				'eval' => 'required',
-			)
-		),
-		'field_id' => array(
-			'label' => '',
-			'config' => array(
-				'type' => 'input',
-				'eval' => 'required',
-			)
-		),
-	)
+	),
 );

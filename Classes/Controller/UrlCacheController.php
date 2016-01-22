@@ -1,5 +1,5 @@
 <?php
-namespace DmitryDulepov\Realurl\Domain\Repository;
+namespace DmitryDulepov\Realurl\Controller;
 /***************************************************************
 *  Copyright notice
 *
@@ -23,6 +23,16 @@ namespace DmitryDulepov\Realurl\Domain\Repository;
 *  This copyright notice MUST APPEAR in all copies of the script!
 ***************************************************************/
 
-class AliasRepository extends AbstractRepository {
+use TYPO3\CMS\Extbase\Mvc\Controller\ActionController;
 
+/**
+ * This class implements management of RealURL url cache.
+ *
+ * @author Dmitry Dulepov <support@snowflake.ch>
+ */
+class UrlCacheController extends ActionController {
+
+	public function indexAction() {
+
+	}
 }

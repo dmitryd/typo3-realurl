@@ -21,6 +21,9 @@
 			<trans-unit id="module.aliases">
 				<source>Aliases</source>
 			</trans-unit>
+			<trans-unit id="module.aliases">
+				<source>Aliases</source>
+			</trans-unit>
 			<trans-unit id="module.aliases.intro">
 				<source>This module manages aliases that are created for items like news or addresses or any other custom types of data.</source>
 			</trans-unit>
@@ -78,11 +81,17 @@
 			<trans-unit id="module.aliases.search.reset">
 				<source>Reset</source>
 			</trans-unit>
-			<trans-unit id="module.cache">
-				<source>Cache</source>
+			<trans-unit id="module.url_cache">
+				<source>URL Cache</source>
 			</trans-unit>
-			<trans-unit id="module.cache.intro">
-				<source>This module allows you to search, edit and remove cache entries for URLs. RealURL comes with configurable cache and not all cache implementations can provide functionality to view or modify cache items.</source>
+			<trans-unit id="module.url_cache.intro">
+				<source>This module allows you to search, edit and remove cache entries for URLs. This cache contains complete URLs consisting from page path and any encoded parameters.</source>
+			</trans-unit>
+			<trans-unit id="module.path_cache">
+				<source>Path Cache</source>
+			</trans-unit>
+			<trans-unit id="module.path_cache.intro">
+				<source>This module allows you to search, edit and remove cache entries for the path cache. Generally, you should never touch entries in this cache un;ess you really know what you are doing.</source>
 			</trans-unit>
 			<trans-unit id="module.configuration">
 				<source>Configuration</source>
