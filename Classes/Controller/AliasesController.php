@@ -58,10 +58,15 @@ class AliasesController extends BackendModuleController {
 	 * @param string $selectedAlias
 	 */
 	public function deleteAction($uid, $selectedAlias) {
+		$this->databaseConnection->sql_query('START TRANSACTION');
 		$this->databaseConnection->exec_DELETEquery('tx_realurl_uniqalias',
 			'tablename=' . $this->databaseConnection->fullQuoteStr($selectedAlias, 'tx_realurl_uniqalias') .
 			' AND uid=' . (int)$uid
 		);
+		$this->databaseConnection->exec_DELETEquery('tx_realurl_uniqalias_cache_map',
+			'alias_uid=' . (int)$uid
+		);
+		$this->databaseConnection->sql_query('COMMIT');
 		$this->addFlashMessage(LocalizationUtility::translate('module.aliases.deleted', 'realurl'));
 		$this->forward('index', null, null, $this->makeArgumentArray());
 	}
@@ -72,9 +77,16 @@ class AliasesController extends BackendModuleController {
 	 * @param string $selectedAlias
 	 */
 	public function deleteAllAction($selectedAlias) {
+		$this->databaseConnection->sql_query('START TRANSACTION');
+		$this->databaseConnection->exec_DELETEquery('tx_realurl_uniqalias_cache_map',
+			'alias_uid IN (SELECT uid FROM tx_realurl_uniqalias WHERE ' .
+				'tablename=' . $this->databaseConnection->fullQuoteStr($selectedAlias, 'tx_realurl_uniqalias_cache_map') .
+				')'
+		);
 		$this->databaseConnection->exec_DELETEquery('tx_realurl_uniqalias',
 			'tablename=' . $this->databaseConnection->fullQuoteStr($selectedAlias, 'tx_realurl_uniqalias')
 		);
+		$this->databaseConnection->sql_query('COMMIT');
 		$this->addFlashMessage(LocalizationUtility::translate('module.aliases.all_deleted', 'realurl'));
 		$this->forward('index');
 	}
