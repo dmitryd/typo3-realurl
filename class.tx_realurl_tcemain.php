@@ -333,7 +333,7 @@ class tx_realurl_tcemain {
 	 */
 	protected function processContentUpdates($status, $tableName, $recordId, array $databaseData, $pObj) {
 		if ($tableName !== 'pages' || $status == 'update') {
-			if (is_numeric($recordId)) {
+			if (!$this->apiWrapper->testInt($recordId)) {
 				$recordId = intval($pObj->substNEWwithIDs[$recordId]);
 			}
 			list($pageId, $languageId) = $this->getPageData($tableName, $recordId);
