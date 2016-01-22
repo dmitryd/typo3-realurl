@@ -80,10 +80,10 @@ abstract class BackendModuleController extends ActionController {
 	/**
 	 * Makes controller name from the controller class name.
 	 *
-	 * @return mixed
+	 * @return string
 	 */
 	protected function getControllerName() {
-		return preg_replace('/^.*\\\([^\\\]+)Controller$/', '\1', get_class($this));
+		return (string)preg_replace('/^.*\\\([^\\\]+)Controller$/', '\1', get_class($this));
 	}
 
 	/**
