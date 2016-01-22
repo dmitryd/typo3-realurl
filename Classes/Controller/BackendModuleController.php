@@ -28,14 +28,16 @@ namespace DmitryDulepov\Realurl\Controller;
  *
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
+use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Extbase\Mvc\Controller\ActionController;
 
 /**
  * This class provides a controller for the Backend module of RealURL.
  *
  * @author Dmitry Dulepov <dmitry.dulepov@gmail.com>
  */
-abstract class BackendModuleController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionController {
+abstract class BackendModuleController extends ActionController {
 
 	/** @var int */
 	protected $currentPageId = 0;
@@ -45,6 +47,26 @@ abstract class BackendModuleController extends \TYPO3\CMS\Extbase\Mvc\Controller
 
 	/** @var string[] */
 	protected $excludedArgments = array();
+
+	/** @var bool */
+	static private $forwardedAction = false;
+
+	/**
+	 * Forwards the request to the last active action.
+	 *
+	 * @throws \TYPO3\CMS\Extbase\Mvc\Exception\StopActionException
+	 */
+	protected function forwardToLastAction() {
+		$moduleData = BackendUtility::getModuleData(
+			array('controller' => '', 'action' => ''),
+			array(),
+			'tx_realurl_web_realurlrealurl'
+		);
+		if (is_array($moduleData) && $moduleData['controller'] !== '' && $moduleData['action'] !== '') {
+			self::$forwardedAction = true;
+			$this->forward($moduleData['action'], $moduleData['controller']);
+		}
+	}
 
 	/**
 	 * Initializes all actions.
@@ -58,6 +80,9 @@ abstract class BackendModuleController extends \TYPO3\CMS\Extbase\Mvc\Controller
 		// Fix pagers
 		$arguments = GeneralUtility::_GPmerged('tx_realurl_web_realurlrealurl');
 		if ($arguments && is_array($arguments)) {
+			if (isset($arguments['action']) && isset($arguments['controller'])) {
+				$this->storeLastAction();
+			}
 			foreach ($arguments as $argumentKey => $argumentValue) {
 				if ($argumentValue) {
 					if (!in_array($argumentKey, $this->excludedArgments)) {
@@ -69,7 +94,29 @@ abstract class BackendModuleController extends \TYPO3\CMS\Extbase\Mvc\Controller
 				}
 			}
 		}
+		elseif (!self::$forwardedAction) {
+			$this->forwardToLastAction();
+		}
 
 		parent::initializeAction();
+	}
+
+	/**
+	 * Stores information about the last action of the module.
+	 */
+	protected function storeLastAction() {
+		BackendUtility::getModuleData(
+			array('controller' => '', 'action' => ''),
+			array('controller' => $this->getControllerName(), 'action' => $this->getActionName()),
+			'tx_realurl_web_realurlrealurl'
+		);
+	}
+
+	protected function getControllerName() {
+		return preg_replace('/^.*\\\([^\\\]+)Controller$/', '\1', get_class($this));
+	}
+
+	protected function getActionName() {
+		return substr($this->actionMethodName, 0, -6);
 	}
 }
