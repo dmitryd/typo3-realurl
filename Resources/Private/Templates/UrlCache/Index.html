@@ -8,4 +8,33 @@
 	<p><f:translate key="LLL:EXT:realurl/Resources/Private/Language/locallang.xlf:module.url_cache.intro"/></p>
 
 	<f:flashMessages/>
+
+	<f:render section="entries" arguments="{entries: entries}"/>
+</f:section>
+
+
+<f:section name="entries">
+	<f:be.widget.paginate objects="{entries}" as="cacheEntries" configuration="{itemsPerPage: 20, insertAbove: 1, insertBelow: 1}">
+		<table class="table table-striped">
+			<tr>
+				<th class="col-sm-1"></th>
+				<th class="col-sm-5"><f:translate key="module.tableHeader.speaking_url"/></th>
+				<th class="col-sm-5"><f:translate key="module.tableHeader.original_url"/></th>
+				<th class="col-sm-1"><f:translate key="module.tableHeader.rootpage_id"/></th>
+			</tr>
+			<f:for each="{cacheEntries}" as="cacheEntry">
+				<f:render section="singleEntryRow" arguments="{cacheEntry: cacheEntry}"/>
+			</f:for>
+		</table>
+	</f:be.widget.paginate>
+</f:section>
+
+
+<f:section name="singleEntryRow">
+	<tr>
+		<td></td>
+		<td>{cacheEntry.speakingUrl}</td>
+		<td>{cacheEntry.originalUrl}</td>
+		<td>{cacheEntry.rootPageId}</td>
+	</tr>
 </f:section>

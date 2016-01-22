@@ -135,6 +135,15 @@
 			<trans-unit id="module.js.deleteAliases">
 				<source>Do you want to delete all aliases of this type?</source>
 			</trans-unit>
+			<trans-unit id="module.tableHeader.speaking_url">
+				<source>Speaking URL</source>
+			</trans-unit>
+			<trans-unit id="module.tableHeader.original_url">
+				<source>Original URL</source>
+			</trans-unit>
+			<trans-unit id="module.tableHeader.rootpage_id">
+				<source>Root page id</source>
+			</trans-unit>
 		</body>
 	</file>
 </xliff>

@@ -23,16 +23,37 @@ namespace DmitryDulepov\Realurl\Controller;
 *  This copyright notice MUST APPEAR in all copies of the script!
 ***************************************************************/
 
-use TYPO3\CMS\Extbase\Mvc\Controller\ActionController;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Extbase\Persistence\QueryInterface;
 
 /**
  * This class implements management of RealURL url cache.
  *
  * @author Dmitry Dulepov <support@snowflake.ch>
  */
-class UrlCacheController extends ActionController {
+class UrlCacheController extends BackendModuleController {
+
+	/**
+	 * @var \DmitryDulepov\Realurl\Domain\Repository\UrlCacheEntryRepository
+	 * @inject
+	 */
+	protected $repository;
 
 	public function indexAction() {
+		$this->view->assignMultiple(array(
+			'entries' => $this->getCacheEntries()
+		));
+	}
 
+	protected function getCacheEntries() {
+		$pageId = (int)GeneralUtility::_GP('id');
+		$query = $this->repository->createQuery();
+		$query->setOrderings(array(
+			'speakingUrl' => QueryInterface::ORDER_ASCENDING,
+			'originalUrl' => QueryInterface::ORDER_ASCENDING,
+		));
+		$query->matching($query->equals('pageId', $pageId));
+
+		return $query->execute();
 	}
 }
