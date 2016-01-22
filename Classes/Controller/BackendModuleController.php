@@ -69,6 +69,24 @@ abstract class BackendModuleController extends ActionController {
 	}
 
 	/**
+	 * Makes action name from the current action method name.
+	 *
+	 * @return string
+	 */
+	protected function getActionName() {
+		return substr($this->actionMethodName, 0, -6);
+	}
+
+	/**
+	 * Makes controller name from the controller class name.
+	 *
+	 * @return mixed
+	 */
+	protected function getControllerName() {
+		return preg_replace('/^.*\\\([^\\\]+)Controller$/', '\1', get_class($this));
+	}
+
+	/**
 	 * Initializes all actions.
 	 *
 	 * @return void
@@ -110,13 +128,5 @@ abstract class BackendModuleController extends ActionController {
 			array('controller' => $this->getControllerName(), 'action' => $this->getActionName()),
 			'tx_realurl_web_realurlrealurl'
 		);
-	}
-
-	protected function getControllerName() {
-		return preg_replace('/^.*\\\([^\\\]+)Controller$/', '\1', get_class($this));
-	}
-
-	protected function getActionName() {
-		return substr($this->actionMethodName, 0, -6);
 	}
 }
