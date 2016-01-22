@@ -62,6 +62,7 @@ class AutomaticConfigurator {
 			$lock->acquireExclusiveLock();
 		} else {
 			$lockFactory = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Locking\\LockFactory');
+			/** @var \TYPO3\CMS\Core\Locking\LockFactory $lockFactory */
 			$lock = $lockFactory->createLocker($lockId);
 			$lock->acquire();
 		}
