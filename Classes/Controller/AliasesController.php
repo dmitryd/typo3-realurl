@@ -118,6 +118,7 @@ class AliasesController extends BackendModuleController {
 		$availableAliasTypes = $this->getAvailableAliasTypes();
 		$this->view->assignMultiple(array(
 			'availableAliasTypes' => $availableAliasTypes,
+			'searchAlias' => $this->request->hasArgument('searchAlias') ? $this->request->getArgument('searchAlias') : '',
 			'selectedAlias' => $selectedAlias,
 		));
 
@@ -233,7 +234,13 @@ class AliasesController extends BackendModuleController {
 	 */
 	protected function processSelectedAlias($selectedAlias) {
 		$query = $this->repository->createQuery();
-		$query->matching($query->equals('tablename', $selectedAlias));
+		$conditons[] = $query->equals('tablename', $selectedAlias);
+		if ($this->request->hasArgument('searchAlias')) {
+			$searchString = $this->request->getArgument('searchAlias');
+			$searchString = $GLOBALS['TYPO3_DB']->escapeStrForLike($searchString);
+			$conditons[] = $query->like('valueAlias', '%' . $searchString . '%');
+		}
+		$query->matching(count($conditons) > 1 ? $query->logicalAnd($conditons) : reset($conditons));
 		$query->setOrderings(array(
 			'valueId' => QueryInterface::ORDER_ASCENDING,
 			'lang' => QueryInterface::ORDER_ASCENDING,

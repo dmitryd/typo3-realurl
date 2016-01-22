@@ -69,6 +69,15 @@
 			<trans-unit id="module.aliases.edit.error.bad_alias_value">
 				<source>Alias value may only contain the following characters: %s</source>
 			</trans-unit>
+			<trans-unit id="module.aliases.search.for">
+				<source>Search alias value for:</source>
+			</trans-unit>
+			<trans-unit id="module.aliases.search.submit">
+				<source>Submit</source>
+			</trans-unit>
+			<trans-unit id="module.aliases.search.reset">
+				<source>Reset</source>
+			</trans-unit>
 			<trans-unit id="module.cache">
 				<source>Cache</source>
 			</trans-unit>
