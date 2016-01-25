@@ -48,9 +48,6 @@ abstract class BackendModuleController extends ActionController {
 	/** @var string[] */
 	protected $excludedArgments = array();
 
-	/** @var bool */
-	static private $forwardedAction = false;
-
 	/**
 	 * Forwards the request to the last active action.
 	 *
@@ -62,9 +59,12 @@ abstract class BackendModuleController extends ActionController {
 			array(),
 			'tx_realurl_web_realurlrealurl'
 		);
-		if (is_array($moduleData) && $moduleData['controller'] !== '' && $moduleData['action'] !== '') {
-			self::$forwardedAction = true;
-			$this->forward($moduleData['action'], $moduleData['controller']);
+		if (is_array($moduleData)) {
+			$currentController = $this->getControllerName();
+			$currentAction = $this->getActionName();
+			if ($moduleData['controller'] !== '' && $moduleData['action'] !== '' && ($moduleData['controller'] !== $currentController || $moduleData['action'] !== $currentAction)) {
+				$this->forward($moduleData['action'], $moduleData['controller']);
+			}
 		}
 	}
 
@@ -87,6 +87,20 @@ abstract class BackendModuleController extends ActionController {
 	}
 
 	/**
+	 * Adds code to the standard request processor for saving the last action.
+	 *
+	 * @param \TYPO3\CMS\Extbase\Mvc\RequestInterface $request
+	 * @param \TYPO3\CMS\Extbase\Mvc\ResponseInterface $response
+	 * @throws \TYPO3\CMS\Extbase\Mvc\Exception\UnsupportedRequestTypeException
+	 */
+	public function processRequest(\TYPO3\CMS\Extbase\Mvc\RequestInterface $request, \TYPO3\CMS\Extbase\Mvc\ResponseInterface $response) {
+		parent::processRequest($request, $response);
+
+		// We are here ony if the action did not throw exceptions (==successful and not forwarded). Save the action.
+		$this->storeLastAction();
+	}
+
+	/**
 	 * Initializes all actions.
 	 *
 	 * @return void
@@ -98,9 +112,6 @@ abstract class BackendModuleController extends ActionController {
 		// Fix pagers
 		$arguments = GeneralUtility::_GPmerged('tx_realurl_web_realurlrealurl');
 		if ($arguments && is_array($arguments)) {
-			if (isset($arguments['action']) && isset($arguments['controller'])) {
-				$this->storeLastAction();
-			}
 			foreach ($arguments as $argumentKey => $argumentValue) {
 				if ($argumentValue) {
 					if (!in_array($argumentKey, $this->excludedArgments)) {
@@ -112,7 +123,7 @@ abstract class BackendModuleController extends ActionController {
 				}
 			}
 		}
-		elseif (!self::$forwardedAction) {
+		else {
 			$this->forwardToLastAction();
 		}
 
@@ -123,12 +134,10 @@ abstract class BackendModuleController extends ActionController {
 	 * Stores information about the last action of the module.
 	 */
 	protected function storeLastAction() {
-		if (!preg_match('/^(?:edit|delete|flush)/', $this->actionMethodName)) {
-			BackendUtility::getModuleData(
-				array('controller' => '', 'action' => ''),
-				array('controller' => $this->getControllerName(), 'action' => $this->getActionName()),
-				'tx_realurl_web_realurlrealurl'
-			);
-		}
+		BackendUtility::getModuleData(
+			array('controller' => '', 'action' => ''),
+			array('controller' => $this->getControllerName(), 'action' => $this->getActionName()),
+			'tx_realurl_web_realurlrealurl'
+		);
 	}
 }
