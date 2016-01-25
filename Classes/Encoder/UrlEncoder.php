@@ -403,9 +403,11 @@ class UrlEncoder extends EncodeDecoderBase {
 		$configuration = (array)$this->configuration->get('fixedPostVars');
 		$postVarSetConfiguration = $this->getConfigurationForPostVars($configuration, $this->urlParameters['id']);
 
-		$segments = $this->encodeUrlParameterBlock($postVarSetConfiguration);
-		if (count($segments) > 0) {
-			$this->appendToEncodedUrl(implode('/', $segments));
+		if (count($postVarSetConfiguration) > 0) {
+			$segments = $this->encodeUrlParameterBlock($postVarSetConfiguration);
+			if (count($segments) > 0) {
+				$this->appendToEncodedUrl(implode('/', $segments));
+			}
 		}
 	}
 
@@ -429,9 +431,12 @@ class UrlEncoder extends EncodeDecoderBase {
 	 * @return void
 	 */
 	protected function encodePreVars() {
-		$segments = $this->encodeUrlParameterBlock((array)$this->configuration->get('preVars'));
-		if (count($segments) > 0) {
-			$this->appendToEncodedUrl(implode('/', $segments));
+		$preVars = (array)$this->configuration->get('preVars');
+		if (count($preVars) > 0) {
+			$segments = $this->encodeUrlParameterBlock($preVars);
+			if (count($segments) > 0) {
+				$this->appendToEncodedUrl(implode('/', $segments));
+			}
 		}
 	}
 
@@ -441,14 +446,21 @@ class UrlEncoder extends EncodeDecoderBase {
 	 * @return void
 	 */
 	protected function encodePostVarSets() {
-		$configuration = (array)$this->configuration->get('postVarSets');
-		$postVarSetConfigurations = $this->getConfigurationForPostVars($configuration, $this->urlParameters['id']);
+		// There is at least an 'id' parameter
+		if (count($this->urlParameters) > 1) {
+			$configuration = (array)$this->configuration->get('postVarSets');
+			$postVarSetConfigurations = $this->getConfigurationForPostVars($configuration, $this->urlParameters['id']);
 
-		foreach ($postVarSetConfigurations as $postVar => $postVarSetConfiguration) {
-			$segments = $this->encodeUrlParameterBlock($postVarSetConfiguration);
-			if (count($segments) > 0) {
-				array_unshift($segments, $postVar);
-				$this->appendToEncodedUrl(implode('/', $segments));
+			foreach ($postVarSetConfigurations as $postVar => $postVarSetConfiguration) {
+				if (is_array($postVarSetConfiguration)) {
+					// Technically it can be a string (for decoding purposes) but makes no sense for encoding
+					// And decoder does not support it too (see UrlDecoder::decodePostVarSets)
+					$segments = $this->encodeUrlParameterBlock($postVarSetConfiguration);
+					if (count($segments) > 0) {
+						array_unshift($segments, $postVar);
+						$this->appendToEncodedUrl(implode('/', $segments));
+					}
+				}
 			}
 		}
 	}
