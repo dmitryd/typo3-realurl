@@ -85,6 +85,10 @@ abstract class EncodeDecoderBase {
 		$this->utility = Utility::getInstance();
 		$this->cache = $this->utility->getCache();
 
+		if ($this->rootPageId === 0) {
+			throw new \Exception('RealURL was not able to find the root page id for the domain "' . $this->utility->getCurrentHost() . '"', 1453732574);
+		}
+
 		$this->pageRepository = GeneralUtility::makeInstance('TYPO3\\CMS\\Frontend\\Page\\PageRepository');
 		$this->pageRepository->init(FALSE);
 	}
