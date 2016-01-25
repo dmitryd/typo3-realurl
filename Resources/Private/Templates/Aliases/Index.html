@@ -59,8 +59,9 @@
 		</div>
 	</form>
 
-	<d:setVariable name="entiesPerPage" value="20"/>
-	<f:if condition="{entries -> f:count()} >= {entiesPerPage}">
+	<d:setVariable name="entriesPerPage" value="20"/>
+	<d:setVariable name="entryCount" value="{foundAliases -> f:count()}"/>
+	<f:if condition="{entryCount} >= {entriesPerPage}">
 		<f:then>
 			<d:setVariable name="hasPager" value="1"/>
 		</f:then>
@@ -68,7 +69,7 @@
 			<d:setVariable name="hasPager" value="0"/>
 		</f:else>
 	</f:if>
-	<f:be.widget.paginate objects="{foundAliases}" as="aliases" configuration="{itemsPerPage: entiesPerPage, insertAbove: hasPager, insertBelow: hasPager, addQueryString: 1}">
+	<f:be.widget.paginate objects="{foundAliases}" as="aliases" configuration="{itemsPerPage: entriesPerPage, insertAbove: hasPager, insertBelow: hasPager, addQueryString: 1}">
 		<table class="table table-striped">
 			<tr>
 				<th class="col-sm-1"></th>
@@ -83,11 +84,13 @@
 		</table>
 	</f:be.widget.paginate>
 
-	<a class="btn btn-default" href="javascript:void(0)" onclick="tx_realurl_confirm(tx_realurl_strings.confirmTitle, tx_realurl_strings.deleteAliases,
-			 '{f:uri.action(action: 'deleteAll', controller: 'Aliases', addQueryString: 1)}')">
-		<c:icon identifier="actions-delete"/>
-		<f:translate key="module.deleteAliasesOfType"/>
-	</a>
+	<f:if condition="{entryCount}">
+		<a class="btn btn-default" href="javascript:void(0)" onclick="tx_realurl_confirm(tx_realurl_strings.confirmTitle, tx_realurl_strings.deleteAliases,
+				 '{f:uri.action(action: 'deleteAll', controller: 'Aliases', addQueryString: 1)}')">
+			<c:icon identifier="actions-delete"/>
+			<f:translate key="module.deleteAliasesOfType"/>
+		</a>
+	</f:if>
 </f:section>
 
 

@@ -14,8 +14,9 @@
 
 
 <f:section name="entries">
-	<d:setVariable name="entiesPerPage" value="20"/>
-	<f:if condition="{entries -> f:count()} >= {entiesPerPage}">
+	<d:setVariable name="entriesPerPage" value="20"/>
+	<d:setVariable name="entryCount" value="{entries -> f:count()}"/>
+	<f:if condition="{entryCount} >= {entriesPerPage}">
 		<f:then>
 			<d:setVariable name="hasPager" value="1"/>
 		</f:then>
@@ -23,7 +24,7 @@
 			<d:setVariable name="hasPager" value="0"/>
 		</f:else>
 	</f:if>
-	<f:be.widget.paginate objects="{entries}" as="cacheEntries" configuration="{itemsPerPage: entiesPerPage, insertAbove: hasPager, insertBelow: hasPager, addQueryString: 1}">
+	<f:be.widget.paginate objects="{entries}" as="cacheEntries" configuration="{itemsPerPage: entriesPerPage, insertAbove: hasPager, insertBelow: hasPager, addQueryString: 1}">
 		<table class="table table-striped">
 			<tr>
 				<th class="col-sm-1"></th>
@@ -36,12 +37,14 @@
 			</f:for>
 		</table>
 	</f:be.widget.paginate>
-	<a class="btn btn-default" href="javascript:void(0)" onclick="tx_realurl_confirm(tx_realurl_strings.confirmTitle, tx_realurl_strings.deleteCacheEntries,
-			 '{f:uri.action(action: 'deleteAll', controller: 'UrlCache', addQueryString: 1)}')">
-		<c:icon identifier="actions-delete"/>
-		<f:translate key="module.deleteCacheEntriesForPage"/>
-	</a>
-	&nbsp;
+	<f:if condition="{entryCount}">
+		<a class="btn btn-default" href="javascript:void(0)" onclick="tx_realurl_confirm(tx_realurl_strings.confirmTitle, tx_realurl_strings.deleteCacheEntries,
+				 '{f:uri.action(action: 'deleteAll', controller: 'UrlCache', addQueryString: 1)}')">
+			<c:icon identifier="actions-delete"/>
+			<f:translate key="module.deleteCacheEntriesForPage"/>
+		</a>
+		&nbsp;
+	</f:if>
 	<a class="btn btn-danger" href="javascript:void(0)" onclick="tx_realurl_confirm(tx_realurl_strings.confirmTitle, tx_realurl_strings.flushCacheEntries,
 			 '{f:uri.action(action: 'flush', controller: 'UrlCache', addQueryString: 1)}')">
 		<c:icon identifier="actions-delete"/>

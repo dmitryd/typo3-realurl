@@ -159,6 +159,15 @@
 			<trans-unit id="module.js.flushCache">
 				<source>Do you want to remove all cached entries? This WILL cause performance issues with the web site!</source>
 			</trans-unit>
+			<trans-unit id="module.url_cache.entry_deleted">
+				<source>Cache entry was removed.</source>
+			</trans-unit>
+			<trans-unit id="module.url_cache.all_entries_deleted">
+				<source>All entries for this page were removed.</source>
+			</trans-unit>
+			<trans-unit id="module.url_cache.flushed">
+				<source>All cache entries were removed.</source>
+			</trans-unit>
 		</body>
 	</file>
 </xliff>
