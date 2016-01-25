@@ -59,7 +59,16 @@
 		</div>
 	</form>
 
-	<f:be.widget.paginate objects="{foundAliases}" as="aliases" configuration="{itemsPerPage: 20, insertAbove: 1, insertBelow: 1}">
+	<d:setVariable name="entiesPerPage" value="20"/>
+	<f:if condition="{entries -> f:count()} >= {entiesPerPage}">
+		<f:then>
+			<d:setVariable name="hasPager" value="1"/>
+		</f:then>
+		<f:else>
+			<d:setVariable name="hasPager" value="0"/>
+		</f:else>
+	</f:if>
+	<f:be.widget.paginate objects="{foundAliases}" as="aliases" configuration="{itemsPerPage: entiesPerPage, insertAbove: hasPager, insertBelow: hasPager, addQueryString: 1}">
 		<table class="table table-striped">
 			<tr>
 				<th class="col-sm-1"></th>
