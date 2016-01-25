@@ -1,0 +1,76 @@
+{namespace d=DmitryDulepov\Realurl\ViewHelpers}
+{namespace c=TYPO3\CMS\Core\ViewHelpers}
+
+<f:layout name="Backend" />
+
+<f:section name="content">
+	<h1><f:translate key="LLL:EXT:realurl/Resources/Private/Language/locallang.xlf:module.path_cache"/></h1>
+	<p><f:translate key="LLL:EXT:realurl/Resources/Private/Language/locallang.xlf:module.path_cache.intro"/></p>
+
+	<f:flashMessages/>
+
+	<f:render section="entries" arguments="{entries: entries}"/>
+</f:section>
+
+
+<f:section name="entries">
+	<d:setVariable name="entriesPerPage" value="20"/>
+	<f:if condition="{entries -> f:count()} >= {entriesPerPage}">
+		<f:then>
+			<d:setVariable name="hasPager" value="1"/>
+		</f:then>
+		<f:else>
+			<d:setVariable name="hasPager" value="0"/>
+		</f:else>
+	</f:if>
+	<f:be.widget.paginate objects="{entries}" as="cacheEntries" configuration="{itemsPerPage: entriesPerPage, insertAbove: hasPager, insertBelow: hasPager, addQueryString: 1}">
+		<table class="table table-striped">
+			<tr>
+				<th class="col-sm-1"></th>
+				<th class="col-sm-6"><f:translate key="module.tableHeader.page_path"/></th>
+				<th class="col-sm-2"><f:translate key="module.tableHeader.mp_var"/></th>
+				<th class="col-sm-1"><f:translate key="module.tableHeader.expire"/></th>
+				<th class="col-sm-1"><f:translate key="module.tableHeader.language"/></th>
+				<th class="col-sm-1"><f:translate key="module.tableHeader.rootpage_id"/></th>
+			</tr>
+			<f:for each="{cacheEntries}" as="cacheEntry">
+				<f:render section="singleEntryRow" arguments="{cacheEntry: cacheEntry}"/>
+			</f:for>
+		</table>
+	</f:be.widget.paginate>
+</f:section>
+
+
+<f:section name="singleEntryRow">
+	<tr>
+		<td>
+			<a class="btn btn-default" href="javascript:void(0)" onclick="tx_realurl_confirm(tx_realurl_strings.confirmTitle, tx_realurl_strings.deleteSingleCacheEntry,
+			 '{f:uri.action(action: 'delete', controller: 'PathCache', addQueryString: 1, arguments: {uid: cacheEntry.uid})}')">
+				<c:icon identifier="actions-delete"/>
+			</a>
+		</td>
+		<td>{cacheEntry.pagePath}</td>
+		<td>
+			<f:if condition="{cacheEntry.mpVar}">
+				<f:then>
+					{cacheEntry.mpVar}
+				</f:then>
+				<f:else>
+					&ndash;
+				</f:else>
+			</f:if>
+		</td>
+		<td>
+			<f:if condition="{cacheEntry.expire}">
+				<f:then>
+					<f:format.date format="{f:translate(key: 'module.dateTimeFormat')}">{cacheEntry.expire}</f:format.date>
+				</f:then>
+				<f:else>
+					&ndash;
+				</f:else>
+			</f:if>
+		</td>
+		<td>{d:languageFromId(language: cacheEntry.languageId)}</td>
+		<td>{cacheEntry.rootPageId}</td>
+	</tr>
+</f:section>
