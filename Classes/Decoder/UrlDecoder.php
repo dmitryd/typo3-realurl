@@ -456,8 +456,11 @@ class UrlDecoder extends EncodeDecoderBase {
 				$this->handleNonExistingPostVarSet($pageId, $postVarSetKey, $pathSegments);
 			} else {
 				$postVarSetConfiguration = $postVarSets[$postVarSetKey];
-				foreach ($postVarSetConfiguration as $postVarConfiguration) {
-					$this->decodeSingleVariable($postVarConfiguration, $pathSegments, $requestVariables, $previousValue);
+				// Note: we do not support aliases for postVarSets!
+				if (is_array($postVarSetConfiguration)) {
+					foreach ($postVarSetConfiguration as $postVarConfiguration) {
+						$this->decodeSingleVariable($postVarConfiguration, $pathSegments, $requestVariables, $previousValue);
+					}
 				}
 			}
 		}
