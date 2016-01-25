@@ -812,7 +812,7 @@ class UrlEncoder extends EncodeDecoderBase {
 		$result = FALSE;
 
 		foreach ($configurationArray as $configuration) {
-			if (isset($this->urlParameters[$configuration['GETvar']])) {
+			if (is_array($configuration) && isset($configuration['GETvar']) && isset($this->urlParameters[$configuration['GETvar']])) {
 				$result = TRUE;
 				break;
 			}
