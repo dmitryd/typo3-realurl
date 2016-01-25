@@ -134,6 +134,7 @@ abstract class BackendModuleController extends ActionController {
 	 * Stores information about the last action of the module.
 	 */
 	protected function storeLastAction() {
+		// Probably should store also arguments (except pager?)
 		BackendUtility::getModuleData(
 			array('controller' => '', 'action' => ''),
 			array('controller' => $this->getControllerName(), 'action' => $this->getActionName()),
