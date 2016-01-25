@@ -17,7 +17,7 @@ config.tx_extbase.persistence.classes {
 			tableName = tx_realurl_pathcache
 			columns {
 				mpvar.mapOnProperty = mpVar
-				pagepath.mapOnProperty
+				pagepath.mapOnProperty = pagePath
 				rootpage_id.mapOnProperty = rootPageId
 			}
 		}

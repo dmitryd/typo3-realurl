@@ -23,7 +23,6 @@ namespace DmitryDulepov\Realurl\Controller;
 *  This copyright notice MUST APPEAR in all copies of the script!
 ***************************************************************/
 
-use TYPO3\CMS\Core\Messaging\AbstractMessage;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Persistence\QueryInterface;
 use TYPO3\CMS\Extbase\Utility\LocalizationUtility;
@@ -93,12 +92,20 @@ class UrlCacheController extends BackendModuleController {
 		$this->forward('index', 'UrlCache');
 	}
 
+	/**
+	 * Shows a list of URL cache entries.
+	 */
 	public function indexAction() {
 		$this->view->assignMultiple(array(
 			'entries' => $this->getCacheEntries()
 		));
 	}
 
+	/**
+	 * Loads URL cache entries.
+	 *
+	 * @return array|\TYPO3\CMS\Extbase\Persistence\QueryResultInterface
+	 */
 	protected function getCacheEntries() {
 		$pageId = (int)GeneralUtility::_GP('id');
 		$query = $this->repository->createQuery();

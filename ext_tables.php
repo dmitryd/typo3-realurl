@@ -10,6 +10,7 @@ if (version_compare(TYPO3_version, '7.6.0', '>=')) {
 			'Overview' => 'index',
 			'Aliases' => 'index,edit,delete,deleteAll',
 			'UrlCache' => 'index,delete,deleteAll,flush',
+			'PathCache' => 'index,delete',
 		),
 		array(
 			'access' => 'user,group',
