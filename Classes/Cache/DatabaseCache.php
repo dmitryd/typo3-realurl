@@ -187,14 +187,18 @@ class DatabaseCache implements CacheInterface, SingletonInterface {
 	 * @param int $rootPageId
 	 * @param int $languageId
 	 * @param int $pageId
+	 * @param string $mpVar
 	 * @return PathCacheEntry|null
 	 */
-	public function getPathFromCacheByPageId($rootPageId, $languageId, $pageId) {
+	public function getPathFromCacheByPageId($rootPageId, $languageId, $pageId, $mpVar) {
 		$cacheEntry = NULL;
 
 		$row = $this->databaseConnection->exec_SELECTgetSingleRow('*', 'tx_realurl_pathcache',
-			'page_id=' . (int)$pageId . ' AND language_id=' . (int)$languageId .
-				' AND rootpage_id=' . (int)$rootPageId . ' AND expire=0'
+			'page_id=' . (int)$pageId .
+				' AND language_id=' . (int)$languageId .
+				' AND rootpage_id=' . (int)$rootPageId .
+				' AND mpvar=' . ($mpVar ? $this->databaseConnection->fullQuoteStr($mpVar, 'tx_realurl_pathcache') : '\'\'') .
+				' AND expire=0'
 		);
 		if (is_array($row)) {
 			$cacheEntry = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\Cache\\PathCacheEntry');

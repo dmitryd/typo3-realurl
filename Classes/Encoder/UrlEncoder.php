@@ -173,7 +173,7 @@ class UrlEncoder extends EncodeDecoderBase {
 		$cacheEntry->setExpiration(0);
 		$cacheEntry->setLanguageId($this->sysLanguageUid);
 		$cacheEntry->setRootPageId($this->rootPageId);
-		$cacheEntry->setMountPoint('');
+		$cacheEntry->setMountPoint(isset($this->originalUrlParameters['MP']) ? $this->originalUrlParameters['MP'] : '');
 		$cacheEntry->setPageId($this->urlParameters['id']);
 		$cacheEntry->setPagePath($pagePath);
 		$this->cache->putPathToCache($cacheEntry);
@@ -347,7 +347,14 @@ class UrlEncoder extends EncodeDecoderBase {
 	 * @return void
 	 */
 	protected function createPathComponent() {
-		$rooLineUtility = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Utility\\RootlineUtility', $this->urlParameters['id']);
+		$mountPointParameter = '';
+		if (isset($this->urlParameters['MP'])) {
+			$mountPointParameter = $this->urlParameters['MP'];
+			unset($this->urlParameters['MP']);
+		}
+		$rooLineUtility = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Utility\\RootlineUtility',
+			$this->urlParameters['id'], $mountPointParameter
+		);
 		$rootLine = $rooLineUtility->get();
 
 		array_pop($rootLine);
@@ -417,7 +424,11 @@ class UrlEncoder extends EncodeDecoderBase {
 	 * @return void
 	 */
 	protected function encodePathComponents() {
-		$cacheEntry = $this->cache->getPathFromCacheByPageId($this->rootPageId, $this->sysLanguageUid, $this->urlParameters['id']);
+		$cacheEntry = $this->cache->getPathFromCacheByPageId($this->rootPageId,
+			$this->sysLanguageUid,
+			$this->urlParameters['id'],
+			isset($this->urlParameters['MP']) ? $this->urlParameters['MP'] : ''
+		);
 		if ($cacheEntry) {
 			$this->appendToEncodedUrl($cacheEntry->getPagePath());
 		} else {
