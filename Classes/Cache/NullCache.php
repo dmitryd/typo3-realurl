@@ -116,9 +116,10 @@ class NullCache implements CacheInterface, SingletonInterface {
 	 * @param int $rootPageId
 	 * @param int $languageId
 	 * @param int $pageId
+	 * @param string $mpVar
 	 * @return PathCacheEntry|null
 	 */
-	public function getPathFromCacheByPageId($rootPageId, $languageId, $pageId) {
+	public function getPathFromCacheByPageId($rootPageId, $languageId, $pageId, $mpVar) {
 		return NULL;
 	}
 

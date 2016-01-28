@@ -76,6 +76,22 @@ class UrlDecoder extends EncodeDecoderBase {
 	protected $mimeType = '';
 
 	/**
+	 * Contains a mount point starting pid for the current branch. Zero means
+	 * "no mount point in the path". This variable will direct the decoder to
+	 * continue page look up from this branch of tree.
+	 *
+	 * @var int
+	 */
+	protected $mountPointStartPid = 0;
+
+	/**
+	 * Contains a generated $_GET['MP'] for the currently decoded branch.
+	 *
+	 * @var string
+	 */
+	protected $mountPointVariable = '';
+
+	/**
 	 * This variable is set to the speaking path only if he decoding has to run.
 	 *
 	 * @var string
@@ -350,6 +366,7 @@ class UrlDecoder extends EncodeDecoderBase {
 					$processedPathSegments = array();
 					$currentPid = $this->rootPageId;
 				}
+				$currentMountPointPid = 0;
 				while ($currentPid !== 0 && count($remainingPathSegments) > 0) {
 					$segment = array_shift($remainingPathSegments);
 					/*
@@ -368,7 +385,12 @@ class UrlDecoder extends EncodeDecoderBase {
 					$nextResult = $this->searchPages($currentPid, $segment);
 					if ($nextResult) {
 						$result = $nextResult;
-						$currentPid = $result->getPageId();
+						if ($this->mountPointStartPid !== $currentMountPointPid) {
+							$currentPid = $currentMountPointPid = $this->mountPointStartPid;
+						}
+						else {
+							$currentPid = $result->getPageId();
+						}
 						$processedPathSegments[] = $segment;
 						$result->setPagePath(implode('/', $processedPathSegments));
 						// Path is valid so far, so we cache it
@@ -659,6 +681,9 @@ class UrlDecoder extends EncodeDecoderBase {
 		ArrayUtility::mergeRecursiveWithOverrule($requestVariables, $this->getVarsFromDomainConfiguration());
 		ArrayUtility::mergeRecursiveWithOverrule($requestVariables, $this->decodePreVars($pathSegments));
 		$pageId = $this->decodePath($pathSegments);
+		if ($this->mountPointVariable !== '') {
+			$requestVariables['MP'] = $this->mountPointVariable;
+		}
 		ArrayUtility::mergeRecursiveWithOverrule($requestVariables, $this->decodeFixedPostVars($pageId, $pathSegments));
 		ArrayUtility::mergeRecursiveWithOverrule($requestVariables, $this->decodePostVarSets($pageId, $pathSegments));
 
@@ -896,7 +921,6 @@ class UrlDecoder extends EncodeDecoderBase {
 		$cacheEntry = $this->cache->getPathFromCacheByPagePath($this->rootPageId, '', $pagePath);
 		if (!$cacheEntry) {
 			$cacheEntry = $newCacheEntry;
-			$cacheEntry->setMountPoint('');
 			$cacheEntry->setRootPageId($this->rootPageId);
 		}
 		if ($cacheEntry->getExpiration() !== 0) {
@@ -1014,8 +1038,15 @@ class UrlDecoder extends EncodeDecoderBase {
 			foreach (self::$pageTitleFields as $field) {
 				if ($this->utility->convertToSafeString($page[$field]) == $segment) {
 					$result = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\Cache\\PathCacheEntry');
-					/** @var \DmitryDulepov\Realurl\Cache\PathCacheEntry $cacheEntry */
-					$result->setPageId((int) $page['uid']);
+					/** @var \DmitryDulepov\Realurl\Cache\PathCacheEntry $result */
+					$result->setPageId((int)$page['uid']);
+					if ($this->mountPointVariable !== '') {
+						$result->setMountPoint($this->mountPointVariable);
+					}
+					if ((int)$page['doktype'] === PageRepository::DOKTYPE_MOUNTPOINT) {
+						$this->mountPointVariable = $page['mount_pid'] . '-' . $page['uid'];
+						$this->mountPointStartPid = (int)$page['mount_pid'];
+					}
 					if ($this->detectedLanguageId > 0) {
 						break;
 					} else {
@@ -1087,7 +1118,7 @@ class UrlDecoder extends EncodeDecoderBase {
 			if ($cacheEntry) {
 				if ((int)$cacheEntry->getExpiration() !== 0) {
 					$this->isExpiredPath = TRUE;
-					$nonExpiredCacheEntry = $this->cache->getPathFromCacheByPageId($cacheEntry->getRootPageId(), $cacheEntry->getLanguageId(), $cacheEntry->getPageId());
+					$nonExpiredCacheEntry = $this->cache->getPathFromCacheByPageId($cacheEntry->getRootPageId(), $cacheEntry->getLanguageId(), $cacheEntry->getPageId(), $cacheEntry->getMountPoint());
 					if ($nonExpiredCacheEntry) {
 						$this->expiredPath = $cacheEntry->getPagePath();
 						$cacheEntry = $nonExpiredCacheEntry;

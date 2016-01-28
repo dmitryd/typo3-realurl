@@ -173,7 +173,7 @@ class UrlEncoder extends EncodeDecoderBase {
 		$cacheEntry->setExpiration(0);
 		$cacheEntry->setLanguageId($this->sysLanguageUid);
 		$cacheEntry->setRootPageId($this->rootPageId);
-		$cacheEntry->setMountPoint('');
+		$cacheEntry->setMountPoint(isset($this->originalUrlParameters['MP']) ? $this->originalUrlParameters['MP'] : '');
 		$cacheEntry->setPageId($this->urlParameters['id']);
 		$cacheEntry->setPagePath($pagePath);
 		$this->cache->putPathToCache($cacheEntry);
@@ -424,7 +424,11 @@ class UrlEncoder extends EncodeDecoderBase {
 	 * @return void
 	 */
 	protected function encodePathComponents() {
-		$cacheEntry = $this->cache->getPathFromCacheByPageId($this->rootPageId, $this->sysLanguageUid, $this->urlParameters['id']);
+		$cacheEntry = $this->cache->getPathFromCacheByPageId($this->rootPageId,
+			$this->sysLanguageUid,
+			$this->urlParameters['id'],
+			isset($this->urlParameters['MP']) ? $this->urlParameters['MP'] : ''
+		);
 		if ($cacheEntry) {
 			$this->appendToEncodedUrl($cacheEntry->getPagePath());
 		} else {
