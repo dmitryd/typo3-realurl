@@ -347,7 +347,14 @@ class UrlEncoder extends EncodeDecoderBase {
 	 * @return void
 	 */
 	protected function createPathComponent() {
-		$rooLineUtility = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Utility\\RootlineUtility', $this->urlParameters['id']);
+		$mountPointParameter = '';
+		if (isset($this->urlParameters['MP'])) {
+			$mountPointParameter = $this->urlParameters['MP'];
+			unset($this->urlParameters['MP']);
+		}
+		$rooLineUtility = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Utility\\RootlineUtility',
+			$this->urlParameters['id'], $mountPointParameter
+		);
 		$rootLine = $rooLineUtility->get();
 
 		array_pop($rootLine);
