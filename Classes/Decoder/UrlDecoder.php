@@ -918,7 +918,7 @@ class UrlDecoder extends EncodeDecoderBase {
 	 */
 	protected function putToPathCache(PathCacheEntry $newCacheEntry) {
 		$pagePath = $newCacheEntry->getPagePath();
-		$cacheEntry = $this->cache->getPathFromCacheByPagePath($this->rootPageId, '', $pagePath);
+		$cacheEntry = $this->cache->getPathFromCacheByPagePath($this->rootPageId, $newCacheEntry->getMountPoint(), $pagePath);
 		if (!$cacheEntry) {
 			$cacheEntry = $newCacheEntry;
 			$cacheEntry->setRootPageId($this->rootPageId);
@@ -1114,7 +1114,8 @@ class UrlDecoder extends EncodeDecoderBase {
 
 		do {
 			$path = implode('/', $pathSegments);
-			$cacheEntry = $this->cache->getPathFromCacheByPagePath($this->rootPageId, '', $path);
+			// Since we know nothing about mount point at this stage, we exclude it from search by passing null as the second argument
+			$cacheEntry = $this->cache->getPathFromCacheByPagePath($this->rootPageId, null, $path);
 			if ($cacheEntry) {
 				if ((int)$cacheEntry->getExpiration() !== 0) {
 					$this->isExpiredPath = TRUE;

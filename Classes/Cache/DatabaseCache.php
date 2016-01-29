@@ -219,7 +219,7 @@ class DatabaseCache implements CacheInterface, SingletonInterface {
 	 * Obtains path from the path cache.
 	 *
 	 * @param int $rootPageId
-	 * @param string $mountPoint
+	 * @param string|null $mountPoint null means exclude from search
 	 * @param string $pagePath
 	 * @return PathCacheEntry|null
 	 */
@@ -227,7 +227,9 @@ class DatabaseCache implements CacheInterface, SingletonInterface {
 		$cacheEntry = NULL;
 
 		$row = $this->databaseConnection->exec_SELECTgetSingleRow('*', 'tx_realurl_pathcache',
-			'rootpage_id=' . (int)$rootPageId . ' AND pagepath=' . $this->databaseConnection->fullQuoteStr($pagePath, 'tx_realurl_pathcache'),
+			'rootpage_id=' . (int)$rootPageId .
+			' AND pagepath=' . $this->databaseConnection->fullQuoteStr($pagePath, 'tx_realurl_pathcache') .
+			(is_null($mountPoint) ? '' : ' AND mpvar=' . ($mountPoint ? $this->databaseConnection->fullQuoteStr($mountPoint, 'tx_realurl_pathcache') : '\'\'')),
 			'', 'expire'
 		);
 		if (is_array($row)) {

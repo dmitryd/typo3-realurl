@@ -110,7 +110,7 @@ interface CacheInterface {
 	 * Obtains path from the path cache.
 	 *
 	 * @param int $rootPageId
-	 * @param string $mountPoint
+	 * @param string|null $mountPoint null means exclude from search
 	 * @param string $pagePath
 	 * @return PathCacheEntry|null
 	 */
