@@ -503,7 +503,7 @@ class tx_realurl extends tx_realurl_baseclass {
 					default:
 						unset($cfg['type']); // Just to make sure it is NOT set.
 						foreach ($cfg as $Gcfg) {
-							if (isset($paramKeyValues[$Gcfg['GETvar']])) {
+							if (isset($Gcfg['GETvar']) && isset($paramKeyValues[$Gcfg['GETvar']])) {
 								$pathParts[] = rawurlencode($keyWord);
 								$pathPartsSize = count($pathParts);
 								$cHashParameters = $this->cHashParameters;
