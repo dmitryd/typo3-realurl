@@ -494,20 +494,25 @@ class UrlEncoder extends EncodeDecoderBase {
 			'encodeUrlParameterBlockUseAsIs',
 		);
 
-		$getVarName = $configuration['GETvar'];
-		$getVarValue = isset($this->urlParameters[$getVarName]) ? $this->urlParameters[$getVarName] : '';
+		if (isset($configuration['GETvar'])) {
+			$getVarName = $configuration['GETvar'];
+			$getVarValue = isset($this->urlParameters[$getVarName]) ? $this->urlParameters[$getVarName] : '';
 
-		if (!isset($configuration['cond']) || $this->checkLegacyCondition($configuration['cond'], $previousValue)) {
+			if (!isset($configuration['cond']) || $this->checkLegacyCondition($configuration['cond'], $previousValue)) {
 
-			// TODO Possible hook here before any other function? Pass name, value, segments and config
+				// TODO Possible hook here before any other function? Pass name, value, segments and config
 
-			foreach ($varProcessingFunctions as $varProcessingFunction) {
-				if ($this->$varProcessingFunction($getVarName, $getVarValue, $configuration, $segments, $previousValue)) {
-					// Unset to prevent further processing
-					unset($this->urlParameters[$getVarName]);
-					break;
+				foreach ($varProcessingFunctions as $varProcessingFunction) {
+					if ($this->$varProcessingFunction($getVarName, $getVarValue, $configuration, $segments, $previousValue)) {
+						// Unset to prevent further processing
+						unset($this->urlParameters[$getVarName]);
+						break;
+					}
 				}
 			}
+		}
+		else {
+			// TODO Log an error here: configuration is bad!
 		}
 	}
 
@@ -948,11 +953,16 @@ class UrlEncoder extends EncodeDecoderBase {
 		$domainsConfiguration = $this->configuration->get('domains/encode');
 		if (is_array($domainsConfiguration)) {
 			foreach ($domainsConfiguration as $configuration) {
-				$getVarName = $configuration['GETvar'];
-				// Note: non-strict comparison here is required!
-				if ($this->urlParameters[$getVarName] == $configuration['value']) {
-					$this->urlPrepend = $configuration['urlPrepend'];
-					unset($this->urlParameters[$getVarName]);
+				if (isset($configuration['GETvar'])) {
+					$getVarName = $configuration['GETvar'];
+					// Note: non-strict comparison here is required!
+					if ($this->urlParameters[$getVarName] == $configuration['value']) {
+						$this->urlPrepend = $configuration['urlPrepend'];
+						unset($this->urlParameters[$getVarName]);
+					}
+				}
+				else {
+					// TODO Log about incorrect configuration here
 				}
 			}
 		}

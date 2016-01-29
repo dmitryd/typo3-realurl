@@ -520,10 +520,15 @@ class UrlDecoder extends EncodeDecoderBase {
 		$handled = FALSE;
 		if (!isset($varConfiguration['cond']) || $this->checkLegacyCondition($varConfiguration['cond'], $previousValue)) {
 			foreach ($varProcessingFunctions as $varProcessingFunction) {
-				if ($this->$varProcessingFunction($varConfiguration, $getVarValue, $requestVariables, $pathSegments)) {
-					$previousValue = (string)end($requestVariables);
-					$handled = TRUE;
-					break;
+				if (isset($varConfiguration['GETvar'])) {
+					if ($this->$varProcessingFunction($varConfiguration, $getVarValue, $requestVariables, $pathSegments)) {
+						$previousValue = (string)end($requestVariables);
+						$handled = TRUE;
+						break;
+					}
+				}
+				else {
+					// TODO Log about bad configuration
 				}
 			}
 		}
