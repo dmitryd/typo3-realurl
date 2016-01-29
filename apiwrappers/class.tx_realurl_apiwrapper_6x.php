@@ -174,7 +174,7 @@ class tx_realurl_apiwrapper_6x extends tx_realurl_apiwrapper implements \TYPO3\C
 	 * @see t3lib_cs::strlen()
 	 */
 	public function strlen($charset, $string) {
-		$this->csConv->strlen($charset, $string);
+		return $this->csConv->strlen($charset, $string);
 	}
 
 	/**

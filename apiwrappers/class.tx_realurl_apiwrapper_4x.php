@@ -204,7 +204,7 @@ class tx_realurl_apiwrapper_4x extends tx_realurl_apiwrapper implements t3lib_Si
 	 * @see t3lib_cs::strlen()
 	 */
 	public function strlen($charset, $string) {
-		$this->csConv->strlen($charset, $string);
+		return $this->csConv->strlen($charset, $string);
 	}
 
 	/**
