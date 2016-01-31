@@ -59,7 +59,8 @@ abstract class BackendModuleController extends ActionController {
 			array(),
 			'tx_realurl_web_realurlrealurl'
 		);
-		if (is_array($moduleData)) {
+		//Don't need to check if it is an array because getModuleData always returns an array. Only have to check if it's empty.
+		if (!empty($moduleData)) {
 			$currentController = $this->getControllerName();
 			$currentAction = $this->getActionName();
 			if ($moduleData['controller'] !== '' && $moduleData['action'] !== '' && ($moduleData['controller'] !== $currentController || $moduleData['action'] !== $currentAction)) {
