@@ -896,7 +896,7 @@ class UrlDecoder extends EncodeDecoderBase {
 	 * @return bool
 	 */
 	protected function isSpeakingUrl() {
-		return $this->siteScript && substr($this->siteScript, 0, 9) !== 'index.php' && substr($this->siteScript, 0, 1) !== '?';
+		return $this->siteScript && substr($this->siteScript, 0, 9) !== 'index.php' && substr($this->siteScript, 0, 1) !== '?' && $this->siteScript !== 'favicon.ico';
 	}
 
 	/**
