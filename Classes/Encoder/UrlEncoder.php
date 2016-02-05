@@ -354,14 +354,14 @@ class UrlEncoder extends EncodeDecoderBase {
 	protected function createPathComponentThroughOverride() {
 		$result = false;
 
-		$mountPointParameter = '';
-		if (isset($this->urlParameters['MP'])) {
-			$mountPointParameter = $this->urlParameters['MP'];
-			unset($this->urlParameters['MP']);
-		}
-		$page = $this->pageRepository->getPage($this->urlParameters['id'], $mountPointParameter);
-		if ((int)$this->originalUrlParameters['L'] > 0) {
-			$overlay = $this->pageRepository->getPageOverlay($page, (int)$this->originalUrlParameters['L']);
+		// Can't use $this->pageRepository->getPage() here because it does
+		// language overlay to TSFE's sys_language_uid automatically.
+		// We do not want this because we may need to encode to a different language
+		$page = $this->databaseConnection->exec_SELECTgetSingleRow('*', 'pages',
+			'uid=' . (int)$this->urlParameters['id']
+		);
+		if ($this->sysLanguageUid > 0) {
+			$overlay = $this->pageRepository->getPageOverlay($page, $this->sysLanguageUid);
 			if (is_array($overlay)) {
 				$page = $overlay;
 				unset($overlay);
