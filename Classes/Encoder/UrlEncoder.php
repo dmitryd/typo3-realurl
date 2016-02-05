@@ -117,13 +117,7 @@ class UrlEncoder extends EncodeDecoderBase {
 			// current host always. See http://bugs.typo3.org/view.php?id=18200
 			$testUrl = $parameters['finalTagParts']['url'];
 			if (preg_match('/^https?:\/\/[^\/]+\//', $testUrl)) {
-				$testUrl = preg_replace('/https?:\/\/[^\/]+\/(.+)$/', '\1', $testUrl);
-			}
-
-			// Remove absRefPrefix if necessary
-			$absRefPrefixLength = strlen($this->tsfe->absRefPrefix);
-			if ($absRefPrefixLength !== 0 && substr($testUrl, 0, $absRefPrefixLength) === $this->tsfe->absRefPrefix) {
-				$testUrl = substr($testUrl, $absRefPrefixLength);
+				$testUrl = preg_replace('/https?:\/\/[^\/]+\/(.+)$/', $this->tsfe->absRefPrefix . '\1', $testUrl);
 			}
 
 			if (isset(self::$urlPrependRegister[$testUrl])) {
@@ -347,15 +341,65 @@ class UrlEncoder extends EncodeDecoderBase {
 	 * @return void
 	 */
 	protected function createPathComponent() {
+		if (!$this->createPathComponentThroughOverride()) {
+			$this->createPathComponentUsingRootline();
+		}
+	}
+
+	/**
+	 * Checks if tx_realurl_pathoverride is set and goes the easy way.
+	 *
+	 * @return bool
+	 */
+	protected function createPathComponentThroughOverride() {
+		$result = false;
+
+		// Can't use $this->pageRepository->getPage() here because it does
+		// language overlay to TSFE's sys_language_uid automatically.
+		// We do not want this because we may need to encode to a different language
+		$page = $this->databaseConnection->exec_SELECTgetSingleRow('*', 'pages',
+			'uid=' . (int)$this->urlParameters['id']
+		);
+		if ($this->sysLanguageUid > 0) {
+			$overlay = $this->pageRepository->getPageOverlay($page, $this->sysLanguageUid);
+			if (is_array($overlay)) {
+				$page = $overlay;
+				unset($overlay);
+			}
+		}
+		if ($page['tx_realurl_pathoverride'] && !empty($page['tx_realurl_pathsegment'])) {
+			$path = trim($page['tx_realurl_pathsegment'], '/');
+			$this->appendToEncodedUrl($path);
+			// Mount points do not work with path override. Having them will
+			// create duplicate path entries but we have to live with this to
+			// avoid further cache management complications. If we ignore
+			// mount point information here, we will have to do something
+			// about it in encodePathComponents() when we fetch from the cache.
+			// It is easier to have duplicate entries here (one with MP and
+			// another without it). It does not really matter.
+			$this->addToPathCache($path);
+			$result = true;
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Creates a path part of the URL.
+	 *
+	 * @return void
+	 */
+	protected function createPathComponentUsingRootline() {
 		$mountPointParameter = '';
 		if (isset($this->urlParameters['MP'])) {
 			$mountPointParameter = $this->urlParameters['MP'];
 			unset($this->urlParameters['MP']);
 		}
-		$rooLineUtility = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Utility\\RootlineUtility',
+		$rootLineUtility = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Utility\\RootlineUtility',
 			$this->urlParameters['id'], $mountPointParameter
 		);
-		$rootLine = $rooLineUtility->get();
+		/** @var \TYPO3\CMS\Core\Utility\RootlineUtility $rootLineUtility */
+		$rootLine = $rootLineUtility->get();
 
 		array_pop($rootLine);
 
