@@ -347,6 +347,55 @@ class UrlEncoder extends EncodeDecoderBase {
 	 * @return void
 	 */
 	protected function createPathComponent() {
+		if (!$this->createPathComponentThroughOverride()) {
+			$this->createPathComponentUsingRootline();
+		}
+	}
+
+	/**
+	 * Checks if tx_realurl_pathoverride is set and goes the easy way.
+	 *
+	 * @return bool
+	 */
+	protected function createPathComponentThroughOverride() {
+		$result = false;
+
+		$mountPointParameter = '';
+		if (isset($this->urlParameters['MP'])) {
+			$mountPointParameter = $this->urlParameters['MP'];
+			unset($this->urlParameters['MP']);
+		}
+		$page = $this->pageRepository->getPage($this->urlParameters['id'], $mountPointParameter);
+		if ((int)$this->originalUrlParameters['L'] > 0) {
+			$overlay = $this->pageRepository->getPageOverlay($page, (int)$this->originalUrlParameters['L']);
+			if (is_array($overlay)) {
+				$page = $overlay;
+				unset($overlay);
+			}
+		}
+		if ($page['tx_realurl_pathoverride'] && !empty($page['tx_realurl_pathsegment'])) {
+			$path = trim($page['tx_realurl_pathsegment'], '/');
+			$this->appendToEncodedUrl($path);
+			// Mount points do not work with path override. Having them will
+			// create duplicate path entries but we have to live with this to
+			// avoid further cache management complications. If we ignore
+			// mount point information here, we will have to do something
+			// about it in encodePathComponents() when we fetch from the cache.
+			// It is easier to have duplicate entries here (one with MP and
+			// another without it). It does not really matter.
+			$this->addToPathCache($path);
+			$result = true;
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Creates a path part of the URL.
+	 *
+	 * @return void
+	 */
+	protected function createPathComponentUsingRootline() {
 		$mountPointParameter = '';
 		if (isset($this->urlParameters['MP'])) {
 			$mountPointParameter = $this->urlParameters['MP'];
