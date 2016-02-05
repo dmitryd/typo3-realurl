@@ -104,9 +104,6 @@ class UrlDecoder extends EncodeDecoderBase {
 	/** @var string */
 	protected $speakingUri;
 
-	/** @var int */
-	protected $sysLanguageUid = 0;
-
 	/**
 	 * Initializes the class.
 	 */
@@ -1148,7 +1145,7 @@ class UrlDecoder extends EncodeDecoderBase {
 	 * @return void
 	 */
 	protected function setLanguageFromQueryString() {
-		$this->sysLanguageUid = (int)GeneralUtility::_GP('L');
+		$this->detectedLanguageId = (int)GeneralUtility::_GP('L');
 	}
 
 	/**
