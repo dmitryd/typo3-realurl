@@ -799,17 +799,6 @@ class UrlDecoder extends EncodeDecoderBase {
 	}
 
 	/**
-	 * Fixes magic_quotes_gpc if somebody still has them turned on.
-	 *
-	 * @param array $array
-	 */
-	protected function fixMagicQuotesGpc(&$array) {
-		if (get_magic_quotes_gpc() && is_array($array)) {
-			GeneralUtility::stripSlashesOnArray($array);
-		}
-	}
-
-	/**
 	 * Gets the entry from cache.
 	 *
 	 * @param string $speakingUrl
@@ -1037,7 +1026,6 @@ class UrlDecoder extends EncodeDecoderBase {
 		$result = array();
 
 		parse_str(trim(GeneralUtility::implodeArrayForUrl('', $requestVariables), '&'), $result);
-		$this->fixMagicQuotesGpc($result);
 		$this->fixBracketsAfterParseStr($result);
 
 		return $result;
