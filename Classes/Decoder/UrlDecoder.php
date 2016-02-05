@@ -345,6 +345,11 @@ class UrlDecoder extends EncodeDecoderBase {
 			$result = NULL;
 		}
 
+		if (is_null($result)) {
+			$result = $this->decodePathByOverride($remainingPathSegments);
+			$currentPid = $result->getPageId();
+		}
+
 		if (is_null($result) || count($remainingPathSegments) > 0) {
 			// Here we are if one of the following is true:
 			// - nothing is in the cache
@@ -426,6 +431,36 @@ class UrlDecoder extends EncodeDecoderBase {
 		}
 
 		return $result ? $result->getPageId() : ((int)$currentPid === (int)$this->rootPageId ? $currentPid : 0);
+	}
+
+	/**
+	 * Tries to decode the path by path override when the whole path is overriden.
+	 *
+	 * @param array $pathSegments
+	 * @return PathCacheEntry
+	 */
+	protected function decodePathByOverride(array &$pathSegments) {
+		$result = null;
+
+		$possibleSegments = array();
+		foreach ($pathSegments as $segment) {
+			if ($this->isPostVar($segment)) {
+				break;
+			}
+			$possibleSegments[] = $segment;
+		}
+
+		while (!empty($possibleSegments) && !$result) {
+			$result = $this->searchPagesByPathOverride($possibleSegments);
+			if (!$result) {
+				array_pop($possibleSegments);
+			}
+		}
+		if ($result) {
+			$pathSegments = array_slice($pathSegments, count($possibleSegments));
+		}
+
+		return $result;
 	}
 
 	/**
@@ -746,6 +781,20 @@ class UrlDecoder extends EncodeDecoderBase {
 	}
 
 	/**
+	 * Obtains a root page id for the given page.
+	 *
+	 * @param int $pageUid
+	 * @return int
+	 */
+	protected function getRootPageIdForPage($pageUid) {
+		$rootLineUtility = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Utility\\RootlineUtility', $pageUid);
+		/** @var \TYPO3\CMS\Core\Utility\RootlineUtility $rootLineUtility */
+		$rootLine = $rootLineUtility->get();
+
+		return is_array($rootLine) && count($rootLine) > 0 ? (int)$rootLine[0]['uid'] : 0;
+	}
+
+	/**
 	 * Parses the URL and validates the result.
 	 *
 	 * @return array
@@ -982,6 +1031,69 @@ class UrlDecoder extends EncodeDecoderBase {
 	}
 
 	/**
+	 * Searches the given path in pages table.
+	 *
+	 * @param string $path
+	 * @return PathCacheEntry|null
+	 */
+	protected function searchForPathOverrideInPages($path) {
+		$result = null;
+
+		$rows = $this->databaseConnection->exec_SELECTgetRows('uid', 'pages',
+			'tx_realurl_pathoverride=1 AND ' .
+				'tx_realurl_pathsegment=' . $this->databaseConnection->fullQuoteStr($path, 'pages') .
+				$this->pageRepository->enableFields('pages', 0)
+		);
+		foreach ($rows as $row) {
+			if ($this->getRootPageIdForPage((int)$row['uid']) === $this->rootPageId) {
+				// Found it!
+				$result = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\Cache\\PathCacheEntry');
+				/** @var \DmitryDulepov\Realurl\Cache\PathCacheEntry $result */
+				$result->setPageId((int)$row['uid']);
+				$result->setPagePath($path);
+				$result->setRootPageId($this->rootPageId);
+				break;
+			}
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Searches the given path in page language overlays.
+	 *
+	 * @param string $path
+	 * @return PathCacheEntry|null
+	 */
+	protected function searchForPathOverrideInPagesLanguageverlay($path) {
+		$result = null;
+
+		$rows = $this->databaseConnection->exec_SELECTgetRows('pages.uid AS uid',
+			'pages_language_overlay, pages',
+			'pages_language_overlay.pid=pages.uid AND ' .
+				'pages_language_overlay.sys_language_uid=' . (int)$this->detectedLanguageId . ' AND ' .
+				'pages.tx_realurl_pathoverride=1 AND ' .
+				'pages_language_overlay.tx_realurl_pathsegment=' . $this->databaseConnection->fullQuoteStr($path, 'pages_language_overlay') .
+				$this->pageRepository->enableFields('pages_language_overlay', 0) .
+				$this->pageRepository->enableFields('pages', 0)
+		);
+		foreach ($rows as $row) {
+			if ($this->getRootPageIdForPage((int)$row['uid']) === $this->rootPageId) {
+				// Found it!
+				$result = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\Cache\\PathCacheEntry');
+				/** @var \DmitryDulepov\Realurl\Cache\PathCacheEntry $result */
+				$result->setLanguageId($this->detectedLanguageId);
+				$result->setPageId((int)$row['uid']);
+				$result->setPagePath($path);
+				$result->setRootPageId($this->rootPageId);
+				break;
+			}
+		}
+
+		return $result;
+	}
+
+	/**
 	 * Searches pages for the match to the segment
 	 *
 	 * @param int $currentPid
@@ -1020,6 +1132,26 @@ class UrlDecoder extends EncodeDecoderBase {
 					}
 				}
 			}
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Seaches for a match in tx_realurl_pathsegment with override option.
+	 *
+	 * @param array $possibleSegments
+	 * @return PathCacheEntry|null
+	 */
+	protected function searchPagesByPathOverride(array $possibleSegments) {
+		$result = null;
+
+		$path = implode('/', $possibleSegments);
+		if ($this->detectedLanguageId > 0) {
+			$result = $this->searchForPathOverrideInPagesLanguageverlay($path);
+		}
+		if (!$result) {
+			$result = $this->searchForPathOverrideInPages($path);
 		}
 
 		return $result;
