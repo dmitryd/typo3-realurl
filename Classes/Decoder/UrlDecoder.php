@@ -248,6 +248,45 @@ class UrlDecoder extends EncodeDecoderBase {
 	}
 
 	/**
+	 * Find a page entry for the current segment and returns a PathCacheEntry for it.
+	 *
+	 * @param string $segment
+	 * @param array $pages
+	 * @param array $collectedPageIds
+	 * @return \DmitryDulepov\Realurl\Cache\PathCacheEntry | NULL
+	 */
+	protected function createPathCacheEntry($segment, $pages, &$collectedPageIds) {
+		$result = NULL;
+		foreach ($pages as $page) {
+			if ($page['doktype'] == PageRepository::DOKTYPE_SHORTCUT) {
+				$page = $this->resolveShortcut($page);
+			}
+			$collectedPageIds[] = (int) $page['uid'];
+			foreach (self::$pageTitleFields as $field) {
+				if ($this->utility->convertToSafeString($page[$field]) == $segment) {
+					$result = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\Cache\\PathCacheEntry');
+					/** @var \DmitryDulepov\Realurl\Cache\PathCacheEntry $result */
+					$result->setPageId((int)$page['uid']);
+					if ($this->mountPointVariable !== '') {
+						$result->setMountPoint($this->mountPointVariable);
+					}
+					if ((int)$page['doktype'] === PageRepository::DOKTYPE_MOUNTPOINT) {
+						$this->mountPointVariable = $page['mount_pid'] . '-' . $page['uid'];
+						$this->mountPointStartPid = (int)$page['mount_pid'];
+					}
+					if ($this->detectedLanguageId > 0) {
+						break;
+					} else {
+						break 2;
+					}
+				}
+			}
+		}
+
+		return $result;
+	}
+
+	/**
 	 * Creates query string from passed variables.
 	 *
 	 * @param array|null $getVars
@@ -735,17 +774,6 @@ class UrlDecoder extends EncodeDecoderBase {
 	}
 
 	/**
-	 * Fixes magic_quotes_gpc if somebody still has them turned on.
-	 *
-	 * @param array $array
-	 */
-	protected function fixMagicQuotesGpc(&$array) {
-		if (get_magic_quotes_gpc() && is_array($array)) {
-			GeneralUtility::stripSlashesOnArray($array);
-		}
-	}
-
-	/**
 	 * Fixes a problem with parse_str that returns `a[b[c]` instead of `a[b[c]]` when parsing `a%5Bb%5Bc%5D%5D`
 	 *
 	 * @param array $array
@@ -771,6 +799,17 @@ class UrlDecoder extends EncodeDecoderBase {
 	}
 
 	/**
+	 * Fixes magic_quotes_gpc if somebody still has them turned on.
+	 *
+	 * @param array $array
+	 */
+	protected function fixMagicQuotesGpc(&$array) {
+		if (get_magic_quotes_gpc() && is_array($array)) {
+			GeneralUtility::stripSlashesOnArray($array);
+		}
+	}
+
+	/**
 	 * Gets the entry from cache.
 	 *
 	 * @param string $speakingUrl
@@ -778,6 +817,46 @@ class UrlDecoder extends EncodeDecoderBase {
 	 */
 	protected function getFromUrlCache($speakingUrl) {
 		return $this->cache->getUrlFromCacheBySpeakingUrl($this->rootPageId, $speakingUrl);
+	}
+
+	/**
+	 * Searches a page below excluded pages and returns the PathCacheEntry if something was found.
+	 *
+	 * @param string $segment
+	 * @param array $pages
+	 * @param array $collectedPageIds
+	 * @param string $disallowedDoktypes
+	 * @param string $pagesEnableFields
+	 * @return \DmitryDulepov\Realurl\Cache\PathCacheEntry | NULL
+	 */
+	protected function getPathCacheEntryAfterExcludedPages($segment, $pages, &$collectedPageIds, $disallowedDoktypes, $pagesEnableFields) {
+		$ids = array();
+		$result = array();
+		$newPages = $pages;
+
+		while ($newPages) {
+			foreach ($newPages as $page) {
+				if ($page['tx_realurl_exclude']) {
+					$ids[] = $page['uid'];
+				}
+			}
+			if ($ids) {
+				$children = $this->databaseConnection->exec_SELECTgetRows(
+					'*', 'pages', 'pid IN (' . implode(',', $ids) . ')' .
+					' AND doktype NOT IN (' . $disallowedDoktypes . ')' . $pagesEnableFields
+				);
+
+				$result = $this->createPathCacheEntry($segment, $children, $collectedPageIds);
+				if ($result) {
+					break;
+				}
+				$newPages = $children;
+				$ids = array();
+			} else {
+				break;
+			}
+		}
+		return $result;
 	}
 
 	/**
@@ -1154,85 +1233,6 @@ class UrlDecoder extends EncodeDecoderBase {
 			$result = $this->searchForPathOverrideInPages($path);
 		}
 
-		return $result;
-	}
-
-	/**
-	 * Find a page entry for the current segment and returns a PathCacheEntry for it.
-	 *
-	 * @param string $segment
-	 * @param array $pages
-	 * @param array $collectedPageIds
-	 * @return \DmitryDulepov\Realurl\Cache\PathCacheEntry | NULL
-	 */
-	public function createPathCacheEntry($segment, $pages, &$collectedPageIds) {
-		$result = NULL;
-		foreach ($pages as $page) {
-			if ($page['doktype'] == PageRepository::DOKTYPE_SHORTCUT) {
-				$page = $this->resolveShortcut($page);
-			}
-			$collectedPageIds[] = (int) $page['uid'];
-			foreach (self::$pageTitleFields as $field) {
-				if ($this->utility->convertToSafeString($page[$field]) == $segment) {
-					$result = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\Cache\\PathCacheEntry');
-					/** @var \DmitryDulepov\Realurl\Cache\PathCacheEntry $result */
-					$result->setPageId((int)$page['uid']);
-					if ($this->mountPointVariable !== '') {
-						$result->setMountPoint($this->mountPointVariable);
-					}
-					if ((int)$page['doktype'] === PageRepository::DOKTYPE_MOUNTPOINT) {
-						$this->mountPointVariable = $page['mount_pid'] . '-' . $page['uid'];
-						$this->mountPointStartPid = (int)$page['mount_pid'];
-					}
-					if ($this->detectedLanguageId > 0) {
-						break;
-					} else {
-						break 2;
-					}
-				}
-			}
-		}
-
-		return $result;
-	}
-
-	/**
-	 * Searches a page below excluded pages and returns the PathCacheEntry if something was found.
-	 *
-	 * @param string $segment
-	 * @param array $pages
-	 * @param array $collectedPageIds
-	 * @param string $disallowedDoktypes
-	 * @param string $pagesEnableFields
-	 * @return \DmitryDulepov\Realurl\Cache\PathCacheEntry | NULL
-	 */
-	public function getPathCacheEntryAfterExcludedPages($segment, $pages, &$collectedPageIds, $disallowedDoktypes, $pagesEnableFields) {
-		$ids = array();
-		$result = array();
-		$newPages = $pages;
-
-		while ($newPages) {
-			foreach ($newPages as $page) {
-				if ($page['tx_realurl_exclude']) {
-					$ids[] = $page['uid'];
-				}
-			}
-			if ($ids) {
-				$children = $this->databaseConnection->exec_SELECTgetRows(
-					'*', 'pages', 'pid IN (' . implode(',', $ids) . ')' .
-					' AND doktype NOT IN (' . $disallowedDoktypes . ')' . $pagesEnableFields
-				);
-
-				$result = $this->createPathCacheEntry($segment, $children, $collectedPageIds);
-				if ($result) {
-					break;
-				}
-				$newPages = $children;
-				$ids = array();
-			} else {
-				break;
-			}
-		}
 		return $result;
 	}
 
