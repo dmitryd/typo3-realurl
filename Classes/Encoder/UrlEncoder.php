@@ -395,10 +395,11 @@ class UrlEncoder extends EncodeDecoderBase {
 			$mountPointParameter = $this->urlParameters['MP'];
 			unset($this->urlParameters['MP']);
 		}
-		$rooLineUtility = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Utility\\RootlineUtility',
+		$rootLineUtility = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Utility\\RootlineUtility',
 			$this->urlParameters['id'], $mountPointParameter
 		);
-		$rootLine = $rooLineUtility->get();
+		/** @var \TYPO3\CMS\Core\Utility\RootlineUtility $rootLineUtility */
+		$rootLine = $rootLineUtility->get();
 
 		array_pop($rootLine);
 
