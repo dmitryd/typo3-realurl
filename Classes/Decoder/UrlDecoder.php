@@ -471,7 +471,7 @@ class UrlDecoder extends EncodeDecoderBase {
 
 		while (count($pathSegments) > 0) {
 			$postVarSetKey = array_shift($pathSegments);
-			if (!isset($postVarSets[$postVarSetKey])) {
+			if (!isset($postVarSets[$postVarSetKey]) || !is_array($postVarSets[$postVarSetKey])) {
 				$this->handleNonExistingPostVarSet($pageId, $postVarSetKey, $pathSegments);
 			} else {
 				$postVarSetConfiguration = $postVarSets[$postVarSetKey];
