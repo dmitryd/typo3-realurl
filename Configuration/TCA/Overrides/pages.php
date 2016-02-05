@@ -10,7 +10,7 @@ if (!isset($GLOBALS['TCA']['pages']['columns']['tx_realurl_pathsegment'])) {
 			'config' => array (
 				'type' => 'input',
 				'max' => 255,
-				'eval' => 'trim,nospace,lower'
+				'eval' => 'trim,nospace,lower,DmitryDulepov\\Realurl\\Evaluator\\SegmentFieldCleaner'
 			),
 		),
 		'tx_realurl_pathoverride' => array(
