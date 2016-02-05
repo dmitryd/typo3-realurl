@@ -773,6 +773,9 @@ class UrlDecoder extends EncodeDecoderBase {
 			$getVarName = key($domainConfuguration['GETvars']);
 			$getVarValue = $domainConfuguration['GETvars'][$getVarName];
 			$requestVariables[$getVarName] = $getVarValue;
+			if ($getVarName === 'L') {
+				$this->detectedLanguageId = (int)$getVarValue;
+			}
 		}
 
 		return $requestVariables;
