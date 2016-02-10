@@ -2696,7 +2696,9 @@ class tx_realurl extends tx_realurl_baseclass {
 				$url .= $suffix;
 			}
 			else {
-				$url .= '/';
+				if ($this->extConf['init']['appendMissingSlash'] !== FALSE) {
+					$url .= '/';
+				}
 			}
 		}
 
