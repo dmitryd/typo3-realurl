@@ -386,7 +386,9 @@ class UrlDecoder extends EncodeDecoderBase {
 
 		if (is_null($result)) {
 			$result = $this->decodePathByOverride($remainingPathSegments);
-			$currentPid = $result->getPageId();
+			if (!is_null($result)) {
+				$currentPid = $result->getPageId();
+			}
 		}
 
 		if (is_null($result) || count($remainingPathSegments) > 0) {
