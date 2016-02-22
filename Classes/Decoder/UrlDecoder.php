@@ -1152,7 +1152,7 @@ class UrlDecoder extends EncodeDecoderBase {
 				$result = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\Cache\\PathCacheEntry');
 				/** @var \DmitryDulepov\Realurl\Cache\PathCacheEntry $result */
 				$result->setLanguageId($this->detectedLanguageId);
-				$result->setPageId((int)$row['uid']);
+				$result->setPageId((int)$row['pid']);
 				$result->setPagePath($path);
 				$result->setRootPageId($this->rootPageId);
 				break;
@@ -1195,7 +1195,7 @@ class UrlDecoder extends EncodeDecoderBase {
 					if ($this->utility->convertToSafeString($pageOverlay[$field]) == $segment) {
 						$result = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\Cache\\PathCacheEntry');
 						/** @var \DmitryDulepov\Realurl\Cache\PathCacheEntry $cacheEntry */
-						$result->setPageId((int)$pageOverlay['uid']);
+						$result->setPageId((int)$pageOverlay['pid']);
 						$result->setLanguageId((int)$this->detectedLanguageId);
 						break;
 					}
