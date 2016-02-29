@@ -122,8 +122,8 @@ class UrlDecoder extends EncodeDecoderBase {
 	public function decodeUrl(array $params) {
 		$this->caller = $params['pObj'];
 
+		$this->initialize();
 		if ($this->isSpeakingUrl()) {
-			$this->initialize();
 			$this->setSpeakingUriFromSiteScript();
 			$this->callPreDecodeHooks($params);
 			$this->checkMissingSlash();
@@ -433,19 +433,10 @@ class UrlDecoder extends EncodeDecoderBase {
 				$currentMountPointPid = 0;
 				while ($currentPid !== 0 && count($remainingPathSegments) > 0) {
 					$segment = array_shift($remainingPathSegments);
-					/*
-					 * On one hand we should check here for empty segments,
-					 * on the other hand it does not make sense to have empty
-					 * segments in the page path because they cannot be decoded.
-					 * If such thing happens, our only hope is cache
-					 * and we should not be here.
-					 *
-					 * Code below is just for the idea what could have been done here.
-					 *
-					if ($this->emptySegmentValue !== '' && $segment === $this->emptySegmentValue) {
-						$segment = '';
+					if ($segment === '') {
+						array_unshift($remainingPathSegments, $segment);
+						break;
 					}
-					*/
 					$nextResult = $this->searchPages($currentPid, $segment);
 					if ($nextResult) {
 						$result = $nextResult;
@@ -772,7 +763,8 @@ class UrlDecoder extends EncodeDecoderBase {
 	 */
 	protected function doDecoding($path) {
 		// Remember: urldecode(), not rawurldecode()!
-		$pathSegments = explode('/', trim(urldecode($path), '/'));
+		$path = trim(urldecode($path), '/');
+		$pathSegments = $path ? explode('/', $path) : array();
 
 		$requestVariables = array();
 
