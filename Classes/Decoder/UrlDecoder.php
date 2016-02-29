@@ -31,6 +31,7 @@ namespace DmitryDulepov\Realurl\Decoder;
 
 use DmitryDulepov\Realurl\Cache\PathCacheEntry;
 use DmitryDulepov\Realurl\Cache\UrlCacheEntry;
+use DmitryDulepov\Realurl\Configuration\ConfigurationReader;
 use DmitryDulepov\Realurl\EncodeDecoderBase;
 use TYPO3\CMS\Core\Utility\ArrayUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -122,6 +123,7 @@ class UrlDecoder extends EncodeDecoderBase {
 		$this->caller = $params['pObj'];
 
 		if ($this->isSpeakingUrl()) {
+			$this->initialize();
 			$this->setSpeakingUriFromSiteScript();
 			$this->checkMissingSlash();
 			if ($this->speakingUri) {
@@ -886,7 +888,7 @@ class UrlDecoder extends EncodeDecoderBase {
 	protected function getVarsFromDomainConfiguration() {
 		$requestVariables = array();
 
-		$domainConfuguration = $this->configuration->get('domains/decode');
+		$domainConfuguration = $this->configuration->get('domains');
 		if (is_array($domainConfuguration) && isset($domainConfuguration['GETvars'])) {
 			reset($domainConfuguration['GETvars']);
 			$getVarName = key($domainConfuguration['GETvars']);
@@ -995,6 +997,13 @@ class UrlDecoder extends EncodeDecoderBase {
 		} else {
 			$this->throw404('Segment "' . $postVarSetKey . '" was not a keyword for a postVarSet as expected on page with id=' . $pageId . '.');
 		}
+	}
+
+	/**
+	 * Initializes configuration reader.
+	 */
+	protected function initializeConfiguration() {
+		$this->configuration = GeneralUtility::makeInstance(ConfigurationReader::class, ConfigurationReader::MODE_DECODE);
 	}
 
 	/**

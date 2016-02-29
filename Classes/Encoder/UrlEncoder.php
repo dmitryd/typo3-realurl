@@ -29,6 +29,7 @@
  ***************************************************************/
 namespace DmitryDulepov\Realurl\Encoder;
 
+use DmitryDulepov\Realurl\Configuration\ConfigurationReader;
 use DmitryDulepov\Realurl\EncodeDecoderBase;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
@@ -732,6 +733,9 @@ class UrlEncoder extends EncodeDecoderBase {
 	protected function executeEncoder() {
 		$this->parseUrlParameters();
 
+		// Initialize needs parsed URL parameters!
+		$this->initialize();
+
 		$this->setLanguage();
 		$this->initializeUrlPrepend();
 		if (!$this->fetchFromtUrlCache()) {
@@ -895,6 +899,13 @@ class UrlEncoder extends EncodeDecoderBase {
 	}
 
 	/**
+	 * Initializes configuration reader.
+	 */
+	protected function initializeConfiguration() {
+		$this->configuration = GeneralUtility::makeInstance(ConfigurationReader::class, ConfigurationReader::MODE_ENCODE, $this->urlParameters);
+	}
+
+	/**
 	 * Checks if system runs in non-live workspace
 	 *
 	 * @return boolean
@@ -994,20 +1005,12 @@ class UrlEncoder extends EncodeDecoderBase {
 	 * @return void
 	 */
 	protected function initializeUrlPrepend() {
-		$domainsConfiguration = $this->configuration->get('domains/encode');
-		if (is_array($domainsConfiguration)) {
-			foreach ($domainsConfiguration as $configuration) {
-				if (isset($configuration['GETvar'])) {
-					$getVarName = $configuration['GETvar'];
-					// Note: non-strict comparison here is required!
-					if ($this->urlParameters[$getVarName] == $configuration['value']) {
-						$this->urlPrepend = $configuration['urlPrepend'];
-						unset($this->urlParameters[$getVarName]);
-					}
-				}
-				else {
-					// TODO Log about incorrect configuration here
-				}
+		$configuration = $this->configuration->get('domains');
+		if (is_array($configuration)) {
+			if (isset($configuration['GETvar'])) {
+				$getVarName = $configuration['GETvar'];
+				unset($this->urlParameters[$getVarName]);
+				$this->urlPrepend = $configuration['urlPrepend'];
 			}
 		}
 	}
