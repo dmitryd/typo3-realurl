@@ -323,7 +323,7 @@ class ConfigurationReader {
 			if (isset($encodeConfiguration['useConfiguration']) && $encodeConfiguration['useConfiguration'] !== $configurationKey) {
 				// Use different config
 				$configurationKey = $this->resolveConfigurationKey($encodeConfiguration['useConfiguration']);
-				$this->configuration = $configuration[$configurationKey];
+				$this->configuration = $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl'][$configurationKey];
 			}
 			$this->domainConfiguration = $encodeConfiguration;
 			break;
