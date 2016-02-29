@@ -105,7 +105,18 @@ class Utility {
 	public function getCurrentHost() {
 		$currentHost = GeneralUtility::getIndpEnv('HTTP_HOST');
 
-		// TODO Add a hook here to modify the host (for command line tools, for example)
+		// Call user hooks
+		if (is_array($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['getHost'])) {
+			foreach($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['getHost'] as $userFunc) {
+				$hookParams = array(
+					'host' => $currentHost,
+				);
+				$newHost = GeneralUtility::callUserFunction($userFunc, $hookParams, $this);
+				if (!empty($newHost) && is_string($newHost)) {
+					$currentHost = $newHost;
+				}
+			}
+		}
 
 		return $currentHost;
 	}
