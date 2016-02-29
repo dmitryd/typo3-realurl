@@ -122,7 +122,7 @@ class UrlEncoder extends EncodeDecoderBase {
 			// current host always. See http://bugs.typo3.org/view.php?id=18200
 			$testUrl = $parameters['finalTagParts']['url'];
 			if (preg_match('/^https?:\/\/[^\/]+\//', $testUrl)) {
-				$testUrl = preg_replace('/https?:\/\/[^\/]+\/(.+)$/', $this->tsfe->absRefPrefix . '\1', $testUrl);
+				$testUrl = preg_replace('/https?:\/\/[^\/]+\/(.*)$/', $this->tsfe->absRefPrefix . '\1', $testUrl);
 			}
 
 			if (isset(self::$urlPrependRegister[$testUrl])) {
