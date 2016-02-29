@@ -162,12 +162,19 @@ class ConfigurationReader {
 					$checkThisConfiguration = true;
 				}
 			}
-			if ($domainName === $this->hostName || $domainName === $this->alternativeHostName) {
+			elseif ($domainName === $this->hostName || $domainName === $this->alternativeHostName) {
 				$checkThisConfiguration = true;
 			}
-			if ($checkThisConfiguration && isset($configuration['useConfiguration']) && isset($globalConfig[$configuration['useConfiguration']])) {
-				$configurationKey = $configuration['useConfiguration'];
-				$this->domainConfiguration = $configuration;
+			if ($checkThisConfiguration) {
+				if (isset($configuration['useConfiguration']) && isset($globalConfig[$configuration['useConfiguration']])) {
+					$configurationKey = $configuration['useConfiguration'];
+					$this->domainConfiguration = $configuration;
+				}
+				if (is_array($configuration['GETvars'])) {
+					foreach ($configuration['GETvars'] as $getVar => $getVarValue) {
+						$_GET[$getVar] = $getVarValue;
+					}
+				}
 				break;
 			}
 		}
