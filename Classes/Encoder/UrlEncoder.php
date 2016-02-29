@@ -29,6 +29,7 @@
  ***************************************************************/
 namespace DmitryDulepov\Realurl\Encoder;
 
+use DmitryDulepov\Realurl\Configuration\ConfigurationReader;
 use DmitryDulepov\Realurl\EncodeDecoderBase;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
@@ -47,6 +48,9 @@ class UrlEncoder extends EncodeDecoderBase {
 
 	/** @var string */
 	protected $encodedUrl = '';
+
+	/** @var array */
+	protected $encoderParameters;
 
 	/**
 	 * This is the URL with sorted GET parameters. It is used for cache
@@ -95,6 +99,7 @@ class UrlEncoder extends EncodeDecoderBase {
 	 * @return void
 	 */
 	public function encodeUrl(array &$encoderParameters) {
+		$this->encoderParameters = $encoderParameters;
 		$this->urlToEncode = $encoderParameters['LD']['totalURL'];
 		if ($this->canEncoderExecute()) {
 			$this->executeEncoder();
@@ -185,6 +190,22 @@ class UrlEncoder extends EncodeDecoderBase {
 			$this->encodedUrl = ($this->encodedUrl ? rtrim($this->encodedUrl, '/') . '/' : '') . $stringToAppend;
 			if ($addSlash) {
 				$this->encodedUrl .= '/';
+			}
+		}
+	}
+
+	/**
+	 * Calls user-defined hooks after encoding
+	 */
+	protected function callPostEncodeHooks() {
+		if (is_array($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['encodeSpURL_postProc'])) {
+			foreach($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['encodeSpURL_postProc'] as $userFunc) {
+				$hookParams = array(
+					'pObj' => &$this,
+					'params' => $this->encoderParameters,
+					'URL' => &$this->encodedUrl,
+				);
+				GeneralUtility::callUserFunction($userFunc, $hookParams, $this);
 			}
 		}
 	}
@@ -732,6 +753,9 @@ class UrlEncoder extends EncodeDecoderBase {
 	protected function executeEncoder() {
 		$this->parseUrlParameters();
 
+		// Initialize needs parsed URL parameters!
+		$this->initialize();
+
 		$this->setLanguage();
 		$this->initializeUrlPrepend();
 		if (!$this->fetchFromtUrlCache()) {
@@ -750,6 +774,7 @@ class UrlEncoder extends EncodeDecoderBase {
 			$this->storeInUrlCache();
 		}
 		$this->reapplyAbsRefPrefix();
+		$this->callPostEncodeHooks();
 		$this->prepareUrlPrepend();
 	}
 
@@ -895,6 +920,13 @@ class UrlEncoder extends EncodeDecoderBase {
 	}
 
 	/**
+	 * Initializes configuration reader.
+	 */
+	protected function initializeConfiguration() {
+		$this->configuration = GeneralUtility::makeInstance(ConfigurationReader::class, ConfigurationReader::MODE_ENCODE, $this->urlParameters);
+	}
+
+	/**
 	 * Checks if system runs in non-live workspace
 	 *
 	 * @return boolean
@@ -994,20 +1026,12 @@ class UrlEncoder extends EncodeDecoderBase {
 	 * @return void
 	 */
 	protected function initializeUrlPrepend() {
-		$domainsConfiguration = $this->configuration->get('domains/encode');
-		if (is_array($domainsConfiguration)) {
-			foreach ($domainsConfiguration as $configuration) {
-				if (isset($configuration['GETvar'])) {
-					$getVarName = $configuration['GETvar'];
-					// Note: non-strict comparison here is required!
-					if ($this->urlParameters[$getVarName] == $configuration['value']) {
-						$this->urlPrepend = $configuration['urlPrepend'];
-						unset($this->urlParameters[$getVarName]);
-					}
-				}
-				else {
-					// TODO Log about incorrect configuration here
-				}
+		$configuration = $this->configuration->get('domains');
+		if (is_array($configuration)) {
+			if (isset($configuration['GETvar'])) {
+				$getVarName = $configuration['GETvar'];
+				unset($this->urlParameters[$getVarName]);
+				$this->urlPrepend = $configuration['urlPrepend'];
 			}
 		}
 	}

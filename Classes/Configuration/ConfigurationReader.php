@@ -31,7 +31,6 @@ namespace DmitryDulepov\Realurl\Configuration;
 
 use \DmitryDulepov\Realurl\Utility;
 use \TYPO3\CMS\Backend\Utility\BackendUtility;
-use \TYPO3\CMS\Core\SingletonInterface;
 use \TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
@@ -41,7 +40,10 @@ use \TYPO3\CMS\Core\Utility\GeneralUtility;
  * @package DmitryDulepov\Realurl\Configuration
  * @author Dmitry Dulepov <dmitry.dulepov@gmail.com>
  */
-class ConfigurationReader implements SingletonInterface {
+class ConfigurationReader {
+
+	const MODE_ENCODE = 0;
+	const MODE_DECODE = 1;
 
 	/** @var string */
 	protected $alternativeHostName;
@@ -49,11 +51,20 @@ class ConfigurationReader implements SingletonInterface {
 	/** @var array */
 	protected $configuration = array();
 
+	/** @var array|null */
+	protected $domainConfiguration = null;
+
 	/** @var array */
 	protected $extConfiguration = array();
 
 	/** @var string */
 	protected $hostName;
+
+	/** @var int */
+	protected $mode;
+
+	/** @var array */
+	protected $urlParameters;
 
 	/** @var \DmitryDulepov\Realurl\Utility */
 	protected $utility;
@@ -74,9 +85,14 @@ class ConfigurationReader implements SingletonInterface {
 
 	/**
 	 * Initializes the class.
+	 *
+	 * @param int $mode One of MODE_* constants
+	 * @param array $urlParameters
 	 */
-	public function __construct() {
-		$this->utility = Utility::getInstance();
+	public function __construct($mode, array $urlParameters = array()) {
+		$this->mode = $mode;
+		$this->urlParameters = $urlParameters;
+		$this->utility = GeneralUtility::makeInstance(Utility::class, $this);
 
 		$this->setHostnames();
 		$this->loadExtConfiguration();
@@ -108,25 +124,55 @@ class ConfigurationReader implements SingletonInterface {
 	 * @return string
 	 */
 	protected function getConfigurationKey() {
-		$result = '_DEFAULT';
+		$configurationKey = '_DEFAULT';
 
 		$globalConfig = &$GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl'];
 		if (is_array($globalConfig)) {
 			if (isset($globalConfig[$this->hostName])) {
-				$result = $this->hostName;
+				$configurationKey = $this->hostName;
 			} elseif (isset($globalConfig[$this->alternativeHostName])) {
-				$result = $this->alternativeHostName;
-			} elseif (isset($globalConfig['_DOMAINS'])) {
-				foreach ($globalConfig['_DOMAINS']['decode'] as $domainName => $configuration) {
-					if ($domainName === $this->hostName || $domainName === $this->alternativeHostName) {
-						$result = $configuration['useConfiguration'];
-						break;
-					}
+				$configurationKey = $this->alternativeHostName;
+			}
+
+			// Adjust if necessary
+			if (isset($globalConfig['_DOMAINS'])) {
+				if ($this->mode == self::MODE_DECODE && isset($globalConfig['_DOMAINS']['decode'])) {
+					$configurationKey = $this->getConfigurationKeyByDomainDecode($configurationKey);
+					// Encoding is handled after rootpage_id is determined.
 				}
 			}
 		}
 
-		return $this->resolveConfigurationKey($result);
+		return $this->resolveConfigurationKey($configurationKey);
+	}
+
+	/**
+	 * Adjusts configration key for decoding.
+	 *
+	 * @param string $configurationKey
+	 * @return string
+	 */
+	protected function getConfigurationKeyByDomainDecode($configurationKey) {
+		$globalConfig = &$GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl'];
+		foreach ($globalConfig['_DOMAINS']['decode'] as $domainName => $configuration) {
+			$checkThisConfiguration = false;
+			if ($domainName{0} == '/') {
+				// Regular expression, match only main host name
+				if (@preg_match($domainName, $this->hostName)) {
+					$checkThisConfiguration = true;
+				}
+			}
+			if ($domainName === $this->hostName || $domainName === $this->alternativeHostName) {
+				$checkThisConfiguration = true;
+			}
+			if ($checkThisConfiguration && isset($configuration['useConfiguration']) && isset($globalConfig[$configuration['useConfiguration']])) {
+				$configurationKey = $configuration['useConfiguration'];
+				$this->domainConfiguration = $configuration;
+				break;
+			}
+		}
+
+		return $configurationKey;
 	}
 
 	/**
@@ -137,15 +183,6 @@ class ConfigurationReader implements SingletonInterface {
 	 */
 	protected function getDefaultValue($path) {
 		return isset($this->defaultValues[$path]) ? $this->defaultValues[$path] : '';
-	}
-
-	/**
-	 * Creates the instance of this class.
-	 *
-	 * @return ConfigurationReader
-	 */
-	static public function getInstance() {
-		return GeneralUtility::makeInstance(__CLASS__);
 	}
 
 	/**
@@ -243,9 +280,13 @@ class ConfigurationReader implements SingletonInterface {
 
 			$this->setRootPageId();
 
-			if (isset($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['_DOMAINS'])) {
-				$this->mergeDomainsConfiguration($configurationKey);
+			if ($this->mode == self::MODE_ENCODE) {
+				// Decode is handled when detecting configuration key
+				$this->updateConfigurationForEncoding($configurationKey);
 			}
+
+			$this->configuration['domains'] = $this->domainConfiguration;
+			unset($this->domainConfiguration);
 		}
 	}
 
@@ -256,47 +297,30 @@ class ConfigurationReader implements SingletonInterface {
 	 * @param string $configurationKey
 	 * @return void
 	 */
-	protected function mergeDomainsConfiguration($configurationKey) {
-		$this->configuration['domains'] = array();
-		$this->mergeDomainsConfigurationForEncode($configurationKey);
-		$this->mergeDomainsConfigurationForDecode();
-	}
-
-	/**
-	 * Updates _DOMAINS configuration for decoding.
-	 *
-	 * @return void
-	 */
-	protected function mergeDomainsConfigurationForDecode() {
-		if (isset($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['_DOMAINS']['decode'][$this->hostName])) {
-			$this->configuration['domains']['decode'] = $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['_DOMAINS']['decode'][$this->hostName];
-		} elseif (isset($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['_DOMAINS']['decode'][$this->alternativeHostName])) {
-			$this->configuration['domains']['decode'] = $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['_DOMAINS']['decode'][$this->alternativeHostName];
-		}
-	}
-
-	/**
-	 * Updates _DOMAINS configuration to include only relevant entries and remove
-	 * rootpage_id option.
-	 *
-	 * @param string $configurationKey
-	 * @return void
-	 */
-	protected function mergeDomainsConfigurationForEncode($configurationKey) {
+	protected function updateConfigurationForEncoding(&$configurationKey) {
 		$configuration = $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['_DOMAINS']['encode'];
-		$newEncodeConfiguration = array();
-		foreach ($configuration as $key => $value) {
-			if (isset($value['useConfiguration']) && $this->resolveConfigurationKey($value['useConfiguration']) !== $configurationKey) {
-				// Not applicable to this configuration
-				continue;
-			}
-			if (isset($value['rootpage_id']) && (int)$value['rootpage_id'] !== (int)$this->configuration['pagePath']['rootpage_id']) {
+		foreach ($configuration as $encodeConfiguration) {
+			if (isset($encodeConfiguration['rootpage_id']) && (int)$encodeConfiguration['rootpage_id'] !== (int)$this->configuration['pagePath']['rootpage_id']) {
 				// Not applicable to this root page
 				continue;
 			}
-			$newEncodeConfiguration[$key] = $value;
+			if (isset($encodeConfiguration['ifDifferentToCurrent']) && $encodeConfiguration['ifDifferentToCurrent'] && GeneralUtility::_GET($encodeConfiguration['GETvar']) == $encodeConfiguration['value']) {
+				// Same as current but prohibited by 'ifDifferentToCurrent'
+				continue;
+			}
+			$getVarName = $encodeConfiguration['GETvar'];
+			if (!isset($this->urlParameters[$getVarName]) || $this->urlParameters[$getVarName] != $encodeConfiguration['value']) {
+				// Not that GET variable value
+				continue;
+			}
+			if (isset($encodeConfiguration['useConfiguration']) && $encodeConfiguration['useConfiguration'] !== $configurationKey) {
+				// Use different config
+				$configurationKey = $this->resolveConfigurationKey($encodeConfiguration['useConfiguration']);
+				$this->configuration = $configuration[$configurationKey];
+			}
+			$this->domainConfiguration = $encodeConfiguration;
+			break;
 		}
-		$this->configuration['domains']['encode'] = $newEncodeConfiguration;
 	}
 
 	/**

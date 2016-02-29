@@ -79,16 +79,6 @@ abstract class EncodeDecoderBase {
 	public function __construct() {
 		$this->databaseConnection = $GLOBALS['TYPO3_DB'];
 		$this->tsfe = $GLOBALS['TSFE'];
-		$this->configuration = ConfigurationReader::getInstance();
-		$this->emptySegmentValue = $this->configuration->get('init/emptySegmentValue');
-		$this->rootPageId = (int)$this->configuration->get('pagePath/rootpage_id');
-		$this->utility = Utility::getInstance();
-		$this->cache = $this->utility->getCache();
-
-		if ($this->rootPageId === 0) {
-			throw new \Exception('RealURL was not able to find the root page id for the domain "' . $this->utility->getCurrentHost() . '"', 1453732574);
-		}
-
 		$this->pageRepository = GeneralUtility::makeInstance('TYPO3\\CMS\\Frontend\\Page\\PageRepository');
 		$this->pageRepository->init(FALSE);
 	}
@@ -156,6 +146,13 @@ abstract class EncodeDecoderBase {
 	}
 
 	/**
+	 * Initializes confguration reader.
+	 *
+	 * @return void
+	 */
+	abstract protected function initializeConfiguration();
+
+	/**
 	 * Looks up an ID value (integer) in lookup-table based on input alias value.
 	 * (The lookup table for id<->alias is meant to contain UNIQUE alias strings for id integers)
 	 * In the lookup table 'tx_realurl_uniqalias' the field "value_alias" should be unique (per combination of field_alias+field_id+tablename)! However the "value_id" field doesn't have to; that is a feature which allows more aliases to point to the same id. The alias selected for converting id to alias will be the first inserted at the moment. This might be more intelligent in the future, having an order column which can be controlled from the backend for instance!
@@ -192,6 +189,23 @@ abstract class EncodeDecoderBase {
 		}
 
 		return $sortedUrl;
+	}
+
+	/**
+	 * Initializes the instance.
+	 *
+	 * @throws \Exception
+	 */
+	protected function initialize() {
+		$this->initializeConfiguration();
+		$this->emptySegmentValue = $this->configuration->get('init/emptySegmentValue');
+		$this->rootPageId = (int)$this->configuration->get('pagePath/rootpage_id');
+		$this->utility = GeneralUtility::makeInstance(Utility::class, $this->configuration);
+		$this->cache = $this->utility->getCache();
+
+		if ($this->rootPageId === 0) {
+			throw new \Exception('RealURL was not able to find the root page id for the domain "' . $this->utility->getCurrentHost() . '"', 1453732574);
+		}
 	}
 
 	/**
