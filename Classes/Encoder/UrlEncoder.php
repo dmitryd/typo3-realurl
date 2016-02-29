@@ -49,6 +49,9 @@ class UrlEncoder extends EncodeDecoderBase {
 	/** @var string */
 	protected $encodedUrl = '';
 
+	/** @var array */
+	protected $encoderParameters;
+
 	/**
 	 * This is the URL with sorted GET parameters. It is used for cache
 	 * manipulation.
@@ -96,6 +99,7 @@ class UrlEncoder extends EncodeDecoderBase {
 	 * @return void
 	 */
 	public function encodeUrl(array &$encoderParameters) {
+		$this->encoderParameters = $encoderParameters;
 		$this->urlToEncode = $encoderParameters['LD']['totalURL'];
 		if ($this->canEncoderExecute()) {
 			$this->executeEncoder();
@@ -186,6 +190,22 @@ class UrlEncoder extends EncodeDecoderBase {
 			$this->encodedUrl = ($this->encodedUrl ? rtrim($this->encodedUrl, '/') . '/' : '') . $stringToAppend;
 			if ($addSlash) {
 				$this->encodedUrl .= '/';
+			}
+		}
+	}
+
+	/**
+	 * Calls user-defined hooks after encoding
+	 */
+	protected function callPostEncodeHooks() {
+		if (is_array($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['encodeSpURL_postProc'])) {
+			foreach($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['encodeSpURL_postProc'] as $userFunc) {
+				$hookParams = array(
+					'pObj' => &$this,
+					'params' => $this->encoderParameters,
+					'URL' => &$this->encodedUrl,
+				);
+				GeneralUtility::callUserFunction($userFunc, $hookParams, $this);
 			}
 		}
 	}
@@ -754,6 +774,7 @@ class UrlEncoder extends EncodeDecoderBase {
 			$this->storeInUrlCache();
 		}
 		$this->reapplyAbsRefPrefix();
+		$this->callPostEncodeHooks();
 		$this->prepareUrlPrepend();
 	}
 

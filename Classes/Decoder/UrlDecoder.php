@@ -125,6 +125,7 @@ class UrlDecoder extends EncodeDecoderBase {
 		if ($this->isSpeakingUrl()) {
 			$this->initialize();
 			$this->setSpeakingUriFromSiteScript();
+			$this->callPreDecodeHooks($params);
 			$this->checkMissingSlash();
 			if ($this->speakingUri) {
 				$this->setLanguageFromQueryString();
@@ -153,6 +154,24 @@ class UrlDecoder extends EncodeDecoderBase {
 		if (count($cHashParameters) > 0) {
 			$requestVariables['cHash'] = $cacheHashCalculator->calculateCacheHash($cHashParameters);
 			$cacheEntry->setRequestVariables($requestVariables);
+		}
+	}
+
+	/**
+	 * Calls user-defined hooks.
+	 *
+	 * @param array $params
+	 */
+	protected function callPreDecodeHooks(array $params) {
+		if (is_array($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['decodeSpURL_preProc'])) {
+			foreach($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['decodeSpURL_preProc'] as $userFunc) {
+				$hookParams = array(
+					'pObj' => &$this,
+					'params' => $params,
+					'URL' => &$this->speakingUri,
+				);
+				GeneralUtility::callUserFunction($userFunc, $hookParams, $this);
+			}
 		}
 	}
 
@@ -1311,18 +1330,6 @@ class UrlDecoder extends EncodeDecoderBase {
 	 */
 	protected function setSpeakingUriFromSiteScript() {
 		$this->speakingUri = ltrim($this->siteScript, '/');
-
-		// Call hooks
-		if (is_array($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['decodeSpURL_preProc'])) {
-			foreach($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['decodeSpURL_preProc'] as $userFunc) {
-				$hookParams = array(
-					'pObj' => $this,
-					'params' => array(),
-					'URL' => &$this->speakingUri,
-				);
-				GeneralUtility::callUserFunction($userFunc, $hookParams, $this);
-			}
-		}
 	}
 
 	/**
