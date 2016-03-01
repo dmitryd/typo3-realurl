@@ -34,6 +34,7 @@ use DmitryDulepov\Realurl\EncodeDecoderBase;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
 use TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer;
+use TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController;
 use TYPO3\CMS\Frontend\Page\PageRepository;
 
 /**
@@ -216,7 +217,7 @@ class UrlEncoder extends EncodeDecoderBase {
 	 * @return bool
 	 */
 	protected function canEncoderExecute() {
-		return $this->isRealURLEnabled() && !$this->isBackendMode() && !$this->isInWorkspace() && $this->isTypo3Url();
+		return $this->isRealURLEnabled() && !$this->isBackendMode() && !$this->isInWorkspace() && $this->isTypo3Url() && $this->isProperTsfe();
 	}
 
 	/**
@@ -949,7 +950,16 @@ class UrlEncoder extends EncodeDecoderBase {
 	}
 
 	/**
-	 * Checks if RealURl is enabled.
+	 * Checks if TSFE is initialized correctly.
+	 *
+	 * @return bool
+	 */
+	protected function isProperTsfe() {
+		return ($this->tsfe instanceof TypoScriptFrontendController) && ($this->tsfe->id > 0);
+	}
+
+	/**
+	 * Checks if RealURL is enabled.
 	 *
 	 * @return bool
 	 */

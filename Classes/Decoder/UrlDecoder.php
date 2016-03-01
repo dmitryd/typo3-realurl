@@ -120,16 +120,18 @@ class UrlDecoder extends EncodeDecoderBase {
 	 * @return void
 	 */
 	public function decodeUrl(array $params) {
-		$this->caller = $params['pObj'];
+		if ($this->isProperTsfe()) {
+			$this->caller = $params['pObj'];
 
-		$this->initialize();
-		if ($this->isSpeakingUrl()) {
-			$this->setSpeakingUriFromSiteScript();
-			$this->callPreDecodeHooks($params);
-			$this->checkMissingSlash();
-			if ($this->speakingUri) {
-				$this->setLanguageFromQueryString();
-				$this->runDecoding();
+			$this->initialize();
+			if ($this->isSpeakingUrl()) {
+				$this->setSpeakingUriFromSiteScript();
+				$this->callPreDecodeHooks($params);
+				$this->checkMissingSlash();
+				if ($this->speakingUri) {
+					$this->setLanguageFromQueryString();
+					$this->runDecoding();
+				}
 			}
 		}
 	}
@@ -1028,6 +1030,14 @@ class UrlDecoder extends EncodeDecoderBase {
 		return in_array($segment, $postVarNames);
 	}
 
+	/**
+	 * Checks if TSFE is initialized correctly.
+	 *
+	 * @return bool
+	 */
+	protected function isProperTsfe() {
+		return ($this->tsfe instanceof TypoScriptFrontendController);
+	}
 
 	/**
 	 * Checks if the current URL is a speaking URL.
