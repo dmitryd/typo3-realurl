@@ -10,7 +10,7 @@
 
 $EM_CONF[$_EXTKEY] = array (
   'title' => 'RealURL: speaking paths for TYPO3',
-  'description' => 'Creates nice looking URLs for TYPO3 pages: converts http://example.com/index.phpid=12345&L=2 to http://example.com/path/to/your/page/. Please, ask for free support in TYPO3 mailing lists or contact the maintainer for paid support.',
+  'description' => 'WARNING! This version is obsolete and unsupported! It was not tested by the author and its work is not guaranteed! If you find bugs in this versionm, they will not be fixed! Use at your own risk. Last stable version of RealURL 1.x is 1.13.6. Users of TYPO3 7.6+ are strongly recommended to wait for upcoming RealURL version 2.',
   'category' => 'fe',
   'shy' => 0,
   'dependencies' => '',
@@ -30,7 +30,7 @@ $EM_CONF[$_EXTKEY] = array (
   'author_company' => '',
   'CGLcompliance' => '',
   'CGLcompliance_note' => '',
-  'version' => '1.13.6',
+  'version' => '1.13.7',
   '_md5_values_when_last_written' => 'a:19:{s:9:"ChangeLog";s:4:"3408";s:10:"_.htaccess";s:4:"9ab3";s:20:"class.ext_update.php";s:4:"9794";s:20:"class.tx_realurl.php";s:4:"0cea";s:29:"class.tx_realurl_advanced.php";s:4:"f387";s:32:"class.tx_realurl_autoconfgen.php";s:4:"f227";s:28:"class.tx_realurl_tcemain.php";s:4:"2983";s:16:"ext_autoload.php";s:4:"a6ff";s:21:"ext_conf_template.txt";s:4:"c890";s:12:"ext_icon.gif";s:4:"ea80";s:17:"ext_localconf.php";s:4:"e297";s:14:"ext_tables.php";s:4:"7182";s:14:"ext_tables.sql";s:4:"150c";s:17:"locallang_csh.xml";s:4:"369d";s:16:"locallang_db.xml";s:4:"584a";s:14:"doc/manual.sxw";s:4:"3b3d";s:38:"modfunc1/class.tx_realurl_modfunc1.php";s:4:"d3a6";s:41:"modfunc1/class.tx_realurl_pagebrowser.php";s:4:"60b1";s:22:"modfunc1/locallang.xml";s:4:"7e4f";}',
   'constraints' => 
   array (
