@@ -1040,8 +1040,16 @@ class UrlEncoder extends EncodeDecoderBase {
 		if (is_array($configuration)) {
 			if (isset($configuration['GETvar'])) {
 				$getVarName = $configuration['GETvar'];
-				unset($this->urlParameters[$getVarName]);
-				$this->urlPrepend = $configuration['urlPrepend'];
+				if (isset($configuration['urlPrepend']) && $configuration['urlPrepend']) {
+					$this->urlPrepend = $configuration['urlPrepend'];
+
+					// Note: version 1.x unsets the var if 'useConfiguration' is set
+					// However it makes more sense to unset the var if 'urlPrepend' is set
+					// because 'urlPrepend' is typically used for language-based domains.
+					// But 'useConfiguration' can be used to localize postVarSet segment
+					// values. So we change the behavior here comapring to 1.x.
+					unset($this->urlParameters[$getVarName]);
+				}
 			}
 		}
 	}
