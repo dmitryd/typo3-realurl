@@ -11,4 +11,10 @@ Notes:
 * If you have questions like "Why did you...", please, read the Developer's FAQ first.
 * If you want to contribute, you are welcome! Please, read "Contribution" page in the documentation.
 
+***
+
+**If you want to support further RealURL development, please [donate](http://www.dmitry-dulepov.com/p/support-typo3-extension-development.html)!**
+
+***
+
 [Documentation](https://github.com/dmitryd/typo3-realurl/wiki)
