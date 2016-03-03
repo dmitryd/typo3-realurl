@@ -29,10 +29,12 @@
  ***************************************************************/
 namespace DmitryDulepov\Realurl\Encoder;
 
+use DmitryDulepov\Realurl\Configuration\ConfigurationReader;
 use DmitryDulepov\Realurl\EncodeDecoderBase;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
 use TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer;
+use TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController;
 use TYPO3\CMS\Frontend\Page\PageRepository;
 
 /**
@@ -47,6 +49,9 @@ class UrlEncoder extends EncodeDecoderBase {
 
 	/** @var string */
 	protected $encodedUrl = '';
+
+	/** @var array */
+	protected $encoderParameters;
 
 	/**
 	 * This is the URL with sorted GET parameters. It is used for cache
@@ -95,6 +100,7 @@ class UrlEncoder extends EncodeDecoderBase {
 	 * @return void
 	 */
 	public function encodeUrl(array &$encoderParameters) {
+		$this->encoderParameters = $encoderParameters;
 		$this->urlToEncode = $encoderParameters['LD']['totalURL'];
 		if ($this->canEncoderExecute()) {
 			$this->executeEncoder();
@@ -117,13 +123,7 @@ class UrlEncoder extends EncodeDecoderBase {
 			// current host always. See http://bugs.typo3.org/view.php?id=18200
 			$testUrl = $parameters['finalTagParts']['url'];
 			if (preg_match('/^https?:\/\/[^\/]+\//', $testUrl)) {
-				$testUrl = preg_replace('/https?:\/\/[^\/]+\/(.+)$/', '\1', $testUrl);
-			}
-
-			// Remove absRefPrefix if necessary
-			$absRefPrefixLength = strlen($this->tsfe->absRefPrefix);
-			if ($absRefPrefixLength !== 0 && substr($testUrl, 0, $absRefPrefixLength) === $this->tsfe->absRefPrefix) {
-				$testUrl = substr($testUrl, $absRefPrefixLength);
+				$testUrl = preg_replace('/https?:\/\/[^\/]+\/(.*)$/', $this->tsfe->absRefPrefix . '\1', $testUrl);
 			}
 
 			if (isset(self::$urlPrependRegister[$testUrl])) {
@@ -173,7 +173,7 @@ class UrlEncoder extends EncodeDecoderBase {
 		$cacheEntry->setExpiration(0);
 		$cacheEntry->setLanguageId($this->sysLanguageUid);
 		$cacheEntry->setRootPageId($this->rootPageId);
-		$cacheEntry->setMountPoint('');
+		$cacheEntry->setMountPoint(isset($this->originalUrlParameters['MP']) ? $this->originalUrlParameters['MP'] : '');
 		$cacheEntry->setPageId($this->urlParameters['id']);
 		$cacheEntry->setPagePath($pagePath);
 		$this->cache->putPathToCache($cacheEntry);
@@ -196,12 +196,28 @@ class UrlEncoder extends EncodeDecoderBase {
 	}
 
 	/**
+	 * Calls user-defined hooks after encoding
+	 */
+	protected function callPostEncodeHooks() {
+		if (is_array($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['encodeSpURL_postProc'])) {
+			foreach($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['encodeSpURL_postProc'] as $userFunc) {
+				$hookParams = array(
+					'pObj' => &$this,
+					'params' => $this->encoderParameters,
+					'URL' => &$this->encodedUrl,
+				);
+				GeneralUtility::callUserFunction($userFunc, $hookParams, $this);
+			}
+		}
+	}
+
+	/**
 	 * Checks if RealURL can encode URLs.
 	 *
 	 * @return bool
 	 */
 	protected function canEncoderExecute() {
-		return $this->isRealURLEnabled() && !$this->isBackendMode() && !$this->isInWorkspace() && $this->isTypo3Url();
+		return $this->isRealURLEnabled() && !$this->isBackendMode() && !$this->isInWorkspace() && $this->isTypo3Url() && $this->isProperTsfe();
 	}
 
 	/**
@@ -347,8 +363,65 @@ class UrlEncoder extends EncodeDecoderBase {
 	 * @return void
 	 */
 	protected function createPathComponent() {
-		$rooLineUtility = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Utility\\RootlineUtility', $this->urlParameters['id']);
-		$rootLine = $rooLineUtility->get();
+		if (!$this->createPathComponentThroughOverride()) {
+			$this->createPathComponentUsingRootline();
+		}
+	}
+
+	/**
+	 * Checks if tx_realurl_pathoverride is set and goes the easy way.
+	 *
+	 * @return bool
+	 */
+	protected function createPathComponentThroughOverride() {
+		$result = false;
+
+		// Can't use $this->pageRepository->getPage() here because it does
+		// language overlay to TSFE's sys_language_uid automatically.
+		// We do not want this because we may need to encode to a different language
+		$page = $this->databaseConnection->exec_SELECTgetSingleRow('*', 'pages',
+			'uid=' . (int)$this->urlParameters['id']
+		);
+		if ($this->sysLanguageUid > 0) {
+			$overlay = $this->pageRepository->getPageOverlay($page, $this->sysLanguageUid);
+			if (is_array($overlay)) {
+				$page = $overlay;
+				unset($overlay);
+			}
+		}
+		if ($page['tx_realurl_pathoverride'] && !empty($page['tx_realurl_pathsegment'])) {
+			$path = trim($page['tx_realurl_pathsegment'], '/');
+			$this->appendToEncodedUrl($path);
+			// Mount points do not work with path override. Having them will
+			// create duplicate path entries but we have to live with this to
+			// avoid further cache management complications. If we ignore
+			// mount point information here, we will have to do something
+			// about it in encodePathComponents() when we fetch from the cache.
+			// It is easier to have duplicate entries here (one with MP and
+			// another without it). It does not really matter.
+			$this->addToPathCache($path);
+			$result = true;
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Creates a path part of the URL.
+	 *
+	 * @return void
+	 */
+	protected function createPathComponentUsingRootline() {
+		$mountPointParameter = '';
+		if (isset($this->urlParameters['MP'])) {
+			$mountPointParameter = $this->urlParameters['MP'];
+			unset($this->urlParameters['MP']);
+		}
+		$rootLineUtility = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Utility\\RootlineUtility',
+			$this->urlParameters['id'], $mountPointParameter
+		);
+		/** @var \TYPO3\CMS\Core\Utility\RootlineUtility $rootLineUtility */
+		$rootLine = $rootLineUtility->get();
 
 		array_pop($rootLine);
 
@@ -361,7 +434,14 @@ class UrlEncoder extends EncodeDecoderBase {
 		}
 
 		$components = array();
-		foreach (array_reverse($rootLine) as $page) {
+		$reversedRootLine = array_reverse($rootLine);
+		$rootLineMax = count($reversedRootLine) - 1;
+		for ($current = 0; $current <= $rootLineMax; $current++) {
+			$page = $reversedRootLine[$current];
+			// Skip if this page is excluded
+			if ($page['tx_realurl_exclude'] && $current !== $rootLineMax) {
+				continue;
+			}
 			if ($enableLanguageOverlay) {
 				$overlay = $this->pageRepository->getPageOverlay($page, (int)$this->originalUrlParameters['L']);
 				if (is_array($overlay)) {
@@ -396,9 +476,11 @@ class UrlEncoder extends EncodeDecoderBase {
 		$configuration = (array)$this->configuration->get('fixedPostVars');
 		$postVarSetConfiguration = $this->getConfigurationForPostVars($configuration, $this->urlParameters['id']);
 
-		$segments = $this->encodeUrlParameterBlock($postVarSetConfiguration);
-		if (count($segments) > 0) {
-			$this->appendToEncodedUrl(implode('/', $segments));
+		if (count($postVarSetConfiguration) > 0) {
+			$segments = $this->encodeUrlParameterBlock($postVarSetConfiguration);
+			if (count($segments) > 0) {
+				$this->appendToEncodedUrl(implode('/', $segments));
+			}
 		}
 	}
 
@@ -408,7 +490,11 @@ class UrlEncoder extends EncodeDecoderBase {
 	 * @return void
 	 */
 	protected function encodePathComponents() {
-		$cacheEntry = $this->cache->getPathFromCacheByPageId($this->rootPageId, $this->sysLanguageUid, $this->urlParameters['id']);
+		$cacheEntry = $this->cache->getPathFromCacheByPageId($this->rootPageId,
+			$this->sysLanguageUid,
+			$this->urlParameters['id'],
+			isset($this->urlParameters['MP']) ? $this->urlParameters['MP'] : ''
+		);
 		if ($cacheEntry) {
 			$this->appendToEncodedUrl($cacheEntry->getPagePath());
 		} else {
@@ -422,9 +508,12 @@ class UrlEncoder extends EncodeDecoderBase {
 	 * @return void
 	 */
 	protected function encodePreVars() {
-		$segments = $this->encodeUrlParameterBlock((array)$this->configuration->get('preVars'));
-		if (count($segments) > 0) {
-			$this->appendToEncodedUrl(implode('/', $segments));
+		$preVars = (array)$this->configuration->get('preVars');
+		if (count($preVars) > 0) {
+			$segments = $this->encodeUrlParameterBlock($preVars);
+			if (count($segments) > 0) {
+				$this->appendToEncodedUrl(implode('/', $segments));
+			}
 		}
 	}
 
@@ -434,14 +523,21 @@ class UrlEncoder extends EncodeDecoderBase {
 	 * @return void
 	 */
 	protected function encodePostVarSets() {
-		$configuration = (array)$this->configuration->get('postVarSets');
-		$postVarSetConfigurations = $this->getConfigurationForPostVars($configuration, $this->urlParameters['id']);
+		// There is at least an 'id' parameter
+		if (count($this->urlParameters) > 1) {
+			$configuration = (array)$this->configuration->get('postVarSets');
+			$postVarSetConfigurations = $this->getConfigurationForPostVars($configuration, $this->urlParameters['id']);
 
-		foreach ($postVarSetConfigurations as $postVar => $postVarSetConfiguration) {
-			$segments = $this->encodeUrlParameterBlock($postVarSetConfiguration);
-			if (count($segments) > 0) {
-				array_unshift($segments, $postVar);
-				$this->appendToEncodedUrl(implode('/', $segments));
+			foreach ($postVarSetConfigurations as $postVar => $postVarSetConfiguration) {
+				if (is_array($postVarSetConfiguration)) {
+					// Technically it can be a string (for decoding purposes) but makes no sense for encoding
+					// And decoder does not support it too (see UrlDecoder::decodePostVarSets)
+					$segments = $this->encodeUrlParameterBlock($postVarSetConfiguration);
+					if (count($segments) > 0) {
+						array_unshift($segments, $postVar);
+						$this->appendToEncodedUrl(implode('/', $segments));
+					}
+				}
 			}
 		}
 	}
@@ -464,20 +560,25 @@ class UrlEncoder extends EncodeDecoderBase {
 			'encodeUrlParameterBlockUseAsIs',
 		);
 
-		$getVarName = $configuration['GETvar'];
-		$getVarValue = isset($this->urlParameters[$getVarName]) ? $this->urlParameters[$getVarName] : '';
+		if (isset($configuration['GETvar'])) {
+			$getVarName = $configuration['GETvar'];
+			$getVarValue = isset($this->urlParameters[$getVarName]) ? $this->urlParameters[$getVarName] : '';
 
-		if (!isset($configuration['cond']) || $this->checkLegacyCondition($configuration['cond'], $previousValue)) {
+			if (!isset($configuration['cond']) || $this->checkLegacyCondition($configuration['cond'], $previousValue)) {
 
-			// TODO Possible hook here before any other function? Pass name, value, segments and config
+				// TODO Possible hook here before any other function? Pass name, value, segments and config
 
-			foreach ($varProcessingFunctions as $varProcessingFunction) {
-				if ($this->$varProcessingFunction($getVarName, $getVarValue, $configuration, $segments, $previousValue)) {
-					// Unset to prevent further processing
-					unset($this->urlParameters[$getVarName]);
-					break;
+				foreach ($varProcessingFunctions as $varProcessingFunction) {
+					if ($this->$varProcessingFunction($getVarName, $getVarValue, $configuration, $segments, $previousValue)) {
+						// Unset to prevent further processing
+						unset($this->urlParameters[$getVarName]);
+						break;
+					}
 				}
 			}
+		}
+		else {
+			// TODO Log an error here: configuration is bad!
 		}
 	}
 
@@ -493,6 +594,7 @@ class UrlEncoder extends EncodeDecoderBase {
 		if ($this->hasUrlParameters($configurationArray)) {
 			$previousValue = '';
 			foreach ($configurationArray as $configuration) {
+				// Technically it must always be array!
 				$this->encodeSingleVariable($configuration, $previousValue, $segments);
 			}
 		}
@@ -652,6 +754,9 @@ class UrlEncoder extends EncodeDecoderBase {
 	protected function executeEncoder() {
 		$this->parseUrlParameters();
 
+		// Initialize needs parsed URL parameters!
+		$this->initialize();
+
 		$this->setLanguage();
 		$this->initializeUrlPrepend();
 		if (!$this->fetchFromtUrlCache()) {
@@ -668,8 +773,9 @@ class UrlEncoder extends EncodeDecoderBase {
 				$this->encodedUrl = $emptyUrlReturnValue;
 			}
 			$this->storeInUrlCache();
-			$this->reapplyAbsRefPrefix();
 		}
+		$this->reapplyAbsRefPrefix();
+		$this->callPostEncodeHooks();
 		$this->prepareUrlPrepend();
 	}
 
@@ -805,13 +911,20 @@ class UrlEncoder extends EncodeDecoderBase {
 		$result = FALSE;
 
 		foreach ($configurationArray as $configuration) {
-			if (isset($this->urlParameters[$configuration['GETvar']])) {
+			if (is_array($configuration) && isset($configuration['GETvar']) && isset($this->urlParameters[$configuration['GETvar']])) {
 				$result = TRUE;
 				break;
 			}
 		}
 
 		return $result;
+	}
+
+	/**
+	 * Initializes configuration reader.
+	 */
+	protected function initializeConfiguration() {
+		$this->configuration = GeneralUtility::makeInstance(ConfigurationReader::class, ConfigurationReader::MODE_ENCODE, $this->urlParameters);
 	}
 
 	/**
@@ -837,7 +950,16 @@ class UrlEncoder extends EncodeDecoderBase {
 	}
 
 	/**
-	 * Checks if RealURl is enabled.
+	 * Checks if TSFE is initialized correctly.
+	 *
+	 * @return bool
+	 */
+	protected function isProperTsfe() {
+		return ($this->tsfe instanceof TypoScriptFrontendController) && ($this->tsfe->id > 0);
+	}
+
+	/**
+	 * Checks if RealURL is enabled.
 	 *
 	 * @return bool
 	 */
@@ -896,13 +1018,15 @@ class UrlEncoder extends EncodeDecoderBase {
 	 * @return void
 	 */
 	protected function reapplyAbsRefPrefix() {
-		$reapplyAbsRefPrefix = (bool)$this->configuration->get('init/reapplyAbsRefPrefix');
-		if (!isset($reapplyAbsRefPrefix) || $reapplyAbsRefPrefix && $this->tsfe->absRefPrefix) {
-			// Prevent // in case of absRefPrefix ending with / and emptyUrlReturnValue=/
-			if (substr($this->tsfe->absRefPrefix, -1, 1) == '/' && substr($this->encodedUrl, 0, 1) == '/') {
-				$this->encodedUrl = substr($this->encodedUrl, 1);
+		if ($this->tsfe->absRefPrefix) {
+			$reapplyAbsRefPrefix = $this->configuration->get('init/reapplyAbsRefPrefix');
+			if ($reapplyAbsRefPrefix === '' || $reapplyAbsRefPrefix) {
+				// Prevent // in case of absRefPrefix ending with / and emptyUrlReturnValue=/
+				if (substr($this->tsfe->absRefPrefix, -1, 1) == '/' && substr($this->encodedUrl, 0, 1) == '/') {
+					$this->encodedUrl = (string)substr($this->encodedUrl, 1);
+				}
+				$this->encodedUrl = $this->tsfe->absRefPrefix . $this->encodedUrl;
 			}
-			$this->encodedUrl = $this->tsfe->absRefPrefix . $this->encodedUrl;
 		}
 	}
 
@@ -912,13 +1036,18 @@ class UrlEncoder extends EncodeDecoderBase {
 	 * @return void
 	 */
 	protected function initializeUrlPrepend() {
-		$domainsConfiguration = $this->configuration->get('domains/encode');
-		if (is_array($domainsConfiguration)) {
-			foreach ($domainsConfiguration as $configuration) {
+		$configuration = $this->configuration->get('domains');
+		if (is_array($configuration)) {
+			if (isset($configuration['GETvar'])) {
 				$getVarName = $configuration['GETvar'];
-				// Note: non-strict comparison here is required!
-				if ($this->urlParameters[$getVarName] == $configuration['value']) {
+				if (isset($configuration['urlPrepend']) && $configuration['urlPrepend']) {
 					$this->urlPrepend = $configuration['urlPrepend'];
+
+					// Note: version 1.x unsets the var if 'useConfiguration' is set
+					// However it makes more sense to unset the var if 'urlPrepend' is set
+					// because 'urlPrepend' is typically used for language-based domains.
+					// But 'useConfiguration' can be used to localize postVarSet segment
+					// values. So we change the behavior here comapring to 1.x.
 					unset($this->urlParameters[$getVarName]);
 				}
 			}

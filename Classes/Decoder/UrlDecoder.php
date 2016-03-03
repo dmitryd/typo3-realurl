@@ -31,6 +31,7 @@ namespace DmitryDulepov\Realurl\Decoder;
 
 use DmitryDulepov\Realurl\Cache\PathCacheEntry;
 use DmitryDulepov\Realurl\Cache\UrlCacheEntry;
+use DmitryDulepov\Realurl\Configuration\ConfigurationReader;
 use DmitryDulepov\Realurl\EncodeDecoderBase;
 use TYPO3\CMS\Core\Utility\ArrayUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -76,6 +77,22 @@ class UrlDecoder extends EncodeDecoderBase {
 	protected $mimeType = '';
 
 	/**
+	 * Contains a mount point starting pid for the current branch. Zero means
+	 * "no mount point in the path". This variable will direct the decoder to
+	 * continue page look up from this branch of tree.
+	 *
+	 * @var int
+	 */
+	protected $mountPointStartPid = 0;
+
+	/**
+	 * Contains a generated $_GET['MP'] for the currently decoded branch.
+	 *
+	 * @var string
+	 */
+	protected $mountPointVariable = '';
+
+	/**
 	 * This variable is set to the speaking path only if he decoding has to run.
 	 *
 	 * @var string
@@ -87,9 +104,6 @@ class UrlDecoder extends EncodeDecoderBase {
 
 	/** @var string */
 	protected $speakingUri;
-
-	/** @var int */
-	protected $sysLanguageUid = 0;
 
 	/**
 	 * Initializes the class.
@@ -106,14 +120,18 @@ class UrlDecoder extends EncodeDecoderBase {
 	 * @return void
 	 */
 	public function decodeUrl(array $params) {
-		$this->caller = $params['pObj'];
+		if ($this->isProperTsfe()) {
+			$this->caller = $params['pObj'];
 
-		if ($this->isSpeakingUrl()) {
-			$this->setSpeakingUriFromSiteScript();
-			$this->checkMissingSlash();
-			if ($this->speakingUri) {
-				$this->setLanguageFromQueryString();
-				$this->runDecoding();
+			$this->initialize();
+			if ($this->isSpeakingUrl()) {
+				$this->setSpeakingUriFromSiteScript();
+				$this->callPreDecodeHooks($params);
+				$this->checkMissingSlash();
+				if ($this->speakingUri) {
+					$this->setLanguageFromQueryString();
+					$this->runDecoding();
+				}
 			}
 		}
 	}
@@ -138,6 +156,24 @@ class UrlDecoder extends EncodeDecoderBase {
 		if (count($cHashParameters) > 0) {
 			$requestVariables['cHash'] = $cacheHashCalculator->calculateCacheHash($cHashParameters);
 			$cacheEntry->setRequestVariables($requestVariables);
+		}
+	}
+
+	/**
+	 * Calls user-defined hooks.
+	 *
+	 * @param array $params
+	 */
+	protected function callPreDecodeHooks(array $params) {
+		if (is_array($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['decodeSpURL_preProc'])) {
+			foreach($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['decodeSpURL_preProc'] as $userFunc) {
+				$hookParams = array(
+					'pObj' => &$this,
+					'params' => $params,
+					'URL' => &$this->speakingUri,
+				);
+				GeneralUtility::callUserFunction($userFunc, $hookParams, $this);
+			}
 		}
 	}
 
@@ -227,6 +263,45 @@ class UrlDecoder extends EncodeDecoderBase {
 				// If localization is enabled, check if this record is a localized version and if so, find uid of the original version.
 				if ($translationEnabled && $row[$configuration['languageField']] > 0) {
 					$result = (int)$row[$configuration['transOrigPointerField']];
+				}
+			}
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Find a page entry for the current segment and returns a PathCacheEntry for it.
+	 *
+	 * @param string $segment
+	 * @param array $pages
+	 * @param array $collectedPageIds
+	 * @return \DmitryDulepov\Realurl\Cache\PathCacheEntry | NULL
+	 */
+	protected function createPathCacheEntry($segment, $pages, &$collectedPageIds) {
+		$result = NULL;
+		foreach ($pages as $page) {
+			if ($page['doktype'] == PageRepository::DOKTYPE_SHORTCUT) {
+				$page = $this->resolveShortcut($page);
+			}
+			$collectedPageIds[] = (int) $page['uid'];
+			foreach (self::$pageTitleFields as $field) {
+				if ($this->utility->convertToSafeString($page[$field]) == $segment) {
+					$result = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\Cache\\PathCacheEntry');
+					/** @var \DmitryDulepov\Realurl\Cache\PathCacheEntry $result */
+					$result->setPageId((int)$page['uid']);
+					if ($this->mountPointVariable !== '') {
+						$result->setMountPoint($this->mountPointVariable);
+					}
+					if ((int)$page['doktype'] === PageRepository::DOKTYPE_MOUNTPOINT) {
+						$this->mountPointVariable = $page['mount_pid'] . '-' . $page['uid'];
+						$this->mountPointStartPid = (int)$page['mount_pid'];
+					}
+					if ($this->detectedLanguageId > 0) {
+						break;
+					} else {
+						break 2;
+					}
 				}
 			}
 		}
@@ -332,6 +407,13 @@ class UrlDecoder extends EncodeDecoderBase {
 			$result = NULL;
 		}
 
+		if (is_null($result)) {
+			$result = $this->decodePathByOverride($remainingPathSegments);
+			if (!is_null($result)) {
+				$currentPid = $result->getPageId();
+			}
+		}
+
 		if (is_null($result) || count($remainingPathSegments) > 0) {
 			// Here we are if one of the following is true:
 			// - nothing is in the cache
@@ -350,25 +432,22 @@ class UrlDecoder extends EncodeDecoderBase {
 					$processedPathSegments = array();
 					$currentPid = $this->rootPageId;
 				}
+				$currentMountPointPid = 0;
 				while ($currentPid !== 0 && count($remainingPathSegments) > 0) {
 					$segment = array_shift($remainingPathSegments);
-					/*
-					 * On one hand we should check here for empty segments,
-					 * on the other hand it does not make sense to have empty
-					 * segments in the page path because they cannot be decoded.
-					 * If such thing happens, our only hope is cache
-					 * and we should not be here.
-					 *
-					 * Code below is just for the idea what could have been done here.
-					 *
-					if ($this->emptySegmentValue !== '' && $segment === $this->emptySegmentValue) {
-						$segment = '';
+					if ($segment === '') {
+						array_unshift($remainingPathSegments, $segment);
+						break;
 					}
-					*/
 					$nextResult = $this->searchPages($currentPid, $segment);
 					if ($nextResult) {
 						$result = $nextResult;
-						$currentPid = $result->getPageId();
+						if ($this->mountPointStartPid !== $currentMountPointPid) {
+							$currentPid = $currentMountPointPid = $this->mountPointStartPid;
+						}
+						else {
+							$currentPid = $result->getPageId();
+						}
 						$processedPathSegments[] = $segment;
 						$result->setPagePath(implode('/', $processedPathSegments));
 						// Path is valid so far, so we cache it
@@ -407,6 +486,36 @@ class UrlDecoder extends EncodeDecoderBase {
 		}
 
 		return $result ? $result->getPageId() : ((int)$currentPid === (int)$this->rootPageId ? $currentPid : 0);
+	}
+
+	/**
+	 * Tries to decode the path by path override when the whole path is overriden.
+	 *
+	 * @param array $pathSegments
+	 * @return PathCacheEntry
+	 */
+	protected function decodePathByOverride(array &$pathSegments) {
+		$result = null;
+
+		$possibleSegments = array();
+		foreach ($pathSegments as $segment) {
+			if ($this->isPostVar($segment)) {
+				break;
+			}
+			$possibleSegments[] = $segment;
+		}
+
+		while (!empty($possibleSegments) && !$result) {
+			$result = $this->searchPagesByPathOverride($possibleSegments);
+			if (!$result) {
+				array_pop($possibleSegments);
+			}
+		}
+		if ($result) {
+			$pathSegments = array_slice($pathSegments, count($possibleSegments));
+		}
+
+		return $result;
 	}
 
 	/**
@@ -452,12 +561,15 @@ class UrlDecoder extends EncodeDecoderBase {
 
 		while (count($pathSegments) > 0) {
 			$postVarSetKey = array_shift($pathSegments);
-			if (!isset($postVarSets[$postVarSetKey])) {
+			if (!isset($postVarSets[$postVarSetKey]) || !is_array($postVarSets[$postVarSetKey])) {
 				$this->handleNonExistingPostVarSet($pageId, $postVarSetKey, $pathSegments);
 			} else {
 				$postVarSetConfiguration = $postVarSets[$postVarSetKey];
-				foreach ($postVarSetConfiguration as $postVarConfiguration) {
-					$this->decodeSingleVariable($postVarConfiguration, $pathSegments, $requestVariables, $previousValue);
+				// Note: we do not support aliases for postVarSets!
+				if (is_array($postVarSetConfiguration)) {
+					foreach ($postVarSetConfiguration as $postVarConfiguration) {
+						$this->decodeSingleVariable($postVarConfiguration, $pathSegments, $requestVariables, $previousValue);
+					}
 				}
 			}
 		}
@@ -495,10 +607,15 @@ class UrlDecoder extends EncodeDecoderBase {
 		$handled = FALSE;
 		if (!isset($varConfiguration['cond']) || $this->checkLegacyCondition($varConfiguration['cond'], $previousValue)) {
 			foreach ($varProcessingFunctions as $varProcessingFunction) {
-				if ($this->$varProcessingFunction($varConfiguration, $getVarValue, $requestVariables, $pathSegments)) {
-					$previousValue = (string)end($requestVariables);
-					$handled = TRUE;
-					break;
+				if (isset($varConfiguration['GETvar'])) {
+					if ($this->$varProcessingFunction($varConfiguration, $getVarValue, $requestVariables, $pathSegments)) {
+						$previousValue = (string)end($requestVariables);
+						$handled = TRUE;
+						break;
+					}
+				}
+				else {
+					// TODO Log about bad configuration
 				}
 			}
 		}
@@ -648,7 +765,8 @@ class UrlDecoder extends EncodeDecoderBase {
 	 */
 	protected function doDecoding($path) {
 		// Remember: urldecode(), not rawurldecode()!
-		$pathSegments = explode('/', trim(urldecode($path), '/'));
+		$path = trim(urldecode($path), '/');
+		$pathSegments = $path ? explode('/', $path) : array();
 
 		$requestVariables = array();
 
@@ -656,6 +774,9 @@ class UrlDecoder extends EncodeDecoderBase {
 		ArrayUtility::mergeRecursiveWithOverrule($requestVariables, $this->getVarsFromDomainConfiguration());
 		ArrayUtility::mergeRecursiveWithOverrule($requestVariables, $this->decodePreVars($pathSegments));
 		$pageId = $this->decodePath($pathSegments);
+		if ($this->mountPointVariable !== '') {
+			$requestVariables['MP'] = $this->mountPointVariable;
+		}
 		ArrayUtility::mergeRecursiveWithOverrule($requestVariables, $this->decodeFixedPostVars($pageId, $pathSegments));
 		ArrayUtility::mergeRecursiveWithOverrule($requestVariables, $this->decodePostVarSets($pageId, $pathSegments));
 
@@ -667,17 +788,6 @@ class UrlDecoder extends EncodeDecoderBase {
 		$this->calculateChash($cacheEntry);
 
 		return $cacheEntry;
-	}
-
-	/**
-	 * Fixes magic_quotes_gpc if somebody still has them turned on.
-	 *
-	 * @param array $array
-	 */
-	protected function fixMagicQuotesGpc(&$array) {
-		if (get_magic_quotes_gpc() && is_array($array)) {
-			GeneralUtility::stripSlashesOnArray($array);
-		}
 	}
 
 	/**
@@ -716,6 +826,60 @@ class UrlDecoder extends EncodeDecoderBase {
 	}
 
 	/**
+	 * Searches a page below excluded pages and returns the PathCacheEntry if something was found.
+	 *
+	 * @param string $segment
+	 * @param array $pages
+	 * @param array $collectedPageIds
+	 * @param string $disallowedDoktypes
+	 * @param string $pagesEnableFields
+	 * @return \DmitryDulepov\Realurl\Cache\PathCacheEntry | NULL
+	 */
+	protected function getPathCacheEntryAfterExcludedPages($segment, $pages, &$collectedPageIds, $disallowedDoktypes, $pagesEnableFields) {
+		$ids = array();
+		$result = array();
+		$newPages = $pages;
+
+		while ($newPages) {
+			foreach ($newPages as $page) {
+				if ($page['tx_realurl_exclude']) {
+					$ids[] = $page['uid'];
+				}
+			}
+			if ($ids) {
+				$children = $this->databaseConnection->exec_SELECTgetRows(
+					'*', 'pages', 'pid IN (' . implode(',', $ids) . ')' .
+					' AND doktype NOT IN (' . $disallowedDoktypes . ')' . $pagesEnableFields
+				);
+
+				$result = $this->createPathCacheEntry($segment, $children, $collectedPageIds);
+				if ($result) {
+					break;
+				}
+				$newPages = $children;
+				$ids = array();
+			} else {
+				break;
+			}
+		}
+		return $result;
+	}
+
+	/**
+	 * Obtains a root page id for the given page.
+	 *
+	 * @param int $pageUid
+	 * @return int
+	 */
+	protected function getRootPageIdForPage($pageUid) {
+		$rootLineUtility = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Utility\\RootlineUtility', $pageUid);
+		/** @var \TYPO3\CMS\Core\Utility\RootlineUtility $rootLineUtility */
+		$rootLine = $rootLineUtility->get();
+
+		return is_array($rootLine) && count($rootLine) > 0 ? (int)$rootLine[0]['uid'] : 0;
+	}
+
+	/**
 	 * Parses the URL and validates the result.
 	 *
 	 * @return array
@@ -737,12 +901,15 @@ class UrlDecoder extends EncodeDecoderBase {
 	protected function getVarsFromDomainConfiguration() {
 		$requestVariables = array();
 
-		$domainConfuguration = $this->configuration->get('domains/decode');
+		$domainConfuguration = $this->configuration->get('domains');
 		if (is_array($domainConfuguration) && isset($domainConfuguration['GETvars'])) {
 			reset($domainConfuguration['GETvars']);
 			$getVarName = key($domainConfuguration['GETvars']);
 			$getVarValue = $domainConfuguration['GETvars'][$getVarName];
 			$requestVariables[$getVarName] = $getVarValue;
+			if ($getVarName === 'L') {
+				$this->detectedLanguageId = (int)$getVarValue;
+			}
 		}
 
 		return $requestVariables;
@@ -846,6 +1013,13 @@ class UrlDecoder extends EncodeDecoderBase {
 	}
 
 	/**
+	 * Initializes configuration reader.
+	 */
+	protected function initializeConfiguration() {
+		$this->configuration = GeneralUtility::makeInstance(ConfigurationReader::class, ConfigurationReader::MODE_DECODE);
+	}
+
+	/**
 	 * Checks if the given segment is a name of the postVar.
 	 *
 	 * @param string $segment
@@ -856,6 +1030,14 @@ class UrlDecoder extends EncodeDecoderBase {
 		return in_array($segment, $postVarNames);
 	}
 
+	/**
+	 * Checks if TSFE is initialized correctly.
+	 *
+	 * @return bool
+	 */
+	protected function isProperTsfe() {
+		return ($this->tsfe instanceof TypoScriptFrontendController);
+	}
 
 	/**
 	 * Checks if the current URL is a speaking URL.
@@ -863,7 +1045,7 @@ class UrlDecoder extends EncodeDecoderBase {
 	 * @return bool
 	 */
 	protected function isSpeakingUrl() {
-		return $this->siteScript && substr($this->siteScript, 0, 9) !== 'index.php' && substr($this->siteScript, 0, 1) !== '?';
+		return $this->siteScript && substr($this->siteScript, 0, 9) !== 'index.php' && substr($this->siteScript, 0, 1) !== '?' && $this->siteScript !== 'favicon.ico';
 	}
 
 	/**
@@ -876,7 +1058,6 @@ class UrlDecoder extends EncodeDecoderBase {
 		$result = array();
 
 		parse_str(trim(GeneralUtility::implodeArrayForUrl('', $requestVariables), '&'), $result);
-		$this->fixMagicQuotesGpc($result);
 		$this->fixBracketsAfterParseStr($result);
 
 		return $result;
@@ -890,10 +1071,9 @@ class UrlDecoder extends EncodeDecoderBase {
 	 */
 	protected function putToPathCache(PathCacheEntry $newCacheEntry) {
 		$pagePath = $newCacheEntry->getPagePath();
-		$cacheEntry = $this->cache->getPathFromCacheByPagePath($this->rootPageId, '', $pagePath);
+		$cacheEntry = $this->cache->getPathFromCacheByPagePath($this->rootPageId, $newCacheEntry->getMountPoint(), $pagePath);
 		if (!$cacheEntry) {
 			$cacheEntry = $newCacheEntry;
-			$cacheEntry->setMountPoint('');
 			$cacheEntry->setRootPageId($this->rootPageId);
 		}
 		if ($cacheEntry->getExpiration() !== 0) {
@@ -950,6 +1130,69 @@ class UrlDecoder extends EncodeDecoderBase {
 	}
 
 	/**
+	 * Searches the given path in pages table.
+	 *
+	 * @param string $path
+	 * @return PathCacheEntry|null
+	 */
+	protected function searchForPathOverrideInPages($path) {
+		$result = null;
+
+		$rows = $this->databaseConnection->exec_SELECTgetRows('uid', 'pages',
+			'tx_realurl_pathoverride=1 AND ' .
+				'tx_realurl_pathsegment=' . $this->databaseConnection->fullQuoteStr($path, 'pages') .
+				$this->pageRepository->enableFields('pages', 0)
+		);
+		foreach ($rows as $row) {
+			if ($this->getRootPageIdForPage((int)$row['uid']) === $this->rootPageId) {
+				// Found it!
+				$result = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\Cache\\PathCacheEntry');
+				/** @var \DmitryDulepov\Realurl\Cache\PathCacheEntry $result */
+				$result->setPageId((int)$row['uid']);
+				$result->setPagePath($path);
+				$result->setRootPageId($this->rootPageId);
+				break;
+			}
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Searches the given path in page language overlays.
+	 *
+	 * @param string $path
+	 * @return PathCacheEntry|null
+	 */
+	protected function searchForPathOverrideInPagesLanguageverlay($path) {
+		$result = null;
+
+		$rows = $this->databaseConnection->exec_SELECTgetRows('pages.uid AS uid',
+			'pages_language_overlay, pages',
+			'pages_language_overlay.pid=pages.uid AND ' .
+				'pages_language_overlay.sys_language_uid=' . (int)$this->detectedLanguageId . ' AND ' .
+				'pages.tx_realurl_pathoverride=1 AND ' .
+				'pages_language_overlay.tx_realurl_pathsegment=' . $this->databaseConnection->fullQuoteStr($path, 'pages_language_overlay') .
+				$this->pageRepository->enableFields('pages_language_overlay', 0) .
+				$this->pageRepository->enableFields('pages', 0)
+		);
+		foreach ($rows as $row) {
+			if ($this->getRootPageIdForPage((int)$row['uid']) === $this->rootPageId) {
+				// Found it!
+				$result = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\Cache\\PathCacheEntry');
+				/** @var \DmitryDulepov\Realurl\Cache\PathCacheEntry $result */
+				$result->setLanguageId($this->detectedLanguageId);
+				$result->setPageId((int)$row['pid']);
+				$result->setPagePath($path);
+				$result->setRootPageId($this->rootPageId);
+				break;
+			}
+		}
+
+		return $result;
+	}
+
+	/**
 	 * Searches pages for the match to the segment
 	 *
 	 * @param int $currentPid
@@ -965,25 +1208,9 @@ class UrlDecoder extends EncodeDecoderBase {
 		$pages = $this->databaseConnection->exec_SELECTgetRows('*', 'pages', 'pid=' . (int)$currentPid .
 			' AND doktype NOT IN (' . $disallowedDoktypes . ')' . $pagesEnableFields
 		);
-		foreach ($pages as $page) {
-			if ($page['doktype'] == PageRepository::DOKTYPE_SHORTCUT) {
-				$page = $this->resolveShortcut($page);
-			}
-			$collectedPageIds[] = (int)$page['uid'];
-			if (!$result) {
-				foreach (self::$pageTitleFields as $field) {
-					if ($this->utility->convertToSafeString($page[$field]) == $segment) {
-						$result = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\Cache\\PathCacheEntry');
-						/** @var \DmitryDulepov\Realurl\Cache\PathCacheEntry $cacheEntry */
-						$result->setPageId((int)$page['uid']);
-						if ($this->detectedLanguageId > 0) {
-							break;
-						} else {
-							break 2;
-						}
-					}
-				}
-			}
+		$result = $this->createPathCacheEntry($segment, $pages, $collectedPageIds);
+		if (!$result) {
+			$result = $this->getPathCacheEntryAfterExcludedPages($segment, $pages, $collectedPageIds, $disallowedDoktypes, $pagesEnableFields);
 		}
 
 		// We have to search overlay as well
@@ -998,12 +1225,32 @@ class UrlDecoder extends EncodeDecoderBase {
 					if ($this->utility->convertToSafeString($pageOverlay[$field]) == $segment) {
 						$result = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\Cache\\PathCacheEntry');
 						/** @var \DmitryDulepov\Realurl\Cache\PathCacheEntry $cacheEntry */
-						$result->setPageId((int)$pageOverlay['uid']);
+						$result->setPageId((int)$pageOverlay['pid']);
 						$result->setLanguageId((int)$this->detectedLanguageId);
 						break;
 					}
 				}
 			}
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Seaches for a match in tx_realurl_pathsegment with override option.
+	 *
+	 * @param array $possibleSegments
+	 * @return PathCacheEntry|null
+	 */
+	protected function searchPagesByPathOverride(array $possibleSegments) {
+		$result = null;
+
+		$path = implode('/', $possibleSegments);
+		if ($this->detectedLanguageId > 0) {
+			$result = $this->searchForPathOverrideInPagesLanguageverlay($path);
+		}
+		if (!$result) {
+			$result = $this->searchForPathOverrideInPages($path);
 		}
 
 		return $result;
@@ -1024,11 +1271,12 @@ class UrlDecoder extends EncodeDecoderBase {
 
 		do {
 			$path = implode('/', $pathSegments);
-			$cacheEntry = $this->cache->getPathFromCacheByPagePath($this->rootPageId, '', $path);
+			// Since we know nothing about mount point at this stage, we exclude it from search by passing null as the second argument
+			$cacheEntry = $this->cache->getPathFromCacheByPagePath($this->rootPageId, null, $path);
 			if ($cacheEntry) {
 				if ((int)$cacheEntry->getExpiration() !== 0) {
 					$this->isExpiredPath = TRUE;
-					$nonExpiredCacheEntry = $this->cache->getPathFromCacheByPageId($cacheEntry->getRootPageId(), $cacheEntry->getLanguageId(), $cacheEntry->getPageId());
+					$nonExpiredCacheEntry = $this->cache->getPathFromCacheByPageId($cacheEntry->getRootPageId(), $cacheEntry->getLanguageId(), $cacheEntry->getPageId(), $cacheEntry->getMountPoint());
 					if ($nonExpiredCacheEntry) {
 						$this->expiredPath = $cacheEntry->getPagePath();
 						$cacheEntry = $nonExpiredCacheEntry;
@@ -1052,7 +1300,7 @@ class UrlDecoder extends EncodeDecoderBase {
 	 * @return void
 	 */
 	protected function setLanguageFromQueryString() {
-		$this->sysLanguageUid = (int)GeneralUtility::_GP('L');
+		$this->detectedLanguageId = (int)GeneralUtility::_GP('L');
 	}
 
 	/**
@@ -1084,18 +1332,6 @@ class UrlDecoder extends EncodeDecoderBase {
 	 */
 	protected function setSpeakingUriFromSiteScript() {
 		$this->speakingUri = ltrim($this->siteScript, '/');
-
-		// Call hooks
-		if (is_array($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['decodeSpURL_preProc'])) {
-			foreach($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['decodeSpURL_preProc'] as $userFunc) {
-				$hookParams = array(
-					'pObj' => $this,
-					'params' => array(),
-					'URL' => &$this->speakingUri,
-				);
-				GeneralUtility::callUserFunction($userFunc, $hookParams, $this);
-			}
-		}
 	}
 
 	/**

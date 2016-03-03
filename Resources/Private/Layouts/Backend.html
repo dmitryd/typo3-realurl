@@ -1,0 +1,60 @@
+{namespace d=DmitryDulepov\Realurl\ViewHelpers}
+
+<f:be.container>
+	<f:be.pageRenderer includeCssFiles="{
+		1: '../typo3conf/ext/realurl/Resources/Public/realurl_be.css'
+	}" includeJsFiles="{
+		2: '../typo3conf/ext/realurl/Resources/Public/realurl_be.js'
+	}" loadJQuery="1"/>
+	<div class="typo3-fullDoc">
+		<div id="typo3-docheader">
+			<div class="typo3-docheader-functions">
+				<div class="left">
+					<f:be.buttons.csh />
+					<f:be.menus.actionMenu>
+						<f:be.menus.actionMenuItem label="{f:translate(key: 'LLL:EXT:realurl/Resources/Private/Language/locallang.xlf:module.index')}" controller="Overview" action="index" />
+						<f:be.menus.actionMenuItem label="{f:translate(key: 'LLL:EXT:realurl/Resources/Private/Language/locallang.xlf:module.aliases')}" controller="Aliases" action="index" />
+						<f:be.menus.actionMenuItem label="{f:translate(key: 'LLL:EXT:realurl/Resources/Private/Language/locallang.xlf:module.url_cache')}" controller="UrlCache" action="index" />
+						<f:be.menus.actionMenuItem label="{f:translate(key: 'LLL:EXT:realurl/Resources/Private/Language/locallang.xlf:module.path_cache')}" controller="PathCache" action="index" />
+						<f:comment>
+						<f:be.menus.actionMenuItem label="{f:translate(key: 'LLL:EXT:realurl/Resources/Private/Language/locallang.xlf:module.configuration')}" controller="Configuration" action="index" />
+						</f:comment>
+					</f:be.menus.actionMenu>
+				</div>
+
+				<div class="right">
+					<f:be.pagePath />
+					<f:be.pageInfo />
+				</div>
+			</div>
+
+			<f:comment>
+			<div class="typo3-docheader-buttons">
+				<div class="left">
+				</div>
+				<div class="right">
+					<f:be.buttons.shortcut />
+				</div>
+			</div>
+			</f:comment>
+		</div>
+		<div id="typo3-docbody">
+			<div id="typo3-inner-docbody" class="realurl-backend">
+				<f:render section="content" />
+			</div>
+		</div>
+		<div id="realurl-dialog-confirm"></div>
+		<script>
+			var tx_realurl_strings = {
+				confirmTitle: <d:translateToJson key="module.js.confirmTitle"/>,
+				deleteAliases: <d:translateToJson key="module.js.deleteAliases"/>,
+				deleteCacheEntries: <d:translateToJson key="module.js.deleteCacheEntries"/>,
+				deleteSingleAlias: <d:translateToJson key="module.js.deleteSingleAlias"/>,
+				deleteSingleCacheEntry: <d:translateToJson key="module.js.deleteSingleCacheEntry"/>,
+				flushCacheEntries: <d:translateToJson key="module.js.flushCache"/>,
+				no: <d:translateToJson key="module.js.no"/>,
+				yes: <d:translateToJson key="module.js.yes"/>
+			};
+		</script>
+	</div>
+</f:be.container>

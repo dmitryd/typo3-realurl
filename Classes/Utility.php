@@ -32,7 +32,6 @@ namespace DmitryDulepov\Realurl;
 use DmitryDulepov\Realurl\Cache\CacheFactory;
 use DmitryDulepov\Realurl\Cache\CacheInterface;
 use DmitryDulepov\Realurl\Configuration\ConfigurationReader;
-use \TYPO3\CMS\Core\SingletonInterface;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
@@ -42,16 +41,22 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  * @package DmitryDulepov\Realurl
  * @author Dmitry Dulepov <dmitry.dulepov@gmail.com>
  */
-class Utility implements SingletonInterface {
+class Utility {
 
 	/** @var \TYPO3\CMS\Core\Charset\CharsetConverter  */
 	protected $csConvertor;
 
+	/** @var ConfigurationReader */
+	protected $configuration;
+
 	/**
 	 * Initializes the class.
+	 *
+	 * @param ConfigurationReader $configuration
 	 */
-	public function __construct() {
+	public function __construct(ConfigurationReader $configuration) {
 		$this->csConvertor = TYPO3_MODE == 'BE' ? $GLOBALS['LANG']->csConvObj : $GLOBALS['TSFE']->csConvObj;
+		$this->configuration = $configuration;
 	}
 
 	/**
@@ -84,7 +89,7 @@ class Utility implements SingletonInterface {
 	 * @return CacheInterface
 	 */
 	public function getCache() {
-		if (TYPO3_MODE !== 'FE' || is_object($GLOBALS['BE_USER']) || ConfigurationReader::getInstance()->get('cache/disable')) {
+		if (TYPO3_MODE !== 'FE' || is_object($GLOBALS['BE_USER']) || $this->configuration->get('cache/disable')) {
 			$cache = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\Cache\\NullCache');
 		} else {
 			$cache = CacheFactory::getCache();
@@ -100,17 +105,19 @@ class Utility implements SingletonInterface {
 	public function getCurrentHost() {
 		$currentHost = GeneralUtility::getIndpEnv('HTTP_HOST');
 
-		// TODO Add a hook here to modify the host (for command line tools, for example)
+		// Call user hooks
+		if (is_array($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['getHost'])) {
+			foreach($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['getHost'] as $userFunc) {
+				$hookParams = array(
+					'host' => $currentHost,
+				);
+				$newHost = GeneralUtility::callUserFunction($userFunc, $hookParams, $this);
+				if (!empty($newHost) && is_string($newHost)) {
+					$currentHost = $newHost;
+				}
+			}
+		}
 
 		return $currentHost;
-	}
-
-	/**
-	 * Obtains the instance of the class.
-	 *
-	 * @return object
-	 */
-	static public function getInstance() {
-		return GeneralUtility::makeInstance(__CLASS__);
 	}
 }

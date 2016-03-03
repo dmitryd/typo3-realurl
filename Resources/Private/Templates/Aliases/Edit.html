@@ -1,0 +1,46 @@
+<f:layout name="Backend"/>
+
+<f:section name="content">
+	<h1><f:translate key="LLL:EXT:realurl/Resources/Private/Language/locallang.xlf:module.aliases"/></h1>
+	<p><f:translate key="LLL:EXT:realurl/Resources/Private/Language/locallang.xlf:module.aliases.intro"/></p>
+
+	<f:flashMessages/>
+
+	<form action="{f:uri.action(action:'edit')}" class="form-horizontal" id="realurlAliasSelectionForm" method="post">
+		<input type="hidden" name="tx_realurl_web_realurlrealurl[uid]" value="{alias.uid}"/>
+		<input type="hidden" name="tx_realurl_web_realurlrealurl[selectedAlias]" value="{selectedAlias}"/>
+		<h3><f:translate key="LLL:EXT:realurl/Resources/Private/Language/locallang.xlf:module.aliases.edit"/></h3>
+		<div class="form-group">
+			<label class="col-sm-2"><f:translate key="LLL:EXT:realurl/Resources/Private/Language/locallang.xlf:module.aliases.edit.alias_info.tablename"/></label>
+			<div class="col-sm-10">
+				<p>{alias.tablename}</p>
+			</div>
+		</div>
+		<div class="form-group">
+			<label class="col-sm-2"><f:translate key="LLL:EXT:realurl/Resources/Private/Language/locallang.xlf:module.aliases.edit.alias_info.uid"/></label>
+			<div class="col-sm-10">
+				<p>{alias.valueId}</p>
+			</div>
+		</div>
+		<div class="form-group">
+			<label class="col-sm-2"><f:translate key="LLL:EXT:realurl/Resources/Private/Language/locallang.xlf:module.aliases.edit.alias_info.field_value"/></label>
+			<div class="col-sm-10">
+				<p>{alias.recordFieldValue}</p>
+			</div>
+		</div>
+		<div class="form-group">
+			<label class="col-sm-2" for="aliasValue"><f:translate key="LLL:EXT:realurl/Resources/Private/Language/locallang.xlf:module.aliases.edit.alias_value"/></label>
+			<div class="col-sm-10">
+				<input class="form-control" id="aliasValue" name="tx_realurl_web_realurlrealurl[valueAlias]" value="{alias.valueAlias}"/>
+			</div>
+		</div>
+		<div class="form-group">
+			<div class="col-sm-2"></div>
+			<div class="col-sm-10">
+				<button class="btn btn-primary" name="tx_realurl_web_realurlrealurl[submit]" type="submit" value="1"><f:translate key="module.aliases.edit.submit"/></button>
+				<a class="btn btn-default" href="{f:uri.action(action: 'index', addQueryString: 1, controller: 'Aliases', arguments: {selectedAlias: alias.tablename})}" role="button"><f:translate key="module.aliases.edit.back"/></a>
+			</div>
+		</div>
+	</form>
+
+</f:section>

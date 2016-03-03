@@ -75,7 +75,7 @@ class DatabaseCache implements CacheInterface, SingletonInterface {
 	 * @return void
 	 */
 	public function clearUrlCacheById($cacheId) {
-		$this->databaseConnection->exec_DELETEquery('tx_realurl_urlcache', 'cache_id=' . (int)$cacheId);
+		$this->databaseConnection->exec_DELETEquery('tx_realurl_urlcache', 'uid=' . (int)$cacheId);
 		$this->databaseConnection->exec_DELETEquery('tx_realurl_uniqalias_cache_map', 'url_cache_id=\'' . (int)$cacheId . '\'');
 	}
 
@@ -86,7 +86,7 @@ class DatabaseCache implements CacheInterface, SingletonInterface {
 	 * @return void
 	 */
 	public function clearUrlCacheForPage($pageId) {
-		$this->databaseConnection->sql_query('DELETE FROM tx_realurl_uniqalias_cache_map WHERE url_cache_id IN (SELECT cache_id FROM tx_realurl_urlcache WHERE page_id=' . (int)$pageId . ')');
+		$this->databaseConnection->sql_query('DELETE FROM tx_realurl_uniqalias_cache_map WHERE url_cache_id IN (SELECT uid FROM tx_realurl_urlcache WHERE page_id=' . (int)$pageId . ')');
 		$this->databaseConnection->exec_DELETEquery('tx_realurl_urlcache', 'page_id=' . (int)$pageId);
 	}
 
@@ -121,7 +121,7 @@ class DatabaseCache implements CacheInterface, SingletonInterface {
 		if (is_array($row)) {
 			$cacheEntry = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\Cache\\UrlCacheEntry');
 			/** @var \DmitryDulepov\Realurl\Cache\UrlCacheEntry $cacheEntry */
-			$cacheEntry->setCacheId($row['cache_id']);
+			$cacheEntry->setCacheId($row['uid']);
 			$cacheEntry->setPageId($row['page_id']);
 			$cacheEntry->setRootPageId($row['rootpage_id']);
 			$cacheEntry->setOriginalUrl($originalUrl);
@@ -134,7 +134,7 @@ class DatabaseCache implements CacheInterface, SingletonInterface {
 			$currentTime = time();
 			if ((int)$row['tstamp'] !== $currentTime) {
 				$this->databaseConnection->exec_UPDATEquery('tx_realurl_urlcache',
-					'cache_id=' . $this->databaseConnection->fullQuoteStr($cacheEntry->getCacheId(), 'tx_realurl_urlcache'),
+					'uid=' . $this->databaseConnection->fullQuoteStr($cacheEntry->getCacheId(), 'tx_realurl_urlcache'),
 					array('tstamp' => $currentTime)
 				);
 			}
@@ -159,7 +159,7 @@ class DatabaseCache implements CacheInterface, SingletonInterface {
 		if (is_array($row)) {
 			$cacheEntry = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\Cache\\UrlCacheEntry');
 			/** @var \DmitryDulepov\Realurl\Cache\UrlCacheEntry $cacheEntry */
-			$cacheEntry->setCacheId($row['cache_id']);
+			$cacheEntry->setCacheId($row['uid']);
 			$cacheEntry->setPageId($row['page_id']);
 			$cacheEntry->setRootPageId($row['rootpage_id']);
 			$cacheEntry->setOriginalUrl($row['original_url']);
@@ -172,7 +172,7 @@ class DatabaseCache implements CacheInterface, SingletonInterface {
 			$currentTime = time();
 			if ((int)$row['tstamp'] !== $currentTime) {
 				$this->databaseConnection->exec_UPDATEquery('tx_realurl_urlcache',
-					'cache_id=' . $this->databaseConnection->fullQuoteStr($cacheEntry->getCacheId(), 'tx_realurl_urlcache'),
+					'uid=' . $this->databaseConnection->fullQuoteStr($cacheEntry->getCacheId(), 'tx_realurl_urlcache'),
 					array('tstamp' => $currentTime)
 				);
 			}
@@ -187,19 +187,23 @@ class DatabaseCache implements CacheInterface, SingletonInterface {
 	 * @param int $rootPageId
 	 * @param int $languageId
 	 * @param int $pageId
+	 * @param string $mpVar
 	 * @return PathCacheEntry|null
 	 */
-	public function getPathFromCacheByPageId($rootPageId, $languageId, $pageId) {
+	public function getPathFromCacheByPageId($rootPageId, $languageId, $pageId, $mpVar) {
 		$cacheEntry = NULL;
 
 		$row = $this->databaseConnection->exec_SELECTgetSingleRow('*', 'tx_realurl_pathcache',
-			'page_id=' . (int)$pageId . ' AND language_id=' . (int)$languageId .
-				' AND rootpage_id=' . (int)$rootPageId . ' AND expire=0'
+			'page_id=' . (int)$pageId .
+				' AND language_id=' . (int)$languageId .
+				' AND rootpage_id=' . (int)$rootPageId .
+				' AND mpvar=' . ($mpVar ? $this->databaseConnection->fullQuoteStr($mpVar, 'tx_realurl_pathcache') : '\'\'') .
+				' AND expire=0'
 		);
 		if (is_array($row)) {
 			$cacheEntry = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\Cache\\PathCacheEntry');
 			/** @var \DmitryDulepov\Realurl\Cache\PathCacheEntry $cacheEntry */
-			$cacheEntry->setCacheId((int)$row['cache_id']);
+			$cacheEntry->setCacheId((int)$row['uid']);
 			$cacheEntry->setExpiration((int)$row['expire']);
 			$cacheEntry->setLanguageId((int)$row['language_id']);
 			$cacheEntry->setMountPoint($row['mpvar']);
@@ -215,7 +219,7 @@ class DatabaseCache implements CacheInterface, SingletonInterface {
 	 * Obtains path from the path cache.
 	 *
 	 * @param int $rootPageId
-	 * @param string $mountPoint
+	 * @param string|null $mountPoint null means exclude from search
 	 * @param string $pagePath
 	 * @return PathCacheEntry|null
 	 */
@@ -223,13 +227,15 @@ class DatabaseCache implements CacheInterface, SingletonInterface {
 		$cacheEntry = NULL;
 
 		$row = $this->databaseConnection->exec_SELECTgetSingleRow('*', 'tx_realurl_pathcache',
-			'rootpage_id=' . (int)$rootPageId . ' AND pagepath=' . $this->databaseConnection->fullQuoteStr($pagePath, 'tx_realurl_pathcache'),
+			'rootpage_id=' . (int)$rootPageId .
+			' AND pagepath=' . $this->databaseConnection->fullQuoteStr($pagePath, 'tx_realurl_pathcache') .
+			(is_null($mountPoint) ? '' : ' AND mpvar=' . ($mountPoint ? $this->databaseConnection->fullQuoteStr($mountPoint, 'tx_realurl_pathcache') : '\'\'')),
 			'', 'expire'
 		);
 		if (is_array($row)) {
 			$cacheEntry = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\Cache\\PathCacheEntry');
 			/** @var \DmitryDulepov\Realurl\Cache\PathCacheEntry $cacheEntry */
-			$cacheEntry->setCacheId((int)$row['cache_id']);
+			$cacheEntry->setCacheId((int)$row['uid']);
 			$cacheEntry->setExpiration((int)$row['expire']);
 			$cacheEntry->setLanguageId((int)$row['language_id']);
 			$cacheEntry->setMountPoint($row['mpvar']);
@@ -260,7 +266,7 @@ class DatabaseCache implements CacheInterface, SingletonInterface {
 		if ($cacheEntry->getCacheId()) {
 			// TODO Expire all other entries
 			$this->databaseConnection->exec_UPDATEquery('tx_realurl_pathcache',
-				'cache_id=' . $this->databaseConnection->fullQuoteStr($cacheEntry->getCacheId(), 'tx_realurl_pathcache'),
+				'uid=' . $this->databaseConnection->fullQuoteStr($cacheEntry->getCacheId(), 'tx_realurl_pathcache'),
 				$data
 			);
 		} else {
@@ -286,7 +292,7 @@ class DatabaseCache implements CacheInterface, SingletonInterface {
 		);
 		if ($cacheEntry->getCacheId()) {
 			$this->databaseConnection->exec_UPDATEquery('tx_realurl_urlcache',
-				'cache_id=' . $this->databaseConnection->fullQuoteStr($cacheEntry->getCacheId(), 'tx_realurl_urlcache'),
+				'uid=' . $this->databaseConnection->fullQuoteStr($cacheEntry->getCacheId(), 'tx_realurl_urlcache'),
 				$data
 			);
 		} else {

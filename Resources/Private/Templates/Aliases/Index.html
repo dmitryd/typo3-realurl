@@ -1,0 +1,122 @@
+{namespace d=DmitryDulepov\Realurl\ViewHelpers}
+{namespace c=TYPO3\CMS\Core\ViewHelpers}
+
+<f:layout name="Backend" />
+
+<f:section name="content">
+	<h1><f:translate key="LLL:EXT:realurl/Resources/Private/Language/locallang.xlf:module.aliases"/></h1>
+	<p><f:translate key="LLL:EXT:realurl/Resources/Private/Language/locallang.xlf:module.aliases.intro"/></p>
+
+	<f:flashMessages/>
+
+	<f:if condition="{availableAliasTypes -> f:count()}">
+		<f:then>
+			<f:render section="availableAliases" arguments="{_all}"/>
+			<f:if condition="{selectedAlias}">
+				<f:render section="showSelectedAliases" arguments="{_all}"/>
+			</f:if>
+		</f:then>
+		<f:else>
+			<f:be.infobox state="1"><f:translate key="module.aliases.not_available"/></f:be.infobox>
+		</f:else>
+	</f:if>
+</f:section>
+
+
+<f:section name="availableAliases">
+	<form action="{f:uri.action(action:'{f:if(condition: action, then: action, else: \'index\')}')}" class="form-horizontal" id="realurlAliasSelectionForm" method="post">
+		<h3><f:translate key="LLL:EXT:realurl/Resources/Private/Language/locallang.xlf:module.aliases.available"/></h3>
+		<div class="form-group">
+			<label class="col-sm-3" for="realurlSelectedAlias"><f:translate key="LLL:EXT:realurl/Resources/Private/Language/locallang.xlf:module.aliases.available.select"/></label>
+			<div class="col-sm-9">
+				<select class="form-control" id="realurlSelectedAlias" name="tx_realurl_web_realurlrealurl[selectedAlias]">
+					<option value=""></option>
+					<f:for each="{availableAliasTypes}" as="aliasTitle" key="tableName">
+						<option {f:if(condition: '{tableName}=={selectedAlias}', then: 'selected="selected"')} value="{tableName}">{aliasTitle}</option>
+					</f:for>
+				</select>
+			</div>
+		</div>
+	</form>
+</f:section>
+
+
+<f:section name="showSelectedAliases">
+	<form action="{f:uri.action(action:'{f:if(condition: action, then: action, else: \'index\')}')}" class="form-horizontal" id="realurlAliasSearchForm" method="post">
+		<input type="hidden" name="tx_realurl_web_realurlrealurl[selectedAlias]" value="{selectedAlias}"/>
+		<div class="form-group">
+			<label class="col-sm-3" for="realurlSearchAlias"><f:translate key="LLL:EXT:realurl/Resources/Private/Language/locallang.xlf:module.aliases.search.for"/></label>
+			<div class="col-sm-9">
+				<input class="form-control" id="realurlSearchAlias" name="tx_realurl_web_realurlrealurl[searchAlias]" value="{searchAlias}"/>
+			</div>
+		</div>
+		<div class="form-group">
+			<div class="col-sm-3"></div>
+			<div class="col-sm-9">
+				<button class="btn btn-primary" name="tx_realurl_web_realurlrealurl[submit]"><f:translate key="module.aliases.search.submit"/></button>
+				<button class="btn btn-default" {f:if(condition:'{searchAlias}', else: 'disabled')} id="realurlSearchAliasReset" name="tx_realurl_web_realurlrealurl[submit]" onclick="document.getElementById('realurlSearchAlias').value='';"><f:translate key="module.aliases.search.reset"/></button>
+			</div>
+		</div>
+	</form>
+
+	<d:setVariable name="entriesPerPage" value="20"/>
+	<d:setVariable name="entryCount" value="{foundAliases -> f:count()}"/>
+	<f:if condition="{entryCount} >= {entriesPerPage}">
+		<f:then>
+			<d:setVariable name="hasPager" value="1"/>
+		</f:then>
+		<f:else>
+			<d:setVariable name="hasPager" value="0"/>
+		</f:else>
+	</f:if>
+	<f:be.widget.paginate objects="{foundAliases}" as="aliases" configuration="{itemsPerPage: entriesPerPage, insertAbove: hasPager, insertBelow: hasPager, addQueryString: 1}">
+		<table class="table table-striped">
+			<tr>
+				<th class="col-sm-1"></th>
+				<th><f:translate key="module.tableHeader.alias"/></th>
+				<th class="col-sm-1"><f:translate key="module.tableHeader.id"/></th>
+				<th class="col-sm-2"><f:translate key="module.tableHeader.language"/></th>
+				<th class="col-sm-2"><f:translate key="module.tableHeader.expire"/></th>
+			</tr>
+			<f:for each="{aliases}" as="alias">
+				<f:render section="singleAliasRow" arguments="{alias: alias}"/>
+			</f:for>
+		</table>
+	</f:be.widget.paginate>
+
+	<f:if condition="{entryCount}">
+		<a class="btn btn-default" href="javascript:void(0)" onclick="tx_realurl_confirm(tx_realurl_strings.confirmTitle, tx_realurl_strings.deleteAliases,
+				 '{f:uri.action(action: 'deleteAll', controller: 'Aliases', addQueryString: 1)}')">
+			<c:icon identifier="actions-delete"/>
+			<f:translate key="module.deleteAliasesOfType"/>
+		</a>
+	</f:if>
+</f:section>
+
+
+<f:section name="singleAliasRow">
+	<tr>
+		<td class="col-sm-1 icon-column">
+			<f:link.action action="edit" class="btn btn-default" controller="Aliases" addQueryString="1" arguments="{uid: alias.uid}">
+				<c:icon identifier="actions-open"/>
+			</f:link.action>
+			<a class="btn btn-default" href="javascript:void(0)" onclick="tx_realurl_confirm(tx_realurl_strings.confirmTitle, tx_realurl_strings.deleteSingleAlias,
+			 '{f:uri.action(action: 'delete', controller: 'Aliases', addQueryString: 1, arguments: {uid: alias.uid})}')">
+				<c:icon identifier="actions-delete"/>
+			</a>
+		</td>
+		<td>{alias.valueAlias}</td>
+		<td class="col-sm-1">{alias.valueId}</td>
+		<td class="col-sm-2">{d:languageFromId(language: alias.lang)}</td>
+		<td class="col-sm-2">
+			<f:if condition="{alias.expire}">
+				<f:then>
+					<f:format.date format="{f:translate(key: 'module.dateTimeFormat')}">{alias.expire}</f:format.date>
+				</f:then>
+				<f:else>
+					&ndash;
+				</f:else>
+			</f:if>
+		</td>
+	</tr>
+</f:section>

@@ -1,0 +1,25 @@
+config.tx_extbase.persistence.classes {
+	DmitryDulepov\Realurl\Domain\Model\Alias {
+		mapping {
+			tableName = tx_realurl_uniqalias
+		}
+	}
+	DmitryDulepov\Realurl\Domain\Model\UrlCacheEntry {
+		mapping {
+			tableName = tx_realurl_urlcache
+			columns {
+				rootpage_id.mapOnProperty = rootPageId
+			}
+		}
+	}
+	DmitryDulepov\Realurl\Domain\Model\PathCacheEntry {
+		mapping {
+			tableName = tx_realurl_pathcache
+			columns {
+				mpvar.mapOnProperty = mpVar
+				pagepath.mapOnProperty = pagePath
+				rootpage_id.mapOnProperty = rootPageId
+			}
+		}
+	}
+}

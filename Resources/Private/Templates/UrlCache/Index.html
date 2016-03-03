@@ -1,0 +1,68 @@
+{namespace d=DmitryDulepov\Realurl\ViewHelpers}
+{namespace c=TYPO3\CMS\Core\ViewHelpers}
+
+<f:layout name="Backend" />
+
+<f:section name="content">
+	<h1><f:translate key="LLL:EXT:realurl/Resources/Private/Language/locallang.xlf:module.url_cache"/></h1>
+	<p><f:translate key="LLL:EXT:realurl/Resources/Private/Language/locallang.xlf:module.url_cache.intro"/></p>
+
+	<f:flashMessages/>
+
+	<f:render section="entries" arguments="{entries: entries}"/>
+</f:section>
+
+
+<f:section name="entries">
+	<d:setVariable name="entriesPerPage" value="20"/>
+	<d:setVariable name="entryCount" value="{entries -> f:count()}"/>
+	<f:if condition="{entryCount} >= {entriesPerPage}">
+		<f:then>
+			<d:setVariable name="hasPager" value="1"/>
+		</f:then>
+		<f:else>
+			<d:setVariable name="hasPager" value="0"/>
+		</f:else>
+	</f:if>
+	<f:be.widget.paginate objects="{entries}" as="cacheEntries" configuration="{itemsPerPage: entriesPerPage, insertAbove: hasPager, insertBelow: hasPager, addQueryString: 1}">
+		<table class="table table-striped">
+			<tr>
+				<th class="col-sm-1"></th>
+				<th class="col-sm-5"><f:translate key="module.tableHeader.speaking_url"/></th>
+				<th class="col-sm-5"><f:translate key="module.tableHeader.original_url"/></th>
+				<th class="col-sm-1"><f:translate key="module.tableHeader.rootpage_id"/></th>
+			</tr>
+			<f:for each="{cacheEntries}" as="cacheEntry">
+				<f:render section="singleEntryRow" arguments="{cacheEntry: cacheEntry}"/>
+			</f:for>
+		</table>
+	</f:be.widget.paginate>
+	<f:if condition="{entryCount}">
+		<a class="btn btn-default" href="javascript:void(0)" onclick="tx_realurl_confirm(tx_realurl_strings.confirmTitle, tx_realurl_strings.deleteCacheEntries,
+				 '{f:uri.action(action: 'deleteAll', controller: 'UrlCache', addQueryString: 1)}')">
+			<c:icon identifier="actions-delete"/>
+			<f:translate key="module.deleteCacheEntriesForPage"/>
+		</a>
+		&nbsp;
+	</f:if>
+	<a class="btn btn-danger" href="javascript:void(0)" onclick="tx_realurl_confirm(tx_realurl_strings.confirmTitle, tx_realurl_strings.flushCacheEntries,
+			 '{f:uri.action(action: 'flush', controller: 'UrlCache', addQueryString: 1)}')">
+		<c:icon identifier="actions-delete"/>
+		<f:translate key="module.flushCache"/>
+	</a>
+</f:section>
+
+
+<f:section name="singleEntryRow">
+	<tr>
+		<td>
+			<a class="btn btn-default" href="javascript:void(0)" onclick="tx_realurl_confirm(tx_realurl_strings.confirmTitle, tx_realurl_strings.deleteSingleCacheEntry,
+			 '{f:uri.action(action: 'delete', controller: 'UrlCache', addQueryString: 1, arguments: {uid: cacheEntry.uid})}')">
+				<c:icon identifier="actions-delete"/>
+			</a>
+		</td>
+		<td>{cacheEntry.speakingUrl}</td>
+		<td>{cacheEntry.originalUrl}</td>
+		<td>{cacheEntry.rootPageId}</td>
+	</tr>
+</f:section>

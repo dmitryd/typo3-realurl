@@ -1,0 +1,18 @@
+<f:layout name="Backend" />
+
+<f:section name="content">
+	<h1><f:translate key="LLL:EXT:realurl/Resources/Private/Language/locallang.xlf:module.index"/></h1>
+	<p><f:translate key="LLL:EXT:realurl/Resources/Private/Language/locallang.xlf:module.index.intro_functions"/></p>
+	<h2><f:translate key="LLL:EXT:realurl/Resources/Private/Language/locallang.xlf:module.aliases"/></h2>
+	<p><f:translate key="LLL:EXT:realurl/Resources/Private/Language/locallang.xlf:module.aliases.intro"/></p>
+	<f:if condition="{isCompatibleCacheImplementation}">
+		<h2><f:translate key="LLL:EXT:realurl/Resources/Private/Language/locallang.xlf:module.url_cache"/></h2>
+		<p><f:translate key="LLL:EXT:realurl/Resources/Private/Language/locallang.xlf:module.url_cache.intro"/></p>
+		<h2><f:translate key="LLL:EXT:realurl/Resources/Private/Language/locallang.xlf:module.path_cache"/></h2>
+		<p><f:translate key="LLL:EXT:realurl/Resources/Private/Language/locallang.xlf:module.path_cache.intro"/></p>
+	</f:if>
+	<f:comment>
+	<h2><f:translate key="LLL:EXT:realurl/Resources/Private/Language/locallang.xlf:module.configuration"/></h2>
+	<p><f:translate key="LLL:EXT:realurl/Resources/Private/Language/locallang.xlf:module.configuration.intro"/></p>
+	</f:comment>
+</f:section>

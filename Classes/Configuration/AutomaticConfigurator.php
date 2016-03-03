@@ -54,10 +54,19 @@ class AutomaticConfigurator {
 	 * @return void
 	 */
 	public function configure() {
-		$lock = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Locking\\Locker');
-		/** @var \TYPO3\CMS\Core\Locking\Locker $lock */
-		$lock->setEnableLogging(FALSE);
-		$lock->acquireExclusiveLock();
+		$lockId = 'realurl_autoconfiguration';
+		if (version_compare(TYPO3_branch, '7.2', '<')) {
+			$lock = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Locking\\Locker', $lockId);
+			/** @var \TYPO3\CMS\Core\Locking\Locker $lock */
+			$lock->setEnableLogging(FALSE);
+			$lock->acquireExclusiveLock();
+		} else {
+			$lockFactory = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Locking\\LockFactory');
+			/** @var \TYPO3\CMS\Core\Locking\LockFactory $lockFactory */
+			$lock = $lockFactory->createLocker($lockId);
+			$lock->acquire();
+		}
+
 		if (!file_exists(PATH_site . TX_REALURL_AUTOCONF_FILE)) {
 			$this->runConfigurator();
 		}

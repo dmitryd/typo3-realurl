@@ -79,12 +79,6 @@ abstract class EncodeDecoderBase {
 	public function __construct() {
 		$this->databaseConnection = $GLOBALS['TYPO3_DB'];
 		$this->tsfe = $GLOBALS['TSFE'];
-		$this->configuration = ConfigurationReader::getInstance();
-		$this->emptySegmentValue = $this->configuration->get('init/emptySegmentValue');
-		$this->rootPageId = (int)$this->configuration->get('pagePath/rootpage_id');
-		$this->utility = Utility::getInstance();
-		$this->cache = $this->utility->getCache();
-
 		$this->pageRepository = GeneralUtility::makeInstance('TYPO3\\CMS\\Frontend\\Page\\PageRepository');
 		$this->pageRepository->init(FALSE);
 	}
@@ -144,12 +138,19 @@ abstract class EncodeDecoderBase {
 		if (is_null($configurationBlock) && isset($configuration['_DEFAULT'])) {
 			$configurationBlock = $configuration['_DEFAULT'];
 		}
-		else if (is_null($configurationBlock)) {
+		if (!is_array($configurationBlock)) {
 			$configurationBlock = array();
 		}
 
 		return $configurationBlock;
 	}
+
+	/**
+	 * Initializes confguration reader.
+	 *
+	 * @return void
+	 */
+	abstract protected function initializeConfiguration();
 
 	/**
 	 * Looks up an ID value (integer) in lookup-table based on input alias value.
@@ -188,6 +189,23 @@ abstract class EncodeDecoderBase {
 		}
 
 		return $sortedUrl;
+	}
+
+	/**
+	 * Initializes the instance.
+	 *
+	 * @throws \Exception
+	 */
+	protected function initialize() {
+		$this->initializeConfiguration();
+		$this->emptySegmentValue = $this->configuration->get('init/emptySegmentValue');
+		$this->rootPageId = (int)$this->configuration->get('pagePath/rootpage_id');
+		$this->utility = GeneralUtility::makeInstance(Utility::class, $this->configuration);
+		$this->cache = $this->utility->getCache();
+
+		if ($this->rootPageId === 0) {
+			throw new \Exception('RealURL was not able to find the root page id for the domain "' . $this->utility->getCurrentHost() . '"', 1453732574);
+		}
 	}
 
 	/**

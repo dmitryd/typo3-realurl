@@ -101,15 +101,16 @@ interface CacheInterface {
 	 * @param int $rootPageId
 	 * @param int $languageId
 	 * @param int $pageId
+	 * @param string $mpVar
 	 * @return PathCacheEntry|null
 	 */
-	public function getPathFromCacheByPageId($rootPageId, $languageId, $pageId);
+	public function getPathFromCacheByPageId($rootPageId, $languageId, $pageId, $mpVar);
 
 	/**
 	 * Obtains path from the path cache.
 	 *
 	 * @param int $rootPageId
-	 * @param string $mountPoint
+	 * @param string|null $mountPoint null means exclude from search
 	 * @param string $pagePath
 	 * @return PathCacheEntry|null
 	 */
