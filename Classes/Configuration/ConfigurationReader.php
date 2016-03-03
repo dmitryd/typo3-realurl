@@ -305,28 +305,29 @@ class ConfigurationReader {
 	 * @return void
 	 */
 	protected function updateConfigurationForEncoding(&$configurationKey) {
-		$configuration = $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['_DOMAINS']['encode'];
-		foreach ($configuration as $encodeConfiguration) {
-			if (isset($encodeConfiguration['rootpage_id']) && (int)$encodeConfiguration['rootpage_id'] !== (int)$this->configuration['pagePath']['rootpage_id']) {
-				// Not applicable to this root page
-				continue;
+		if (isset($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['_DOMAINS']['encode'])) {
+			foreach ($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['_DOMAINS']['encode'] as $encodeConfiguration) {
+				if (isset($encodeConfiguration['rootpage_id']) && (int)$encodeConfiguration['rootpage_id'] !== (int)$this->configuration['pagePath']['rootpage_id']) {
+					// Not applicable to this root page
+					continue;
+				}
+				if (isset($encodeConfiguration['ifDifferentToCurrent']) && $encodeConfiguration['ifDifferentToCurrent'] && GeneralUtility::_GET($encodeConfiguration['GETvar']) == $encodeConfiguration['value']) {
+					// Same as current but prohibited by 'ifDifferentToCurrent'
+					continue;
+				}
+				$getVarName = $encodeConfiguration['GETvar'];
+				if (!isset($this->urlParameters[$getVarName]) || $this->urlParameters[$getVarName] != $encodeConfiguration['value']) {
+					// Not that GET variable value
+					continue;
+				}
+				if (isset($encodeConfiguration['useConfiguration']) && $encodeConfiguration['useConfiguration'] !== $configurationKey) {
+					// Use different config
+					$configurationKey = $this->resolveConfigurationKey($encodeConfiguration['useConfiguration']);
+					$this->configuration = $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl'][$configurationKey];
+				}
+				$this->domainConfiguration = $encodeConfiguration;
+				break;
 			}
-			if (isset($encodeConfiguration['ifDifferentToCurrent']) && $encodeConfiguration['ifDifferentToCurrent'] && GeneralUtility::_GET($encodeConfiguration['GETvar']) == $encodeConfiguration['value']) {
-				// Same as current but prohibited by 'ifDifferentToCurrent'
-				continue;
-			}
-			$getVarName = $encodeConfiguration['GETvar'];
-			if (!isset($this->urlParameters[$getVarName]) || $this->urlParameters[$getVarName] != $encodeConfiguration['value']) {
-				// Not that GET variable value
-				continue;
-			}
-			if (isset($encodeConfiguration['useConfiguration']) && $encodeConfiguration['useConfiguration'] !== $configurationKey) {
-				// Use different config
-				$configurationKey = $this->resolveConfigurationKey($encodeConfiguration['useConfiguration']);
-				$this->configuration = $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl'][$configurationKey];
-			}
-			$this->domainConfiguration = $encodeConfiguration;
-			break;
 		}
 	}
 
