@@ -145,14 +145,16 @@ class DataHandler {
 		$this->cache->expirePathCache($pageId, $languageId);
 		$this->cache->clearUrlCacheForPage($pageId);
 		$subpages = BackendUtility::getRecordsByField('pages', 'pid', $pageId);
-		$uidList = array();
-		foreach ($subpages as $subpage) {
-			$uidList[] = (int)$subpage['uid'];
-		}
-		unset($subpages);
-		foreach ($uidList as $uid) {
-			$this->cache->expirePathCache($uid, $languageId);
-			$this->expireCachesForPageAndSubpages($uid, $languageId);
+		if (is_array($subpages)) {
+			$uidList = array();
+			foreach ($subpages as $subpage) {
+				$uidList[] = (int)$subpage['uid'];
+			}
+			unset($subpages);
+			foreach ($uidList as $uid) {
+				$this->cache->expirePathCache($uid, $languageId);
+				$this->expireCachesForPageAndSubpages($uid, $languageId);
+			}
 		}
 	}
 }
