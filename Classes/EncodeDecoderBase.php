@@ -79,6 +79,8 @@ abstract class EncodeDecoderBase {
 	public function __construct() {
 		$this->databaseConnection = $GLOBALS['TYPO3_DB'];
 		$this->tsfe = $GLOBALS['TSFE'];
+		// Warning! It is important to init the new object and not reuse any existing object
+		// $this->pageRepository->sys_language_uid must stay 0 because we will do overlays manually
 		$this->pageRepository = GeneralUtility::makeInstance('TYPO3\\CMS\\Frontend\\Page\\PageRepository');
 		$this->pageRepository->init(FALSE);
 	}

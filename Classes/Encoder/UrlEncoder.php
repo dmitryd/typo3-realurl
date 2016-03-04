@@ -90,7 +90,6 @@ class UrlEncoder extends EncodeDecoderBase {
 	 */
 	public function __construct() {
 		parent::__construct();
-		$this->pageRepository = $this->tsfe->sys_page;
 	}
 
 	/**
@@ -418,7 +417,7 @@ class UrlEncoder extends EncodeDecoderBase {
 			unset($this->urlParameters['MP']);
 		}
 		$rootLineUtility = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Utility\\RootlineUtility',
-			$this->urlParameters['id'], $mountPointParameter
+			$this->urlParameters['id'], $mountPointParameter, $this->pageRepository
 		);
 		/** @var \TYPO3\CMS\Core\Utility\RootlineUtility $rootLineUtility */
 		$rootLine = $rootLineUtility->get();
