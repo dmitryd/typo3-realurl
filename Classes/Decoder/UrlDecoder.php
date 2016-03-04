@@ -283,7 +283,8 @@ class UrlDecoder extends EncodeDecoderBase {
 		$result = NULL;
 		foreach ($pages as $page) {
 			if ($page['doktype'] == PageRepository::DOKTYPE_SHORTCUT) {
-				$shortcutPages[$page['uid']] = $page;
+				// Value is not relevant, key is!
+				$shortcutPages[$page['uid']] = true;
 			}
 			$collectedPageIds[] = (int)$page['uid'];
 			foreach (self::$pageTitleFields as $field) {
