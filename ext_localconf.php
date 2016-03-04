@@ -1,5 +1,9 @@
 <?php
 
+if (!defined('TX_REALURL_AUTOCONF_FILE')) {
+	define('TX_REALURL_AUTOCONF_FILE', 'typo3conf/realurl_autoconf.php');
+}
+
 if (!function_exists('includeRealurlConfiguration')) {
 	/**
 	 * Includes RealURL configuration.
@@ -21,9 +25,6 @@ if (!function_exists('includeRealurlConfiguration')) {
 			unset($realurlConfigurationFile);
 
 			if (!isset($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']) && $configuration['enableAutoConf']) {
-				if (!defined('TX_REALURL_AUTOCONF_FILE')) {
-					define('TX_REALURL_AUTOCONF_FILE', 'typo3conf/realurl_autoconf.php');
-				}
 				/** @noinspection PhpIncludeInspection */
 				@include_once(PATH_site . TX_REALURL_AUTOCONF_FILE);
 			}
