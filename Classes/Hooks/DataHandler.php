@@ -78,7 +78,7 @@ class DataHandler {
 	 * @param array $databaseData
 	 */
 	protected function clearAutoConfiguration($tableName, array $databaseData) {
-		if ($tableName === 'sys_domain' || $tableName == 'pages' && isset($databaseData['is_siteroot'])) {
+		if ($tableName === 'sys_domain' || $tableName === 'pages' && isset($databaseData['is_siteroot'])) {
 			if (file_exists(PATH_site . TX_REALURL_AUTOCONF_FILE)) {
 				@unlink(PATH_site . TX_REALURL_AUTOCONF_FILE);
 			}
