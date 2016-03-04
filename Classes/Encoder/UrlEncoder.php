@@ -856,15 +856,17 @@ class UrlEncoder extends EncodeDecoderBase {
 	 * @return void
 	 */
 	protected function handleFileNameSetDefaultSuffix() {
-		$suffixValue = $this->configuration->get('fileName/defaultToHTMLsuffixOnPrev');
-		if ($suffixValue) {
-			if (!is_string($suffixValue) || strpos($suffixValue, '.') === FALSE) {
-				$suffixValue = '.html';
+		if ($this->encodedUrl) {
+			$suffixValue = $this->configuration->get('fileName/defaultToHTMLsuffixOnPrev');
+			if ($suffixValue) {
+				if (!is_string($suffixValue) || strpos($suffixValue, '.') === FALSE) {
+					$suffixValue = '.html';
+				}
+				if ($this->encodedUrl !== '') {
+					$this->encodedUrl = rtrim($this->encodedUrl, '/');
+				}
+				$this->encodedUrl .= $suffixValue;
 			}
-			if ($this->encodedUrl !== '') {
-				$this->encodedUrl = rtrim($this->encodedUrl, '/');
-			}
-			$this->encodedUrl .= $suffixValue;
 		}
 	}
 
