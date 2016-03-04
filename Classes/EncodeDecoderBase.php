@@ -30,7 +30,6 @@
 namespace DmitryDulepov\Realurl;
 
 use DmitryDulepov\Realurl\Cache\CacheInterface;
-use DmitryDulepov\Realurl\Configuration\ConfigurationReader;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController;
 use TYPO3\CMS\Frontend\Page\PageRepository;
@@ -202,7 +201,7 @@ abstract class EncodeDecoderBase {
 		$this->initializeConfiguration();
 		$this->emptySegmentValue = $this->configuration->get('init/emptySegmentValue');
 		$this->rootPageId = (int)$this->configuration->get('pagePath/rootpage_id');
-		$this->utility = GeneralUtility::makeInstance(Utility::class, $this->configuration);
+		$this->utility = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\Utility', $this->configuration);
 		$this->cache = $this->utility->getCache();
 
 		if ($this->rootPageId === 0) {

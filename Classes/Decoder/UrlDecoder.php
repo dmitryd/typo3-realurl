@@ -1016,7 +1016,7 @@ class UrlDecoder extends EncodeDecoderBase {
 	 * Initializes configuration reader.
 	 */
 	protected function initializeConfiguration() {
-		$this->configuration = GeneralUtility::makeInstance(ConfigurationReader::class, ConfigurationReader::MODE_DECODE);
+		$this->configuration = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\Configuration\\ConfigurationReader', ConfigurationReader::MODE_DECODE);
 	}
 
 	/**

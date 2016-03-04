@@ -29,7 +29,6 @@
  ***************************************************************/
 namespace DmitryDulepov\Realurl\Configuration;
 
-use \DmitryDulepov\Realurl\Utility;
 use \TYPO3\CMS\Backend\Utility\BackendUtility;
 use \TYPO3\CMS\Core\Utility\GeneralUtility;
 
@@ -92,7 +91,7 @@ class ConfigurationReader {
 	public function __construct($mode, array $urlParameters = array()) {
 		$this->mode = $mode;
 		$this->urlParameters = $urlParameters;
-		$this->utility = GeneralUtility::makeInstance(Utility::class, $this);
+		$this->utility = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\Utility', $this);
 
 		$this->setHostnames();
 		$this->loadExtConfiguration();
