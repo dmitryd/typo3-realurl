@@ -90,7 +90,6 @@ class UrlEncoder extends EncodeDecoderBase {
 	 */
 	public function __construct() {
 		parent::__construct();
-		$this->pageRepository = $this->tsfe->sys_page;
 	}
 
 	/**
@@ -418,7 +417,7 @@ class UrlEncoder extends EncodeDecoderBase {
 			unset($this->urlParameters['MP']);
 		}
 		$rootLineUtility = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Utility\\RootlineUtility',
-			$this->urlParameters['id'], $mountPointParameter
+			$this->urlParameters['id'], $mountPointParameter, $this->pageRepository
 		);
 		/** @var \TYPO3\CMS\Core\Utility\RootlineUtility $rootLineUtility */
 		$rootLine = $rootLineUtility->get();
@@ -857,15 +856,17 @@ class UrlEncoder extends EncodeDecoderBase {
 	 * @return void
 	 */
 	protected function handleFileNameSetDefaultSuffix() {
-		$suffixValue = $this->configuration->get('fileName/defaultToHTMLsuffixOnPrev');
-		if ($suffixValue) {
-			if (!is_string($suffixValue) || strpos($suffixValue, '.') === FALSE) {
-				$suffixValue = '.html';
+		if ($this->encodedUrl) {
+			$suffixValue = $this->configuration->get('fileName/defaultToHTMLsuffixOnPrev');
+			if ($suffixValue) {
+				if (!is_string($suffixValue) || strpos($suffixValue, '.') === FALSE) {
+					$suffixValue = '.html';
+				}
+				if ($this->encodedUrl !== '') {
+					$this->encodedUrl = rtrim($this->encodedUrl, '/');
+				}
+				$this->encodedUrl .= $suffixValue;
 			}
-			if ($this->encodedUrl !== '') {
-				$this->encodedUrl = rtrim($this->encodedUrl, '/');
-			}
-			$this->encodedUrl .= $suffixValue;
 		}
 	}
 
@@ -924,7 +925,7 @@ class UrlEncoder extends EncodeDecoderBase {
 	 * Initializes configuration reader.
 	 */
 	protected function initializeConfiguration() {
-		$this->configuration = GeneralUtility::makeInstance(ConfigurationReader::class, ConfigurationReader::MODE_ENCODE, $this->urlParameters);
+		$this->configuration = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\Configuration\\ConfigurationReader', ConfigurationReader::MODE_ENCODE, $this->urlParameters);
 	}
 
 	/**
