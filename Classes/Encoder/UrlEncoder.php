@@ -489,6 +489,7 @@ class UrlEncoder extends EncodeDecoderBase {
 	 * @return void
 	 */
 	protected function encodePathComponents() {
+		$this->fixPageId();
 		$cacheEntry = $this->cache->getPathFromCacheByPageId($this->rootPageId,
 			$this->sysLanguageUid,
 			$this->urlParameters['id'],
@@ -807,6 +808,20 @@ class UrlEncoder extends EncodeDecoderBase {
 				if ($segment === '') {
 					$segment = $this->emptySegmentValue;
 				}
+			}
+		}
+	}
+
+	/**
+	 * Fixes page id if it is not a direct numeric page id.
+	 */
+	protected function fixPageId() {
+		if (!MathUtility::canBeInterpretedAsInteger($this->urlParameters['id'])) {
+			// Seems to be an alias
+			$alias = $this->urlParameters['id'];
+			$this->urlParameters['id'] = $this->pageRepository->getPageIdFromAlias($alias);
+			if ($this->urlParameters['id'] === 0) {
+				throw new \Exception(sprintf('Page with alias "%s" does not exist.', $alias), 1457183797);
 			}
 		}
 	}
