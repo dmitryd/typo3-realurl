@@ -598,7 +598,7 @@ class UrlDecoder extends EncodeDecoderBase {
 			'decodeUrlParameterBlockUsingUserFunc',
 			'decodeUrlParameterBlockUsingLookupTable',
 			'decodeUrlParameterBlockUsingValueDefault',
-			// Allways the last one!
+			// Always the last one!
 			'decodeUrlParameterBlockUseAsIs',
 		);
 
@@ -1249,7 +1249,7 @@ class UrlDecoder extends EncodeDecoderBase {
 	}
 
 	/**
-	 * Seaches for a match in tx_realurl_pathsegment with override option.
+	 * Searches for a match in tx_realurl_pathsegment with override option.
 	 *
 	 * @param array $possibleSegments
 	 * @return PathCacheEntry|null

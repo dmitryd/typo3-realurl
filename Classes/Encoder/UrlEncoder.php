@@ -555,7 +555,7 @@ class UrlEncoder extends EncodeDecoderBase {
 			'encodeUrlParameterBlockUsingUserFunc',
 			'encodeUrlParameterBlockUsingLookupTable',
 			'encodeUrlParameterBlockUsingValueDefault',
-			// Allways the last one!
+			// Always the last one!
 			'encodeUrlParameterBlockUseAsIs',
 		);
 
