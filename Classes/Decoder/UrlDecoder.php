@@ -1211,7 +1211,7 @@ class UrlDecoder extends EncodeDecoderBase {
 		$resultForCache = null;
 
 		$collectedPageIds = array(); $shortcutPages = array();
-		$disallowedDoktypes = PageRepository::DOKTYPE_RECYCLER . ',' . PageRepository::DOKTYPE_SPACER;
+		$disallowedDoktypes = PageRepository::DOKTYPE_RECYCLER;
 		$pagesEnableFields = $this->pageRepository->enableFields('pages');
 		$pages = $this->databaseConnection->exec_SELECTgetRows('*', 'pages', 'pid=' . (int)$currentPid .
 			' AND doktype NOT IN (' . $disallowedDoktypes . ')' . $pagesEnableFields
