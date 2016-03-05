@@ -63,9 +63,25 @@ class DataHandler {
 	public function processDatamap_afterDatabaseOperations($status, $tableName, $recordId, array $databaseData, /** @noinspection PhpUnusedParameterInspection */ \TYPO3\CMS\Core\DataHandling\DataHandler $dataHandler) {
 		$this->expirePathCache($status, $tableName, $recordId, $databaseData);
 		//$this->processContentUpdates($status, $tableName, $recordId, $databaseData, $dataHandler);
-		//$this->clearAutoConfiguration($tableName);
+		$this->clearAutoConfiguration($tableName, $databaseData);
 		if ($status !== 'new') {
 			$this->clearUrlCacheForAliasChanges($tableName, (int)$recordId);
+		}
+	}
+
+	/**
+	 * Clears automatic configuration when necessary. Note: we do not check if
+	 * it iss enabled. Even if now it is disabled, later it can be re-enabled
+	 * and suddenly obsolete config will be used. So we clear always.
+	 *
+	 * @param string $tableName
+	 * @param array $databaseData
+	 */
+	protected function clearAutoConfiguration($tableName, array $databaseData) {
+		if ($tableName === 'sys_domain' || $tableName === 'pages' && isset($databaseData['is_siteroot'])) {
+			if (file_exists(PATH_site . TX_REALURL_AUTOCONF_FILE)) {
+				@unlink(PATH_site . TX_REALURL_AUTOCONF_FILE);
+			}
 		}
 	}
 

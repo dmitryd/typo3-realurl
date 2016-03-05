@@ -276,15 +276,17 @@ class UrlDecoder extends EncodeDecoderBase {
 	 * @param string $segment
 	 * @param array $pages
 	 * @param array $collectedPageIds
+	 * @param array $shortcutPages
 	 * @return \DmitryDulepov\Realurl\Cache\PathCacheEntry | NULL
 	 */
-	protected function createPathCacheEntry($segment, $pages, &$collectedPageIds) {
+	protected function createPathCacheEntry($segment, $pages, array &$collectedPageIds, array &$shortcutPages) {
 		$result = NULL;
 		foreach ($pages as $page) {
 			if ($page['doktype'] == PageRepository::DOKTYPE_SHORTCUT) {
-				$page = $this->resolveShortcut($page);
+				// Value is not relevant, key is!
+				$shortcutPages[$page['uid']] = true;
 			}
-			$collectedPageIds[] = (int) $page['uid'];
+			$collectedPageIds[] = (int)$page['uid'];
 			foreach (self::$pageTitleFields as $field) {
 				if ($this->utility->convertToSafeString($page[$field]) == $segment) {
 					$result = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\Cache\\PathCacheEntry');
@@ -439,7 +441,8 @@ class UrlDecoder extends EncodeDecoderBase {
 						array_unshift($remainingPathSegments, $segment);
 						break;
 					}
-					$nextResult = $this->searchPages($currentPid, $segment);
+					$saveToCache = true;
+					$nextResult = $this->searchPages($currentPid, $segment, $saveToCache);
 					if ($nextResult) {
 						$result = $nextResult;
 						if ($this->mountPointStartPid !== $currentMountPointPid) {
@@ -450,8 +453,10 @@ class UrlDecoder extends EncodeDecoderBase {
 						}
 						$processedPathSegments[] = $segment;
 						$result->setPagePath(implode('/', $processedPathSegments));
-						// Path is valid so far, so we cache it
-						$this->putToPathCache($result);
+						if ($saveToCache) {
+							// Path is valid so far, so we cache it
+							$this->putToPathCache($result);
+						}
 					} else {
 						if ((int)$currentPid !== (int)$this->rootPageId) {
 							$currentPid = 0;
@@ -833,11 +838,12 @@ class UrlDecoder extends EncodeDecoderBase {
 	 * @param array $collectedPageIds
 	 * @param string $disallowedDoktypes
 	 * @param string $pagesEnableFields
+	 * @param array $shortcutPages
 	 * @return \DmitryDulepov\Realurl\Cache\PathCacheEntry | NULL
 	 */
-	protected function getPathCacheEntryAfterExcludedPages($segment, $pages, &$collectedPageIds, $disallowedDoktypes, $pagesEnableFields) {
+	protected function getPathCacheEntryAfterExcludedPages($segment, $pages, &$collectedPageIds, $disallowedDoktypes, $pagesEnableFields, array &$shortcutPages) {
 		$ids = array();
-		$result = array();
+		$result = null;
 		$newPages = $pages;
 
 		while ($newPages) {
@@ -852,7 +858,7 @@ class UrlDecoder extends EncodeDecoderBase {
 					' AND doktype NOT IN (' . $disallowedDoktypes . ')' . $pagesEnableFields
 				);
 
-				$result = $this->createPathCacheEntry($segment, $children, $collectedPageIds);
+				$result = $this->createPathCacheEntry($segment, $children, $collectedPageIds, $shortcutPages);
 				if ($result) {
 					break;
 				}
@@ -1197,20 +1203,22 @@ class UrlDecoder extends EncodeDecoderBase {
 	 *
 	 * @param int $currentPid
 	 * @param string $segment
+	 * @param bool $saveToCache
 	 * @return PathCacheEntry
 	 */
-	protected function searchPages($currentPid, $segment) {
-		$result = NULL;
+	protected function searchPages($currentPid, $segment, &$saveToCache) {
+		$result = null;
+		$resultForCache = null;
 
-		$collectedPageIds = array();
+		$collectedPageIds = array(); $shortcutPages = array();
 		$disallowedDoktypes = PageRepository::DOKTYPE_RECYCLER . ',' . PageRepository::DOKTYPE_SPACER;
 		$pagesEnableFields = $this->pageRepository->enableFields('pages');
 		$pages = $this->databaseConnection->exec_SELECTgetRows('*', 'pages', 'pid=' . (int)$currentPid .
 			' AND doktype NOT IN (' . $disallowedDoktypes . ')' . $pagesEnableFields
 		);
-		$result = $this->createPathCacheEntry($segment, $pages, $collectedPageIds);
+		$result = $this->createPathCacheEntry($segment, $pages, $collectedPageIds, $shortcutPages);
 		if (!$result) {
-			$result = $this->getPathCacheEntryAfterExcludedPages($segment, $pages, $collectedPageIds, $disallowedDoktypes, $pagesEnableFields);
+			$result = $this->getPathCacheEntryAfterExcludedPages($segment, $pages, $collectedPageIds, $disallowedDoktypes, $pagesEnableFields, $shortcutPages);
 		}
 
 		// We have to search overlay as well
@@ -1231,6 +1239,10 @@ class UrlDecoder extends EncodeDecoderBase {
 					}
 				}
 			}
+		}
+
+		if ($result && isset($shortcutPages[$result->getPageId()])) {
+			$saveToCache = false;
 		}
 
 		return $result;
