@@ -58,6 +58,13 @@ class PathCacheEntry {
 	protected $rootPageId = 0;
 
 	/**
+	 * Resets cache_id on cloning.
+	 */
+	public function __clone() {
+		$this->cacheId = '';
+	}
+
+	/**
 	 * @return string
 	 */
 	public function getCacheId() {
