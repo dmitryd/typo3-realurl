@@ -422,7 +422,13 @@ class UrlEncoder extends EncodeDecoderBase {
 		/** @var \TYPO3\CMS\Core\Utility\RootlineUtility $rootLineUtility */
 		$rootLine = $rootLineUtility->get();
 
-		array_pop($rootLine);
+		// Skip from the root of the tree to the first level of pages
+		while (count($rootLine) !== 0) {
+			$page = array_pop($rootLine);
+			if ($page['uid'] == $this->rootPageId) {
+				break;
+			}
+		}
 
 		if ((int)$this->originalUrlParameters['L'] > 0) {
 			$enableLanguageOverlay = TRUE;

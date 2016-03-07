@@ -56,6 +56,9 @@ class UrlDecoder extends EncodeDecoderBase {
 	/** @var int */
 	protected $detectedLanguageId = 0;
 
+	/** @var string */
+	protected $disallowedDoktypes;
+
 	/**
 	 * Indicates that the path is expired but we could not redirect because
 	 * non-expired path is missing from the path cache. In such case we do not
@@ -836,12 +839,11 @@ class UrlDecoder extends EncodeDecoderBase {
 	 * @param string $segment
 	 * @param array $pages
 	 * @param array $collectedPageIds
-	 * @param string $disallowedDoktypes
 	 * @param string $pagesEnableFields
 	 * @param array $shortcutPages
 	 * @return \DmitryDulepov\Realurl\Cache\PathCacheEntry | NULL
 	 */
-	protected function getPathCacheEntryAfterExcludedPages($segment, $pages, &$collectedPageIds, $disallowedDoktypes, $pagesEnableFields, array &$shortcutPages) {
+	protected function getPathCacheEntryAfterExcludedPages($segment, $pages, &$collectedPageIds, $pagesEnableFields, array &$shortcutPages) {
 		$ids = array();
 		$result = null;
 		$newPages = $pages;
@@ -853,9 +855,10 @@ class UrlDecoder extends EncodeDecoderBase {
 				}
 			}
 			if ($ids) {
+				// No sorting here because pages can be on any level
 				$children = $this->databaseConnection->exec_SELECTgetRows(
 					'*', 'pages', 'pid IN (' . implode(',', $ids) . ')' .
-					' AND doktype NOT IN (' . $disallowedDoktypes . ')' . $pagesEnableFields
+					' AND doktype NOT IN (' . $this->disallowedDoktypes . ')' . $pagesEnableFields
 				);
 
 				$result = $this->createPathCacheEntry($segment, $children, $collectedPageIds, $shortcutPages);
@@ -1019,6 +1022,18 @@ class UrlDecoder extends EncodeDecoderBase {
 	}
 
 	/**
+	 * Initializes the decoder.
+	 *
+	 * @throws \Exception
+	 */
+	protected function initialize() {
+		parent::initialize();
+
+		$this->disallowedDoktypes = PageRepository::DOKTYPE_RECYCLER .
+			($this->configuration->get('extconf/enableBadBehavior') ? '' : ',' . PageRepository::DOKTYPE_SPACER);
+	}
+
+	/**
 	 * Initializes configuration reader.
 	 */
 	protected function initializeConfiguration() {
@@ -1147,7 +1162,8 @@ class UrlDecoder extends EncodeDecoderBase {
 		$rows = $this->databaseConnection->exec_SELECTgetRows('uid', 'pages',
 			'tx_realurl_pathoverride=1 AND ' .
 				'tx_realurl_pathsegment=' . $this->databaseConnection->fullQuoteStr($path, 'pages') .
-				$this->pageRepository->enableFields('pages', 0, array('fe_group' => true))
+				$this->pageRepository->enableFields('pages', 0, array('fe_group' => true)),
+				'', 'sorting'
 		);
 		foreach ($rows as $row) {
 			if ($this->getRootPageIdForPage((int)$row['uid']) === $this->rootPageId) {
@@ -1211,14 +1227,14 @@ class UrlDecoder extends EncodeDecoderBase {
 		$resultForCache = null;
 
 		$collectedPageIds = array(); $shortcutPages = array();
-		$disallowedDoktypes = PageRepository::DOKTYPE_RECYCLER . ',' . PageRepository::DOKTYPE_SPACER;
 		$pagesEnableFields = $this->pageRepository->enableFields('pages', -1, array('fe_group' => true));
 		$pages = $this->databaseConnection->exec_SELECTgetRows('*', 'pages', 'pid=' . (int)$currentPid .
-			' AND doktype NOT IN (' . $disallowedDoktypes . ')' . $pagesEnableFields
+			' AND doktype NOT IN (' . $this->disallowedDoktypes . ')' . $pagesEnableFields,
+			'', 'sorting'
 		);
 		$result = $this->createPathCacheEntry($segment, $pages, $collectedPageIds, $shortcutPages);
 		if (!$result) {
-			$result = $this->getPathCacheEntryAfterExcludedPages($segment, $pages, $collectedPageIds, $disallowedDoktypes, $pagesEnableFields, $shortcutPages);
+			$result = $this->getPathCacheEntryAfterExcludedPages($segment, $pages, $collectedPageIds, $pagesEnableFields, $shortcutPages);
 		}
 
 		// We have to search overlay as well
