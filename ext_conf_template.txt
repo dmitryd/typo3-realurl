@@ -9,3 +9,6 @@ autoConfFormat = 0
 
 # cat=basic/enable; type=boolean; label=Enable devLog:Debugging-only! Required any 3rd party devLog extension
 enableDevLog = 0
+
+# cat=basic/enable; type=boolean; label=Enable certain bad behavior:Enables certain bad behavior that worked with realurl 1.x but does not work with realurl 2.x by default. Discouraged!
+enableBadBehavior = 0
