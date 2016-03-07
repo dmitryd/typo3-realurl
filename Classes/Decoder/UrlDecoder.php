@@ -853,6 +853,7 @@ class UrlDecoder extends EncodeDecoderBase {
 				}
 			}
 			if ($ids) {
+				// No sorting here because pages can be on any level
 				$children = $this->databaseConnection->exec_SELECTgetRows(
 					'*', 'pages', 'pid IN (' . implode(',', $ids) . ')' .
 					' AND doktype NOT IN (' . $disallowedDoktypes . ')' . $pagesEnableFields
@@ -1147,7 +1148,8 @@ class UrlDecoder extends EncodeDecoderBase {
 		$rows = $this->databaseConnection->exec_SELECTgetRows('uid', 'pages',
 			'tx_realurl_pathoverride=1 AND ' .
 				'tx_realurl_pathsegment=' . $this->databaseConnection->fullQuoteStr($path, 'pages') .
-				$this->pageRepository->enableFields('pages', 0, array('fe_group' => true))
+				$this->pageRepository->enableFields('pages', 0, array('fe_group' => true)),
+				'', 'sorting'
 		);
 		foreach ($rows as $row) {
 			if ($this->getRootPageIdForPage((int)$row['uid']) === $this->rootPageId) {
@@ -1214,7 +1216,8 @@ class UrlDecoder extends EncodeDecoderBase {
 		$disallowedDoktypes = PageRepository::DOKTYPE_RECYCLER . ',' . PageRepository::DOKTYPE_SPACER;
 		$pagesEnableFields = $this->pageRepository->enableFields('pages', -1, array('fe_group' => true));
 		$pages = $this->databaseConnection->exec_SELECTgetRows('*', 'pages', 'pid=' . (int)$currentPid .
-			' AND doktype NOT IN (' . $disallowedDoktypes . ')' . $pagesEnableFields
+			' AND doktype NOT IN (' . $disallowedDoktypes . ')' . $pagesEnableFields,
+			'', 'sorting'
 		);
 		$result = $this->createPathCacheEntry($segment, $pages, $collectedPageIds, $shortcutPages);
 		if (!$result) {
