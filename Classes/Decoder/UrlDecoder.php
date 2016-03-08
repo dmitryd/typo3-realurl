@@ -150,7 +150,12 @@ class UrlDecoder extends EncodeDecoderBase {
 	 * @return void
 	 */
 	protected function calculateChash(UrlCacheEntry $cacheEntry) {
-		$requestVariables = $cacheEntry->getRequestVariables();
+		$requestVariables = $_GET;
+		$decodeVariables = array();
+
+		parse_str(substr(GeneralUtility::implodeArrayForUrl('', $cacheEntry->getRequestVariables()), 1), $decodeVariables);
+
+		ArrayUtility::mergeRecursiveWithOverrule($requestVariables, $decodeVariables);
 
 		$cacheHashCalculator = GeneralUtility::makeInstance('TYPO3\\CMS\\Frontend\\Page\\CacheHashCalculator');
 		/* @var \TYPO3\CMS\Frontend\Page\CacheHashCalculator $cacheHashCalculator */
@@ -325,17 +330,15 @@ class UrlDecoder extends EncodeDecoderBase {
 			return $_SERVER['QUERY_STRING'];
 		}
 
-		$parameters = array();
-		foreach ($getVars as $var => $value) {
-			$parameters = array_merge($parameters, $this->createQueryStringParameter($value, $var));
-		}
-
 		$queryString = GeneralUtility::getIndpEnv('QUERY_STRING');
 		if ($queryString) {
-			array_push($parameters, $queryString);
+			$queryStringParameters = array();
+			parse_str($queryString, $queryStringParameters);
+			ArrayUtility::mergeRecursiveWithOverrule($queryStringParameters, $getVars);
+			$getVars = $queryStringParameters;
 		}
 
-		return implode('&', $parameters);
+		return substr(GeneralUtility::implodeArrayForUrl('', $getVars), 1);
 	}
 
 
