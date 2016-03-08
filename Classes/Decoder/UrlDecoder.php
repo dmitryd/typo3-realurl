@@ -150,7 +150,12 @@ class UrlDecoder extends EncodeDecoderBase {
 	 * @return void
 	 */
 	protected function calculateChash(UrlCacheEntry $cacheEntry) {
-		$requestVariables = $cacheEntry->getRequestVariables();
+		$requestVariables = $_GET;
+		$decodeVariables = array();
+
+		parse_str(substr(GeneralUtility::implodeArrayForUrl('', $cacheEntry->getRequestVariables()), 1), $decodeVariables);
+
+		ArrayUtility::mergeRecursiveWithOverrule($requestVariables, $decodeVariables);
 
 		$cacheHashCalculator = GeneralUtility::makeInstance('TYPO3\\CMS\\Frontend\\Page\\CacheHashCalculator');
 		/* @var \TYPO3\CMS\Frontend\Page\CacheHashCalculator $cacheHashCalculator */
@@ -325,17 +330,15 @@ class UrlDecoder extends EncodeDecoderBase {
 			return $_SERVER['QUERY_STRING'];
 		}
 
-		$parameters = array();
-		foreach ($getVars as $var => $value) {
-			$parameters = array_merge($parameters, $this->createQueryStringParameter($value, $var));
-		}
-
 		$queryString = GeneralUtility::getIndpEnv('QUERY_STRING');
 		if ($queryString) {
-			array_push($parameters, $queryString);
+			$queryStringParameters = array();
+			parse_str($queryString, $queryStringParameters);
+			ArrayUtility::mergeRecursiveWithOverrule($queryStringParameters, $getVars);
+			$getVars = $queryStringParameters;
 		}
 
-		return implode('&', $parameters);
+		return substr(GeneralUtility::implodeArrayForUrl('', $getVars), 1);
 	}
 
 
@@ -373,15 +376,17 @@ class UrlDecoder extends EncodeDecoderBase {
 	protected function decodeFixedPostVars($pageId, array &$pathSegments) {
 		$requestVariables = array();
 
-		$allPostVars = array_filter((array)$this->configuration->get('fixedPostVars'));
-		$postVars = $this->getConfigurationForPostVars($allPostVars, $pageId);
+		if (count($pathSegments) > 0) {
+			$allPostVars = array_filter((array)$this->configuration->get('fixedPostVars'));
+			$postVars = $this->getConfigurationForPostVars($allPostVars, $pageId);
 
-		$previousValue = '';
-		foreach ($postVars as $postVarConfiguration) {
-			$this->decodeSingleVariable($postVarConfiguration, $pathSegments, $requestVariables, $previousValue);
-			if (count($pathSegments) == 0) {
-				// TODO Is it correct to break here? fixedPostVars should all present!
-				break;
+			$previousValue = '';
+			foreach ($postVars as $postVarConfiguration) {
+				$this->decodeSingleVariable($postVarConfiguration, $pathSegments, $requestVariables, $previousValue);
+				if (count($pathSegments) == 0) {
+					// TODO Is it correct to break here? fixedPostVars should all present!
+					break;
+				}
 			}
 		}
 
@@ -535,18 +540,20 @@ class UrlDecoder extends EncodeDecoderBase {
 	protected function decodePreVars(array &$pathSegments) {
 		$requestVariables = array();
 
-		$preVarsList = array_filter((array)$this->configuration->get('preVars'));
+		if (count($pathSegments) > 0) {
+			$preVarsList = array_filter((array)$this->configuration->get('preVars'));
 
-		$previousValue = '';
-		foreach ($preVarsList as $preVarConfiguration) {
-			$this->decodeSingleVariable($preVarConfiguration, $pathSegments, $requestVariables, $previousValue);
-			if (count($pathSegments) == 0) {
-				break;
+			$previousValue = '';
+			foreach ($preVarsList as $preVarConfiguration) {
+				$this->decodeSingleVariable($preVarConfiguration, $pathSegments, $requestVariables, $previousValue);
+				if (count($pathSegments) == 0) {
+					break;
+				}
 			}
-		}
 
-		if (isset($requestVariables['L'])) {
-			$this->detectedLanguageId = (int)$requestVariables['L'];
+			if (isset($requestVariables['L'])) {
+				$this->detectedLanguageId = (int)$requestVariables['L'];
+			}
 		}
 
 		return $requestVariables;
@@ -562,21 +569,23 @@ class UrlDecoder extends EncodeDecoderBase {
 	protected function decodePostVarSets($pageId, array &$pathSegments) {
 		$requestVariables = array();
 
-		$allPostVarSets = array_filter((array)$this->configuration->get('postVarSets'));
-		$postVarSets = $this->getConfigurationForPostVars($allPostVarSets, $pageId);
+		if (count($pathSegments) > 0) {
+			$allPostVarSets = array_filter((array)$this->configuration->get('postVarSets'));
+			$postVarSets = $this->getConfigurationForPostVars($allPostVarSets, $pageId);
 
-		$previousValue = '';
+			$previousValue = '';
 
-		while (count($pathSegments) > 0) {
-			$postVarSetKey = array_shift($pathSegments);
-			if (!isset($postVarSets[$postVarSetKey]) || !is_array($postVarSets[$postVarSetKey])) {
-				$this->handleNonExistingPostVarSet($pageId, $postVarSetKey, $pathSegments);
-			} else {
-				$postVarSetConfiguration = $postVarSets[$postVarSetKey];
-				// Note: we do not support aliases for postVarSets!
-				if (is_array($postVarSetConfiguration)) {
-					foreach ($postVarSetConfiguration as $postVarConfiguration) {
-						$this->decodeSingleVariable($postVarConfiguration, $pathSegments, $requestVariables, $previousValue);
+			while (count($pathSegments) > 0) {
+				$postVarSetKey = array_shift($pathSegments);
+				if (!isset($postVarSets[$postVarSetKey]) || !is_array($postVarSets[$postVarSetKey])) {
+					$this->handleNonExistingPostVarSet($pageId, $postVarSetKey, $pathSegments);
+				} else {
+					$postVarSetConfiguration = $postVarSets[$postVarSetKey];
+					// Note: we do not support aliases for postVarSets!
+					if (is_array($postVarSetConfiguration)) {
+						foreach ($postVarSetConfiguration as $postVarConfiguration) {
+							$this->decodeSingleVariable($postVarConfiguration, $pathSegments, $requestVariables, $previousValue);
+						}
 					}
 				}
 			}
