@@ -1171,7 +1171,7 @@ class UrlDecoder extends EncodeDecoderBase {
 		$rows = $this->databaseConnection->exec_SELECTgetRows('uid', 'pages',
 			'tx_realurl_pathoverride=1 AND ' .
 				'tx_realurl_pathsegment=' . $this->databaseConnection->fullQuoteStr($path, 'pages') .
-				$this->pageRepository->enableFields('pages', 0, array('fe_group' => true)),
+				$this->pageRepository->enableFields('pages', 1, array('fe_group' => true)),
 				'', 'sorting'
 		);
 		foreach ($rows as $row) {
@@ -1204,8 +1204,8 @@ class UrlDecoder extends EncodeDecoderBase {
 				'pages_language_overlay.sys_language_uid=' . (int)$this->detectedLanguageId . ' AND ' .
 				'pages.tx_realurl_pathoverride=1 AND ' .
 				'pages_language_overlay.tx_realurl_pathsegment=' . $this->databaseConnection->fullQuoteStr($path, 'pages_language_overlay') .
-				$this->pageRepository->enableFields('pages_language_overlay', 0, array('fe_group' => true)) .
-				$this->pageRepository->enableFields('pages', 0, array('fe_group' => true))
+				$this->pageRepository->enableFields('pages_language_overlay', 1, array('fe_group' => true)) .
+				$this->pageRepository->enableFields('pages', 1, array('fe_group' => true))
 		);
 		foreach ($rows as $row) {
 			if ($this->getRootPageIdForPage((int)$row['uid']) === $this->rootPageId) {
@@ -1236,7 +1236,7 @@ class UrlDecoder extends EncodeDecoderBase {
 		$resultForCache = null;
 
 		$collectedPageIds = array(); $shortcutPages = array();
-		$pagesEnableFields = $this->pageRepository->enableFields('pages', -1, array('fe_group' => true));
+		$pagesEnableFields = $this->pageRepository->enableFields('pages', 1, array('fe_group' => true));
 		$pages = $this->databaseConnection->exec_SELECTgetRows('*', 'pages', 'pid=' . (int)$currentPid .
 			' AND doktype NOT IN (' . $this->disallowedDoktypes . ')' . $pagesEnableFields,
 			'', 'sorting'
@@ -1248,7 +1248,7 @@ class UrlDecoder extends EncodeDecoderBase {
 
 		// We have to search overlay as well
 		if ($this->detectedLanguageId > 0 && count($collectedPageIds) > 0) {
-			$pagesOverlayEnableFields = $this->pageRepository->enableFields('pages_language_overlay', -1, array('fe_group' => true));
+			$pagesOverlayEnableFields = $this->pageRepository->enableFields('pages_language_overlay', 1, array('fe_group' => true));
 			$pageOverlays = $this->databaseConnection->exec_SELECTgetRows('*', 'pages_language_overlay',
 				'pid IN (' . implode(',', $collectedPageIds) . ') AND sys_language_uid=' . (int)$this->detectedLanguageId .
 				$pagesOverlayEnableFields
