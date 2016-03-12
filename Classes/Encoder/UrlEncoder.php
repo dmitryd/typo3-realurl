@@ -1181,7 +1181,7 @@ class UrlEncoder extends EncodeDecoderBase {
 			if (!$cacheEntry || $cacheEntry->getSpeakingUrl() !== $this->encodedUrl) {
 				$cacheEntry = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\Cache\\UrlCacheEntry');
 				/** @var \DmitryDulepov\Realurl\Cache\UrlCacheEntry $cacheEntry */
-				$cacheEntry->setPageId($this->originalUrlParameters['id']);
+				$cacheEntry->setPageId($this->urlParameters['id']); // $this->originalUrlParameters['uid'] can be an alias, we need a number here!
 				$cacheEntry->setRequestVariables($this->originalUrlParameters);
 				$cacheEntry->setRootPageId($this->rootPageId);
 				$cacheEntry->setOriginalUrl($this->originalUrl);
