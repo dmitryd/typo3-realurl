@@ -430,13 +430,7 @@ class UrlEncoder extends EncodeDecoderBase {
 			}
 		}
 
-		if ((int)$this->originalUrlParameters['L'] > 0) {
-			$enableLanguageOverlay = TRUE;
-			$fieldList = self::$pageOverlayTitleFields;
-		} else {
-			$enableLanguageOverlay = FALSE;
-			$fieldList = self::$pageTitleFields;
-		}
+		$enableLanguageOverlay = ((int)$this->originalUrlParameters['L'] > 0);
 
 		$components = array();
 		$reversedRootLine = array_reverse($rootLine);
@@ -454,7 +448,7 @@ class UrlEncoder extends EncodeDecoderBase {
 					unset($overlay);
 				}
 			}
-			foreach ($fieldList as $field) {
+			foreach (self::$pageTitleFields as $field) {
 				if ($page[$field]) {
 					$segment = $this->utility->convertToSafeString($page[$field]);
 					if ($segment === '') {
@@ -1181,7 +1175,7 @@ class UrlEncoder extends EncodeDecoderBase {
 			if (!$cacheEntry || $cacheEntry->getSpeakingUrl() !== $this->encodedUrl) {
 				$cacheEntry = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\Cache\\UrlCacheEntry');
 				/** @var \DmitryDulepov\Realurl\Cache\UrlCacheEntry $cacheEntry */
-				$cacheEntry->setPageId($this->originalUrlParameters['id']);
+				$cacheEntry->setPageId($this->urlParameters['id']); // $this->originalUrlParameters['uid'] can be an alias, we need a number here!
 				$cacheEntry->setRequestVariables($this->originalUrlParameters);
 				$cacheEntry->setRootPageId($this->rootPageId);
 				$cacheEntry->setOriginalUrl($this->originalUrl);
