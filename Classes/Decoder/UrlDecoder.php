@@ -1248,14 +1248,10 @@ class UrlDecoder extends EncodeDecoderBase {
 
 		// We have to search overlay as well
 		if ($this->detectedLanguageId > 0 && count($collectedPageIds) > 0) {
-			$pagesOverlayEnableFields = $this->pageRepository->enableFields('pages_language_overlay', 1, array('fe_group' => true));
-			$pageOverlays = $this->databaseConnection->exec_SELECTgetRows('*', 'pages_language_overlay',
-				'pid IN (' . implode(',', $collectedPageIds) . ') AND sys_language_uid=' . (int)$this->detectedLanguageId .
-				$pagesOverlayEnableFields
-			);
-			foreach ($pageOverlays as $pageOverlay) {
-				foreach (self::$pageOverlayTitleFields as $field) {
-					if ($this->utility->convertToSafeString($pageOverlay[$field]) == $segment) {
+			foreach ($pages as $pageRecord) {
+				$pageOverlay = $this->pageRepository->getPageOverlay($pageRecord, (int)$this->detectedLanguageId);
+				foreach (self::$pageTitleFields as $field) {
+					if ($this->utility->convertToSafeString($pageOverlay[$field]) === $segment) {
 						$result = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\Cache\\PathCacheEntry');
 						/** @var \DmitryDulepov\Realurl\Cache\PathCacheEntry $cacheEntry */
 						$result->setPageId((int)$pageOverlay['pid']);

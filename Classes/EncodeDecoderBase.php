@@ -54,9 +54,6 @@ abstract class EncodeDecoderBase {
 	/** @var string */
 	protected $emptySegmentValue;
 
-	/** @var array */
-	static public $pageOverlayTitleFields = array('tx_realurl_pathsegment', 'nav_title', 'title', 'uid');
-
 	/** @var PageRepository */
 	protected $pageRepository = NULL;
 

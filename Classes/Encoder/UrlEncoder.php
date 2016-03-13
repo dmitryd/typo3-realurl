@@ -430,13 +430,7 @@ class UrlEncoder extends EncodeDecoderBase {
 			}
 		}
 
-		if ((int)$this->originalUrlParameters['L'] > 0) {
-			$enableLanguageOverlay = TRUE;
-			$fieldList = self::$pageOverlayTitleFields;
-		} else {
-			$enableLanguageOverlay = FALSE;
-			$fieldList = self::$pageTitleFields;
-		}
+		$enableLanguageOverlay = ((int)$this->originalUrlParameters['L'] > 0);
 
 		$components = array();
 		$reversedRootLine = array_reverse($rootLine);
@@ -454,7 +448,7 @@ class UrlEncoder extends EncodeDecoderBase {
 					unset($overlay);
 				}
 			}
-			foreach ($fieldList as $field) {
+			foreach (self::$pageTitleFields as $field) {
 				if ($page[$field]) {
 					$segment = $this->utility->convertToSafeString($page[$field]);
 					if ($segment === '') {
