@@ -1251,10 +1251,10 @@ class UrlDecoder extends EncodeDecoderBase {
 			foreach ($pages as $pageRecord) {
 				$pageOverlay = $this->pageRepository->getPageOverlay($pageRecord, (int)$this->detectedLanguageId);
 				foreach (self::$pageTitleFields as $field) {
-					if ($this->utility->convertToSafeString($pageOverlay[$field]) === $segment) {
+					if ($pageOverlay[$field] && $this->utility->convertToSafeString($pageOverlay[$field]) === $segment) {
 						$result = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\Cache\\PathCacheEntry');
 						/** @var \DmitryDulepov\Realurl\Cache\PathCacheEntry $cacheEntry */
-						$result->setPageId((int)$pageOverlay['pid']);
+						$result->setPageId((int)$pageOverlay['uid']);
 						$result->setLanguageId((int)$this->detectedLanguageId);
 						break;
 					}
