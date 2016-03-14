@@ -156,7 +156,7 @@ class UrlEncoder extends EncodeDecoderBase {
 		if (count($urlParameters) == 1 && isset($urlParameters['cHash'])) {
 			unset($urlParameters['cHash']);
 		} elseif (count($urlParameters) > 0) {
-			$this->encodedUrl .= '?' . trim(GeneralUtility::implodeArrayForUrl('', $urlParameters), '&');
+			$this->encodedUrl .= '?' . trim(GeneralUtility::implodeArrayForUrl('', $urlParameters, '', false, true), '&');
 		}
 	}
 
