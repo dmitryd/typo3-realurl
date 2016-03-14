@@ -767,6 +767,7 @@ class UrlEncoder extends EncodeDecoderBase {
 			$this->handleFileName();
 
 			$this->addRemainingUrlParameters();
+			$this->trimMultipleSlashes();
 
 			if ($this->encodedUrl === '') {
 				$emptyUrlReturnValue = $this->configuration->get('init/emptyUrlReturnValue') ?: '/';
@@ -1187,6 +1188,16 @@ class UrlEncoder extends EncodeDecoderBase {
 					$this->storeAliasToUrlCacheMapping($cacheId);
 				}
 			}
+		}
+	}
+
+	/**
+	 * Removes multiple slashes at the end of the encoded URL.
+	 */
+	protected function trimMultipleSlashes() {
+		$regExp = '~(/{2,})$~';
+		if (preg_match($regExp, $this->encodedUrl)) {
+			$this->encodedUrl = preg_replace($regExp, '/', $this->encodedUrl);
 		}
 	}
 }
