@@ -326,11 +326,12 @@ class UrlDecoder extends EncodeDecoderBase {
 	 * @return string
 	 */
 	protected function createQueryString($getVars) {
+		$queryString = (string)$_SERVER['QUERY_STRING'];
+
 		if (!is_array($getVars) || count($getVars) == 0) {
-			return $_SERVER['QUERY_STRING'];
+			return $queryString;
 		}
 
-		$queryString = GeneralUtility::getIndpEnv('QUERY_STRING');
 		if ($queryString) {
 			$queryStringParameters = array();
 			parse_str($queryString, $queryStringParameters);
