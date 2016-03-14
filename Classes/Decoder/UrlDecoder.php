@@ -126,8 +126,8 @@ class UrlDecoder extends EncodeDecoderBase {
 		if ($this->isProperTsfe()) {
 			$this->caller = $params['pObj'];
 
-			$this->initialize();
 			if ($this->isSpeakingUrl()) {
+				$this->initialize();
 				$this->setSpeakingUriFromSiteScript();
 				$this->callPreDecodeHooks($params);
 				$this->checkMissingSlash();
