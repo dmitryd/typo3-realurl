@@ -80,6 +80,7 @@ class ConfigurationReader {
 		'fileName/defaultToHTMLsuffixOnPrev' => FALSE,
 		'init/appendMissingSlash' => 'ifNotFile,redirect[301]',
 		'init/emptySegmentValue' => '',
+		'pagePath/spaceCharacter' => '-', // undocumented & deprecated!
 	);
 
 	/**

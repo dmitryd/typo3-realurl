@@ -296,7 +296,7 @@ class UrlDecoder extends EncodeDecoderBase {
 			}
 			$collectedPageIds[] = (int)$page['uid'];
 			foreach (self::$pageTitleFields as $field) {
-				if ($this->utility->convertToSafeString($page[$field]) == $segment) {
+				if ($this->utility->convertToSafeString($page[$field], $this->separatorCharacter) == $segment) {
 					$result = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\Cache\\PathCacheEntry');
 					/** @var \DmitryDulepov\Realurl\Cache\PathCacheEntry $result */
 					$result->setPageId((int)$page['uid']);
@@ -1252,7 +1252,7 @@ class UrlDecoder extends EncodeDecoderBase {
 			foreach ($pages as $pageRecord) {
 				$pageOverlay = $this->pageRepository->getPageOverlay($pageRecord, (int)$this->detectedLanguageId);
 				foreach (self::$pageTitleFields as $field) {
-					if ($pageOverlay[$field] && $this->utility->convertToSafeString($pageOverlay[$field]) === $segment) {
+					if ($pageOverlay[$field] && $this->utility->convertToSafeString($pageOverlay[$field], $this->separatorCharacter) === $segment) {
 						$result = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\Cache\\PathCacheEntry');
 						/** @var \DmitryDulepov\Realurl\Cache\PathCacheEntry $cacheEntry */
 						$result->setPageId((int)$pageOverlay['uid']);

@@ -249,7 +249,7 @@ class UrlEncoder extends EncodeDecoderBase {
 	 * @return string
 	 */
 	public function cleanUpAlias(array $configuration, $newAliasValue) {
-		$processedTitle = $this->utility->convertToSafeString($newAliasValue);
+		$processedTitle = $this->utility->convertToSafeString($newAliasValue, $this->separatorCharacter);
 
 		if ($configuration['useUniqueCache_conf']['encodeTitle_userProc']) {
 			$encodingConfiguration = array('strtolower' => $configuration['useUniqueCache_conf']['strtolower'], 'spaceCharacter' => $configuration['useUniqueCache_conf']['spaceCharacter']);
@@ -450,7 +450,7 @@ class UrlEncoder extends EncodeDecoderBase {
 			}
 			foreach (self::$pageTitleFields as $field) {
 				if ($page[$field]) {
-					$segment = $this->utility->convertToSafeString($page[$field]);
+					$segment = $this->utility->convertToSafeString($page[$field], $this->separatorCharacter);
 					if ($segment === '') {
 						$segment = $this->emptySegmentValue;
 					}
