@@ -53,8 +53,14 @@ class ConfigurationReader {
 	/** @var array|null */
 	protected $domainConfiguration = null;
 
+	/** @var \Exception */
+	protected $exception = null;
+
 	/** @var array */
 	protected $extConfiguration = array();
+
+	/** @var array */
+	protected $getVarsToSet = array();
 
 	/** @var string */
 	protected $hostName;
@@ -94,10 +100,15 @@ class ConfigurationReader {
 		$this->urlParameters = $urlParameters;
 		$this->utility = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\Utility', $this);
 
-		$this->setHostnames();
-		$this->loadExtConfiguration();
-		$this->performAutomaticConfiguration();
-		$this->setConfigurationForTheCurrentDomain();
+		try {
+			$this->setHostnames();
+			$this->loadExtConfiguration();
+			$this->performAutomaticConfiguration();
+			$this->setConfigurationForTheCurrentDomain();
+		}
+		catch (\Exception $exception) {
+			$this->exception = $exception;
+		}
 	}
 
 	/**
@@ -116,6 +127,29 @@ class ConfigurationReader {
 		}
 
 		return $value;
+	}
+
+	/**
+	 * Returns _GET vars to set.
+	 *
+	 * @return array
+	 */
+	public function getGetVarsToSet() {
+		return $this->getVarsToSet;
+	}
+
+	/**
+	 * If the configuration is invalid throws an exception stored earlier. This
+	 * makes sense only we are have a speaking url.
+	 *
+	 * This must be called once prior to using get() call.
+	 *
+	 * @throws \Exception
+	 */
+	public function validate() {
+		if ($this->exception !== null) {
+			throw $this->exception;
+		}
 	}
 
 	/**
@@ -172,7 +206,7 @@ class ConfigurationReader {
 				}
 				if (is_array($configuration['GETvars'])) {
 					foreach ($configuration['GETvars'] as $getVar => $getVarValue) {
-						$_GET[$getVar] = $getVarValue;
+						$this->getVarsToSet[$getVar] = $getVarValue;
 					}
 				}
 				break;

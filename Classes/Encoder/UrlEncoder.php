@@ -942,6 +942,7 @@ class UrlEncoder extends EncodeDecoderBase {
 	 */
 	protected function initializeConfiguration() {
 		$this->configuration = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\Configuration\\ConfigurationReader', ConfigurationReader::MODE_ENCODE, $this->urlParameters);
+		$this->configuration->validate();
 	}
 
 	/**

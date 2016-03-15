@@ -126,8 +126,11 @@ class UrlDecoder extends EncodeDecoderBase {
 		if ($this->isProperTsfe()) {
 			$this->caller = $params['pObj'];
 
+			$this->initialize();
+			$this->mergeGetVarsFromDomainsConfiguration();
+
 			if ($this->isSpeakingUrl()) {
-				$this->initialize();
+				$this->configuration->validate();
 				$this->setSpeakingUriFromSiteScript();
 				$this->callPreDecodeHooks($params);
 				$this->checkMissingSlash();
@@ -1092,6 +1095,13 @@ class UrlDecoder extends EncodeDecoderBase {
 		$this->fixBracketsAfterParseStr($result);
 
 		return $result;
+	}
+
+	/**
+	 * Merges $_GET from domains configuration.
+	 */
+	protected function mergeGetVarsFromDomainsConfiguration() {
+		ArrayUtility::mergeRecursiveWithOverrule($_GET, $this->configuration->getGetVarsToSet());
 	}
 
 	/**
