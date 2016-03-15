@@ -120,7 +120,6 @@ class DataHandler implements SingletonInterface {
 			while (FALSE !== ($data = $this->databaseConnection->sql_fetch_assoc($result))) {
 				if ($data['url_cache_id']) {
 					$this->cache->clearUrlCacheById($data['url_cache_id']);
-					$this->databaseConnection->exec_DELETEquery('tx_realurl_uniqalias_cache_map', 'uid=' . (int)$data['uid']);
 				}
 				if ((int)$data['expire'] === 0) {
 					$this->databaseConnection->exec_UPDATEquery('tx_realurl_uniqalias', 'uid=' . (int)$data['uid'], array(
