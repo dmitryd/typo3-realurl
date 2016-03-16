@@ -286,18 +286,19 @@ class UrlDecoder extends EncodeDecoderBase {
 	 *
 	 * @param string $segment
 	 * @param array $pages
-	 * @param array $collectedPageIds
 	 * @param array $shortcutPages
 	 * @return \DmitryDulepov\Realurl\Cache\PathCacheEntry | NULL
 	 */
-	protected function createPathCacheEntry($segment, $pages, array &$collectedPageIds, array &$shortcutPages) {
+	protected function createPathCacheEntry($segment, array $pages, array &$shortcutPages) {
 		$result = NULL;
 		foreach ($pages as $page) {
 			if ($page['doktype'] == PageRepository::DOKTYPE_SHORTCUT) {
 				// Value is not relevant, key is!
 				$shortcutPages[$page['uid']] = true;
 			}
-			$collectedPageIds[] = (int)$page['uid'];
+			if ($this->detectedLanguageId > 0 && !isset($page['_PAGES_OVERLAY'])) {
+				$page = $this->pageRepository->getPageOverlay($page, (int)$this->detectedLanguageId);
+			}
 			foreach (self::$pageTitleFields as $field) {
 				if ($this->utility->convertToSafeString($page[$field], $this->separatorCharacter) == $segment) {
 					$result = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\Cache\\PathCacheEntry');
@@ -310,11 +311,7 @@ class UrlDecoder extends EncodeDecoderBase {
 						$this->mountPointVariable = $page['mount_pid'] . '-' . $page['uid'];
 						$this->mountPointStartPid = (int)$page['mount_pid'];
 					}
-					if ($this->detectedLanguageId > 0) {
-						break;
-					} else {
-						break 2;
-					}
+					break 2;
 				}
 			}
 		}
@@ -851,12 +848,11 @@ class UrlDecoder extends EncodeDecoderBase {
 	 *
 	 * @param string $segment
 	 * @param array $pages
-	 * @param array $collectedPageIds
 	 * @param string $pagesEnableFields
 	 * @param array $shortcutPages
 	 * @return \DmitryDulepov\Realurl\Cache\PathCacheEntry | NULL
 	 */
-	protected function getPathCacheEntryAfterExcludedPages($segment, $pages, &$collectedPageIds, $pagesEnableFields, array &$shortcutPages) {
+	protected function getPathCacheEntryAfterExcludedPages($segment, array $pages, $pagesEnableFields, array &$shortcutPages) {
 		$ids = array();
 		$result = null;
 		$newPages = $pages;
@@ -879,7 +875,7 @@ class UrlDecoder extends EncodeDecoderBase {
 					}
 				}
 
-				$result = $this->createPathCacheEntry($segment, $children, $collectedPageIds, $shortcutPages);
+				$result = $this->createPathCacheEntry($segment, $children, $shortcutPages);
 				if ($result) {
 					break;
 				}
@@ -1251,31 +1247,15 @@ class UrlDecoder extends EncodeDecoderBase {
 		$result = null;
 		$resultForCache = null;
 
-		$collectedPageIds = array(); $shortcutPages = array();
+		$shortcutPages = array();
 		$pagesEnableFields = $this->pageRepository->enableFields('pages', 1, array('fe_group' => true));
 		$pages = $this->databaseConnection->exec_SELECTgetRows('*', 'pages', 'pid=' . (int)$currentPid .
 			' AND doktype NOT IN (' . $this->disallowedDoktypes . ')' . $pagesEnableFields,
 			'', 'sorting'
 		);
-		$result = $this->createPathCacheEntry($segment, $pages, $collectedPageIds, $shortcutPages);
+		$result = $this->createPathCacheEntry($segment, $pages, $shortcutPages);
 		if (!$result) {
-			$result = $this->getPathCacheEntryAfterExcludedPages($segment, $pages, $collectedPageIds, $pagesEnableFields, $shortcutPages);
-		}
-
-		// We have to search overlay as well
-		if ($this->detectedLanguageId > 0 && count($collectedPageIds) > 0) {
-			foreach ($pages as $pageRecord) {
-				$pageOverlay = $this->pageRepository->getPageOverlay($pageRecord, (int)$this->detectedLanguageId);
-				foreach (self::$pageTitleFields as $field) {
-					if ($pageOverlay[$field] && $this->utility->convertToSafeString($pageOverlay[$field], $this->separatorCharacter) === $segment) {
-						$result = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\Cache\\PathCacheEntry');
-						/** @var \DmitryDulepov\Realurl\Cache\PathCacheEntry $cacheEntry */
-						$result->setPageId((int)$pageOverlay['uid']);
-						$result->setLanguageId((int)$this->detectedLanguageId);
-						break;
-					}
-				}
-			}
+			$result = $this->getPathCacheEntryAfterExcludedPages($segment, $pages, $pagesEnableFields, $shortcutPages);
 		}
 
 		if ($result && isset($shortcutPages[$result->getPageId()])) {
