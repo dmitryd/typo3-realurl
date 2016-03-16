@@ -873,6 +873,11 @@ class UrlDecoder extends EncodeDecoderBase {
 					'*', 'pages', 'pid IN (' . implode(',', $ids) . ')' .
 					' AND doktype NOT IN (' . $this->disallowedDoktypes . ')' . $pagesEnableFields
 				);
+				if ($this->detectedLanguageId > 0) {
+					foreach ($children as &$child) {
+						$child = $this->pageRepository->getPageOverlay($child, (int)$this->detectedLanguageId);
+					}
+				}
 
 				$result = $this->createPathCacheEntry($segment, $children, $collectedPageIds, $shortcutPages);
 				if ($result) {
