@@ -1225,7 +1225,7 @@ class UrlDecoder extends EncodeDecoderBase {
 				$result = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\Cache\\PathCacheEntry');
 				/** @var \DmitryDulepov\Realurl\Cache\PathCacheEntry $result */
 				$result->setLanguageId($this->detectedLanguageId);
-				$result->setPageId((int)$row['pid']);
+				$result->setPageId((int)$row['uid']);
 				$result->setPagePath($path);
 				$result->setRootPageId($this->rootPageId);
 				break;
