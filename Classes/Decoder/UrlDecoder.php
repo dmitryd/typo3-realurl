@@ -257,27 +257,6 @@ class UrlDecoder extends EncodeDecoderBase {
 			}
 		}
 
-		if (!is_int($result)) {
-			// If no cached entry, look it up directly in the table. Note: this will
-			// most likely fail. When encoding we convert alias field to a nice
-			// looking URL segment, which usually looks differently from the field.
-			// But this is the only thing we can do without fetching each record and
-			// re-encoding the field to find the match.
-			$fieldList[] = $configuration['id_field'];
-			$row = $this->databaseConnection->exec_SELECTgetSingleRow(implode(',', $fieldList),
-				$configuration['table'],
-				$configuration['alias_field'] . '=' . $this->databaseConnection->fullQuoteStr($value, $configuration['table']) .
-				' ' . $configuration['addWhereClause']);
-			if (is_array($row)) {
-				$result = (int)$row[$configuration['id_field']];
-
-				// If localization is enabled, check if this record is a localized version and if so, find uid of the original version.
-				if ($translationEnabled && $row[$configuration['languageField']] > 0) {
-					$result = (int)$row[$configuration['transOrigPointerField']];
-				}
-			}
-		}
-
 		return $result;
 	}
 
