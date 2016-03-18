@@ -190,7 +190,7 @@ class ConfigurationReader {
 		$globalConfig = &$GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl'];
 		foreach ($globalConfig['_DOMAINS']['decode'] as $domainName => $configuration) {
 			$checkThisConfiguration = false;
-			if($GLOBALS['TSFE']->beUserLogin < 1 || !$GLOBALS['TSFE']->beUserLogin){
+			if(!$GLOBALS['TSFE']->beUserLogin){
 				if ($domainName{0} == '/') {
 					// Regular expression, match only main host name
 					if (@preg_match($domainName, $this->hostName)) {
