@@ -1376,6 +1376,8 @@ class UrlDecoder extends EncodeDecoderBase {
 	 */
 	protected function throw404($errorMessage) {
 		// TODO Write to our own error log here
+		// Register the detectedLanguageId
+		$this->caller->register['realurl_detectedLanguageId'] = $this->detectedLanguageId;
 		$this->caller->pageNotFoundAndExit($errorMessage);
 	}
 }
