@@ -53,18 +53,17 @@ abstract class BackendModuleController extends ActionController {
 	 *
 	 * @throws \TYPO3\CMS\Extbase\Mvc\Exception\StopActionException
 	 */
-	protected function forwardToLastAction() {
+	protected function forwardToLastModule() {
 		$moduleData = BackendUtility::getModuleData(
-			array('controller' => '', 'action' => ''),
+			array('controller' => ''),
 			array(),
 			'tx_realurl_web_realurlrealurl'
 		);
 		//Don't need to check if it is an array because getModuleData always returns an array. Only have to check if it's empty.
 		if (!empty($moduleData)) {
 			$currentController = $this->getControllerName();
-			$currentAction = $this->getActionName();
-			if ($moduleData['controller'] !== '' && $moduleData['action'] !== '' && ($moduleData['controller'] !== $currentController || $moduleData['action'] !== $currentAction)) {
-				$this->forward($moduleData['action'], $moduleData['controller']);
+			if ($moduleData['controller'] !== '' && $moduleData['controller'] !== $currentController) {
+				$this->forward(null, $moduleData['controller']);
 			}
 		}
 	}
@@ -98,7 +97,7 @@ abstract class BackendModuleController extends ActionController {
 		parent::processRequest($request, $response);
 
 		// We are here ony if the action did not throw exceptions (==successful and not forwarded). Save the action.
-		$this->storeLastAction();
+		$this->storeLastModuleInformation();
 	}
 
 	/**
@@ -125,7 +124,7 @@ abstract class BackendModuleController extends ActionController {
 			}
 		}
 		else {
-			$this->forwardToLastAction();
+			$this->forwardToLastModule();
 		}
 
 		parent::initializeAction();
@@ -134,11 +133,11 @@ abstract class BackendModuleController extends ActionController {
 	/**
 	 * Stores information about the last action of the module.
 	 */
-	protected function storeLastAction() {
+	protected function storeLastModuleInformation() {
 		// Probably should store also arguments (except pager?)
 		BackendUtility::getModuleData(
-			array('controller' => '', 'action' => ''),
-			array('controller' => $this->getControllerName(), 'action' => $this->getActionName()),
+			array('controller' => ''),
+			array('controller' => $this->getControllerName()),
 			'tx_realurl_web_realurlrealurl'
 		);
 	}
