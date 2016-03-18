@@ -91,7 +91,7 @@
 				<source>Path Cache</source>
 			</trans-unit>
 			<trans-unit id="module.path_cache.intro">
-				<source>This module allows you to search, edit and remove cache entries for the path cache. Generally, you should never touch entries in this cache un;ess you really know what you are doing.</source>
+				<source>This module allows you to search, edit and remove cache entries for the path cache. Generally, you should never touch entries in this cache unless you really know what you are doing.</source>
 			</trans-unit>
 			<trans-unit id="module.configuration">
 				<source>Configuration</source>

@@ -59,6 +59,16 @@ class DatabaseCache implements CacheInterface, SingletonInterface {
 	}
 
 	/**
+	 * Empties the path cache for one page.
+	 *
+	 * @param int $pageId
+	 * @return void
+	 */
+	public function clearPathCacheForPage($pageId) {
+		$this->databaseConnection->exec_DELETEquery('tx_realurl_pathcache', 'page_id=' . (int)$pageId);
+	}
+
+	/**
 	 * Empties the URL cache.
 	 *
 	 * @return mixed
@@ -76,7 +86,7 @@ class DatabaseCache implements CacheInterface, SingletonInterface {
 	 */
 	public function clearUrlCacheById($cacheId) {
 		$this->databaseConnection->exec_DELETEquery('tx_realurl_urlcache', 'uid=' . (int)$cacheId);
-		$this->databaseConnection->exec_DELETEquery('tx_realurl_uniqalias_cache_map', 'url_cache_id=\'' . (int)$cacheId . '\'');
+		$this->databaseConnection->exec_DELETEquery('tx_realurl_uniqalias_cache_map', 'url_cache_id=' . (int)$cacheId);
 	}
 
 	/**

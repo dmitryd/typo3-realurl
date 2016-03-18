@@ -127,7 +127,10 @@ class UrlDecoder extends EncodeDecoderBase {
 			$this->caller = $params['pObj'];
 
 			$this->initialize();
+			$this->mergeGetVarsFromDomainsConfiguration();
+
 			if ($this->isSpeakingUrl()) {
+				$this->configuration->validate();
 				$this->setSpeakingUriFromSiteScript();
 				$this->callPreDecodeHooks($params);
 				$this->checkMissingSlash();
@@ -283,20 +286,21 @@ class UrlDecoder extends EncodeDecoderBase {
 	 *
 	 * @param string $segment
 	 * @param array $pages
-	 * @param array $collectedPageIds
 	 * @param array $shortcutPages
 	 * @return \DmitryDulepov\Realurl\Cache\PathCacheEntry | NULL
 	 */
-	protected function createPathCacheEntry($segment, $pages, array &$collectedPageIds, array &$shortcutPages) {
+	protected function createPathCacheEntry($segment, array $pages, array &$shortcutPages) {
 		$result = NULL;
 		foreach ($pages as $page) {
 			if ($page['doktype'] == PageRepository::DOKTYPE_SHORTCUT) {
 				// Value is not relevant, key is!
 				$shortcutPages[$page['uid']] = true;
 			}
-			$collectedPageIds[] = (int)$page['uid'];
+			if ($this->detectedLanguageId > 0 && !isset($page['_PAGES_OVERLAY'])) {
+				$page = $this->pageRepository->getPageOverlay($page, (int)$this->detectedLanguageId);
+			}
 			foreach (self::$pageTitleFields as $field) {
-				if ($this->utility->convertToSafeString($page[$field]) == $segment) {
+				if ($this->utility->convertToSafeString($page[$field], $this->separatorCharacter) == $segment) {
 					$result = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\Cache\\PathCacheEntry');
 					/** @var \DmitryDulepov\Realurl\Cache\PathCacheEntry $result */
 					$result->setPageId((int)$page['uid']);
@@ -307,11 +311,7 @@ class UrlDecoder extends EncodeDecoderBase {
 						$this->mountPointVariable = $page['mount_pid'] . '-' . $page['uid'];
 						$this->mountPointStartPid = (int)$page['mount_pid'];
 					}
-					if ($this->detectedLanguageId > 0) {
-						break;
-					} else {
-						break 2;
-					}
+					break 2;
 				}
 			}
 		}
@@ -326,11 +326,12 @@ class UrlDecoder extends EncodeDecoderBase {
 	 * @return string
 	 */
 	protected function createQueryString($getVars) {
+		$queryString = (string)$_SERVER['QUERY_STRING'];
+
 		if (!is_array($getVars) || count($getVars) == 0) {
-			return $_SERVER['QUERY_STRING'];
+			return $queryString;
 		}
 
-		$queryString = GeneralUtility::getIndpEnv('QUERY_STRING');
 		if ($queryString) {
 			$queryStringParameters = array();
 			parse_str($queryString, $queryStringParameters);
@@ -847,12 +848,11 @@ class UrlDecoder extends EncodeDecoderBase {
 	 *
 	 * @param string $segment
 	 * @param array $pages
-	 * @param array $collectedPageIds
 	 * @param string $pagesEnableFields
 	 * @param array $shortcutPages
 	 * @return \DmitryDulepov\Realurl\Cache\PathCacheEntry | NULL
 	 */
-	protected function getPathCacheEntryAfterExcludedPages($segment, $pages, &$collectedPageIds, $pagesEnableFields, array &$shortcutPages) {
+	protected function getPathCacheEntryAfterExcludedPages($segment, array $pages, $pagesEnableFields, array &$shortcutPages) {
 		$ids = array();
 		$result = null;
 		$newPages = $pages;
@@ -869,8 +869,13 @@ class UrlDecoder extends EncodeDecoderBase {
 					'*', 'pages', 'pid IN (' . implode(',', $ids) . ')' .
 					' AND doktype NOT IN (' . $this->disallowedDoktypes . ')' . $pagesEnableFields
 				);
+				if ($this->detectedLanguageId > 0) {
+					foreach ($children as &$child) {
+						$child = $this->pageRepository->getPageOverlay($child, (int)$this->detectedLanguageId);
+					}
+				}
 
-				$result = $this->createPathCacheEntry($segment, $children, $collectedPageIds, $shortcutPages);
+				$result = $this->createPathCacheEntry($segment, $children, $shortcutPages);
 				if ($result) {
 					break;
 				}
@@ -1094,6 +1099,18 @@ class UrlDecoder extends EncodeDecoderBase {
 	}
 
 	/**
+	 * Merges $_GET from domains configuration if corresponding _GET parameter is
+	 * not set already.
+	 */
+	protected function mergeGetVarsFromDomainsConfiguration() {
+		foreach ($this->configuration->getGetVarsToSet() as $getVarName => $getVarValue) {
+			if (empty($_GET[$getVarName])) {
+				$_GET[$getVarName] = $getVarValue;
+			}
+		}
+	}
+
+	/**
 	 * Adds data to the path cache. Cache ntry should have page path, language id and page id set.
 	 *
 	 * @param PathCacheEntry $newCacheEntry
@@ -1213,7 +1230,7 @@ class UrlDecoder extends EncodeDecoderBase {
 				$result = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\Cache\\PathCacheEntry');
 				/** @var \DmitryDulepov\Realurl\Cache\PathCacheEntry $result */
 				$result->setLanguageId($this->detectedLanguageId);
-				$result->setPageId((int)$row['pid']);
+				$result->setPageId((int)$row['uid']);
 				$result->setPagePath($path);
 				$result->setRootPageId($this->rootPageId);
 				break;
@@ -1235,31 +1252,15 @@ class UrlDecoder extends EncodeDecoderBase {
 		$result = null;
 		$resultForCache = null;
 
-		$collectedPageIds = array(); $shortcutPages = array();
+		$shortcutPages = array();
 		$pagesEnableFields = $this->pageRepository->enableFields('pages', 1, array('fe_group' => true));
 		$pages = $this->databaseConnection->exec_SELECTgetRows('*', 'pages', 'pid=' . (int)$currentPid .
 			' AND doktype NOT IN (' . $this->disallowedDoktypes . ')' . $pagesEnableFields,
 			'', 'sorting'
 		);
-		$result = $this->createPathCacheEntry($segment, $pages, $collectedPageIds, $shortcutPages);
+		$result = $this->createPathCacheEntry($segment, $pages, $shortcutPages);
 		if (!$result) {
-			$result = $this->getPathCacheEntryAfterExcludedPages($segment, $pages, $collectedPageIds, $pagesEnableFields, $shortcutPages);
-		}
-
-		// We have to search overlay as well
-		if ($this->detectedLanguageId > 0 && count($collectedPageIds) > 0) {
-			foreach ($pages as $pageRecord) {
-				$pageOverlay = $this->pageRepository->getPageOverlay($pageRecord, (int)$this->detectedLanguageId);
-				foreach (self::$pageTitleFields as $field) {
-					if ($pageOverlay[$field] && $this->utility->convertToSafeString($pageOverlay[$field]) === $segment) {
-						$result = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\Cache\\PathCacheEntry');
-						/** @var \DmitryDulepov\Realurl\Cache\PathCacheEntry $cacheEntry */
-						$result->setPageId((int)$pageOverlay['uid']);
-						$result->setLanguageId((int)$this->detectedLanguageId);
-						break;
-					}
-				}
-			}
+			$result = $this->getPathCacheEntryAfterExcludedPages($segment, $pages, $pagesEnableFields, $shortcutPages);
 		}
 
 		if ($result && isset($shortcutPages[$result->getPageId()])) {

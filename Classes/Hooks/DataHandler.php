@@ -33,8 +33,10 @@ use DmitryDulepov\Realurl\Cache\CacheFactory;
 use DmitryDulepov\Realurl\Cache\CacheInterface;
 use DmitryDulepov\Realurl\EncodeDecoderBase;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Core\SingletonInterface;
+use TYPO3\CMS\Core\Utility\MathUtility;
 
-class DataHandler {
+class DataHandler implements SingletonInterface {
 
 	/** @var CacheInterface */
 	protected $cache;
@@ -48,6 +50,19 @@ class DataHandler {
 	public function __construct() {
 		$this->cache = CacheFactory::getCache();
 		$this->databaseConnection = $GLOBALS['TYPO3_DB'];
+	}
+
+	/**
+	 * Clears path and URL caches if the page was deleted.
+	 *
+	 * @param string $table
+	 * @param string|int $id
+	 */
+	public function processCmdmap_deleteAction($table, $id) {
+		if (($table === 'pages' || $table === 'pages_language_overlay') && MathUtility::canBeInterpretedAsInteger($id)) {
+			$this->cache->clearPathCacheForPage((int)$id);
+			$this->cache->clearUrlCacheForPage((int)$id);
+		}
 	}
 
 	/**
@@ -105,7 +120,6 @@ class DataHandler {
 			while (FALSE !== ($data = $this->databaseConnection->sql_fetch_assoc($result))) {
 				if ($data['url_cache_id']) {
 					$this->cache->clearUrlCacheById($data['url_cache_id']);
-					$this->databaseConnection->exec_DELETEquery('tx_realurl_uniqalias_cache_map', 'uid=' . (int)$data['uid']);
 				}
 				if ((int)$data['expire'] === 0) {
 					$this->databaseConnection->exec_UPDATEquery('tx_realurl_uniqalias', 'uid=' . (int)$data['uid'], array(

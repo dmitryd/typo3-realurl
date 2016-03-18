@@ -63,6 +63,13 @@ abstract class EncodeDecoderBase {
 	/** @var int */
 	protected $rootPageId;
 
+	/**
+	 * Undocumented, unsupported & deprecated.
+	 *
+	 * @var string
+	 */
+	protected $separatorCharacter;
+
 	/** @var TypoScriptFrontendController */
 	protected $tsfe;
 
@@ -200,6 +207,7 @@ abstract class EncodeDecoderBase {
 		$this->rootPageId = (int)$this->configuration->get('pagePath/rootpage_id');
 		$this->utility = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\Utility', $this->configuration);
 		$this->cache = $this->utility->getCache();
+		$this->separatorCharacter = $this->configuration->get('pagePath/spaceCharacter');
 
 		if ($this->rootPageId === 0) {
 			throw new \Exception('RealURL was not able to find the root page id for the domain "' . $this->utility->getCurrentHost() . '"', 1453732574);

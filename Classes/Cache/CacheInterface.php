@@ -46,6 +46,14 @@ interface CacheInterface {
 	public function clearExpiredPathCacheEntries();
 
 	/**
+	 * Empties the path cache for one page.
+	 *
+	 * @param int $pageId
+	 * @return void
+	 */
+	public function clearPathCacheForPage($pageId);
+
+	/**
 	 * Empties the URL cache.
 	 *
 	 * @return void

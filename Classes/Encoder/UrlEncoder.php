@@ -156,7 +156,7 @@ class UrlEncoder extends EncodeDecoderBase {
 		if (count($urlParameters) == 1 && isset($urlParameters['cHash'])) {
 			unset($urlParameters['cHash']);
 		} elseif (count($urlParameters) > 0) {
-			$this->encodedUrl .= '?' . trim(GeneralUtility::implodeArrayForUrl('', $urlParameters), '&');
+			$this->encodedUrl .= '?' . trim(GeneralUtility::implodeArrayForUrl('', $urlParameters, '', false, true), '&');
 		}
 	}
 
@@ -249,7 +249,7 @@ class UrlEncoder extends EncodeDecoderBase {
 	 * @return string
 	 */
 	public function cleanUpAlias(array $configuration, $newAliasValue) {
-		$processedTitle = $this->utility->convertToSafeString($newAliasValue);
+		$processedTitle = $this->utility->convertToSafeString($newAliasValue, $this->separatorCharacter);
 
 		if ($configuration['useUniqueCache_conf']['encodeTitle_userProc']) {
 			$encodingConfiguration = array('strtolower' => $configuration['useUniqueCache_conf']['strtolower'], 'spaceCharacter' => $configuration['useUniqueCache_conf']['spaceCharacter']);
@@ -450,7 +450,7 @@ class UrlEncoder extends EncodeDecoderBase {
 			}
 			foreach (self::$pageTitleFields as $field) {
 				if ($page[$field]) {
-					$segment = $this->utility->convertToSafeString($page[$field]);
+					$segment = $this->utility->convertToSafeString($page[$field], $this->separatorCharacter);
 					if ($segment === '') {
 						$segment = $this->emptySegmentValue;
 					}
@@ -767,6 +767,7 @@ class UrlEncoder extends EncodeDecoderBase {
 			$this->handleFileName();
 
 			$this->addRemainingUrlParameters();
+			$this->trimMultipleSlashes();
 
 			if ($this->encodedUrl === '') {
 				$emptyUrlReturnValue = $this->configuration->get('init/emptyUrlReturnValue') ?: '/';
@@ -941,6 +942,7 @@ class UrlEncoder extends EncodeDecoderBase {
 	 */
 	protected function initializeConfiguration() {
 		$this->configuration = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\Configuration\\ConfigurationReader', ConfigurationReader::MODE_ENCODE, $this->urlParameters);
+		$this->configuration->validate();
 	}
 
 	/**
@@ -1187,6 +1189,16 @@ class UrlEncoder extends EncodeDecoderBase {
 					$this->storeAliasToUrlCacheMapping($cacheId);
 				}
 			}
+		}
+	}
+
+	/**
+	 * Removes multiple slashes at the end of the encoded URL.
+	 */
+	protected function trimMultipleSlashes() {
+		$regExp = '~(/{2,})$~';
+		if (preg_match($regExp, $this->encodedUrl)) {
+			$this->encodedUrl = preg_replace($regExp, '/', $this->encodedUrl);
 		}
 	}
 }
