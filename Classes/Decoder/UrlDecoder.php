@@ -1099,10 +1099,15 @@ class UrlDecoder extends EncodeDecoderBase {
 	}
 
 	/**
-	 * Merges $_GET from domains configuration.
+	 * Merges $_GET from domains configuration if corresponding _GET parameter is
+	 * not set already.
 	 */
 	protected function mergeGetVarsFromDomainsConfiguration() {
-		ArrayUtility::mergeRecursiveWithOverrule($_GET, $this->configuration->getGetVarsToSet());
+		foreach ($this->configuration->getGetVarsToSet() as $getVarName => $getVarValue) {
+			if (empty($_GET[$getVarName])) {
+				$_GET[$getVarName] = $getVarValue;
+			}
+		}
 	}
 
 	/**
