@@ -216,7 +216,7 @@ class UrlEncoder extends EncodeDecoderBase {
 	 * @return bool
 	 */
 	protected function canEncoderExecute() {
-		return $this->isRealURLEnabled() && !$this->isBackendMode() && !$this->isInWorkspace() && $this->isTypo3Url() && $this->isProperTsfe();
+		return $this->isRealURLEnabled() && !$this->isInWorkspace() && $this->isTypo3Url() && $this->isProperTsfe();
 	}
 
 	/**
@@ -943,15 +943,6 @@ class UrlEncoder extends EncodeDecoderBase {
 	protected function initializeConfiguration() {
 		$this->configuration = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\Configuration\\ConfigurationReader', ConfigurationReader::MODE_ENCODE, $this->urlParameters);
 		$this->configuration->validate();
-	}
-
-	/**
-	 * Checks if system runs in non-live workspace
-	 *
-	 * @return boolean
-	 */
-	protected function isBackendMode() {
-		return (TYPO3_MODE == 'BE');
 	}
 
 	/**
