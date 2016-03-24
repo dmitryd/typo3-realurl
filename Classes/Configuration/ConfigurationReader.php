@@ -105,6 +105,7 @@ class ConfigurationReader {
 			$this->loadExtConfiguration();
 			$this->performAutomaticConfiguration();
 			$this->setConfigurationForTheCurrentDomain();
+			$this->postProcessConfiguration();
 		}
 		catch (\Exception $exception) {
 			$this->exception = $exception;
@@ -447,5 +448,27 @@ class ConfigurationReader {
 		$this->configuration['pagePath']['rootpage_id'] = (int)$rows[0]['uid'];
 
 		return TRUE;
+	}
+
+	/**
+	 * Runs a postprocessing hook for extensions.
+	 *
+	 * @return void
+	 */
+	protected function postProcessConfiguration() {
+		if (is_array($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['ConfigurationReader_postProc'])) {
+			foreach ($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['ConfigurationReader_postProc'] as $userFunc) {
+				$parameters = array(
+					'configuration' => &$this->configuration,
+					'domainConfiguration' => &$this->domainConfiguration,
+					'exception' => &$this->exception,
+					'extConfiguration' => &$this->extConfiguration,
+					'hostName' => &$this->hostName,
+					'urlParameters' => &$this->urlParameters,
+					'pObj' => &$this,
+				);
+				GeneralUtility::callUserFunction($userFunc, $parameters, $this);
+			}
+		}
 	}
 }
