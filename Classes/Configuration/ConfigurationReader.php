@@ -523,7 +523,7 @@ class ConfigurationReader {
 	}
 
 	/**
-	 * Runs post-processing hooks for extensions.
+	 * Runs a postprocessing hook for extensions.
 	 *
 	 * @return void
 	 */
