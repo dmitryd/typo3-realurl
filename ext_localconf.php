@@ -11,7 +11,6 @@ if (!function_exists('includeRealurlConfiguration')) {
 	 * @return void
 	 */
 	function includeRealurlConfiguration() {
-		xdebug_break();
 		$configuration = $GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['realurl'];
 		if (is_string($configuration)) {
 			$configuration = @unserialize($configuration);
