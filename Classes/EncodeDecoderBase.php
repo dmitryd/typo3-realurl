@@ -208,10 +208,6 @@ abstract class EncodeDecoderBase {
 		$this->utility = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\Utility', $this->configuration);
 		$this->cache = $this->utility->getCache();
 		$this->separatorCharacter = $this->configuration->get('pagePath/spaceCharacter');
-
-		if ($this->rootPageId === 0) {
-			throw new \Exception('RealURL was not able to find the root page id for the domain "' . $this->utility->getCurrentHost() . '"', 1453732574);
-		}
 	}
 
 	/**
