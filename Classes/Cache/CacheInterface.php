@@ -99,9 +99,10 @@ interface CacheInterface {
 	 *
 	 * @param int $rootPageId
 	 * @param string $speakingUrl
+	 * @param int $languageId
 	 * @return UrlCacheEntry|null
 	 */
-	public function getUrlFromCacheBySpeakingUrl($rootPageId, $speakingUrl);
+	public function getUrlFromCacheBySpeakingUrl($rootPageId, $speakingUrl, $languageId);
 
 	/**
 	 * Obtains non-expired (!) path from the path cache.

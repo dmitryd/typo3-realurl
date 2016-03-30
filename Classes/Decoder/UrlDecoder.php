@@ -840,7 +840,7 @@ class UrlDecoder extends EncodeDecoderBase {
 	 * @return UrlCacheEntry|null
 	 */
 	protected function getFromUrlCache($speakingUrl) {
-		return $this->cache->getUrlFromCacheBySpeakingUrl($this->rootPageId, $speakingUrl);
+		return $this->cache->getUrlFromCacheBySpeakingUrl($this->rootPageId, $speakingUrl, $this->detectedLanguageId);
 	}
 
 	/**

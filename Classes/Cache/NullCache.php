@@ -114,9 +114,10 @@ class NullCache implements CacheInterface, SingletonInterface {
 	 *
 	 * @param int $rootPageId
 	 * @param string $speakingUrl
+	 * @param int $languageId
 	 * @return UrlCacheEntry|null
 	 */
-	public function getUrlFromCacheBySpeakingUrl($rootPageId, $speakingUrl) {
+	public function getUrlFromCacheBySpeakingUrl($rootPageId, $speakingUrl, $languageId) {
 		return NULL;
 	}
 
