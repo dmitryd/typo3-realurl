@@ -192,6 +192,11 @@ class AutomaticConfigurator {
 		// Add from extensions
 		if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/realurl/class.tx_realurl_autoconfgen.php']['extensionConfiguration'])) {
 			foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/realurl/class.tx_realurl_autoconfgen.php']['extensionConfiguration'] as $extKey => $userFunc) {
+				$previousExceptionHandler = set_error_handler(function(/** @noinspection PhpUnusedParameterInspection */ $errno, $errstr) use ($userFunc) {
+					$message = 'Error while calling "' . $userFunc . '" for realurl automatic configuration. Error message: ' . $errstr;
+					error_log($message);
+				}, E_RECOVERABLE_ERROR);
+
 				$params = array(
 					'config' => $confTemplate,
 					'extKey' => $extKey
@@ -200,6 +205,8 @@ class AutomaticConfigurator {
 				if ($var) {
 					$confTemplate = $var;
 				}
+
+				set_error_handler($previousExceptionHandler, E_RECOVERABLE_ERROR);
 			}
 		}
 
@@ -215,10 +222,17 @@ class AutomaticConfigurator {
 	protected function postProcessConfiguration(array &$configuration) {
 		if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/realurl/class.tx_realurl_autoconfgen.php']['postProcessConfiguration'])) {
 			foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/realurl/class.tx_realurl_autoconfgen.php']['postProcessConfiguration'] as $userFunc) {
+				$previousExceptionHandler = set_error_handler(function(/** @noinspection PhpUnusedParameterInspection */ $errno, $errstr) use ($userFunc) {
+					$message = 'Error while calling "' . $userFunc . '" for post processing realurl configuration. Error message: ' . $errstr;
+					error_log($message);
+				}, E_RECOVERABLE_ERROR);
+
 				$parameters = array(
 					'config' => &$configuration,
 				);
 				GeneralUtility::callUserFunction($userFunc, $parameters, $this);
+
+				set_error_handler($previousExceptionHandler, E_RECOVERABLE_ERROR);
 			}
 		}
 	}
