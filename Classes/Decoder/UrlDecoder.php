@@ -123,7 +123,7 @@ class UrlDecoder extends EncodeDecoderBase {
 	 * @return void
 	 */
 	public function decodeUrl(array $params) {
-		if ($this->isProperTsfe()) {
+		if ($this->canDecoderExecute()) {
 			$this->caller = $params['pObj'];
 
 			$this->initialize();
@@ -186,6 +186,15 @@ class UrlDecoder extends EncodeDecoderBase {
 				GeneralUtility::callUserFunction($userFunc, $hookParams, $this);
 			}
 		}
+	}
+
+	/**
+	 * Checks if the decoder can execute.
+	 *
+	 * @return bool
+	 */
+	protected function canDecoderExecute() {
+		return $this->isProperTsfe() && !$this->isInWorkspace();
 	}
 
 	/**
