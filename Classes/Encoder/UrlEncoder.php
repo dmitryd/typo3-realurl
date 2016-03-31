@@ -946,19 +946,6 @@ class UrlEncoder extends EncodeDecoderBase {
 	}
 
 	/**
-	 * Checks if system runs in non-live workspace
-	 *
-	 * @return boolean
-	 */
-	protected function isInWorkspace() {
-		$result = false;
-		if ($this->tsfe->beUserLogin) {
-			$result = ($GLOBALS['BE_USER']->workspace !== 0);
-		}
-		return $result;
-	}
-
-	/**
 	 * Checks if TSFE is initialized correctly.
 	 *
 	 * @return bool

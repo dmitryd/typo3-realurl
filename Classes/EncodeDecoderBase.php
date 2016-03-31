@@ -211,6 +211,19 @@ abstract class EncodeDecoderBase {
 	}
 
 	/**
+	 * Checks if system runs in non-live workspace
+	 *
+	 * @return boolean
+	 */
+	protected function isInWorkspace() {
+		$result = false;
+		if ($this->tsfe->beUserLogin) {
+			$result = ($GLOBALS['BE_USER']->workspace !== 0);
+		}
+		return $result;
+	}
+
+	/**
 	 * Sorts the array deeply.
 	 *
 	 * @param array $pathParts
