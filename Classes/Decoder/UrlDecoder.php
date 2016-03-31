@@ -499,7 +499,68 @@ class UrlDecoder extends EncodeDecoderBase {
 			$this->throw404('Cannot decode "' . implode('/', $pathSegments) . '"');
 		}
 
-		return $result ? $result->getPageId() : ((int)$currentPid === (int)$this->rootPageId ? $currentPid : 0);
+		$targetPid = $result ? $result->getPageId() : ((int)$currentPid === (int)$this->rootPageId ? $currentPid : 0);
+		$return = $this->handleShortcutTargetPage($targetPid);
+
+		return $return;
+	}
+
+	/**
+	 * Tries to find shortcut page for targetPid
+	 *
+	 * @param int $targetPid
+	 * @return int
+	 */
+	protected function handleShortcutTargetPage($targetPid) {
+
+		$targetPage = $this->pageRepository->getPage($targetPid);
+
+		$dokType = (int)$targetPage['doktype'];
+		$shortcutMode = (int)$targetPage['shortcut_mode'];
+
+		if ($dokType === PageRepository::DOKTYPE_SHORTCUT && ($targetPage['shortcut'] || $shortcutMode)) {
+			if ($shortcutMode === PageRepository::SHORTCUT_MODE_NONE) {
+				// No shortcut_mode set, so target is directly set in $page['shortcut']
+				$searchField = 'uid';
+				$searchUid = (int)$targetPage['shortcut'];
+			} elseif ($shortcutMode === PageRepository::SHORTCUT_MODE_FIRST_SUBPAGE || $shortcutMode === PageRepository::SHORTCUT_MODE_RANDOM_SUBPAGE) {
+				// Check subpages - first subpage or random subpage
+				$searchField = 'pid';
+				// If a shortcut mode is set and no valid page is given to select subpags
+				// from use the actual page.
+				$searchUid = (int)$targetPage['shortcut'] ?: $targetPage['uid'];
+			} elseif ($shortcutMode === PageRepository::SHORTCUT_MODE_PARENT_PAGE) {
+				// Shortcut to parent page
+				$searchField = 'uid';
+				$searchUid = $targetPage['pid'];
+			} else {
+				$searchField = '';
+				$searchUid = 0;
+			}
+
+			$whereStatement = $searchField . '=' . $searchUid
+				. $this->pageRepository->where_hid_del
+				. $this->pageRepository->where_groupAccess
+				. ' ' . $additionalWhereClause;
+
+			$row = $GLOBALS['TYPO3_DB']->exec_SELECTgetSingleRow(
+				'uid',
+				'pages',
+				$whereStatement,
+				'',
+				'sorting'
+			);
+
+			if (is_array($row)) {
+				$targetPid = $row['uid'];
+			} else {
+				// @TODO Exception ?!
+			}
+		} elseif ($dokType === PageRepository::DOKTYPE_SHORTCUT) {
+			// @TODO Exception ?!
+		}
+
+		return $targetPid;
 	}
 
 	/**
