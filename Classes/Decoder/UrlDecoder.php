@@ -1122,6 +1122,7 @@ class UrlDecoder extends EncodeDecoderBase {
 		if (!$cacheEntry) {
 			$cacheEntry = $newCacheEntry;
 			$cacheEntry->setRootPageId($this->rootPageId);
+			$cacheEntry->setLanguageId($this->detectedLanguageId);
 		}
 		if ($cacheEntry->getExpiration() !== 0) {
 			$cacheEntry->setExpiration(0);
