@@ -625,7 +625,7 @@ class tx_realurl_advanced {
 					$segTitleFieldArray = $this->apiWrapper->trimExplode(',', $this->conf['segTitleFieldList'] ? $this->conf['segTitleFieldList'] : TX_REALURL_SEGTITLEFIELDLIST_DEFAULT, 1);
 					$theTitle = '';
 					foreach ($segTitleFieldArray as $fieldName) {
-						if ($page[$fieldName]) {
+						if (isset($page[$fieldName]) && $page[$fieldName] !== '') {
 							$theTitle = $page[$fieldName];
 							break;
 						}
@@ -1078,7 +1078,7 @@ class tx_realurl_advanced {
 				// otherwise they will never be found
 				$uidTrack[$row['uid']] = $row;
 				foreach ($segTitleFieldArray as $fieldName) {
-					if ($row[$fieldName]) {
+					if (isset($row[$fieldName]) && $row[$fieldName] !== '') {
 						$encodedTitle = $this->encodeTitle($row[$fieldName]);
 						if (!isset($titles[$fieldName][$encodedTitle])) {
 							$titles[$fieldName][$encodedTitle] = $row['uid'];
