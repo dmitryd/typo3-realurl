@@ -55,13 +55,3 @@ if (!isset($GLOBALS['TCA']['pages']['columns']['tx_realurl_pathsegment'])) {
 	);
 
 }
-
-// Make sure that no same pages titles exist on the page.
-$GLOBALS['TCA']['pages']['columns']['title']['config']['eval'] =
-	isset($GLOBALS['TCA']['pages']['columns']['title']['config']['eval']) ?
-		$GLOBALS['TCA']['pages']['columns']['title']['config']['eval'] .= ',uniqueInPid' :
-		'uniqueInPid';
-$GLOBALS['TCA']['pages']['columns']['nav_title']['config']['eval'] =
-	isset($GLOBALS['TCA']['pages']['columns']['nav_title']['config']['eval']) ?
-		$GLOBALS['TCA']['pages']['columns']['nav_title']['config']['eval'] .= ',uniqueInPid' :
-		'uniqueInPid';
