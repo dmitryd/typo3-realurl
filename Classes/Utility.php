@@ -103,21 +103,26 @@ class Utility {
 	 * @return string
 	 */
 	public function getCurrentHost() {
-		$currentHost = GeneralUtility::getIndpEnv('HTTP_HOST');
+		static $cachedHost = null;
 
-		// Call user hooks
-		if (is_array($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['getHost'])) {
-			foreach($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['getHost'] as $userFunc) {
-				$hookParams = array(
-					'host' => $currentHost,
-				);
-				$newHost = GeneralUtility::callUserFunction($userFunc, $hookParams, $this);
-				if (!empty($newHost) && is_string($newHost)) {
-					$currentHost = $newHost;
+		if ($cachedHost === null) {
+			$currentHost = (string)GeneralUtility::getIndpEnv('HTTP_HOST');
+
+			// Call user hooks
+			if (is_array($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['getHost'])) {
+				foreach($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['getHost'] as $userFunc) {
+					$hookParams = array(
+						'host' => $currentHost,
+					);
+					$newHost = GeneralUtility::callUserFunction($userFunc, $hookParams, $this);
+					if (!empty($newHost) && is_string($newHost)) {
+						$currentHost = $newHost;
+					}
 				}
 			}
+			$cachedHost = $currentHost;
 		}
 
-		return $currentHost;
+		return $cachedHost;
 	}
 }

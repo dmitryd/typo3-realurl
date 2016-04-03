@@ -125,7 +125,7 @@ class DatabaseCache implements CacheInterface, SingletonInterface {
 		$cacheEntry = NULL;
 
 		$row = $this->databaseConnection->exec_SELECTgetSingleRow('*', 'tx_realurl_urlcache',
-			'rootpage_id=' . $rootPageId . ' AND ' .
+			'rootpage_id=' . (int)$rootPageId . ' AND ' .
 				'original_url=' . $this->databaseConnection->fullQuoteStr($originalUrl, 'tx_realurl_urlcache')
 		);
 		if (is_array($row)) {
@@ -157,15 +157,39 @@ class DatabaseCache implements CacheInterface, SingletonInterface {
 	 *
 	 * @param int $rootPageId
 	 * @param string $speakingUrl
+	 * @param int $languageId
 	 * @return UrlCacheEntry|null
 	 */
-	public function getUrlFromCacheBySpeakingUrl($rootPageId, $speakingUrl) {
+	public function getUrlFromCacheBySpeakingUrl($rootPageId, $speakingUrl, $languageId) {
 		$cacheEntry = NULL;
 
-		$row = $this->databaseConnection->exec_SELECTgetSingleRow('*', 'tx_realurl_urlcache',
-			'rootpage_id=' . $rootPageId . ' AND ' .
+		$rows = $this->databaseConnection->exec_SELECTgetRows('*', 'tx_realurl_urlcache',
+			'rootpage_id=' . (int)$rootPageId . ' AND ' .
 				'speaking_url=' . $this->databaseConnection->fullQuoteStr($speakingUrl, 'tx_realurl_urlcache')
 		);
+
+		if (count($rows) === 1) {
+			$row = reset($rows);
+		}
+		else {
+			// See #103
+			$row = null;
+			foreach ($rows as $rowCandidate) {
+				$variables = @json_decode($rowCandidate['request_variables'], TRUE);
+				if (is_array($variables) && isset($variables['L'])) {
+					if ((int)$variables['L'] === (int)$languageId) {
+						// Found language!
+						$row = $rowCandidate;
+						break;
+					}
+					elseif ((int)$variables['L'] === 0) {
+						// Default language
+						$row = $rowCandidate;
+					}
+				}
+			}
+		}
+
 		if (is_array($row)) {
 			$cacheEntry = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\Cache\\UrlCacheEntry');
 			/** @var \DmitryDulepov\Realurl\Cache\UrlCacheEntry $cacheEntry */
@@ -174,7 +198,7 @@ class DatabaseCache implements CacheInterface, SingletonInterface {
 			$cacheEntry->setRootPageId($row['rootpage_id']);
 			$cacheEntry->setOriginalUrl($row['original_url']);
 			$cacheEntry->setSpeakingUrl($speakingUrl);
-			$requestVariables = json_decode($row['request_variables'], TRUE);
+			$requestVariables = @json_decode($row['request_variables'], TRUE);
 			// TODO Log a problem here because it must be an array always
 			$cacheEntry->setRequestVariables(is_array($requestVariables) ? $requestVariables : array());
 

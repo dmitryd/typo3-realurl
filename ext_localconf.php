@@ -16,18 +16,20 @@ if (!function_exists('includeRealurlConfiguration')) {
 			$configuration = @unserialize($configuration);
 		}
 
-		if (is_array($configuration)) {
-			$realurlConfigurationFile = trim($configuration['configFile']);
-			if ($realurlConfigurationFile && @file_exists(PATH_site . $realurlConfigurationFile)) {
-				/** @noinspection PhpIncludeInspection */
-				require_once(PATH_site . $realurlConfigurationFile);
-			}
-			unset($realurlConfigurationFile);
+		if (!is_array($configuration)) {
+			$configuration = array(
+				'configFile' => 'typo3conf/realurl_conf.php',
+				'enableAutoConf' => true,
+			);
+		}
 
-			if (!isset($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']) && $configuration['enableAutoConf']) {
-				/** @noinspection PhpIncludeInspection */
-				@include_once(PATH_site . TX_REALURL_AUTOCONF_FILE);
-			}
+		$realurlConfigurationFile = trim($configuration['configFile']);
+		if ($realurlConfigurationFile && @file_exists(PATH_site . $realurlConfigurationFile)) {
+			\TYPO3\CMS\Core\Utility\GeneralUtility::requireOnce(PATH_site . $realurlConfigurationFile);
+		}
+		elseif ($configuration['enableAutoConf']) {
+			/** @noinspection PhpIncludeInspection */
+			@include_once(PATH_site . TX_REALURL_AUTOCONF_FILE);
 		}
 	}
 }

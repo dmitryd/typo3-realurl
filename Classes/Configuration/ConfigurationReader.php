@@ -31,6 +31,7 @@ namespace DmitryDulepov\Realurl\Configuration;
 
 use \TYPO3\CMS\Backend\Utility\BackendUtility;
 use \TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Core\Utility\MathUtility;
 
 /**
  * This class provides configuration loading and access for the rest of the
@@ -326,7 +327,9 @@ class ConfigurationReader {
 				$this->updateConfigurationForEncoding($configurationKey);
 			}
 
-			$this->configuration['domains'] = $this->domainConfiguration;
+			if (is_array($this->domainConfiguration)) {
+				$this->configuration['domains'] = $this->domainConfiguration;
+			}
 			unset($this->domainConfiguration);
 		}
 	}
@@ -371,7 +374,11 @@ class ConfigurationReader {
 	 * @return void
 	 */
 	protected function setHostnames() {
-		$this->alternativeHostName = $this->hostName = $this->utility->getCurrentHost();
+		if ($this->mode == self::MODE_DECODE) {
+			$this->setHostnamesForDecoding();
+		} else {
+			$this->setHostnamesForEncoding();
+		}
 		if (substr($this->hostName, 0, 4) === 'www.') {
 			$this->alternativeHostName = substr($this->hostName, 4);
 		} elseif (substr_count($this->hostName, '.') === 1) {
@@ -380,13 +387,59 @@ class ConfigurationReader {
 	}
 
 	/**
+	 * Sets host name variables for decoding.
+	 *
+	 * @return void
+	 */
+	protected function setHostnamesForDecoding() {
+		$this->alternativeHostName = $this->hostName = $this->utility->getCurrentHost();
+	}
+
+	/**
+	 * Sets host name variables for encoding.
+	 *
+	 * @return void
+	 */
+	protected function setHostnamesForEncoding() {
+		if ($GLOBALS['TSFE']->config['config']['typolinkEnableLinksAcrossDomains']) {
+			// We have to find proper domain for the id.
+			$pageRepository = $GLOBALS['TSFE']->sys_page;
+			/** @var \TYPO3\CMS\Frontend\Page\PageRepository $pageRepository */
+			$id = $this->urlParameters['id'];
+			if (!MathUtility::canBeInterpretedAsInteger($id)) {
+				$id = $pageRepository->getPageIdFromAlias($this->urlParameters['id']);
+			}
+			$MP = isset($this->urlParameters['MP']) ? $this->urlParameters['MP'] : '';
+			$rootline = $pageRepository->getRootLine($id, $MP);
+			$globalConfig = &$GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl'];
+			foreach ($rootline as $page) {
+				foreach ($globalConfig as $domainName => $configuration) {
+					if ($domainName !== '_DOMAINS' && is_array($configuration) && isset($configuration['pagePath']) && is_array($configuration['pagePath']) && isset($configuration['pagePath']['rootpage_id'])) {
+						if ((int)$configuration['pagePath']['rootpage_id'] === (int)$page['uid']) {
+							$this->hostName = $domainName;
+							break 2;
+						}
+					}
+				}
+			}
+		}
+		if (empty($this->hostName)) {
+			$this->alternativeHostName = $this->hostName = $this->utility->getCurrentHost();
+		}
+	}
+
+	/**
 	 * Sets the root page id from the current host if that is not set already.
 	 *
 	 * @return void
+	 * @throws \Exception
 	 */
 	protected function setRootPageId() {
 		if (!isset($this->configuration['pagePath']['rootpage_id'])) {
 			$this->setRootPageIdFromDomainRecord() || $this->setRootPageIdFromRootFlag() || $this->setRootPageIdFromTopLevelPages();
+		}
+		if ((int)$this->configuration['pagePath']['rootpage_id'] === 0) {
+			throw new \Exception('RealURL was not able to find the root page id for the domain "' . $this->utility->getCurrentHost() . '"', 1453732574);
 		}
 	}
 

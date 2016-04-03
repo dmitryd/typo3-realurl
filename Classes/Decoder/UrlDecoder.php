@@ -123,7 +123,7 @@ class UrlDecoder extends EncodeDecoderBase {
 	 * @return void
 	 */
 	public function decodeUrl(array $params) {
-		if ($this->isProperTsfe()) {
+		if ($this->canDecoderExecute()) {
 			$this->caller = $params['pObj'];
 
 			$this->initialize();
@@ -186,6 +186,15 @@ class UrlDecoder extends EncodeDecoderBase {
 				GeneralUtility::callUserFunction($userFunc, $hookParams, $this);
 			}
 		}
+	}
+
+	/**
+	 * Checks if the decoder can execute.
+	 *
+	 * @return bool
+	 */
+	protected function canDecoderExecute() {
+		return $this->isProperTsfe() && !$this->isInWorkspace();
 	}
 
 	/**
@@ -296,11 +305,18 @@ class UrlDecoder extends EncodeDecoderBase {
 				// Value is not relevant, key is!
 				$shortcutPages[$page['uid']] = true;
 			}
+			while ($page['doktype'] == PageRepository::DOKTYPE_MOUNTPOINT && $page['mount_pid_ol'] == 1) {
+				$originalUid = $page['uid'];
+				$page = $this->pageRepository->getPage($page['mount_pid']);
+				if (!is_array($page)) {
+					$this->tsfe->pageNotFoundAndExit('[realurl] Broken mount point at page with uid=' . $originalUid);
+				}
+			}
 			if ($this->detectedLanguageId > 0 && !isset($page['_PAGES_OVERLAY'])) {
 				$page = $this->pageRepository->getPageOverlay($page, (int)$this->detectedLanguageId);
 			}
 			foreach (self::$pageTitleFields as $field) {
-				if ($this->utility->convertToSafeString($page[$field], $this->separatorCharacter) == $segment) {
+				if (isset($page[$field]) && $page[$field] !== '' && $this->utility->convertToSafeString($page[$field], $this->separatorCharacter) === $segment) {
 					$result = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\Cache\\PathCacheEntry');
 					/** @var \DmitryDulepov\Realurl\Cache\PathCacheEntry $result */
 					$result->setPageId((int)$page['uid']);
@@ -782,9 +798,12 @@ class UrlDecoder extends EncodeDecoderBase {
 	 * @return UrlCacheEntry with only pageId and requestVariables filled in
 	 */
 	protected function doDecoding($path) {
-		// Remember: urldecode(), not rawurldecode()!
-		$path = trim(urldecode($path), '/');
+		$path = trim($path, '/');
 		$pathSegments = $path ? explode('/', $path) : array();
+		// Remember: urldecode(), not rawurldecode()!
+		foreach($pathSegments as $id => $value) {
+			$pathSegments[$id] = urldecode($value);
+		}
 
 		$requestVariables = array();
 
@@ -840,7 +859,7 @@ class UrlDecoder extends EncodeDecoderBase {
 	 * @return UrlCacheEntry|null
 	 */
 	protected function getFromUrlCache($speakingUrl) {
-		return $this->cache->getUrlFromCacheBySpeakingUrl($this->rootPageId, $speakingUrl);
+		return $this->cache->getUrlFromCacheBySpeakingUrl($this->rootPageId, $speakingUrl, $this->detectedLanguageId);
 	}
 
 	/**
@@ -1122,6 +1141,7 @@ class UrlDecoder extends EncodeDecoderBase {
 		if (!$cacheEntry) {
 			$cacheEntry = $newCacheEntry;
 			$cacheEntry->setRootPageId($this->rootPageId);
+			$cacheEntry->setLanguageId($this->detectedLanguageId);
 		}
 		if ($cacheEntry->getExpiration() !== 0) {
 			$cacheEntry->setExpiration(0);
