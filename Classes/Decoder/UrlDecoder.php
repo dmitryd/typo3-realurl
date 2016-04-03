@@ -309,7 +309,7 @@ class UrlDecoder extends EncodeDecoderBase {
 				$page = $this->pageRepository->getPageOverlay($page, (int)$this->detectedLanguageId);
 			}
 			foreach (self::$pageTitleFields as $field) {
-				if ($this->utility->convertToSafeString($page[$field], $this->separatorCharacter) == $segment) {
+				if (isset($page[$field]) && $page[$field] !== '' && $this->utility->convertToSafeString($page[$field], $this->separatorCharacter) === $segment) {
 					$result = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\Cache\\PathCacheEntry');
 					/** @var \DmitryDulepov\Realurl\Cache\PathCacheEntry $result */
 					$result->setPageId((int)$page['uid']);
