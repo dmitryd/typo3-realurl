@@ -326,7 +326,9 @@ class ConfigurationReader {
 				$this->updateConfigurationForEncoding($configurationKey);
 			}
 
-			$this->configuration['domains'] = $this->domainConfiguration;
+			if (is_array($this->domainConfiguration)) {
+				$this->configuration['domains'] = $this->domainConfiguration;
+			}
 			unset($this->domainConfiguration);
 		}
 	}
