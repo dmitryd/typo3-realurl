@@ -449,7 +449,7 @@ class UrlEncoder extends EncodeDecoderBase {
 				}
 			}
 			foreach (self::$pageTitleFields as $field) {
-				if ($page[$field]) {
+				if (isset($page[$field]) && $page[$field] !== '') {
 					$segment = $this->utility->convertToSafeString($page[$field], $this->separatorCharacter);
 					if ($segment === '') {
 						$segment = $this->emptySegmentValue;
