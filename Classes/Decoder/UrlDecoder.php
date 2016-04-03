@@ -305,6 +305,13 @@ class UrlDecoder extends EncodeDecoderBase {
 				// Value is not relevant, key is!
 				$shortcutPages[$page['uid']] = true;
 			}
+			while ($page['doktype'] == PageRepository::DOKTYPE_MOUNTPOINT && $page['mount_pid_ol'] == 1) {
+				$originalUid = $page['uid'];
+				$page = $this->pageRepository->getPage($page['mount_pid']);
+				if (!is_array($page)) {
+					$this->tsfe->pageNotFoundAndExit('[realurl] Broken mount point at page with uid=' . $originalUid);
+				}
+			}
 			if ($this->detectedLanguageId > 0 && !isset($page['_PAGES_OVERLAY'])) {
 				$page = $this->pageRepository->getPageOverlay($page, (int)$this->detectedLanguageId);
 			}
