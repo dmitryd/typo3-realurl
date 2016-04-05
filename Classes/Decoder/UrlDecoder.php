@@ -1396,6 +1396,10 @@ class UrlDecoder extends EncodeDecoderBase {
 	 */
 	protected function throw404($errorMessage) {
 		// TODO Write to our own error log here
+
+		// Set language to allow localized error pages
+		$_GET['L'] = $this->detectedLanguageId;
+
 		$this->caller->pageNotFoundAndExit($errorMessage);
 	}
 }
