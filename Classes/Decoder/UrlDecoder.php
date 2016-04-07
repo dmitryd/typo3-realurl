@@ -1062,8 +1062,7 @@ class UrlDecoder extends EncodeDecoderBase {
 	protected function initialize() {
 		parent::initialize();
 
-		$this->disallowedDoktypes = PageRepository::DOKTYPE_RECYCLER .
-			($this->configuration->get('extconf/enableBadBehavior') ? '' : ',' . PageRepository::DOKTYPE_SPACER);
+		$this->disallowedDoktypes = PageRepository::DOKTYPE_RECYCLER;
 	}
 
 	/**
