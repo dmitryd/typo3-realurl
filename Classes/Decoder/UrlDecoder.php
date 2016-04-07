@@ -1082,7 +1082,7 @@ class UrlDecoder extends EncodeDecoderBase {
 	protected function makeRealPhpArrayFromRequestVars(array $requestVariables) {
 		$result = array();
 
-		parse_str(trim(GeneralUtility::implodeArrayForUrl('', $requestVariables), '&'), $result);
+		parse_str($this->createQueryStringFromParameters($requestVariables), $result);
 		$this->fixBracketsAfterParseStr($result);
 
 		return $result;
@@ -1109,7 +1109,7 @@ class UrlDecoder extends EncodeDecoderBase {
 	 */
 	protected function mergeWithExistingGetVars(array &$requestVariables) {
 		if (count($_GET) > 0) {
-			$flatGetArray = $this->parseQueryStringParameters(substr(GeneralUtility::implodeArrayForUrl('', $_GET), 1));
+			$flatGetArray = $this->parseQueryStringParameters($this->createQueryStringFromParameters($_GET));
 			ArrayUtility::mergeRecursiveWithOverrule($requestVariables, $flatGetArray);
 		}
 	}
@@ -1166,7 +1166,7 @@ class UrlDecoder extends EncodeDecoderBase {
 			$requestVariables['id'] = $cacheEntry->getPageId();
 			$this->sortArrayDeep($requestVariables);
 
-			$originalUrl = substr(GeneralUtility::implodeArrayForUrl('', $requestVariables), 1);
+			$originalUrl = $this->createQueryStringFromParameters($requestVariables);
 
 			if ($this->canCacheUrl($originalUrl)) {
 				$cacheEntry->setOriginalUrl($originalUrl);
@@ -1370,7 +1370,7 @@ class UrlDecoder extends EncodeDecoderBase {
 		if ($cacheEntry) {
 			$requestVariables = $cacheEntry->getRequestVariables();
 			$requestVariables['id'] = $cacheEntry->getPageId();
-			$_SERVER['QUERY_STRING'] = substr(GeneralUtility::implodeArrayForUrl('', $requestVariables, ''), 1);
+			$_SERVER['QUERY_STRING'] = $this->createQueryStringFromParameters($requestVariables);
 
 			// Setting info in TSFE
 			$this->caller->mergingWithGetVars($this->makeRealPhpArrayFromRequestVars($requestVariables));

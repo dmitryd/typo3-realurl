@@ -102,6 +102,17 @@ abstract class EncodeDecoderBase {
 	}
 
 	/**
+	 * Creates a query string (without preceeding question mark) from
+	 * parameters.
+	 *
+	 * @param array $parameters
+	 * @return mixed
+	 */
+	protected function createQueryStringFromParameters(array $parameters) {
+		return substr(GeneralUtility::implodeArrayForUrl('', $parameters), 1);
+	}
+
+	/**
 	 * Checks conditions for xxxVar.
 	 *
 	 * @param array $conditionConfiguration
@@ -188,9 +199,9 @@ abstract class EncodeDecoderBase {
 		$urlParts = parse_url($url);
 		$sortedUrl = $urlParts['path'];
 		if ($urlParts['query']) {
-			parse_str($url, $pathParts);
-			$this->sortArrayDeep($pathParts);
-			$sortedUrl .= '?' . ltrim(GeneralUtility::implodeArrayForUrl('', $pathParts), '&');
+			parse_str($url, $parameters);
+			$this->sortArrayDeep($parameters);
+			$sortedUrl .= '?' . $this->createQueryStringFromParameters($parameters);
 		}
 
 		return $sortedUrl;

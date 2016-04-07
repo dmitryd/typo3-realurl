@@ -994,7 +994,7 @@ class UrlEncoder extends EncodeDecoderBase {
 
 		$sortedUrlParameters = $this->urlParameters;
 		$this->sortArrayDeep($sortedUrlParameters);
-		$this->originalUrl = trim(GeneralUtility::implodeArrayForUrl('', $sortedUrlParameters), '&');
+		$this->originalUrl = $this->createQueryStringFromParameters($sortedUrlParameters);
 	}
 
 	/**
