@@ -49,7 +49,7 @@ class AliasesController extends BackendModuleController {
 	protected $repository;
 
 	/** @var string */
-	static protected $validAliasCahacters = 'abcdefghijklmnopqrstuvwxyz0123456789-';
+	static protected $validAliasCharacters = 'abcdefghijklmnopqrstuvwxyz0123456789-';
 
 	/**
 	 * Deletes the selected alias.
@@ -201,7 +201,7 @@ class AliasesController extends BackendModuleController {
 	 * @return int
 	 */
 	protected function isValidAliasValue($aliasValue) {
-		return preg_match('/^[' . preg_quote(self::$validAliasCahacters, '/') . ']+$/', $aliasValue);
+		return preg_match('/^[' . preg_quote(self::$validAliasCharacters, '/') . ']+$/', $aliasValue);
 	}
 
 	/**
@@ -215,7 +215,7 @@ class AliasesController extends BackendModuleController {
 		$aliasValue = $this->request->getArgument('valueAlias');
 
 		if (!$this->isValidAliasValue($aliasValue)) {
-			$this->addFlashMessage(LocalizationUtility::translate('module.aliases.edit.error.bad_alias_value', 'realurl', array(self::$validAliasCahacters)), '', AbstractMessage::ERROR);
+			$this->addFlashMessage(LocalizationUtility::translate('module.aliases.edit.error.bad_alias_value', 'realurl', array(self::$validAliasCharacters)), '', AbstractMessage::ERROR);
 		}
 		elseif ($this->doesAliasExistsForAnotherRecord($aliasValue)) {
 			$this->addFlashMessage(LocalizationUtility::translate('module.aliases.edit.error.already_exists', 'realurl'), '', AbstractMessage::ERROR);
