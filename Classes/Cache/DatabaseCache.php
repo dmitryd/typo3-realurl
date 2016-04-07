@@ -139,15 +139,6 @@ class DatabaseCache implements CacheInterface, SingletonInterface {
 			$requestVariables = json_decode($row['request_variables'], TRUE);
 			// TODO Log a problem here because it must be an array always
 			$cacheEntry->setRequestVariables(is_array($requestVariables) ? $requestVariables : array());
-
-			// Update timestamp
-			$currentTime = time();
-			if ((int)$row['tstamp'] !== $currentTime) {
-				$this->databaseConnection->exec_UPDATEquery('tx_realurl_urlcache',
-					'uid=' . $this->databaseConnection->fullQuoteStr($cacheEntry->getCacheId(), 'tx_realurl_urlcache'),
-					array('tstamp' => $currentTime)
-				);
-			}
 		}
 
 		return $cacheEntry;
@@ -201,15 +192,6 @@ class DatabaseCache implements CacheInterface, SingletonInterface {
 			$requestVariables = @json_decode($row['request_variables'], TRUE);
 			// TODO Log a problem here because it must be an array always
 			$cacheEntry->setRequestVariables(is_array($requestVariables) ? $requestVariables : array());
-
-			// Update timestamp
-			$currentTime = time();
-			if ((int)$row['tstamp'] !== $currentTime) {
-				$this->databaseConnection->exec_UPDATEquery('tx_realurl_urlcache',
-					'uid=' . $this->databaseConnection->fullQuoteStr($cacheEntry->getCacheId(), 'tx_realurl_urlcache'),
-					array('tstamp' => $currentTime)
-				);
-			}
 		}
 
 		return $cacheEntry;
@@ -322,7 +304,6 @@ class DatabaseCache implements CacheInterface, SingletonInterface {
 			'request_variables' => json_encode($cacheEntry->getRequestVariables()),
 			'rootpage_id' => $cacheEntry->getRootPageId(),
 			'speaking_url' => $cacheEntry->getSpeakingUrl(),
-			'tstamp' => time(),
 		);
 		if ($cacheEntry->getCacheId()) {
 			$this->databaseConnection->exec_UPDATEquery('tx_realurl_urlcache',
@@ -330,7 +311,6 @@ class DatabaseCache implements CacheInterface, SingletonInterface {
 				$data
 			);
 		} else {
-			$data['crdate'] = $data['tstamp'];
 			$this->databaseConnection->exec_INSERTquery('tx_realurl_urlcache', $data);
 			$cacheEntry->setCacheId($this->databaseConnection->sql_insert_id());
 		}

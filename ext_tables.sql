@@ -4,7 +4,6 @@
 CREATE TABLE tx_realurl_uniqalias (
 	uid int(11) NOT NULL auto_increment,
 	pid int(11) DEFAULT '0' NOT NULL,
-	tstamp int(11) DEFAULT '0' NOT NULL,
 	tablename varchar(255) DEFAULT '' NOT NULL,
 	field_alias varchar(255) DEFAULT '' NOT NULL,
 	field_id varchar(60) DEFAULT '' NOT NULL,
@@ -37,7 +36,6 @@ CREATE TABLE tx_realurl_urlcache (
 	uid int(11) NOT NULL auto_increment,
 	pid int(11) DEFAULT '0' NOT NULL,
 	crdate int(11) DEFAULT '0' NOT NULL,
-	tstamp int(11) DEFAULT '0' NOT NULL,
 	page_id int(11) DEFAULT '0' NOT NULL,
 	rootpage_id int(11) DEFAULT '0' NOT NULL,
 	original_url text,
