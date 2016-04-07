@@ -153,13 +153,7 @@ class UrlDecoder extends EncodeDecoderBase {
 	 * @return void
 	 */
 	protected function calculateChash(UrlCacheEntry $cacheEntry) {
-		$requestVariables = $_GET;
-		$decodeVariables = array();
-
-		parse_str(substr(GeneralUtility::implodeArrayForUrl('', $cacheEntry->getRequestVariables()), 1), $decodeVariables);
-
-		ArrayUtility::mergeRecursiveWithOverrule($requestVariables, $decodeVariables);
-
+		$requestVariables = $cacheEntry->getRequestVariables();
 		$cacheHashCalculator = GeneralUtility::makeInstance('TYPO3\\CMS\\Frontend\\Page\\CacheHashCalculator');
 		/* @var \TYPO3\CMS\Frontend\Page\CacheHashCalculator $cacheHashCalculator */
 		$cHashParameters = $cacheHashCalculator->getRelevantParameters(GeneralUtility::implodeArrayForUrl('', $requestVariables));
@@ -334,30 +328,6 @@ class UrlDecoder extends EncodeDecoderBase {
 
 		return $result;
 	}
-
-	/**
-	 * Creates query string from passed variables.
-	 *
-	 * @param array|null $getVars
-	 * @return string
-	 */
-	protected function createQueryString($getVars) {
-		$queryString = (string)$_SERVER['QUERY_STRING'];
-
-		if (!is_array($getVars) || count($getVars) == 0) {
-			return $queryString;
-		}
-
-		if ($queryString) {
-			$queryStringParameters = array();
-			parse_str($queryString, $queryStringParameters);
-			ArrayUtility::mergeRecursiveWithOverrule($queryStringParameters, $getVars);
-			$getVars = $queryStringParameters;
-		}
-
-		return substr(GeneralUtility::implodeArrayForUrl('', $getVars), 1);
-	}
-
 
 	/**
 	 * Generates a parameter string from an array recursively
@@ -817,6 +787,8 @@ class UrlDecoder extends EncodeDecoderBase {
 		ArrayUtility::mergeRecursiveWithOverrule($requestVariables, $this->decodeFixedPostVars($pageId, $pathSegments));
 		ArrayUtility::mergeRecursiveWithOverrule($requestVariables, $this->decodePostVarSets($pageId, $pathSegments));
 
+		$this->mergeWithExistingGetVars($requestVariables);
+
 		$cacheEntry = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\Cache\\UrlCacheEntry');
 		/** @var \DmitryDulepov\Realurl\Cache\UrlCacheEntry $cacheEntry */
 		$cacheEntry->setPageId($pageId);
@@ -1129,6 +1101,39 @@ class UrlDecoder extends EncodeDecoderBase {
 	}
 
 	/**
+	 * Merges generated request variables with existing $_GET variables. Those in
+	 * $_GET override generated.
+	 *
+	 * @param array $requestVariables
+	 * @return void
+	 */
+	protected function mergeWithExistingGetVars(array &$requestVariables) {
+		if (count($_GET) > 0) {
+			$flatGetArray = $this->parseQueryStringParameters(substr(GeneralUtility::implodeArrayForUrl('', $_GET), 1));
+			ArrayUtility::mergeRecursiveWithOverrule($requestVariables, $flatGetArray);
+		}
+	}
+
+	/**
+	 * Parses query string to a set of key/value.
+	 *
+	 * @param string $queryString
+	 * @return array
+	 */
+	protected function parseQueryStringParameters($queryString) {
+		$urlParameters = array();
+
+		$parts = GeneralUtility::trimExplode('&', $queryString, true);
+		foreach ($parts as $part) {
+			list($parameter, $value) = explode('=', $part);
+			// Remember: urldecode(), not rawurldecode()!
+			$urlParameters[urldecode($parameter)] = urldecode($value);
+		}
+
+		return $urlParameters;
+	}
+
+	/**
 	 * Adds data to the path cache. Cache ntry should have page path, language id and page id set.
 	 *
 	 * @param PathCacheEntry $newCacheEntry
@@ -1161,7 +1166,7 @@ class UrlDecoder extends EncodeDecoderBase {
 			$requestVariables['id'] = $cacheEntry->getPageId();
 			$this->sortArrayDeep($requestVariables);
 
-			$originalUrl = trim(GeneralUtility::implodeArrayForUrl('', $requestVariables), '&');
+			$originalUrl = substr(GeneralUtility::implodeArrayForUrl('', $requestVariables), 1);
 
 			if ($this->canCacheUrl($originalUrl)) {
 				$cacheEntry->setOriginalUrl($originalUrl);
@@ -1365,7 +1370,7 @@ class UrlDecoder extends EncodeDecoderBase {
 		if ($cacheEntry) {
 			$requestVariables = $cacheEntry->getRequestVariables();
 			$requestVariables['id'] = $cacheEntry->getPageId();
-			$_SERVER['QUERY_STRING'] = $this->createQueryString($requestVariables);
+			$_SERVER['QUERY_STRING'] = substr(GeneralUtility::implodeArrayForUrl('', $requestVariables, ''), 1);
 
 			// Setting info in TSFE
 			$this->caller->mergingWithGetVars($this->makeRealPhpArrayFromRequestVars($requestVariables));
