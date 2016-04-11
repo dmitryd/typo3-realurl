@@ -956,7 +956,7 @@ class UrlDecoder extends EncodeDecoderBase {
 			$putBack = TRUE;
 			$fileNameSegment = array_pop($urlParts);
 			if ($fileNameSegment && strpos($fileNameSegment, '.') !== FALSE) {
-				if (!$this->handleFileNameMappingToGetVar($fileNameSegment, $getVars)) {
+				if (!$this->handleFileNameMappingToGetVar($fileNameSegment, $getVars, $putBack)) {
 					$validExtensions = array();
 
 					foreach (array('acceptHTMLsuffix', 'defaultToHTMLsuffixOnPrev') as $option) {
@@ -973,8 +973,11 @@ class UrlDecoder extends EncodeDecoderBase {
 						$fileNameSegment = pathinfo($fileNameSegment, PATHINFO_FILENAME);
 					}
 					// If no match, we leave it as is => 404.
-				} else {
-					$putBack = FALSE;
+				}
+				else {
+					if ($putBack && count($urlParts) === 0 && $fileNameSegment === 'index') {
+						$putBack = false;
+					}
 				}
 			}
 			if ($putBack) {
@@ -990,16 +993,30 @@ class UrlDecoder extends EncodeDecoderBase {
 	 *
 	 * @param string $fileNameSegment
 	 * @param array $getVars
+	 * @param bool $putBack
 	 * @return bool
 	 */
-	protected function handleFileNameMappingToGetVar($fileNameSegment, array &$getVars) {
-		$result = FALSE;
+	protected function handleFileNameMappingToGetVar(&$fileNameSegment, array &$getVars, &$putBack) {
+		$result = false;
 		if ($fileNameSegment) {
 			$fileNameConfiguration = $this->configuration->get('fileName/index/' . $fileNameSegment);
 			if (is_array($fileNameConfiguration)) {
-				$result = TRUE;
+				$result = true;
+				$putBack = false;
 				if (isset($fileNameConfiguration['keyValues'])) {
 					$getVars = $fileNameConfiguration['keyValues'];
+				}
+			}
+			else {
+				list($fileName, $extension) = GeneralUtility::revExplode('.', $fileNameSegment, 2);
+				$fileNameConfiguration = $this->configuration->get('fileName/index/.' . $extension);
+				if (is_array($fileNameConfiguration)) {
+					$result = true;
+					$putBack = true;
+					$fileNameSegment = $fileName;
+					if (isset($fileNameConfiguration['keyValues'])) {
+						$getVars = $fileNameConfiguration['keyValues'];
+					}
 				}
 			}
 		}
