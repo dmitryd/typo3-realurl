@@ -295,15 +295,16 @@ class UrlDecoder extends EncodeDecoderBase {
 	protected function createPathCacheEntry($segment, array $pages, array &$shortcutPages) {
 		$result = NULL;
 		foreach ($pages as $page) {
+			$originalMountPointPid = 0;
 			if ($page['doktype'] == PageRepository::DOKTYPE_SHORTCUT) {
 				// Value is not relevant, key is!
 				$shortcutPages[$page['uid']] = true;
 			}
 			while ($page['doktype'] == PageRepository::DOKTYPE_MOUNTPOINT && $page['mount_pid_ol'] == 1) {
-				$originalUid = $page['uid'];
+				$originalMountPointPid = $page['uid'];
 				$page = $this->pageRepository->getPage($page['mount_pid']);
 				if (!is_array($page)) {
-					$this->tsfe->pageNotFoundAndExit('[realurl] Broken mount point at page with uid=' . $originalUid);
+					$this->tsfe->pageNotFoundAndExit('[realurl] Broken mount point at page with uid=' . $originalMountPointPid);
 				}
 			}
 			if ($this->detectedLanguageId > 0 && !isset($page['_PAGES_OVERLAY'])) {
@@ -317,7 +318,12 @@ class UrlDecoder extends EncodeDecoderBase {
 					if ($this->mountPointVariable !== '') {
 						$result->setMountPoint($this->mountPointVariable);
 					}
-					if ((int)$page['doktype'] === PageRepository::DOKTYPE_MOUNTPOINT) {
+					if ($originalMountPointPid !== 0) {
+						// Mount point with mount_pid_ol==1
+						$this->mountPointVariable = $page['uid'] . '-' . $originalMountPointPid;
+						// No $this->mountPointStartPid here because this is a substituted page
+					}
+					elseif ((int)$page['doktype'] === PageRepository::DOKTYPE_MOUNTPOINT) {
 						$this->mountPointVariable = $page['mount_pid'] . '-' . $page['uid'];
 						$this->mountPointStartPid = (int)$page['mount_pid'];
 					}
@@ -850,6 +856,13 @@ class UrlDecoder extends EncodeDecoderBase {
 
 		while ($newPages) {
 			foreach ($newPages as $page) {
+				while ($page['doktype'] == PageRepository::DOKTYPE_MOUNTPOINT && $page['mount_pid_ol'] == 1) {
+					$originalUid = $page['uid'];
+					$page = $this->pageRepository->getPage($page['mount_pid']);
+					if (!is_array($page)) {
+						$this->tsfe->pageNotFoundAndExit('[realurl] Broken mount point at page with uid=' . $originalUid);
+					}
+				}
 				if ($page['tx_realurl_exclude']) {
 					$ids[] = $page['uid'];
 				}
