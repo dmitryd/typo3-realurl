@@ -1425,7 +1425,7 @@ class UrlDecoder extends EncodeDecoderBase {
 			// Here we are in one of the following cases:
 			// - if the URL is the URL of the shortcut itself (normally never
 			//   happens because the encoder always makes the URL of the
-			//   shortcut target page. We should not resolve such shortcuts
+			//   shortcut target page). We should not resolve such shortcuts
 			//   but make a redirect to prevent duplicate content. However
 			//   it is not possible to distinguish this case from the second
 			//   case (see below). 
