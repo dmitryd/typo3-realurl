@@ -861,6 +861,22 @@ class UrlDecoder extends EncodeDecoderBase {
 	}
 
 	/**
+	 * Obtains the uid of the first subpage of the given page respecting
+	 * enableFields.
+	 *
+	 * @param int $pageId
+	 * @return int
+	 */
+	protected function getFirstSubpageId($pageId) {
+		$page = $this->databaseConnection->exec_SELECTgetSingleRow('*', 'pages',
+			'pid=' . (int)$pageId . $this->pageRepository->enableFields('pages'),
+			'', 'sorting'
+		);
+
+		return is_array($page) ? (int)$page['uid'] : 0;
+	}
+
+	/**
 	 * Gets the entry from cache.
 	 *
 	 * @param string $speakingUrl
@@ -1245,6 +1261,57 @@ class UrlDecoder extends EncodeDecoderBase {
 	}
 
 	/**
+	 * Resolves shortcuts. This function will throw numerous exceptions if a
+	 * shortcut cannot be resolved.
+	 *
+	 * @param int $pageId
+	 * @return int
+	 * @throws \Exception
+	 */
+	protected function resolveShortcut($pageId) {
+		$originalPageId = $pageId;
+		$maxTries = 100;
+		$page = $this->pageRepository->getPage($pageId);
+		while ($maxTries-- && $pageId > 0 && $page['doktype'] == PageRepository::DOKTYPE_SHORTCUT) {
+			if ($page['doktype'] == PageRepository::DOKTYPE_SHORTCUT) {
+				switch ($page['shortcut_mode']) {
+					case PageRepository::SHORTCUT_MODE_NONE:
+						$pageId = (int)$page['shortcut'];
+						break;
+					case PageRepository::SHORTCUT_MODE_RANDOM_SUBPAGE:
+						throw new \Exception(sprintf(
+							'RealURL does not support shortcuts of type "random" (pid=%d)', $pageId
+						), 1460464087);
+					case PageRepository::SHORTCUT_MODE_FIRST_SUBPAGE:
+						$pageId = $this->getFirstSubpageId($pageId);
+						break;
+					case PageRepository::SHORTCUT_MODE_PARENT_PAGE:
+						$pageId = (int)$page['pid'];
+						break;
+					default:
+						throw new \Exception(sprintf(
+							'Unknown shortcut mode "%s" (pid=%d)', $page['shortcut_mode'], $pageId
+						), 1460464094);
+				}
+			}
+			if ($pageId) {
+				$page = $this->pageRepository->getPage($pageId);
+			}
+		}
+
+		if ($maxTries === 0) {
+			throw new \Exception('Too many attempts to resolve shortcut in RealURL. Possible endless loop?', 1460463860);
+		}
+		if ($pageId === 0) {
+			throw new \Exception(sprintf(
+				'RealURL is unable to resolve shortcut for page with id=%d', (int)$originalPageId
+			), 1460464244);
+		}
+
+		return $pageId;
+	}
+
+	/**
 	 * Contains the actual decoding logic after $this->speakingUri is set.
 	 *
 	 * @return void
@@ -1355,6 +1422,7 @@ class UrlDecoder extends EncodeDecoderBase {
 
 		if ($result && isset($shortcutPages[$result->getPageId()])) {
 			$saveToCache = false;
+			$result->setPageId($this->resolveShortcut($result->getPageId()));
 		}
 
 		return $result;
