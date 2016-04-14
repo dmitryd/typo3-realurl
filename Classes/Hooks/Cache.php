@@ -57,13 +57,9 @@ class Cache {
 	 */
 	public function clearUrlCache(array $parameters) {
 		$cacheCommand = $parameters['cacheCmd'];
-		if ($cacheCommand == 'pages' || $cacheCommand == 'all' || MathUtility::canBeInterpretedAsFloat($cacheCommand)) {
+		if (MathUtility::canBeInterpretedAsFloat($cacheCommand)) {
 			$cacheInstance = CacheFactory::getCache();
-			if ($cacheCommand == 'pages' || $cacheCommand == 'all') {
-				$cacheInstance->clearUrlCache();
-			} else {
-				$cacheInstance->clearUrlCacheForPage((int)$cacheCommand);
-			}
+			$cacheInstance->clearUrlCacheForPage((int)$cacheCommand);
 		}
 	}
 
