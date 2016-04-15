@@ -1136,7 +1136,6 @@ class UrlEncoder extends EncodeDecoderBase {
 
 			// Store new alias
 			$insertArray = array(
-				'tstamp' => time(),
 				'tablename' => $configuration['table'],
 				'field_alias' => $configuration['alias_field'],
 				'field_id' => $configuration['id_field'],
