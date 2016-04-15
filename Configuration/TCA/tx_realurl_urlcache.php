@@ -24,7 +24,7 @@
 
 $GLOBALS['TCA']['tx_realurl_urlcache'] = array(
 	'ctrl' => array(
-		'label' => '',
+		'label' => 'speaking_url',
 		'hideTable' => 1,
 	),
 	'columns' => array(
