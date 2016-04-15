@@ -295,15 +295,16 @@ class UrlDecoder extends EncodeDecoderBase {
 	protected function createPathCacheEntry($segment, array $pages, array &$shortcutPages) {
 		$result = NULL;
 		foreach ($pages as $page) {
+			$originalMountPointPid = 0;
 			if ($page['doktype'] == PageRepository::DOKTYPE_SHORTCUT) {
 				// Value is not relevant, key is!
 				$shortcutPages[$page['uid']] = true;
 			}
 			while ($page['doktype'] == PageRepository::DOKTYPE_MOUNTPOINT && $page['mount_pid_ol'] == 1) {
-				$originalUid = $page['uid'];
+				$originalMountPointPid = $page['uid'];
 				$page = $this->pageRepository->getPage($page['mount_pid']);
 				if (!is_array($page)) {
-					$this->tsfe->pageNotFoundAndExit('[realurl] Broken mount point at page with uid=' . $originalUid);
+					$this->tsfe->pageNotFoundAndExit('[realurl] Broken mount point at page with uid=' . $originalMountPointPid);
 				}
 			}
 			if ($this->detectedLanguageId > 0 && !isset($page['_PAGES_OVERLAY'])) {
@@ -317,7 +318,12 @@ class UrlDecoder extends EncodeDecoderBase {
 					if ($this->mountPointVariable !== '') {
 						$result->setMountPoint($this->mountPointVariable);
 					}
-					if ((int)$page['doktype'] === PageRepository::DOKTYPE_MOUNTPOINT) {
+					if ($originalMountPointPid !== 0) {
+						// Mount point with mount_pid_ol==1
+						$this->mountPointVariable = $page['uid'] . '-' . $originalMountPointPid;
+						// No $this->mountPointStartPid here because this is a substituted page
+					}
+					elseif ((int)$page['doktype'] === PageRepository::DOKTYPE_MOUNTPOINT) {
 						$this->mountPointVariable = $page['mount_pid'] . '-' . $page['uid'];
 						$this->mountPointStartPid = (int)$page['mount_pid'];
 					}
@@ -850,6 +856,13 @@ class UrlDecoder extends EncodeDecoderBase {
 
 		while ($newPages) {
 			foreach ($newPages as $page) {
+				while ($page['doktype'] == PageRepository::DOKTYPE_MOUNTPOINT && $page['mount_pid_ol'] == 1) {
+					$originalUid = $page['uid'];
+					$page = $this->pageRepository->getPage($page['mount_pid']);
+					if (!is_array($page)) {
+						$this->tsfe->pageNotFoundAndExit('[realurl] Broken mount point at page with uid=' . $originalUid);
+					}
+				}
 				if ($page['tx_realurl_exclude']) {
 					$ids[] = $page['uid'];
 				}
@@ -943,7 +956,7 @@ class UrlDecoder extends EncodeDecoderBase {
 			$putBack = TRUE;
 			$fileNameSegment = array_pop($urlParts);
 			if ($fileNameSegment && strpos($fileNameSegment, '.') !== FALSE) {
-				if (!$this->handleFileNameMappingToGetVar($fileNameSegment, $getVars)) {
+				if (!$this->handleFileNameMappingToGetVar($fileNameSegment, $getVars, $putBack)) {
 					$validExtensions = array();
 
 					foreach (array('acceptHTMLsuffix', 'defaultToHTMLsuffixOnPrev') as $option) {
@@ -960,8 +973,11 @@ class UrlDecoder extends EncodeDecoderBase {
 						$fileNameSegment = pathinfo($fileNameSegment, PATHINFO_FILENAME);
 					}
 					// If no match, we leave it as is => 404.
-				} else {
-					$putBack = FALSE;
+				}
+				else {
+					if ($putBack && count($urlParts) === 0 && $fileNameSegment === 'index') {
+						$putBack = false;
+					}
 				}
 			}
 			if ($putBack) {
@@ -977,16 +993,30 @@ class UrlDecoder extends EncodeDecoderBase {
 	 *
 	 * @param string $fileNameSegment
 	 * @param array $getVars
+	 * @param bool $putBack
 	 * @return bool
 	 */
-	protected function handleFileNameMappingToGetVar($fileNameSegment, array &$getVars) {
-		$result = FALSE;
+	protected function handleFileNameMappingToGetVar(&$fileNameSegment, array &$getVars, &$putBack) {
+		$result = false;
 		if ($fileNameSegment) {
 			$fileNameConfiguration = $this->configuration->get('fileName/index/' . $fileNameSegment);
 			if (is_array($fileNameConfiguration)) {
-				$result = TRUE;
+				$result = true;
+				$putBack = false;
 				if (isset($fileNameConfiguration['keyValues'])) {
 					$getVars = $fileNameConfiguration['keyValues'];
+				}
+			}
+			else {
+				list($fileName, $extension) = GeneralUtility::revExplode('.', $fileNameSegment, 2);
+				$fileNameConfiguration = $this->configuration->get('fileName/index/.' . $extension);
+				if (is_array($fileNameConfiguration)) {
+					$result = true;
+					$putBack = true;
+					$fileNameSegment = $fileName;
+					if (isset($fileNameConfiguration['keyValues'])) {
+						$getVars = $fileNameConfiguration['keyValues'];
+					}
 				}
 			}
 		}
