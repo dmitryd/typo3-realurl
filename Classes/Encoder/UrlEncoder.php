@@ -915,8 +915,8 @@ class UrlEncoder extends EncodeDecoderBase {
 						else {
 							$this->encodedUrl = rtrim($this->encodedUrl, '/');
 						}
-						$this->encodedUrl .= $fileName;
 					}
+					$this->encodedUrl .= $fileName;
 					$this->urlParameters = array_diff_key($this->urlParameters, $variablesToRemove);
 					$result = TRUE;
 					break;
