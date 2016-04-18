@@ -441,8 +441,13 @@ class UrlEncoder extends EncodeDecoderBase {
 			if ($page['tx_realurl_exclude'] && $current !== $rootLineMax) {
 				continue;
 			}
+
 			if ($enableLanguageOverlay) {
-				$overlay = $this->pageRepository->getPageOverlay($page, (int)$this->originalUrlParameters['L']);
+				$overlayLanguage = (int)$this->originalUrlParameters['L'];
+				if(isset($this->configuration->get('pagePath/languageFallback')[(int)$this->originalUrlParameters['L']])) {
+					$overlayLanguage = $this->configuration->get('pagePath/languageFallback')[(int)$this->originalUrlParameters['L']];
+				}
+				$overlay = $this->pageRepository->getPageOverlay($page, $overlayLanguage);
 				if (is_array($overlay)) {
 					$page = $overlay;
 					unset($overlay);
@@ -915,8 +920,8 @@ class UrlEncoder extends EncodeDecoderBase {
 						else {
 							$this->encodedUrl = rtrim($this->encodedUrl, '/');
 						}
-						$this->encodedUrl .= $fileName;
 					}
+					$this->encodedUrl .= $fileName;
 					$this->urlParameters = array_diff_key($this->urlParameters, $variablesToRemove);
 					$result = TRUE;
 					break;
