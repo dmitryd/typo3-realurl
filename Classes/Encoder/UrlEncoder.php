@@ -244,7 +244,12 @@ class UrlEncoder extends EncodeDecoderBase {
 	 * @return bool
 	 */
 	protected function canEncoderExecute() {
-		return $this->isRealURLEnabled() && !$this->isInWorkspace() && $this->isTypo3Url() && $this->isProperTsfe();
+		return $this->isRealURLEnabled() &&
+			!$this->isSimulateStaticEnabled() &&
+			!$this->isInWorkspace() &&
+			$this->isTypo3Url() &&
+			$this->isProperTsfe()
+		;
 	}
 
 	/**
@@ -998,6 +1003,17 @@ class UrlEncoder extends EncodeDecoderBase {
 	 */
 	protected function isRealURLEnabled() {
 		return (bool)$this->tsfe->config['config']['tx_realurl_enable'];
+	}
+
+	/**
+	 * Checks if simulatestatic is enabled.
+	 *
+	 * @return bool
+	 */
+	protected function isSimulateStaticEnabled() {
+		return isset($this->tsfe->config['config']['simulateStaticDocuments']) && (bool)$this->tsfe->config['config']['simulateStaticDocuments'] ||
+			isset($this->tsfe->TYPO3_CONF_VARS['FE']['simulateStaticDocuments']) && (bool)$this->tsfe->TYPO3_CONF_VARS['FE']['simulateStaticDocuments']
+		;
 	}
 
 	/**
