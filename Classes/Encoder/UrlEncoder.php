@@ -93,6 +93,33 @@ class UrlEncoder extends EncodeDecoderBase {
 	}
 
 	/**
+	 * Returns the configuration reader. This can be used in hooks.
+	 *
+	 * @return ConfigurationReader
+	 */
+	public function getConfiguration() {
+		return $this->configuration;
+	}
+
+	/**
+	 * Returns a coipy of original url parameters. This can be used in hooks.
+	 *
+	 * @return array
+	 */
+	public function getOriginalUrlParameters() {
+		return $this->originalUrlParameters;
+	}
+
+	/**
+	 * Returns $this->utility. This can be used in hooks.
+	 *
+	 * @return \DmitryDulepov\Realurl\Utility
+	 */
+	public function getUtility() {
+		return $this->utility;
+	}
+
+	/**
 	 * Entry point for the URL encoder.
 	 *
 	 * @param array $encoderParameters
