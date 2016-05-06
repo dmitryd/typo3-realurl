@@ -130,7 +130,8 @@ class UrlEncoder extends EncodeDecoderBase {
 		$this->urlToEncode = $encoderParameters['LD']['totalURL'];
 		if ($this->canEncoderExecute()) {
 			$this->executeEncoder();
-			$encoderParameters['LD']['totalURL'] = $this->encodedUrl;
+			$encoderParameters['LD']['totalURL'] = $this->encodedUrl .
+				(isset($encoderParameters['LD']['sectionIndex']) ? $encoderParameters['LD']['sectionIndex'] : '');
 		}
 	}
 
