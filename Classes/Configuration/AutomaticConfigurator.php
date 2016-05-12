@@ -83,7 +83,7 @@ class AutomaticConfigurator {
 		if ($this->hasStaticInfoTables) {
 			$languages = $this->databaseConnection->exec_SELECTgetRows('t1.uid AS uid,t2.lg_iso_2 AS lg_iso_2', 'sys_language t1, static_languages t2', 't2.uid=t1.static_lang_isocode AND t1.hidden=0');
 		} else {
-			$languages = $this->databaseConnection->exec_SELECTgetRows('t1.uid AS uid,t1.uid AS lg_iso_2', 'sys_language t1', 't1.hidden=0');
+			$languages = $this->databaseConnection->exec_SELECTgetRows('t1.uid AS uid,t1.language_isocode AS lg_iso_2', 'sys_language t1', 't1.hidden=0');
 		}
 		if (count($languages) > 0) {
 			$configuration['preVars'] = array(
