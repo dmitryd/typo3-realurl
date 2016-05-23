@@ -39,11 +39,11 @@ namespace DmitryDulepov\Realurl\Cache;
 interface CacheInterface {
 
 	/**
-	 * Removes expired path cache entries.
+	 * Removes expired cache entries.
 	 *
 	 * @return void
 	 */
-	public function clearExpiredPathCacheEntries();
+	public function clearExpiredCacheEntries();
 
 	/**
 	 * Empties the path cache for one page.
@@ -77,13 +77,13 @@ interface CacheInterface {
 	public function clearUrlCacheForPage($pageId);
 
 	/**
-	 * Expires path cache for the given page and language.
+	 * Expires cache for the given page and language.
 	 *
 	 * @param int $pageId
-	 * @param int $languageId
+	 * @param int|null $languageId
 	 * @return void
 	 */
-	public function expirePathCache($pageId, $languageId);
+	public function expireCache($pageId, $languageId = null);
 
 	/**
 	 * Gets the entry from cache.
