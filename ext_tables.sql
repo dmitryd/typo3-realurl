@@ -41,10 +41,11 @@ CREATE TABLE tx_realurl_urlcache (
 	original_url text,
 	speaking_url text,
 	request_variables text,
+	expire int(11) DEFAULT '0' NOT NULL,
 
 	PRIMARY KEY (uid),
 	KEY parent (pid),
-	KEY pathq1 (rootpage_id,original_url(32)),
+	KEY pathq1 (rootpage_id,original_url(32),expire),
 	KEY pathq2 (rootpage_id,speaking_url(32)),
 	KEY page_id (page_id)
 ) ENGINE=InnoDB;
