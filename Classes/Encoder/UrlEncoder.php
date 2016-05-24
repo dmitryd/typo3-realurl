@@ -822,7 +822,7 @@ class UrlEncoder extends EncodeDecoderBase {
 		$result = FALSE;
 
 		$cacheEntry = $this->cache->getUrlFromCacheByOriginalUrl($this->rootPageId, $this->originalUrl);
-		if ($cacheEntry) {
+		if ($cacheEntry && $cacheEntry->getExpiration() === 0) {
 			$this->encodedUrl = $cacheEntry->getSpeakingUrl();
 			$result = TRUE;
 		}
@@ -1204,20 +1204,24 @@ class UrlEncoder extends EncodeDecoderBase {
 	protected function storeInUrlCache() {
 		if ($this->canCacheUrl($this->originalUrl)) {
 			$cacheEntry = $this->cache->getUrlFromCacheByOriginalUrl($this->rootPageId, $this->originalUrl);
-			if (!$cacheEntry || $cacheEntry->getSpeakingUrl() !== $this->encodedUrl) {
+			/** @var \DmitryDulepov\Realurl\Cache\UrlCacheEntry $cacheEntry */
+			if ($cacheEntry && $cacheEntry->getExpiration() !== 0 && $cacheEntry->getSpeakingUrl() === $this->encodedUrl) {
+				// Unexpire
+				$cacheEntry->setExpiration(0);
+			}
+			elseif (!$cacheEntry || $cacheEntry->getSpeakingUrl() !== $this->encodedUrl) {
 				$cacheEntry = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\Cache\\UrlCacheEntry');
-				/** @var \DmitryDulepov\Realurl\Cache\UrlCacheEntry $cacheEntry */
 				$cacheEntry->setPageId($this->urlParameters['id']); // $this->originalUrlParameters['uid'] can be an alias, we need a number here!
 				$cacheEntry->setRequestVariables($this->originalUrlParameters);
 				$cacheEntry->setRootPageId($this->rootPageId);
 				$cacheEntry->setOriginalUrl($this->originalUrl);
 				$cacheEntry->setSpeakingUrl($this->encodedUrl);
-				$this->cache->putUrlToCache($cacheEntry);
+			}
+			$this->cache->putUrlToCache($cacheEntry);
 
-				$cacheId = $cacheEntry->getCacheId();
-				if (!empty($cacheId)) {
-					$this->storeAliasToUrlCacheMapping($cacheId);
-				}
+			$cacheId = $cacheEntry->getCacheId();
+			if (!empty($cacheId)) {
+				$this->storeAliasToUrlCacheMapping($cacheId);
 			}
 		}
 	}

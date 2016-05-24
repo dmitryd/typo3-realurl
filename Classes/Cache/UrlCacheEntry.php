@@ -69,7 +69,7 @@ class UrlCacheEntry {
 	 * @return int
 	 */
 	public function getExpiration() {
-		return $this->expiration;
+		return (int)$this->expiration;
 	}
 
 	/**
