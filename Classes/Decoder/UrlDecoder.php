@@ -461,6 +461,7 @@ class UrlDecoder extends EncodeDecoderBase {
 					} else {
 						if ((int)$currentPid !== (int)$this->rootPageId) {
 							$currentPid = 0;
+							$result = null;
 						}
 						array_unshift($remainingPathSegments, $segment);
 						break;
