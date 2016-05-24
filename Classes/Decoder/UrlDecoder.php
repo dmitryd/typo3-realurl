@@ -47,6 +47,9 @@ use TYPO3\CMS\Frontend\Page\PageRepository;
  */
 class UrlDecoder extends EncodeDecoderBase {
 
+	const REDIRECT_STATUS_HEADER = 'HTTP/1.0 301 TYPO3 RealURL Redirect';
+	const REDIRECT_INFO_HEADER = 'X-TYPO3-RealURL-Info';
+
 	/** @var bool */
 	protected $appendedSlash = FALSE;
 
@@ -189,6 +192,24 @@ class UrlDecoder extends EncodeDecoderBase {
 	 */
 	protected function canDecoderExecute() {
 		return $this->isProperTsfe() && !$this->isInWorkspace();
+	}
+
+	/**
+	 * Checks if the entry is expired and redirects to a non-expired entry.
+	 *
+	 * @param UrlCacheEntry $cacheEntry
+	 */
+	protected function checkExpiration(UrlCacheEntry $cacheEntry) {
+		if ($cacheEntry->getExpiration() > 0) {
+			$newerCacheEntry = $this->cache->getUrlFromCacheByOriginalUrl($cacheEntry->getRootPageId(), $cacheEntry->getOriginalUrl());
+			if ($newerCacheEntry->getExpiration() === 0) {
+				@ob_end_clean();
+				header(self::REDIRECT_STATUS_HEADER);
+				header(self::REDIRECT_INFO_HEADER . ': redirecting expired URL to a fresh one');
+				header('Location: ' . GeneralUtility::locationHeaderUrl($newerCacheEntry->getSpeakingUrl()));
+				die;
+			}
+		}
 	}
 
 	/**
@@ -1228,6 +1249,7 @@ class UrlDecoder extends EncodeDecoderBase {
 			$this->originalPath = $urlParts['path'];
 			$cacheEntry = $this->doDecoding($urlParts['path']);
 		}
+		$this->checkExpiration($cacheEntry);
 		$this->setRequestVariables($cacheEntry);
 
 		// If it is still not there (could have been added by other process!), than update
