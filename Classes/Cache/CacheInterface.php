@@ -119,11 +119,12 @@ interface CacheInterface {
 	 * Obtains path from the path cache.
 	 *
 	 * @param int $rootPageId
+	 * @param int $languageId
 	 * @param string|null $mountPoint null means exclude from search
 	 * @param string $pagePath
 	 * @return PathCacheEntry|null
 	 */
-	public function getPathFromCacheByPagePath($rootPageId, $mountPoint, $pagePath);
+	public function getPathFromCacheByPagePath($rootPageId, $languageId, $mountPoint, $pagePath);
 
 	/**
 	 * Puts path to the cache. This must override existing entry if cache id is set in the cache entry.

@@ -1365,7 +1365,7 @@ class UrlDecoder extends EncodeDecoderBase {
 		do {
 			$path = implode('/', $pathSegments);
 			// Since we know nothing about mount point at this stage, we exclude it from search by passing null as the second argument
-			$cacheEntry = $this->cache->getPathFromCacheByPagePath($this->rootPageId, null, $path);
+			$cacheEntry = $this->cache->getPathFromCacheByPagePath($this->rootPageId, $this->detectedLanguageId, null, $path);
 			if ($cacheEntry) {
 				if ((int)$cacheEntry->getExpiration() !== 0) {
 					$this->isExpiredPath = TRUE;
