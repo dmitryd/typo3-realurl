@@ -237,13 +237,14 @@ class UrlDecoder extends EncodeDecoderBase {
 					$matches = array();
 					if (preg_match('/^redirect(\[(30[1237])\])?$/', $option, $matches)) {
 						$code = count($matches) > 1 ? $matches[2] : 301;
-						$status = 'HTTP/1.1 ' . $code . ' TYPO3 RealURL redirect for missing slash';
+						$status = 'HTTP/1.1 ' . $code . ' TYPO3 RealURL redirect';
 
 						// Check path segment to be relative for the current site.
 						// parse_url() does not work with relative URLs, so we use it to test
 						if (!@parse_url($this->speakingUri, PHP_URL_HOST)) {
 							@ob_end_clean();
 							header($status);
+							header(self::REDIRECT_INFO_HEADER . ': redirect for missing slash');
 							header('Location: ' . GeneralUtility::locationHeaderUrl($this->speakingUri));
 							exit;
 						}
@@ -502,7 +503,8 @@ class UrlDecoder extends EncodeDecoderBase {
 					$result->getPagePath() .
 					substr($this->speakingUri, $startPosition + strlen($this->expiredPath));
 				@ob_end_clean();
-				header('HTTP/1.1 302 TYPO3 RealURL redirect for expired page path');
+				header(self::REDIRECT_STATUS_HEADER);
+				header(self::REDIRECT_INFO_HEADER . ': redirect for expired page path');
 				header('Location: ' . GeneralUtility::locationHeaderUrl($newUrl));
 				die;
 			}
@@ -1067,8 +1069,8 @@ class UrlDecoder extends EncodeDecoderBase {
 			}
 			$goodPath = substr($this->originalPath, 0, $badPathPartPos) . substr($this->originalPath, $badPathPartPos + $badPathPartLength);
 			@ob_end_clean();
-			header('HTTP/1.1 301 RealURL postVarSet_failureMode redirect');
-			header('X-TYPO3-RealURL-Info: ' . $postVarSetKey);
+			header(self::REDIRECT_STATUS_HEADER);
+			header(self::REDIRECT_INFO_HEADER  . ': postVarSet_failureMode redirect for ' . $postVarSetKey);
 			header('Location: ' . GeneralUtility::locationHeaderUrl($goodPath));
 			exit;
 		} elseif ($failureMode == 'ignore') {
