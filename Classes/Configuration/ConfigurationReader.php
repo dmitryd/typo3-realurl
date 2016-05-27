@@ -374,15 +374,17 @@ class ConfigurationReader {
 	 * @return void
 	 */
 	protected function setHostnames() {
-		if ($this->mode == self::MODE_DECODE) {
-			$this->setHostnamesForDecoding();
-		} else {
-			$this->setHostnamesForEncoding();
-		}
-		if (substr($this->hostName, 0, 4) === 'www.') {
-			$this->alternativeHostName = substr($this->hostName, 4);
-		} elseif (substr_count($this->hostName, '.') === 1) {
-			$this->alternativeHostName = 'www.' . $this->hostName;
+		if (is_array($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl'])) {
+			if ($this->mode == self::MODE_DECODE) {
+				$this->setHostnamesForDecoding();
+			} else {
+				$this->setHostnamesForEncoding();
+			}
+			if (substr($this->hostName, 0, 4) === 'www.') {
+				$this->alternativeHostName = substr($this->hostName, 4);
+			} elseif (substr_count($this->hostName, '.') === 1) {
+				$this->alternativeHostName = 'www.' . $this->hostName;
+			}
 		}
 	}
 
