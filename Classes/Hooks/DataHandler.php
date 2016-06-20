@@ -78,7 +78,7 @@ class DataHandler implements SingletonInterface {
 
 			$languageOverlays = BackendUtility::getRecordsByField('pages_language_overlay', 'pid', $id);
 			foreach ($languageOverlays as $languageOverlay) {
-				$this->expireCachesForPageAndSubpages($languageOverlay['uid'], $languageOverlay['sys_language_uid']);
+				$this->expireCachesForPageAndSubpages($languageOverlay['pid'], $languageOverlay['sys_language_uid']);
 			}
 		}
 	}
