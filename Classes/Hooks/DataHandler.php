@@ -169,20 +169,23 @@ class DataHandler implements SingletonInterface {
 	 *
 	 * @param int $pageId
 	 * @param int $languageId
+	 * @param int $level
 	 * @return void
 	 */
-	protected function expireCachesForPageAndSubpages($pageId, $languageId) {
+	protected function expireCachesForPageAndSubpages($pageId, $languageId, $level = 0) {
 		$this->cache->expireCache($pageId, $languageId);
-		$subpages = BackendUtility::getRecordsByField('pages', 'pid', $pageId);
-		if (is_array($subpages)) {
-			$uidList = array();
-			foreach ($subpages as $subpage) {
-				$uidList[] = (int)$subpage['uid'];
-			}
-			unset($subpages);
-			foreach ($uidList as $uid) {
-				$this->cache->expireCache($uid, $languageId);
-				$this->expireCachesForPageAndSubpages($uid, $languageId);
+		if ($level++ < 20) {
+			$subpages = BackendUtility::getRecordsByField('pages', 'pid', $pageId);
+			if (is_array($subpages)) {
+				$uidList = array();
+				foreach ($subpages as $subpage) {
+					$uidList[] = (int)$subpage['uid'];
+				}
+				unset($subpages);
+				foreach ($uidList as $uid) {
+					$this->cache->expireCache($uid, $languageId);
+					$this->expireCachesForPageAndSubpages($uid, $languageId, $level);
+				}
 			}
 		}
 	}
