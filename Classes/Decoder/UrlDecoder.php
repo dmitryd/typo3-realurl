@@ -1240,6 +1240,8 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 
 	/**
 	 * Merges $_GET from domains configuration.
+	 *
+	 * @return void
 	 */
 	protected function mergeGetVarsFromDomainsConfiguration() {
 		// Convert the configuration into an $_GET-"friendly" format
