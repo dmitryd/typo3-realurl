@@ -66,6 +66,24 @@ class DataHandler implements SingletonInterface {
 	}
 
 	/**
+	 * Expires caches if the page was moved.
+	 *
+	 * @param string $command
+	 * @param string $table
+	 * @param int $id
+	 */
+	public function processCmdmap_postProcess($command, $table, $id) {
+		if ($command === 'move' && $table === 'pages') {
+			$this->expireCachesForPageAndSubpages((int)$id, 0);
+
+			$languageOverlays = BackendUtility::getRecordsByField('pages_language_overlay', 'pid', $id);
+			foreach ($languageOverlays as $languageOverlay) {
+				$this->expireCachesForPageAndSubpages($languageOverlay['uid'], $languageOverlay['sys_language_uid']);
+			}
+		}
+	}
+
+	/**
 	 * A DataHandler hook to expire old records.
 	 *
 	 * @param string $status 'new' (ignoring) or 'update'
