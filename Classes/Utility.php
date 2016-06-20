@@ -63,12 +63,15 @@ class Utility {
 	 * Converts a given string to a string that can be used as a URL segment.
 	 * The result is not url-encoded.
 	 *
-	 * @param string $string
+	 * @param string $processedTitle
 	 * @param string $spaceCharacter
+	 * @param bool $strToLower
 	 * @return string
 	 */
-	public function convertToSafeString($string, $spaceCharacter = '-') {
-		$processedTitle = $this->csConvertor->conv_case('utf-8', $string, 'toLower');
+	public function convertToSafeString($processedTitle, $spaceCharacter = '-', $strToLower = true) {
+		if ($strToLower) {
+			$processedTitle = $this->csConvertor->conv_case('utf-8', $processedTitle, 'toLower');
+		}
 		$processedTitle = strip_tags($processedTitle);
 		$processedTitle = preg_replace('/[ \-+_]+/', $spaceCharacter, $processedTitle);
 		$processedTitle = $this->csConvertor->specCharsToASCII('utf-8', $processedTitle);
@@ -78,7 +81,9 @@ class Utility {
 
 		// TODO Post-processing hook here
 
-		$processedTitle = strtolower($processedTitle);
+		if ($strToLower) {
+			$processedTitle = strtolower($processedTitle);
+		}
 
 		return $processedTitle;
 	}
