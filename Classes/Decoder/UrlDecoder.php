@@ -336,7 +336,13 @@ class UrlDecoder extends EncodeDecoderBase {
 				}
 			}
 			if ($this->detectedLanguageId > 0 && !isset($page['_PAGES_OVERLAY'])) {
-				$page = $this->pageRepository->getPageOverlay($page, (int)$this->detectedLanguageId);
+
+				$overlayLanguage = (int)$this->detectedLanguageId;
+				if(isset($this->configuration->get('pagePath/languageFallback')[$overlayLanguage])) {
+					$overlayLanguage = $this->configuration->get('pagePath/languageFallback')[$overlayLanguage];
+				}
+
+				$page = $this->pageRepository->getPageOverlay($page, $overlayLanguage);
 			}
 			foreach (self::$pageTitleFields as $field) {
 				if (isset($page[$field]) && $page[$field] !== '' && $this->utility->convertToSafeString($page[$field], $this->separatorCharacter) === $segment) {
