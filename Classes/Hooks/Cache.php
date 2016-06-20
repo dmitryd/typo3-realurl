@@ -75,7 +75,7 @@ class Cache {
 	public function clearUrlCacheForRecords(array $parameters) {
 		if ($parameters['table'] == 'pages' && MathUtility::canBeInterpretedAsInteger($parameters['uid'])) {
 			$cacheInstance = CacheFactory::getCache();
-			$cacheInstance->clearUrlCacheForPage($parameters['uid']);
+			$cacheInstance->expireCache($parameters['uid'], null);
 		}
 	}
 }
