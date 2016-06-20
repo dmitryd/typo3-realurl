@@ -414,7 +414,8 @@ class UrlEncoder extends EncodeDecoderBase {
 		$page = $this->databaseConnection->exec_SELECTgetSingleRow('*', 'pages',
 			'uid=' . (int)$this->urlParameters['id']
 		);
-		if ($this->sysLanguageUid > 0) {
+		$languageExceptionUids = (string)$this->configuration->get('pagePath/languageExceptionUids');
+		if ($this->sysLanguageUid > 0 && (empty($languageExceptionUids) || !GeneralUtility::inList($languageExceptionUids, $this->sysLanguageUid))) {
 			$overlay = $this->pageRepository->getPageOverlay($page, $this->sysLanguageUid);
 			if (is_array($overlay)) {
 				$page = $overlay;
@@ -463,7 +464,8 @@ class UrlEncoder extends EncodeDecoderBase {
 			}
 		}
 
-		$enableLanguageOverlay = ((int)$this->originalUrlParameters['L'] > 0);
+		$languageExceptionUids = (string)$this->configuration->get('pagePath/languageExceptionUids');
+		$enableLanguageOverlay = ((int)$this->originalUrlParameters['L'] > 0) && (empty($languageExceptionUids) || !GeneralUtility::inList($languageExceptionUids, $this->sysLanguageUid));
 
 		$components = array();
 		$reversedRootLine = array_reverse($rootLine);
