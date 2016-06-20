@@ -335,7 +335,8 @@ class UrlDecoder extends EncodeDecoderBase {
 					$this->tsfe->pageNotFoundAndExit('[realurl] Broken mount point at page with uid=' . $originalMountPointPid);
 				}
 			}
-			if ($this->detectedLanguageId > 0 && !isset($page['_PAGES_OVERLAY'])) {
+			$languageExceptionUids = (string)$this->configuration->get('pagePath/languageExceptionUids');
+			if ($this->detectedLanguageId > 0 && !isset($page['_PAGES_OVERLAY']) && (empty($languageExceptionUids) || !GeneralUtility::inList($languageExceptionUids, $this->detectedLanguageId))) {
 				$page = $this->pageRepository->getPageOverlay($page, (int)$this->detectedLanguageId);
 			}
 			foreach (self::$pageTitleFields as $field) {
@@ -903,7 +904,8 @@ class UrlDecoder extends EncodeDecoderBase {
 					'*', 'pages', 'pid IN (' . implode(',', $ids) . ')' .
 					' AND doktype NOT IN (' . $this->disallowedDoktypes . ')' . $pagesEnableFields
 				);
-				if ($this->detectedLanguageId > 0) {
+				$languageExceptionUids = (string)$this->configuration->get('pagePath/languageExceptionUids');
+				if ($this->detectedLanguageId > 0 && (empty($languageExceptionUids) || !GeneralUtility::inList($languageExceptionUids, $this->detectedLanguageId))) {
 					foreach ($children as &$child) {
 						$child = $this->pageRepository->getPageOverlay($child, (int)$this->detectedLanguageId);
 					}
@@ -1370,7 +1372,8 @@ class UrlDecoder extends EncodeDecoderBase {
 		$result = null;
 
 		$path = implode('/', $possibleSegments);
-		if ($this->detectedLanguageId > 0) {
+		$languageExceptionUids = (string)$this->configuration->get('pagePath/languageExceptionUids');
+		if ($this->detectedLanguageId > 0 && (empty($languageExceptionUids) || !GeneralUtility::inList($languageExceptionUids, $this->detectedLanguageId))) {
 			$result = $this->searchForPathOverrideInPagesLanguageOverlay($path);
 		}
 		if (!$result) {
