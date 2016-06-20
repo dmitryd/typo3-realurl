@@ -203,11 +203,17 @@ class UrlDecoder extends EncodeDecoderBase {
 		if ($cacheEntry->getExpiration() > 0) {
 			$newerCacheEntry = $this->cache->getUrlFromCacheByOriginalUrl($cacheEntry->getRootPageId(), $cacheEntry->getOriginalUrl());
 			if ($newerCacheEntry->getExpiration() === 0) {
-				@ob_end_clean();
-				header(self::REDIRECT_STATUS_HEADER);
-				header(self::REDIRECT_INFO_HEADER . ': redirecting expired URL to a fresh one');
-				header('Location: ' . GeneralUtility::locationHeaderUrl($newerCacheEntry->getSpeakingUrl()));
-				die;
+				if ($cacheEntry->getSpeakingUrl() !== $newerCacheEntry->getSpeakingUrl()) {
+					@ob_end_clean();
+					header(self::REDIRECT_STATUS_HEADER);
+					header(self::REDIRECT_INFO_HEADER . ': redirecting expired URL to a fresh one');
+					header('Location: ' . GeneralUtility::locationHeaderUrl($newerCacheEntry->getSpeakingUrl()));
+					die;
+				}
+				else {
+					// Got expired and non-expired entry for the same speaking url. Remove expired one.
+					$this->cache->clearUrlCacheById($cacheEntry->getCacheId());
+				}
 			}
 		}
 	}
