@@ -7,58 +7,6 @@ if (!defined('TX_REALURL_AUTOCONF_FILE')) {
 if (!function_exists('includeRealurlConfiguration')) {
 
 	/**
-	 * Makes sure that some known USER_INT plugins are not included to cHash
-	 * calculation. This will dynamically adjust variables if certain
-	 * parameters are found in the URL. This is useful for decoding only when
-	 * there is no URL cache entry for the URL because in such case these
-	 * parameters will create a cHash.
-	 *
-	 * @return void
-	 * @see \TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController::makeCacheHash()
-	 */
-	function tx_realurl_fixCacheHashExcludeList() {
-		$excludeList = &$GLOBALS['TYPO3_CONF_VARS']['FE']['cHashExcludedParameters'];
-		$excludeArray = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(',', (string)$excludeList, true);
-		$newExcludeArray = $excludeArray;
-
-		$knownUserIntParameterPrefixes = array(
-			'tx_felogin_pi1',
-			'tx_form_form',
-			'tx_indexedsearch',
-			'tx_solr'
-		);
-		$knownUserIntParameters = array(
-			'q', // solr
-		);
-
-		foreach ($knownUserIntParameterPrefixes as $userIntParameterPrefix) {
-			$urlParameters = \TYPO3\CMS\Core\Utility\GeneralUtility::_GET($userIntParameterPrefix);
-			if (is_array($urlParameters)) {
-				foreach (array_keys($urlParameters) as $parameterName) {
-					$fullParameterName = $userIntParameterPrefix . '[' . $parameterName . ']';
-					if (!in_array($fullParameterName, $newExcludeArray)) {
-						$newExcludeArray[] = $fullParameterName;
-					}
-				}
-				unset($parameterName, $urlParameters);
-			}
-		}
-		foreach ($knownUserIntParameters as $userIntParameter) {
-			$urlParameter = \TYPO3\CMS\Core\Utility\GeneralUtility::_GET($userIntParameter);
-			if (is_string($urlParameter) && !in_array($userIntParameter, $newExcludeArray)) {
-				$newExcludeArray[] = $userIntParameter;
-			}
-		}
-
-		if (count($newExcludeArray) !== count($excludeArray)) {
-			$excludeList = implode(',', $newExcludeArray);
-			if (is_array($GLOBALS['TYPO3_CONF_VARS']['FE']['cacheHash']['excludedParameters'])) {
-				$GLOBALS['TYPO3_CONF_VARS']['FE']['cacheHash']['excludedParameters'] = $newExcludeArray;
-			}
-		}
-	}
-
-	/**
 	 * Includes RealURL configuration.
 	 *
 	 * @return void
@@ -92,7 +40,6 @@ $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['tslib/class.tslib_content.php']['typo
 $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['tslib/class.tslib_fe.php']['checkAlternativeIdMethods-PostProc']['realurl'] = 'DmitryDulepov\\Realurl\\Decoder\\UrlDecoder->decodeUrl';
 
 includeRealurlConfiguration();
-tx_realurl_fixCacheHashExcludeList();
 
 $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tcemain.php']['clearCachePostProc']['realurl_all_caches'] = 'DmitryDulepov\\Realurl\\Hooks\\Cache->clearUrlCache';
 $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tcemain.php']['clearCachePostProc']['realurl_records'] = 'DmitryDulepov\\Realurl\\Hooks\\Cache->clearUrlCacheForRecords';
