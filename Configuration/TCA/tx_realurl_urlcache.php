@@ -62,5 +62,13 @@ $GLOBALS['TCA']['tx_realurl_urlcache'] = array(
 				'type' => 'input',
 			)
 		),
+		'expire' => array(
+			'label' => '',
+			'config' => array(
+				'type' => 'input',
+				'eval' => 'datetime',
+				'default' => 0,
+			)
+		),
 	),
 );
