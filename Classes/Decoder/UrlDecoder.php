@@ -1302,7 +1302,7 @@ class UrlDecoder extends EncodeDecoderBase {
 	 * @param string $path
 	 * @return PathCacheEntry|null
 	 */
-	protected function searchForPathOverrideInPagesLanguageverlay($path) {
+	protected function searchForPathOverrideInPagesLanguageOverlay($path) {
 		$result = null;
 
 		$rows = $this->databaseConnection->exec_SELECTgetRows('pages.uid AS uid',
@@ -1371,7 +1371,7 @@ class UrlDecoder extends EncodeDecoderBase {
 
 		$path = implode('/', $possibleSegments);
 		if ($this->detectedLanguageId > 0) {
-			$result = $this->searchForPathOverrideInPagesLanguageverlay($path);
+			$result = $this->searchForPathOverrideInPagesLanguageOverlay($path);
 		}
 		if (!$result) {
 			$result = $this->searchForPathOverrideInPages($path);
