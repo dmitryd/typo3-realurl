@@ -33,6 +33,9 @@ use TYPO3\CMS\Extbase\DomainObject\AbstractEntity;
  */
 class UrlCacheEntry extends AbstractEntity {
 
+	/** @var int */
+	protected $expire;
+
 	/** @var string */
 	protected $originalUrl;
 
@@ -47,6 +50,13 @@ class UrlCacheEntry extends AbstractEntity {
 
 	/** @var string */
 	protected $speakingUrl;
+
+	/**
+	 * @return int
+	 */
+	public function getExpire() {
+		return $this->expire;
+	}
 
 	/**
 	 * @return string
