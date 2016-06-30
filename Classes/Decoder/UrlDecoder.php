@@ -1208,7 +1208,7 @@ class UrlDecoder extends EncodeDecoderBase {
 	 */
 	protected function putToPathCache(PathCacheEntry $newCacheEntry) {
 		$pagePath = $newCacheEntry->getPagePath();
-		$cacheEntry = $this->cache->getPathFromCacheByPagePath($this->rootPageId, $newCacheEntry->getMountPoint(), $pagePath);
+		$cacheEntry = $this->cache->getPathFromCacheByPagePath($this->rootPageId, $this->detectedLanguageId, $newCacheEntry->getMountPoint(), $pagePath);
 		if (!$cacheEntry) {
 			$cacheEntry = $newCacheEntry;
 			$cacheEntry->setRootPageId($this->rootPageId);
