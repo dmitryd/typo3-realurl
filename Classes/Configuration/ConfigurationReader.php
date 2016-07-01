@@ -464,7 +464,11 @@ class ConfigurationReader {
 					'exception' => &$this->exception,
 					'extConfiguration' => &$this->extConfiguration,
 					'hostName' => &$this->hostName,
+					'alternativeHostName' => &$this->alternativeHostName,
 					'urlParameters' => &$this->urlParameters,
+					'getVarsToSet' => &$this->getVarsToSet,
+					'mode' => &$this->mode,
+					'utility' => &$this->utility,
 					'pObj' => &$this,
 				);
 				GeneralUtility::callUserFunction($userFunc, $parameters, $this);
