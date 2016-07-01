@@ -540,8 +540,9 @@ class ConfigurationReader {
 					'alternativeHostName' => &$this->alternativeHostName,
 					'urlParameters' => &$this->urlParameters,
 					'getVarsToSet' => &$this->getVarsToSet,
-					'utility' => $this->utility,
-					'pObj' => $this,
+					'mode' => &$this->mode,
+					'utility' => &$this->utility,
+					'pObj' => &$this,
 				);
 				GeneralUtility::callUserFunction($userFunc, $parameters, $this);
 			}
