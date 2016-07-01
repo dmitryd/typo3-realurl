@@ -939,20 +939,6 @@ class UrlDecoder extends EncodeDecoderBase {
 	}
 
 	/**
-	 * Parses the URL and validates the result.
-	 *
-	 * @return array
-	 */
-	protected function getUrlParts() {
-		$uParts = @parse_url($this->speakingUri);
-		if (!is_array($uParts)) {
-			$this->throw404('Current URL is invalid');
-		}
-
-		return $uParts;
-	}
-
-	/**
 	 * Obtains variables from the domain confuguration.
 	 *
 	 * @return array
@@ -1252,12 +1238,10 @@ class UrlDecoder extends EncodeDecoderBase {
 	 * @return void
 	 */
 	protected function runDecoding() {
-		$urlParts = $this->getUrlParts();
-
 		$cacheEntry = $this->getFromUrlCache($this->speakingUri);
 		if (!$cacheEntry) {
-			$this->originalPath = $urlParts['path'];
-			$cacheEntry = $this->doDecoding($urlParts['path']);
+			$this->originalPath = $this->speakingUri;
+			$cacheEntry = $this->doDecoding($this->speakingUri);
 		}
 		$this->checkExpiration($cacheEntry);
 		$this->setRequestVariables($cacheEntry);
