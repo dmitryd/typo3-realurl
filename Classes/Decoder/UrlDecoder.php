@@ -487,11 +487,14 @@ class UrlDecoder extends EncodeDecoderBase {
 							// Path is valid so far, so we cache it
 							$this->putToPathCache($result);
 						}
-					} else {
-						if ((int)$currentPid !== (int)$this->rootPageId) {
-							$currentPid = 0;
-							$result = null;
-						}
+					}
+					elseif ($this->isPostVar($segment, $currentPid)) {
+						// Not decoded, looks like a postVarSet. Put it back.
+						array_unshift($remainingPathSegments, $segment);
+						break;
+					}
+					else {
+						// Not decoded, not a postVarSet, could be a fixedPostVar. Still put back and hope for the best!
 						array_unshift($remainingPathSegments, $segment);
 						break;
 					}
@@ -1096,11 +1099,24 @@ class UrlDecoder extends EncodeDecoderBase {
 	 * Checks if the given segment is a name of the postVar.
 	 *
 	 * @param string $segment
+	 * @param int $pageId
 	 * @return bool
 	 */
-	protected function isPostVar($segment) {
-		$postVarNames = array_filter(array_keys((array)$this->configuration->get('postVarSets')));
-		return in_array($segment, $postVarNames);
+	protected function isPostVar($segment, $pageId = 0) {
+		$result = false;
+
+		$postVarSets = null;
+		if ($pageId > 0) {
+			$postVarSets = $this->configuration->get('postVarSets/' . $pageId);
+		}
+		if (!is_array($postVarSets)) {
+			$postVarSets = $this->configuration->get('postVarSets/_DEFAULT');
+		}
+		if (is_array($postVarSets)) {
+			$result = isset($postVarSets[$segment]);
+		}
+
+		return $result;
 	}
 
 	/**
