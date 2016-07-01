@@ -151,6 +151,15 @@ class ConfigurationReader {
 	}
 
 	/**
+	 * Returns the current mode.
+	 *
+	 * @return int
+	 */
+	public function getMode() {
+		return $this->mode;
+	}
+
+	/**
 	 * If the configuration is invalid throws an exception stored earlier. This
 	 * makes sense only we are have a speaking url.
 	 *
@@ -516,7 +525,7 @@ class ConfigurationReader {
 	}
 
 	/**
-	 * Runs a postprocessing hook for extensions.
+	 * Runs post-processing hooks for extensions.
 	 *
 	 * @return void
 	 */
@@ -532,7 +541,6 @@ class ConfigurationReader {
 					'alternativeHostName' => &$this->alternativeHostName,
 					'urlParameters' => &$this->urlParameters,
 					'getVarsToSet' => &$this->getVarsToSet,
-					'mode' => &$this->mode,
 					'utility' => &$this->utility,
 					'pObj' => &$this,
 				);
