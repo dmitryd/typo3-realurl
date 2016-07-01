@@ -1240,8 +1240,9 @@ class UrlDecoder extends EncodeDecoderBase {
 	protected function runDecoding() {
 		$cacheEntry = $this->getFromUrlCache($this->speakingUri);
 		if (!$cacheEntry) {
-			$this->originalPath = $this->speakingUri;
-			$cacheEntry = $this->doDecoding($this->speakingUri);
+			list($pathToDecode) = explode('?', $this->speakingUri, 2);
+			$this->originalPath = $pathToDecode;
+			$cacheEntry = $this->doDecoding($pathToDecode);
 		}
 		$this->checkExpiration($cacheEntry);
 		$this->setRequestVariables($cacheEntry);
