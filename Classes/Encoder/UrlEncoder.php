@@ -840,9 +840,9 @@ class UrlEncoder extends EncodeDecoderBase {
 	 */
 	protected function fixEmptySegments(array &$segments) {
 		if ($this->emptySegmentValue !== '') {
-			foreach ($segments as &$segment) {
+			foreach ($segments as $key => $segment) {
 				if ($segment === '') {
-					$segment = $this->emptySegmentValue;
+					$segments[$key] = $this->emptySegmentValue;
 				}
 			}
 		}
