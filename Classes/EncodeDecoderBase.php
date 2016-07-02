@@ -244,9 +244,9 @@ abstract class EncodeDecoderBase {
 		if (count($pathParts) > 1) {
 			ksort($pathParts);
 		}
-		foreach ($pathParts as &$part) {
+		foreach ($pathParts as $key => $part) {
 			if (is_array($part)) {
-				$this->sortArrayDeep($part);
+				$this->sortArrayDeep($pathParts[$key]);
 			}
 		}
 	}

@@ -909,8 +909,8 @@ class UrlDecoder extends EncodeDecoderBase {
 				);
 				$languageExceptionUids = (string)$this->configuration->get('pagePath/languageExceptionUids');
 				if ($this->detectedLanguageId > 0 && (empty($languageExceptionUids) || !GeneralUtility::inList($languageExceptionUids, $this->detectedLanguageId))) {
-					foreach ($children as &$child) {
-						$child = $this->pageRepository->getPageOverlay($child, (int)$this->detectedLanguageId);
+					foreach ($children as $key => $child) {
+						$children[$key] = $this->pageRepository->getPageOverlay($child, (int)$this->detectedLanguageId);
 					}
 				}
 
