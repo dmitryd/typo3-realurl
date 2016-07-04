@@ -185,27 +185,23 @@ class DatabaseCache implements CacheInterface, SingletonInterface {
 
 		$rows = $this->databaseConnection->exec_SELECTgetRows('*', 'tx_realurl_urlcache',
 			'rootpage_id=' . (int)$rootPageId . ' AND ' .
-				'speaking_url=' . $this->databaseConnection->fullQuoteStr($speakingUrl, 'tx_realurl_urlcache')
+				'speaking_url=' . $this->databaseConnection->fullQuoteStr($speakingUrl, 'tx_realurl_urlcache'),
+				'', 'expire'
 		);
 
-		if (count($rows) === 1) {
-			$row = reset($rows);
-		}
-		else {
-			// See #103
-			$row = null;
-			foreach ($rows as $rowCandidate) {
-				$variables = @json_decode($rowCandidate['request_variables'], TRUE);
-				if (is_array($variables) && isset($variables['L'])) {
-					if ((int)$variables['L'] === (int)$languageId) {
-						// Found language!
-						$row = $rowCandidate;
-						break;
-					}
-					elseif ((int)$variables['L'] === 0) {
-						// Default language
-						$row = $rowCandidate;
-					}
+		// See #103
+		$row = null;
+		foreach ($rows as $rowCandidate) {
+			$variables = @json_decode($rowCandidate['request_variables'], TRUE);
+			if (is_array($variables) && isset($variables['L'])) {
+				if ((int)$variables['L'] === (int)$languageId) {
+					// Found language!
+					$row = $rowCandidate;
+					break;
+				}
+				elseif ((int)$variables['L'] === 0) {
+					// Default language
+					$row = $rowCandidate;
 				}
 			}
 		}
