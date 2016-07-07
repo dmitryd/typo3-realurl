@@ -173,7 +173,11 @@ class DatabaseCache implements CacheInterface, SingletonInterface {
 		return $cacheEntry;
 	}
 	/**
-	 * Gets the entry from cache.
+	 * Gets the entry from cache. Language id is needed here because in some
+	 * cases URLs can be the same for different languages (_DOMAINS & use alias,
+	 * for example).
+	 *
+	 * We may not fallback to the default language here!
 	 *
 	 * @param int $rootPageId
 	 * @param string $speakingUrl
@@ -199,10 +203,10 @@ class DatabaseCache implements CacheInterface, SingletonInterface {
 					$row = $rowCandidate;
 					break;
 				}
-				elseif ((int)$variables['L'] === 0) {
-					// Default language
-					$row = $rowCandidate;
-				}
+			}
+			elseif ((int)$languageId === 0) {
+				// No 'L' means default language.
+				$row = $rowCandidate;
 			}
 		}
 
