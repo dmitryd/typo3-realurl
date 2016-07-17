@@ -1178,7 +1178,7 @@ class UrlDecoder extends EncodeDecoderBase {
 	 */
 	protected function mergeWithExistingGetVars(array &$requestVariables) {
 		if (count($_GET) > 0) {
-			$flatGetArray = $this->parseQueryStringParameters($this->createQueryStringFromParameters($_GET));
+			$flatGetArray = $this->parseQueryStringParameters($this->createQueryStringFromParameters(GeneralUtility::_GET()));
 			ArrayUtility::mergeRecursiveWithOverrule($requestVariables, $flatGetArray);
 		}
 	}
