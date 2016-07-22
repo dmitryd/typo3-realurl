@@ -1198,11 +1198,16 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 	 * not set already.
 	 */
 	protected function mergeGetVarsFromDomainsConfiguration() {
-		foreach ($this->configuration->getGetVarsToSet() as $getVarName => $getVarValue) {
-			if (empty($_GET[$getVarName])) {
-				$_GET[$getVarName] = $getVarValue;
-			}
-		}
+		$getVars = array();
+		// Convert the configuration into an $_GET-"friendly" format
+		// Maybe there's an nicer way to do this
+		$getVarsAsQueryString = http_build_query($this->configuration->getGetVarsToSet());
+		parse_str($getVarsAsQueryString, $getVars);
+
+		// Over-write $_GET-params to match earlier behavior …
+		ArrayUtility::mergeRecursiveWithOverrule($getVars, $_GET, TRUE, TRUE, FALSE);
+		// … and store it back
+		$_GET = $getVars;
 	}
 
 	/**
