@@ -24,7 +24,7 @@
 
 $GLOBALS['TCA']['tx_realurl_urlcache'] = array(
 	'ctrl' => array(
-		'label' => '',
+		'label' => 'speaking_url',
 		'hideTable' => 1,
 	),
 	'columns' => array(
@@ -60,6 +60,14 @@ $GLOBALS['TCA']['tx_realurl_urlcache'] = array(
 			'label' => '',
 			'config' => array(
 				'type' => 'input',
+			)
+		),
+		'expire' => array(
+			'label' => '',
+			'config' => array(
+				'type' => 'input',
+				'eval' => 'datetime',
+				'default' => 0,
 			)
 		),
 	),

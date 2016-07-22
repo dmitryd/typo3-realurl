@@ -24,7 +24,7 @@
 
 $GLOBALS['TCA']['tx_realurl_pathcache'] = array(
 	'ctrl' => array(
-		'label' => '',
+		'label' => 'pagepath',
 		'hideTable' => 1,
 	),
 	'columns' => array(

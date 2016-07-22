@@ -8,7 +8,7 @@ if (!isset($GLOBALS['TCA']['pages_language_overlay']['columns']['tx_realurl_path
 			'config' => array(
 				'type' => 'input',
 				'max' => 255,
-				'eval' => 'trim,nospace,lower,uniqueInPid,DmitryDulepov\\Realurl\\Evaluator\\SegmentFieldCleaner'
+				'eval' => 'trim,nospace,lower,DmitryDulepov\\Realurl\\Evaluator\\SegmentFieldCleaner'
 			),
 		),
 	));

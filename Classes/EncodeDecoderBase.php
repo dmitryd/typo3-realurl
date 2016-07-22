@@ -102,6 +102,17 @@ abstract class EncodeDecoderBase {
 	}
 
 	/**
+	 * Creates a query string (without preceeding question mark) from
+	 * parameters.
+	 *
+	 * @param array $parameters
+	 * @return mixed
+	 */
+	protected function createQueryStringFromParameters(array $parameters) {
+		return substr(GeneralUtility::implodeArrayForUrl('', $parameters), 1);
+	}
+
+	/**
 	 * Checks conditions for xxxVar.
 	 *
 	 * @param array $conditionConfiguration
@@ -188,9 +199,9 @@ abstract class EncodeDecoderBase {
 		$urlParts = parse_url($url);
 		$sortedUrl = $urlParts['path'];
 		if ($urlParts['query']) {
-			parse_str($url, $pathParts);
-			$this->sortArrayDeep($pathParts);
-			$sortedUrl .= '?' . ltrim(GeneralUtility::implodeArrayForUrl('', $pathParts), '&');
+			parse_str($url, $parameters);
+			$this->sortArrayDeep($parameters);
+			$sortedUrl .= '?' . $this->createQueryStringFromParameters($parameters);
 		}
 
 		return $sortedUrl;
@@ -208,10 +219,19 @@ abstract class EncodeDecoderBase {
 		$this->utility = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\Utility', $this->configuration);
 		$this->cache = $this->utility->getCache();
 		$this->separatorCharacter = $this->configuration->get('pagePath/spaceCharacter');
+	}
 
-		if ($this->rootPageId === 0) {
-			throw new \Exception('RealURL was not able to find the root page id for the domain "' . $this->utility->getCurrentHost() . '"', 1453732574);
+	/**
+	 * Checks if system runs in non-live workspace
+	 *
+	 * @return boolean
+	 */
+	protected function isInWorkspace() {
+		$result = false;
+		if ($this->tsfe->beUserLogin) {
+			$result = ($GLOBALS['BE_USER']->workspace !== 0);
 		}
+		return $result;
 	}
 
 	/**
@@ -224,9 +244,9 @@ abstract class EncodeDecoderBase {
 		if (count($pathParts) > 1) {
 			ksort($pathParts);
 		}
-		foreach ($pathParts as &$part) {
+		foreach ($pathParts as $key => $part) {
 			if (is_array($part)) {
-				$this->sortArrayDeep($part);
+				$this->sortArrayDeep($pathParts[$key]);
 			}
 		}
 	}

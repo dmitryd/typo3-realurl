@@ -80,10 +80,14 @@ class AutomaticConfigurator {
 	 * @return void
 	 */
 	protected function addLanguages(array &$configuration) {
-		if ($this->hasStaticInfoTables) {
-			$languages = $this->databaseConnection->exec_SELECTgetRows('t1.uid AS uid,t2.lg_iso_2 AS lg_iso_2', 'sys_language t1, static_languages t2', 't2.uid=t1.static_lang_isocode AND t1.hidden=0');
-		} else {
-			$languages = $this->databaseConnection->exec_SELECTgetRows('t1.uid AS uid,t1.uid AS lg_iso_2', 'sys_language t1', 't1.hidden=0');
+		if (version_compare(TYPO3_branch, '7.6', '>=')) {
+			$languages = $this->databaseConnection->exec_SELECTgetRows('t1.uid AS uid,t1.language_isocode AS lg_iso_2', 'sys_language t1', 't1.hidden=0 AND lg_iso_2<>\'\'');
+		}
+		elseif ($this->hasStaticInfoTables) {
+			$languages = $this->databaseConnection->exec_SELECTgetRows('t1.uid AS uid,t2.lg_iso_2 AS lg_iso_2', 'sys_language t1, static_languages t2', 't2.uid=t1.static_lang_isocode AND t1.hidden=0 AND lg_iso_2<>\'\'');
+		}
+		else {
+			$languages = array();
 		}
 		if (count($languages) > 0) {
 			$configuration['preVars'] = array(
@@ -192,6 +196,11 @@ class AutomaticConfigurator {
 		// Add from extensions
 		if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/realurl/class.tx_realurl_autoconfgen.php']['extensionConfiguration'])) {
 			foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/realurl/class.tx_realurl_autoconfgen.php']['extensionConfiguration'] as $extKey => $userFunc) {
+				$previousExceptionHandler = set_error_handler(function(/** @noinspection PhpUnusedParameterInspection */ $errno, $errstr) use ($userFunc) {
+					$message = 'Error while calling "' . $userFunc . '" for realurl automatic configuration. Error message: ' . $errstr;
+					error_log($message);
+				}, E_RECOVERABLE_ERROR);
+
 				$params = array(
 					'config' => $confTemplate,
 					'extKey' => $extKey
@@ -200,6 +209,8 @@ class AutomaticConfigurator {
 				if ($var) {
 					$confTemplate = $var;
 				}
+
+				set_error_handler($previousExceptionHandler, E_RECOVERABLE_ERROR);
 			}
 		}
 
@@ -215,10 +226,17 @@ class AutomaticConfigurator {
 	protected function postProcessConfiguration(array &$configuration) {
 		if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/realurl/class.tx_realurl_autoconfgen.php']['postProcessConfiguration'])) {
 			foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/realurl/class.tx_realurl_autoconfgen.php']['postProcessConfiguration'] as $userFunc) {
+				$previousExceptionHandler = set_error_handler(function(/** @noinspection PhpUnusedParameterInspection */ $errno, $errstr) use ($userFunc) {
+					$message = 'Error while calling "' . $userFunc . '" for post processing realurl configuration. Error message: ' . $errstr;
+					error_log($message);
+				}, E_RECOVERABLE_ERROR);
+
 				$parameters = array(
 					'config' => &$configuration,
 				);
 				GeneralUtility::callUserFunction($userFunc, $parameters, $this);
+
+				set_error_handler($previousExceptionHandler, E_RECOVERABLE_ERROR);
 			}
 		}
 	}

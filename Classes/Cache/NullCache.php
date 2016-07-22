@@ -40,11 +40,11 @@ use TYPO3\CMS\Core\SingletonInterface;
 class NullCache implements CacheInterface, SingletonInterface {
 
 	/**
-	 * Removes expired path cache entries.
+	 * Removes expired cache entries.
 	 *
 	 * @return void
 	 */
-	public function clearExpiredPathCacheEntries() {
+	public function clearExpiredCacheEntries() {
 		// Do nothing
 	}
 
@@ -88,13 +88,13 @@ class NullCache implements CacheInterface, SingletonInterface {
 	}
 
 	/**
-	 * Expires path cache for the given page and language.
+	 * Expires cache for the given page and language.
 	 *
 	 * @param int $pageId
 	 * @param int $languageId
 	 * @return void
 	 */
-	public function expirePathCache($pageId, $languageId) {
+	public function expireCache($pageId, $languageId = null) {
 		// Do nothing
 	}
 
@@ -114,9 +114,10 @@ class NullCache implements CacheInterface, SingletonInterface {
 	 *
 	 * @param int $rootPageId
 	 * @param string $speakingUrl
+	 * @param int $languageId
 	 * @return UrlCacheEntry|null
 	 */
-	public function getUrlFromCacheBySpeakingUrl($rootPageId, $speakingUrl) {
+	public function getUrlFromCacheBySpeakingUrl($rootPageId, $speakingUrl, $languageId) {
 		return NULL;
 	}
 
@@ -137,11 +138,12 @@ class NullCache implements CacheInterface, SingletonInterface {
 	 * Obtains path from the path cache.
 	 *
 	 * @param int $rootPageId
+	 * @param int $languageId
 	 * @param string|null $mountPoint null means exclude from search
 	 * @param string $pagePath
 	 * @return PathCacheEntry|null
 	 */
-	public function getPathFromCacheByPagePath($rootPageId, $mountPoint, $pagePath) {
+	public function getPathFromCacheByPagePath($rootPageId, $languageId, $mountPoint, $pagePath) {
 		return NULL;
 	}
 

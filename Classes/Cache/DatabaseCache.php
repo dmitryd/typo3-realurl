@@ -54,8 +54,9 @@ class DatabaseCache implements CacheInterface, SingletonInterface {
 	 *
 	 * @return void
 	 */
-	public function clearExpiredPathCacheEntries() {
+	public function clearExpiredCacheEntries() {
 		$this->databaseConnection->exec_DELETEquery('tx_realurl_pathcache', 'expire<' . time());
+		$this->databaseConnection->exec_DELETEquery('tx_realurl_urlcache', 'expire<' . time());
 	}
 
 	/**
@@ -65,7 +66,7 @@ class DatabaseCache implements CacheInterface, SingletonInterface {
 	 * @return void
 	 */
 	public function clearPathCacheForPage($pageId) {
-		$this->databaseConnection->exec_DELETEquery('tx_realurl_pathcache', 'page_id=' . (int)$pageId);
+		$this->databaseConnection->exec_DELETEquery('tx_realurl_pathcache', 'page_id=' . (int)$pageId . ' AND expire=0');
 	}
 
 	/**
@@ -96,22 +97,48 @@ class DatabaseCache implements CacheInterface, SingletonInterface {
 	 * @return void
 	 */
 	public function clearUrlCacheForPage($pageId) {
-		$this->databaseConnection->sql_query('DELETE FROM tx_realurl_uniqalias_cache_map WHERE url_cache_id IN (SELECT uid FROM tx_realurl_urlcache WHERE page_id=' . (int)$pageId . ')');
-		$this->databaseConnection->exec_DELETEquery('tx_realurl_urlcache', 'page_id=' . (int)$pageId);
+		$this->databaseConnection->sql_query('DELETE FROM tx_realurl_uniqalias_cache_map WHERE url_cache_id IN (SELECT uid FROM tx_realurl_urlcache WHERE page_id=' . (int)$pageId . ' AND expire=0)');
+		$this->databaseConnection->exec_DELETEquery('tx_realurl_urlcache', 'page_id=' . (int)$pageId . ' AND expire=0');
 	}
 
 	/**
-	 * Expires path cache for the given page and language.
+	 * Expires cache for the given page and language.
 	 *
 	 * @param int $pageId
-	 * @param int $languageId
+	 * @param int|null $languageId
 	 * @return void
 	 */
-	public function expirePathCache($pageId, $languageId) {
+	public function expireCache($pageId, $languageId = null) {
+		$expirationTime = time() + 30*24*60*60;
+
+		$this->databaseConnection->sql_query('START TRANSACTION');
+
 		$this->databaseConnection->exec_UPDATEquery('tx_realurl_pathcache',
-			'page_id=' . (int)$pageId . ' AND language_id=' . (int)$languageId . ' AND expire=0',
-			array('expire' => time() + 30*24*60*60)
+			'page_id=' . (int)$pageId . (!is_null($languageId) ? ' AND language_id=' . (int)$languageId : '') . ' AND expire=0',
+			array('expire' => $expirationTime)
 		);
+
+		if (is_null($languageId)) {
+			$this->databaseConnection->exec_UPDATEquery('tx_realurl_pathcache',
+				'page_id=' . (int)$pageId . ' AND expire=0',
+				array('expire' => $expirationTime)
+			);
+		}
+		else {
+			$rows = $this->databaseConnection->exec_SELECTgetRows('*', 'tx_realurl_urlcache',
+				'page_id=' . (int)$pageId . ' AND expire=0'
+			);
+			foreach ($rows as $row) {
+				$requestVariables = @json_decode($row['request_variables'], TRUE);
+				if (is_array($requestVariables) && (int)$requestVariables['L'] === (int)$languageId) {
+					$this->databaseConnection->exec_UPDATEquery('tx_realurl_urlcache',
+						'uid=' . (int)$row['uid'], array('expire' => $expirationTime)
+					);
+				}
+			}
+		}
+
+		$this->databaseConnection->sql_query('COMMIT');
 	}
 
 	/**
@@ -125,13 +152,15 @@ class DatabaseCache implements CacheInterface, SingletonInterface {
 		$cacheEntry = NULL;
 
 		$row = $this->databaseConnection->exec_SELECTgetSingleRow('*', 'tx_realurl_urlcache',
-			'rootpage_id=' . $rootPageId . ' AND ' .
-				'original_url=' . $this->databaseConnection->fullQuoteStr($originalUrl, 'tx_realurl_urlcache')
+			'rootpage_id=' . (int)$rootPageId . ' AND ' .
+				'original_url=' . $this->databaseConnection->fullQuoteStr($originalUrl, 'tx_realurl_urlcache'),
+				'', 'expire'
 		);
 		if (is_array($row)) {
 			$cacheEntry = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\Cache\\UrlCacheEntry');
 			/** @var \DmitryDulepov\Realurl\Cache\UrlCacheEntry $cacheEntry */
 			$cacheEntry->setCacheId($row['uid']);
+			$cacheEntry->setExpiration($row['expire']);
 			$cacheEntry->setPageId($row['page_id']);
 			$cacheEntry->setRootPageId($row['rootpage_id']);
 			$cacheEntry->setOriginalUrl($originalUrl);
@@ -139,53 +168,60 @@ class DatabaseCache implements CacheInterface, SingletonInterface {
 			$requestVariables = json_decode($row['request_variables'], TRUE);
 			// TODO Log a problem here because it must be an array always
 			$cacheEntry->setRequestVariables(is_array($requestVariables) ? $requestVariables : array());
-
-			// Update timestamp
-			$currentTime = time();
-			if ((int)$row['tstamp'] !== $currentTime) {
-				$this->databaseConnection->exec_UPDATEquery('tx_realurl_urlcache',
-					'uid=' . $this->databaseConnection->fullQuoteStr($cacheEntry->getCacheId(), 'tx_realurl_urlcache'),
-					array('tstamp' => $currentTime)
-				);
-			}
 		}
 
 		return $cacheEntry;
 	}
 	/**
-	 * Gets the entry from cache.
+	 * Gets the entry from cache. Language id is needed here because in some
+	 * cases URLs can be the same for different languages (_DOMAINS & use alias,
+	 * for example).
+	 *
+	 * We may not fallback to the default language here!
 	 *
 	 * @param int $rootPageId
 	 * @param string $speakingUrl
+	 * @param int $languageId
 	 * @return UrlCacheEntry|null
 	 */
-	public function getUrlFromCacheBySpeakingUrl($rootPageId, $speakingUrl) {
+	public function getUrlFromCacheBySpeakingUrl($rootPageId, $speakingUrl, $languageId) {
 		$cacheEntry = NULL;
 
-		$row = $this->databaseConnection->exec_SELECTgetSingleRow('*', 'tx_realurl_urlcache',
-			'rootpage_id=' . $rootPageId . ' AND ' .
-				'speaking_url=' . $this->databaseConnection->fullQuoteStr($speakingUrl, 'tx_realurl_urlcache')
+		$rows = $this->databaseConnection->exec_SELECTgetRows('*', 'tx_realurl_urlcache',
+			'rootpage_id=' . (int)$rootPageId . ' AND ' .
+				'speaking_url=' . $this->databaseConnection->fullQuoteStr($speakingUrl, 'tx_realurl_urlcache'),
+				'', 'expire'
 		);
+
+		// See #103
+		$row = null;
+		foreach ($rows as $rowCandidate) {
+			$variables = @json_decode($rowCandidate['request_variables'], TRUE);
+			if (is_array($variables) && isset($variables['L'])) {
+				if ((int)$variables['L'] === (int)$languageId) {
+					// Found language!
+					$row = $rowCandidate;
+					break;
+				}
+			}
+			elseif ((int)$languageId === 0) {
+				// No 'L' means default language.
+				$row = $rowCandidate;
+			}
+		}
+
 		if (is_array($row)) {
 			$cacheEntry = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\Cache\\UrlCacheEntry');
 			/** @var \DmitryDulepov\Realurl\Cache\UrlCacheEntry $cacheEntry */
 			$cacheEntry->setCacheId($row['uid']);
+			$cacheEntry->setExpiration($row['expire']);
 			$cacheEntry->setPageId($row['page_id']);
 			$cacheEntry->setRootPageId($row['rootpage_id']);
 			$cacheEntry->setOriginalUrl($row['original_url']);
 			$cacheEntry->setSpeakingUrl($speakingUrl);
-			$requestVariables = json_decode($row['request_variables'], TRUE);
+			$requestVariables = @json_decode($row['request_variables'], TRUE);
 			// TODO Log a problem here because it must be an array always
 			$cacheEntry->setRequestVariables(is_array($requestVariables) ? $requestVariables : array());
-
-			// Update timestamp
-			$currentTime = time();
-			if ((int)$row['tstamp'] !== $currentTime) {
-				$this->databaseConnection->exec_UPDATEquery('tx_realurl_urlcache',
-					'uid=' . $this->databaseConnection->fullQuoteStr($cacheEntry->getCacheId(), 'tx_realurl_urlcache'),
-					array('tstamp' => $currentTime)
-				);
-			}
 		}
 
 		return $cacheEntry;
@@ -229,16 +265,18 @@ class DatabaseCache implements CacheInterface, SingletonInterface {
 	 * Obtains path from the path cache.
 	 *
 	 * @param int $rootPageId
+	 * @param int $languageId
 	 * @param string|null $mountPoint null means exclude from search
 	 * @param string $pagePath
 	 * @return PathCacheEntry|null
 	 */
-	public function getPathFromCacheByPagePath($rootPageId, $mountPoint, $pagePath) {
+	public function getPathFromCacheByPagePath($rootPageId, $languageId, $mountPoint, $pagePath) {
 		$cacheEntry = NULL;
 
 		$row = $this->databaseConnection->exec_SELECTgetSingleRow('*', 'tx_realurl_pathcache',
 			'rootpage_id=' . (int)$rootPageId .
 			' AND pagepath=' . $this->databaseConnection->fullQuoteStr($pagePath, 'tx_realurl_pathcache') .
+			' AND language_id=' . (int)$languageId .
 			(is_null($mountPoint) ? '' : ' AND mpvar=' . ($mountPoint ? $this->databaseConnection->fullQuoteStr($mountPoint, 'tx_realurl_pathcache') : '\'\'')),
 			'', 'expire'
 		);
@@ -293,12 +331,12 @@ class DatabaseCache implements CacheInterface, SingletonInterface {
 	 */
 	public function putUrlToCache(UrlCacheEntry $cacheEntry) {
 		$data = array(
+			'expire' => $cacheEntry->getExpiration(),
 			'original_url' => $cacheEntry->getOriginalUrl(),
 			'page_id' => $cacheEntry->getPageId(),
 			'request_variables' => json_encode($cacheEntry->getRequestVariables()),
 			'rootpage_id' => $cacheEntry->getRootPageId(),
 			'speaking_url' => $cacheEntry->getSpeakingUrl(),
-			'tstamp' => time(),
 		);
 		if ($cacheEntry->getCacheId()) {
 			$this->databaseConnection->exec_UPDATEquery('tx_realurl_urlcache',
@@ -306,7 +344,6 @@ class DatabaseCache implements CacheInterface, SingletonInterface {
 				$data
 			);
 		} else {
-			$data['crdate'] = $data['tstamp'];
 			$this->databaseConnection->exec_INSERTquery('tx_realurl_urlcache', $data);
 			$cacheEntry->setCacheId($this->databaseConnection->sql_insert_id());
 		}

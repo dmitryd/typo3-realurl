@@ -29,7 +29,8 @@
 			<tr>
 				<th class="col-sm-1"></th>
 				<th class="col-sm-5"><f:translate key="module.tableHeader.speaking_url"/></th>
-				<th class="col-sm-5"><f:translate key="module.tableHeader.original_url"/></th>
+				<th class="col-sm-4"><f:translate key="module.tableHeader.original_url"/></th>
+				<th class="col-sm-1"><f:translate key="module.tableHeader.expire"/></th>
 				<th class="col-sm-1"><f:translate key="module.tableHeader.rootpage_id"/></th>
 			</tr>
 			<f:for each="{cacheEntries}" as="cacheEntry">
@@ -63,6 +64,16 @@
 		</td>
 		<td>{cacheEntry.speakingUrl}</td>
 		<td>{cacheEntry.originalUrl}</td>
+		<td>
+			<f:if condition="{cacheEntry.expire}">
+				<f:then>
+					<f:format.date format="{f:translate(key: 'module.dateTimeFormat')}">{cacheEntry.expire}</f:format.date>
+				</f:then>
+				<f:else>
+					&ndash;
+				</f:else>
+			</f:if>
+		</td>
 		<td>{cacheEntry.rootPageId}</td>
 	</tr>
 </f:section>

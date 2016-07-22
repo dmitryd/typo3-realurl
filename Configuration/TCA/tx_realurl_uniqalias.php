@@ -24,7 +24,7 @@
 
 $GLOBALS['TCA']['tx_realurl_uniqalias'] = array(
 	'ctrl' => array(
-		'label' => '',
+		'label' => 'value_alias',
 		'hideTable' => 1,
 	),
 	'columns' => array(

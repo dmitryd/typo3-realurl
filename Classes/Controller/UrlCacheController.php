@@ -112,6 +112,7 @@ class UrlCacheController extends BackendModuleController {
 		$query->setOrderings(array(
 			'speakingUrl' => QueryInterface::ORDER_ASCENDING,
 			'originalUrl' => QueryInterface::ORDER_ASCENDING,
+			'expire' => QueryInterface::ORDER_ASCENDING,
 		));
 		$query->matching($query->equals('pageId', $pageId));
 

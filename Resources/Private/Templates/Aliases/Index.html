@@ -69,7 +69,7 @@
 			<d:setVariable name="hasPager" value="0"/>
 		</f:else>
 	</f:if>
-	<f:be.widget.paginate objects="{foundAliases}" as="aliases" configuration="{itemsPerPage: entriesPerPage, insertAbove: hasPager, insertBelow: hasPager, addQueryString: 1}">
+	<f:be.widget.paginate objects="{foundAliases}" as="aliases" configuration="{itemsPerPage: entriesPerPage, insertAbove: hasPager, insertBelow: hasPager}">
 		<table class="table table-striped">
 			<tr>
 				<th class="col-sm-1"></th>
