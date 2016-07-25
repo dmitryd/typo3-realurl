@@ -282,7 +282,7 @@ class UrlDecoder extends EncodeDecoderBase {
 
 		// First, test if there is an entry in cache for the alias
 		if ($configuration['useUniqueCache']) {
-			$cachedId = $this->getFromAliasCacheByAliasValue($configuration, $value, FALSE);
+			$cachedId = $this->getFromAliasCacheByAliasValue($configuration, $value, $this->detectedLanguageId, NULL, FALSE);
 			if (MathUtility::canBeInterpretedAsInteger($cachedId)) {
 				$result = (int)$cachedId;
 			}
@@ -1428,7 +1428,31 @@ class UrlDecoder extends EncodeDecoderBase {
 	 * @return void
 	 */
 	protected function setLanguageFromQueryString() {
-		$this->detectedLanguageId = (int)GeneralUtility::_GP('L');
+ 		$lang = GeneralUtility::_GP('L');
+		if ($lang == '') {
+			$this->setLanguageFromPath();
+		} else {
+			$this->detectedLanguageId = (int)GeneralUtility::_GP('L');
+		}
+	}
+
+	/**
+	 * Set Language from Path
+	 *
+	 * @return void
+	 */
+	protected function setLanguageFromPath() {
+		$cacheEntry = $this->getFromUrlCache($this->speakingUri);
+		if (!$cacheEntry) {
+			list($pathToDecode) = explode('?', $this->speakingUri, 2);
+			$path = trim($pathToDecode, '/');
+			$pathSegments = $path ? explode('/', $path) : array();
+			foreach($pathSegments as $id => $value) {
+				$pathSegments[$id] = urldecode($value);
+			}
+			// The Language path segment should be configured in the preVars
+			$this->decodePreVars($pathSegments);
+		}
 	}
 
 	/**
