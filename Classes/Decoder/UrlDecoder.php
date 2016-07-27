@@ -1162,16 +1162,28 @@ class UrlDecoder extends EncodeDecoderBase {
 	 * not set already.
 	 */
 	protected function mergeGetVarsFromDomainsConfiguration() {
-		$getVars = array();
 		// Convert the configuration into an $_GET-"friendly" format
-		// Maybe there's an nicer way to do this
-		$getVarsAsQueryString = http_build_query($this->configuration->getGetVarsToSet());
-		parse_str($getVarsAsQueryString, $getVars);
+		$getVars = $this->makeRealPhpArrayFromRequestVars($this->configuration->getGetVarsToSet());
 
-		// Over-write $_GET-params to match earlier behavior …
-		ArrayUtility::mergeRecursiveWithOverrule($getVars, $_GET, TRUE, TRUE, FALSE);
-		// … and store it back
-		$_GET = $getVars;
+		// Over-write with $_GET-params that $_GET-parmas have a "higher" priority
+		$GET = GeneralUtility::_GET();
+		if (!is_array($GET)) {
+			$GET = array();
+		}
+		ArrayUtility::mergeRecursiveWithOverrule($getVars, $GET, TRUE, TRUE, FALSE);
+
+		// Re-caclulate the cHash
+		if (isset($getVars['cHash'])) {
+			unset($getVars['cHash']);
+		}
+		/* @var \TYPO3\CMS\Frontend\Page\CacheHashCalculator $cacheHashCalculator */
+		$cacheHashCalculator = GeneralUtility::makeInstance('TYPO3\\CMS\\Frontend\\Page\\CacheHashCalculator');
+		$getVars['cHash'] = $cacheHashCalculator->generateForParameters(
+			GeneralUtility::implodeArrayForUrl('', $getVars)
+		);
+
+		// Store the "new" $_GET-params back
+		$this->caller->mergingWithGetVars($getVars);
 	}
 
 	/**
