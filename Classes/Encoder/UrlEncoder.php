@@ -214,7 +214,7 @@ class UrlEncoder extends EncodeDecoderBase {
 	 * @return void
 	 */
 	protected function appendToEncodedUrl($stringToAppend, $addSlash = TRUE) {
-		if ($stringToAppend) {
+		if ($stringToAppend !== '') {
 			$this->encodedUrl = ($this->encodedUrl ? rtrim($this->encodedUrl, '/') . '/' : '') . $stringToAppend;
 			if ($addSlash) {
 				$this->encodedUrl .= '/';
