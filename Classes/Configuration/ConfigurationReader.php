@@ -81,7 +81,7 @@ class ConfigurationReader {
 	 * @var array
 	 */
 	protected $defaultValues = array(
-		'cache/banUrlsRegExp' => '/tx_solr|tx_indexedsearch|(?:^|\?|&)q=/',
+		'cache/banUrlsRegExp' => '/tx_solr|tx_indexedsearch|tx_kesearch|(?:^|\?|&)q=/',
 		'cache/disable' => FALSE,
 		'fileName/acceptHTMLsuffix' => TRUE,
 		'fileName/defaultToHTMLsuffixOnPrev' => FALSE,
