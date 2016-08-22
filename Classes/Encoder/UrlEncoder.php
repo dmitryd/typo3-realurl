@@ -308,14 +308,6 @@ class UrlEncoder extends EncodeDecoderBase {
 	protected function createAliasForValue($getVarValue, array $configuration) {
 		$result = $getVarValue;
 
-		$languageEnabled = FALSE;
-		$fieldList = array();
-		if ($configuration['transOrigPointerField'] && $configuration['languageField']) {
-			$fieldList[] = 'uid';
-			$fieldList[] = $configuration['transOrigPointerField'];
-			$fieldList[] = $configuration['languageField'];
-			$languageEnabled = TRUE;
-		}
 
 		// Define the language for the alias
 		$languageUrlParameter = $configuration['languageGetVar'] ?: 'L';
@@ -326,6 +318,15 @@ class UrlEncoder extends EncodeDecoderBase {
 
 		// First, test if there is an entry in cache for the id
 		if (!$configuration['useUniqueCache'] || $configuration['autoUpdate'] || !($result = $this->getFromAliasCache($configuration, $getVarValue, $languageUid))) {
+			$languageEnabled = FALSE;
+			$fieldList = array();
+			if ($configuration['transOrigPointerField'] && $configuration['languageField']) {
+				$fieldList[] = 'uid';
+				$fieldList[] = $configuration['transOrigPointerField'];
+				$fieldList[] = $configuration['languageField'];
+				$languageEnabled = TRUE;
+			}
+
 			$fieldList[] = $configuration['alias_field'];
 			$row = $this->databaseConnection->exec_SELECTgetSingleRow(implode(',', $fieldList), $configuration['table'],
 						$configuration['id_field'] . '=' . $this->databaseConnection->fullQuoteStr($getVarValue, $configuration['table']) .

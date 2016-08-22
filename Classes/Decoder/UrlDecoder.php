@@ -292,16 +292,6 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 	protected function convertAliasToId(array $configuration, $value) {
 		$result = (string)$value;
 
-		// Assemble list of fields to look up. This includes localization related fields
-		$translationEnabled = FALSE;
-		$fieldList = array();
-		if ($configuration['languageGetVar'] && $configuration['transOrigPointerField'] && $configuration['languageField']) {
-			$fieldList[] = 'uid';
-			$fieldList[] = $configuration['transOrigPointerField'];
-			$fieldList[] = $configuration['languageField'];
-			$translationEnabled = TRUE;
-		}
-
 		// First, test if there is an entry in cache for the alias
 		if ($configuration['useUniqueCache']) {
 			$cachedId = $this->getFromAliasCacheByAliasValue($configuration, $value, FALSE);
@@ -316,6 +306,19 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 			// looking URL segment, which usually looks differently from the field.
 			// But this is the only thing we can do without fetching each record and
 			// re-encoding the field to find the match.
+
+			// Assemble list of fields to look up. This includes localization related fields
+			$translationEnabled = FALSE;
+			$fieldList = array();
+			if ($configuration['languageGetVar'] && $configuration['transOrigPointerField'] && $configuration['languageField']) {
+				$fieldList[] = 'uid';
+				if ($configuration['table'] !== 'pages') {
+					$fieldList[] = $configuration['transOrigPointerField'];
+					$fieldList[] = $configuration['languageField'];
+				}
+				$translationEnabled = TRUE;
+			}
+
 			$fieldList[] = $configuration['id_field'];
 			$row = $this->databaseConnection->exec_SELECTgetSingleRow(implode(',', $fieldList),
 				$configuration['table'],
