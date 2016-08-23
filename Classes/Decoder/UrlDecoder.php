@@ -1208,16 +1208,6 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 		}
 		ArrayUtility::mergeRecursiveWithOverrule($getVars, $GET, TRUE, TRUE, FALSE);
 
-		// Re-caclulate the cHash
-		if (isset($getVars['cHash'])) {
-			unset($getVars['cHash']);
-		}
-		/* @var \TYPO3\CMS\Frontend\Page\CacheHashCalculator $cacheHashCalculator */
-		$cacheHashCalculator = GeneralUtility::makeInstance('TYPO3\\CMS\\Frontend\\Page\\CacheHashCalculator');
-		$getVars['cHash'] = $cacheHashCalculator->generateForParameters(
-			GeneralUtility::implodeArrayForUrl('', $getVars)
-		);
-
 		// Store the "new" $_GET-params back
 		$this->caller->mergingWithGetVars($getVars);
 	}
