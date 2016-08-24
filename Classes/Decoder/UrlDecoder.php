@@ -300,7 +300,7 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 			}
 		}
 
-		if (!is_int($result)) {
+		if (!is_int($result) && $configuration['table'] !== 'pages') {
 			// If no cached entry, look it up directly in the table. Note: this will
 			// most likely fail. When encoding we convert alias field to a nice
 			// looking URL segment, which usually looks differently from the field.

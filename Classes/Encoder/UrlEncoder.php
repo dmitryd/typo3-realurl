@@ -308,7 +308,6 @@ class UrlEncoder extends EncodeDecoderBase {
 	protected function createAliasForValue($getVarValue, array $configuration) {
 		$result = $getVarValue;
 
-
 		// Define the language for the alias
 		$languageUrlParameter = $configuration['languageGetVar'] ?: 'L';
 		$languageUid = isset($this->originalUrlParameters[$languageUrlParameter]) ? (int)$this->originalUrlParameters[$languageUrlParameter] : 0;
@@ -320,7 +319,11 @@ class UrlEncoder extends EncodeDecoderBase {
 		if (!$configuration['useUniqueCache'] || $configuration['autoUpdate'] || !($result = $this->getFromAliasCache($configuration, $getVarValue, $languageUid))) {
 			$languageEnabled = FALSE;
 			$fieldList = array();
-			if ($configuration['transOrigPointerField'] && $configuration['languageField']) {
+			if ($configuration['table'] === 'pages') {
+				$fieldList[] = 'uid';
+				$languageEnabled = TRUE;
+			}
+			elseif ($configuration['transOrigPointerField'] && $configuration['languageField']) {
 				$fieldList[] = 'uid';
 				$fieldList[] = $configuration['transOrigPointerField'];
 				$fieldList[] = $configuration['languageField'];
@@ -334,11 +337,21 @@ class UrlEncoder extends EncodeDecoderBase {
 			if (is_array($row)) {
 				// Looking for localized version
 				if ($languageEnabled && $languageUid !== 0) {
-					/** @noinspection PhpUndefinedMethodInspection */
-					$localizedRow = $this->databaseConnection->exec_SELECTgetSingleRow($configuration['alias_field'], $configuration['table'],
-							$configuration['transOrigPointerField'] . '=' . (int)$row['uid'] . '
-							AND ' . $configuration['languageField'] . '=' . $languageUid . '
-							' . (isset($configuration['addWhereClause']) ? $configuration['addWhereClause'] : ''));
+					if ($configuration['table'] === 'pages') {
+						// Note: can't use $this->pageRepository->getPageOverlay() here because 'alias_field' can be an expression
+						$localizedRow = $this->databaseConnection->exec_SELECTgetSingleRow($configuration['alias_field'], 'pages_language_overlay',
+							'pid=' . (int)$row['uid'] . ' AND sys_language_uid=' . $languageUid .
+							(isset($configuration['addWhereClause']) ? $configuration['addWhereClause'] : '')
+						);
+					}
+					else {
+						// Note: can't use $this->pageRepository->getRecordOverlay() here because 'alias_field' can be an expression
+						$localizedRow = $this->databaseConnection->exec_SELECTgetSingleRow($configuration['alias_field'], $configuration['table'],
+							$configuration['transOrigPointerField'] . '=' . (int)$row['uid'] .
+							' AND ' . $configuration['languageField'] . '=' . $languageUid .
+							(isset($configuration['addWhereClause']) ? $configuration['addWhereClause'] : '')
+						);
+					}
 					if (is_array($localizedRow)) {
 						$row = $localizedRow;
 					}
