@@ -43,7 +43,7 @@
 				<source>The alias was deleted.</source>
 			</trans-unit>
 			<trans-unit id="module.aliases.all_deleted">
-				<source>Alias were deleted.</source>
+				<source>Aliases were deleted.</source>
 			</trans-unit>
 			<trans-unit id="module.aliases.edit.submit">
 				<source>Save</source>
