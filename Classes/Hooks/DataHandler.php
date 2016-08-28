@@ -62,6 +62,7 @@ class DataHandler implements SingletonInterface {
 		if (($table === 'pages' || $table === 'pages_language_overlay') && MathUtility::canBeInterpretedAsInteger($id)) {
 			$this->cache->clearPathCacheForPage((int)$id);
 			$this->cache->clearUrlCacheForPage((int)$id);
+			$this->clearUrlCacheForAliasChanges($table, (int)$id);
 		}
 	}
 
@@ -128,7 +129,10 @@ class DataHandler implements SingletonInterface {
 	 * @return void
 	 */
 	protected function clearUrlCacheForAliasChanges($tableName, $recordId) {
-		if (!preg_match('/^(?:pages|sys_|cf_)/', $tableName)) {
+		if (!preg_match('/^(?:sys_|cf_)/', $tableName)) {
+			if ($tableName == 'pages_language_overlay') {
+				$tableName = 'pages';
+			}
 			$expirationTime = time() + 30*24*60*60;
 			// This check would be sufficient for most cases but only when id_field is 'uid' in the configuration
 			$result = $this->databaseConnection->sql_query(
