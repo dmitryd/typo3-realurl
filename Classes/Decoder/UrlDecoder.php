@@ -952,6 +952,21 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 	}
 
 	/**
+	 * Parses the URL and validates the result. This function will strip possible
+	 * query string from speaking URL (we only need to decode the speaking URL!)
+	 *
+	 * @return array
+	 */
+	protected function getUrlPath() {
+		$urlPath = @parse_url('/' . ltrim($this->speakingUri, '/'), PHP_URL_PATH);
+		if (!is_string($urlPath)) {
+			$this->throw404('Current URL is invalid');
+		}
+
+		return ltrim($urlPath, '/');
+	}
+
+	/**
 	 * Obtains variables from the domain confuguration.
 	 *
 	 * @return array
@@ -1273,11 +1288,12 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 	 * @return void
 	 */
 	protected function runDecoding() {
+		$urlPath = $this->getUrlPath();
+
 		$cacheEntry = $this->getFromUrlCache($this->speakingUri);
 		if (!$cacheEntry) {
-			list($pathToDecode) = explode('?', $this->speakingUri, 2);
-			$this->originalPath = $pathToDecode;
-			$cacheEntry = $this->doDecoding($pathToDecode);
+			$this->originalPath = $urlPath;
+			$cacheEntry = $this->doDecoding($urlPath);
 		}
 		$this->checkExpiration($cacheEntry);
 		$this->setRequestVariables($cacheEntry);
