@@ -1580,3 +1580,4 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 		$this->caller->pageNotFoundAndExit($errorMessage);
 	}
 }
+
