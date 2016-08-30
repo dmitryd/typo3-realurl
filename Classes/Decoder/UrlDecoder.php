@@ -177,30 +177,6 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 	}
 
 	/**
-	 * Calculates and adds cHash to the entry. This function is only called
-	 * if we had to decode the entry, which was not in the cache. Even if we
-	 * had cHash in the URL, we force to recalculate it because we could have
-	 * decoded parameters differently than the original URL had (for example,
-	 * skipped some noMatch parameters).
-	 *
-	 * @param UrlCacheEntry $cacheEntry
-	 * @return void
-	 */
-	protected function calculateChash(UrlCacheEntry $cacheEntry) {
-		$requestVariables = $cacheEntry->getRequestVariables();
-		if (!isset($requestVariables['cHash']) && $this->configuration->get('init/recalculateChashIfMissing')) {
-			$cacheHashCalculator = GeneralUtility::makeInstance('TYPO3\\CMS\\Frontend\\Page\\CacheHashCalculator');
-			/* @var \TYPO3\CMS\Frontend\Page\CacheHashCalculator $cacheHashCalculator */
-			$cHashParameters = $cacheHashCalculator->getRelevantParameters(GeneralUtility::implodeArrayForUrl('', $requestVariables));
-
-			if (count($cHashParameters) > 0) {
-				$requestVariables['cHash'] = $cacheHashCalculator->calculateCacheHash($cHashParameters);
-				$cacheEntry->setRequestVariables($requestVariables);
-			}
-		}
-	}
-
-	/**
 	 * Calls user-defined hooks.
 	 *
 	 * @param array $params
@@ -835,8 +811,6 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 		/** @var \DmitryDulepov\Realurl\Cache\UrlCacheEntry $cacheEntry */
 		$cacheEntry->setPageId($pageId);
 		$cacheEntry->setRequestVariables($requestVariables);
-
-		$this->calculateChash($cacheEntry);
 
 		return $cacheEntry;
 	}
