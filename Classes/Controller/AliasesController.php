@@ -252,7 +252,7 @@ class AliasesController extends BackendModuleController {
 		$conditons[] = $query->equals('tablename', $selectedAlias);
 		if ($this->request->hasArgument('searchAlias')) {
 			$searchString = $this->request->getArgument('searchAlias');
-			$searchString = $GLOBALS['TYPO3_DB']->escapeStrForLike($searchString);
+			$searchString = $GLOBALS['TYPO3_DB']->escapeStrForLike($searchString, $selectedAlias);
 			$conditons[] = $query->like('valueAlias', '%' . $searchString . '%');
 		}
 		$query->matching(count($conditons) > 1 ? $query->logicalAnd($conditons) : reset($conditons));
