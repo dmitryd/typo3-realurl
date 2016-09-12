@@ -422,7 +422,7 @@ class UrlEncoder extends EncodeDecoderBase {
 				unset($overlay);
 			}
 		}
-		if ($page['tx_realurl_pathoverride'] && !empty($page['tx_realurl_pathsegment'])) {
+		if ($page['tx_realurl_pathoverride'] && $page['tx_realurl_pathsegment'] !== '') {
 			$path = trim($page['tx_realurl_pathsegment'], '/');
 			$this->appendToEncodedUrl($path);
 			// Mount points do not work with path override. Having them will
