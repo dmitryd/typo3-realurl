@@ -22,6 +22,7 @@ namespace DmitryDulepov\Realurl;
 *
 *  This copyright notice MUST APPEAR in all copies of the script!
 ***************************************************************/
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * This class updates realurl from version 1.x to 2.x.
@@ -44,11 +45,24 @@ class ext_update {
 	 * Runs the update.
 	 */
 	public function main() {
+		$lock = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Locking\\LockFactory')->createLocker('tx_realurl_update');
+		/** @var \TYPO3\CMS\Core\Locking\LockingStrategyInterface $lock */
+		try {
+			$lock->acquire();
+		}
+		catch (\TYPO3\CMS\Core\Locking\Exception $e) {
+			// Nothing
+		}
+
 		$this->checkAndRenameTables();
 		if ($this->pathCacheNeedsUpdates()) {
 			$this->databaseConnection->sql_query('ALTER TABLE tx_realurl_pathdata CHANGE cache_id uid int(11) NOT NULL');
 			$this->databaseConnection->sql_query('ALTER TABLE tx_realurl_pathdata DROP PRIMARY KEY');
 			$this->databaseConnection->sql_query('ALTER TABLE tx_realurl_pathdata MODIFY uid int(11) NOT NULL auto_increment primary key');
+		}
+
+		if ($lock->isAcquired()) {
+			$lock->release();
 		}
 	}
 
