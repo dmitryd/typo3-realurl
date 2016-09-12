@@ -30,7 +30,7 @@ use TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper;
  * It is an exact copy of EXT:vhs'es <v:variable.set>. Thanks to Claus Due!
  *
  * @author Claus Due <claus@namelesscoder.net>
- * @author Dmitry Dulepov <support@snowflake.ch>
+ * @author Dmitry Dulepov <dmitry.dulepov@gmail.com>
  */
 class SetVariableViewHelper extends AbstractViewHelper {
 

@@ -30,7 +30,7 @@ use TYPO3\CMS\Extbase\Utility\LocalizationUtility;
 /**
  * This class implements management of RealURL url cache.
  *
- * @author Dmitry Dulepov <support@snowflake.ch>
+ * @author Dmitry Dulepov <dmitry.dulepov@gmail.com>
  */
 class UrlCacheController extends BackendModuleController {
 
