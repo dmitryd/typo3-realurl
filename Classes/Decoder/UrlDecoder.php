@@ -684,9 +684,16 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 			'decodeUrlParameterBlockUseAsIs',
 		);
 
-		$getVarValue = count($pathSegments) > 0 ? array_shift($pathSegments) : '';
-		if ($this->emptySegmentValue !== '' && $getVarValue === $this->emptySegmentValue) {
+		if (count($pathSegments) > 0) {
+			$getVarValue = count($pathSegments) > 0 ? array_shift($pathSegments) : '';
+			if ($this->emptySegmentValue !== '' && $getVarValue === $this->emptySegmentValue) {
+				$getVarValue = '';
+			}
+			$isFakeValue = false;
+		}
+		else {
 			$getVarValue = '';
+			$isFakeValue = true;
 		}
 
 		// TODO Possible hook here before any other function? Pass name, value, segments and config
@@ -695,7 +702,7 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 		if (!isset($varConfiguration['cond']) || $this->checkLegacyCondition($varConfiguration['cond'], $previousValue)) {
 			foreach ($varProcessingFunctions as $varProcessingFunction) {
 				if (isset($varConfiguration['GETvar'])) {
-					if ($this->$varProcessingFunction($varConfiguration, $getVarValue, $requestVariables, $pathSegments)) {
+					if ($this->$varProcessingFunction($varConfiguration, $getVarValue, $requestVariables, $pathSegments, $isFakeValue)) {
 						$previousValue = (string)end($requestVariables);
 						$handled = TRUE;
 						break;
@@ -706,7 +713,7 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 				}
 			}
 		}
-		if (!$handled) {
+		if (!$handled && !$isFakeValue) {
 			array_unshift($pathSegments, $getVarValue);
 		}
 	}
@@ -759,13 +766,16 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 	 * @param $getVarValue
 	 * @param array $requestVariables
 	 * @param array $pathSegments
+	 * @param bool $isFakeValue
 	 * @return bool
 	 */
-	protected function decodeUrlParameterBlockUsingNoMatch(array $configuration, $getVarValue, /** @noinspection PhpUnusedParameterInspection */ array &$requestVariables, array &$pathSegments) {
+	protected function decodeUrlParameterBlockUsingNoMatch(array $configuration, $getVarValue, /** @noinspection PhpUnusedParameterInspection */ array &$requestVariables, array &$pathSegments, $isFakeValue) {
 		$result = FALSE;
 		if ($configuration['noMatch'] == 'bypass') {
 			// If no match and "bypass" is set, then return the value to $pathSegments and break
-			array_unshift($pathSegments, $getVarValue);
+			if (!$isFakeValue) {
+				array_unshift($pathSegments, $getVarValue);
+			}
 			$result = TRUE;
 		} elseif ($configuration['noMatch'] == 'null') {
 			// If no match and "null" is set, then break (without setting any value!)
@@ -782,14 +792,16 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 	 * @param $getVarValue
 	 * @param array $requestVariables
 	 * @param array $pathSegments
+	 * @param bool $isFakeValue
 	 * @return bool
 	 */
-	protected function decodeUrlParameterBlockUsingUserFunc(array $configuration, $getVarValue, array &$requestVariables, array &$pathSegments) {
+	protected function decodeUrlParameterBlockUsingUserFunc(array $configuration, $getVarValue, array &$requestVariables, array &$pathSegments, $isFakeValue) {
 		$result = FALSE;
 
 		if (isset($configuration['userFunc'])) {
 			$parameters = array(
 				'decodeAlias' => true,
+				'isFakeValue' => $isFakeValue,
 				'origValue' => $getVarValue,
 				'pathParts' => &$pathSegments,
 				'pObj' => &$this,
