@@ -1327,7 +1327,7 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 		$this->checkExpiration($cacheEntry);
 
 		if ($calculateChash) {
-			$this->calculateChash($cacheEntry);
+//			$this->calculateChash($cacheEntry);
 		}
 
 		$this->setRequestVariables($cacheEntry);
