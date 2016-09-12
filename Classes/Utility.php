@@ -32,6 +32,7 @@ namespace DmitryDulepov\Realurl;
 use DmitryDulepov\Realurl\Cache\CacheFactory;
 use DmitryDulepov\Realurl\Cache\CacheInterface;
 use DmitryDulepov\Realurl\Configuration\ConfigurationReader;
+use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
@@ -57,6 +58,28 @@ class Utility {
 	public function __construct(ConfigurationReader $configuration) {
 		$this->csConvertor = TYPO3_MODE == 'BE' ? $GLOBALS['LANG']->csConvObj : $GLOBALS['TSFE']->csConvObj;
 		$this->configuration = $configuration;
+	}
+
+	/**
+	 * Checks if required update should run and runs it if necessary.
+	 *
+	 * @return void
+	 */
+	static public function checkAndPerformRequiredUpdates() {
+		$currentUpdateLevel = 1;
+
+		$registry = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Registry');
+		/** @var \TYPO3\CMS\Core\Registry $registry */
+		$updateLevel = (int)$registry->get('tx_realurl', 'updateLevel', 0);
+		if ($updateLevel < $currentUpdateLevel) {
+			require_once(ExtensionManagementUtility::extPath('realurl', 'class.ext_update.php'));
+			$updater = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\ext_update');
+			/** @var \DmitryDulepov\Realurl\ext_update $updater */
+			if ($updater->access()) {
+				$updater->main();
+			}
+			$registry->set('tx_realurl', 'updateLevel', $currentUpdateLevel);
+		}
 	}
 
 	/**
