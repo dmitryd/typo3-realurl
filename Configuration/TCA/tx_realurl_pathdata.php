@@ -22,7 +22,7 @@
 *  This copyright notice MUST APPEAR in all copies of the script!
 ***************************************************************/
 
-$GLOBALS['TCA']['tx_realurl_pathcache'] = array(
+$GLOBALS['TCA']['tx_realurl_pathdata'] = array(
 	'ctrl' => array(
 		'label' => 'pagepath',
 		'hideTable' => 1,

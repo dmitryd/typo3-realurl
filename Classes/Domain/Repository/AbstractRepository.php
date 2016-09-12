@@ -28,7 +28,7 @@ use TYPO3\CMS\Extbase\Persistence\Repository;
 /**
  * This class implements a base repository for all RealURl repositories.
  *
- * @author Dmitry Dulepov <support@snowflake.ch>
+ * @author Dmitry Dulepov <dmitry.dulepov@gmail.com>
  */
 abstract class AbstractRepository extends Repository {
 

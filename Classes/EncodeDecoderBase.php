@@ -80,6 +80,7 @@ abstract class EncodeDecoderBase {
 	 * Initializes the class.
 	 */
 	public function __construct() {
+		Utility::checkAndPerformRequiredUpdates();
 		$this->databaseConnection = $GLOBALS['TYPO3_DB'];
 		$this->tsfe = $GLOBALS['TSFE'];
 		// Warning! It is important to init the new object and not reuse any existing object

@@ -40,9 +40,10 @@ class CacheFactory {
 	 */
 	static public function getCache() {
 		$cacheClassName = $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['realurl']['cacheImplementation'];
-		if (!class_exists($cacheClassName)) {
-			$cacheClassName = 'DmitryDulepov\\Realurl\\Cache\\NullCache';
+		if (!isset($cacheClassName) || !$cacheClassName || !class_exists($cacheClassName)) {
+			$cacheClassName = 'DmitryDulepov\\Realurl\\Cache\\DatabaseCache';
 		}
+
 		return GeneralUtility::makeInstance($cacheClassName);
 	}
 
