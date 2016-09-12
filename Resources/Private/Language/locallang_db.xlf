@@ -13,7 +13,7 @@
 				<source>Override the whole page path</source>
 			</trans-unit>
 			<trans-unit id="pages.tx_realurl_nocache" xml:space="preserve">
-				<source>Disable RealURL cache</source>
+				<source>Do not save speaking URLs</source>
 			</trans-unit>
 			<trans-unit id="pages.palette_title" xml:space="preserve">
 				<source>Speaking URL</source>

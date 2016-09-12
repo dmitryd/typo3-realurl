@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<xliff version="1.0">
+	<file source-language="en" datatype="plaintext" original="messages" date="2014-06-02T11:48:25Z" product-name="realurl">
+		<header/>
+		<body>
+			<trans-unit id="tx_realurl_nocache.description" xml:space="preserve">
+				<source>Use this checkbox on pages like search or calendar that generate many random URLs with parameters that do not repeat. If such pages are saved to the cache, they may produce too many entries and lower performance of the site.</source>
+			</trans-unit>
+		</body>
+	</file>
+</xliff>
