@@ -785,6 +785,7 @@ class UrlEncoder extends EncodeDecoderBase {
 	 * Encodes the URL.
 	 *
 	 * @return void
+	 * @throws \Exception
 	 */
 	protected function executeEncoder() {
 		$this->parseUrlParameters();
@@ -796,7 +797,18 @@ class UrlEncoder extends EncodeDecoderBase {
 		$this->initializeUrlPrepend();
 		if (!$this->fetchFromtUrlCache()) {
 			$this->encodePreVars();
-			$this->encodePathComponents();
+			try {
+				$this->encodePathComponents();
+			}
+			catch (\Exception $e) {
+				if ($e->getCode() === 1343589451) {
+					// Rootline failure: "Could not fetch page data for uid X"
+					// Reset and quit. See https://github.com/dmitryd/typo3-realurl/issues/200
+					$this->encodedUrl = $this->urlToEncode;
+					return;
+				}
+				throw $e;
+			}
 			$this->encodeFixedPostVars();
 			$this->encodePostVarSets();
 			$this->handleFileName();
