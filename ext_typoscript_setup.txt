@@ -6,7 +6,7 @@ config.tx_extbase.persistence.classes {
 	}
 	DmitryDulepov\Realurl\Domain\Model\UrlCacheEntry {
 		mapping {
-			tableName = tx_realurl_urlcache
+			tableName = tx_realurl_urldata
 			columns {
 				rootpage_id.mapOnProperty = rootPageId
 			}
@@ -14,7 +14,7 @@ config.tx_extbase.persistence.classes {
 	}
 	DmitryDulepov\Realurl\Domain\Model\PathCacheEntry {
 		mapping {
-			tableName = tx_realurl_pathcache
+			tableName = tx_realurl_pathdata
 			columns {
 				mpvar.mapOnProperty = mpVar
 				pagepath.mapOnProperty = pagePath
