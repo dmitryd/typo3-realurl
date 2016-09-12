@@ -32,7 +32,7 @@ CREATE TABLE tx_realurl_uniqalias_cache_map (
 #
 # Table structure for table 'tx_realurl_urlcache'
 #
-CREATE TABLE tx_realurl_urlcache (
+CREATE TABLE tx_realurl_urldata (
 	uid int(11) NOT NULL auto_increment,
 	pid int(11) DEFAULT '0' NOT NULL,
 	crdate int(11) DEFAULT '0' NOT NULL,
@@ -53,7 +53,7 @@ CREATE TABLE tx_realurl_urlcache (
 #
 # Table structure for table 'tx_realurl_pathcache'
 #
-CREATE TABLE tx_realurl_pathcache (
+CREATE TABLE tx_realurl_pathdata (
 	uid int(11) NOT NULL auto_increment,
 	pid int(11) DEFAULT '0' NOT NULL,
 	page_id int(11) DEFAULT '0' NOT NULL,
