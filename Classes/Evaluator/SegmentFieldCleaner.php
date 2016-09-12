@@ -27,7 +27,7 @@ namespace DmitryDulepov\Realurl\Evaluator;
  * This class contains form field evaluator that will remove leading and
  * trailing slashes from the tx_realurl_pathsegment field on save.
  *
- * @author Dmitry Dulepov <support@snowflake.ch>
+ * @author Dmitry Dulepov <dmitry.dulepov@gmail.com>
  */
 class SegmentFieldCleaner {
 
