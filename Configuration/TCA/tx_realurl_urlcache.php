@@ -22,7 +22,7 @@
 *  This copyright notice MUST APPEAR in all copies of the script!
 ***************************************************************/
 
-$GLOBALS['TCA']['tx_realurl_urlcache'] = array(
+$GLOBALS['TCA']['tx_realurl_urldata'] = array(
 	'ctrl' => array(
 		'label' => 'speaking_url',
 		'hideTable' => 1,

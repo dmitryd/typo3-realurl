@@ -44,10 +44,11 @@ class ext_update {
 	 * Runs the update.
 	 */
 	public function main() {
+		$this->checkAndRenameTables();
 		if ($this->pathCacheNeedsUpdates()) {
-			$this->databaseConnection->sql_query('ALTER TABLE tx_realurl_pathcache CHANGE cache_id uid int(11) NOT NULL');
-			$this->databaseConnection->sql_query('ALTER TABLE tx_realurl_pathcache DROP PRIMARY KEY');
-			$this->databaseConnection->sql_query('ALTER TABLE tx_realurl_pathcache MODIFY uid int(11) NOT NULL auto_increment primary key');
+			$this->databaseConnection->sql_query('ALTER TABLE tx_realurl_pathdata CHANGE cache_id uid int(11) NOT NULL');
+			$this->databaseConnection->sql_query('ALTER TABLE tx_realurl_pathdata DROP PRIMARY KEY');
+			$this->databaseConnection->sql_query('ALTER TABLE tx_realurl_pathdata MODIFY uid int(11) NOT NULL auto_increment primary key');
 		}
 	}
 
@@ -57,7 +58,37 @@ class ext_update {
 	 * @return bool
 	 */
 	public function access() {
-		return $this->pathCacheNeedsUpdates();
+		return $this->hasOldCacheTables() || $this->pathCacheNeedsUpdates();
+	}
+
+	/**
+	 * Checks and renames *cache tables to *data tables.
+	 */
+	protected function checkAndRenameTables() {
+		$tableMap = array(
+			'tx_realurl_pathcache' => 'tx_realurl_pathdata',
+			'tx_realurl_urlcache' => 'tx_realurl_urldata',
+		);
+
+		$tables = $this->databaseConnection->admin_get_tables();
+		foreach ($tableMap as $oldTableName => $newTableName) {
+			if (isset($tables[$oldTableName])) {
+				if (!isset($tables[$newTableName])) {
+					$this->databaseConnection->sql_query('ALTER TABLE ' . $oldTableName . ' RENAME TO ' . $newTableName);
+				}
+				else {
+					if ((int)$tables[$newTableName]['Rows'] === 0) {
+						$this->databaseConnection->sql_query('INSERT INTO ' . $newTableName . ' SELECT * FROM ' . $oldTableName);
+					}
+					$this->databaseConnection->sql_query('DROP TABLE' . $oldTableName);
+				}
+			}
+		}
+	}
+
+	protected function hasOldCacheTables() {
+		$tables = $this->databaseConnection->admin_get_tables();
+		return isset($tables['tx_realurl_pathcache']) || isset($tables['tx_realurl_urlcache']);
 	}
 
 	/**
@@ -66,7 +97,7 @@ class ext_update {
 	 * @return bool
 	 */
 	protected function pathCacheNeedsUpdates() {
-		$fields = $this->databaseConnection->admin_get_fields('tx_realurl_pathcache');
+		$fields = $this->databaseConnection->admin_get_fields('tx_realurl_pathdata');
 
 		return isset($fields['cache_id']) || !isset($fields['uid']) || stripos($fields['uid']['Extra'], 'auto_increment') === false;
 	}
