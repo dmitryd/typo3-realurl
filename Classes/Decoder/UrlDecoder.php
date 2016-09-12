@@ -539,6 +539,10 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 					}
 				}
 			}
+			elseif ($currentPid === 0) {
+				// Found a postVar on the rootPage
+				$currentPid = $this->rootPageId;
+			}
 		}
 		if ($allPathsAreExpired && !$result) {
 			// We could not resolve the new path, use the expired one :(
