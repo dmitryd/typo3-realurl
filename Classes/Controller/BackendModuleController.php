@@ -28,6 +28,7 @@ namespace DmitryDulepov\Realurl\Controller;
  *
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
+use DmitryDulepov\Realurl\Utility;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Mvc\Controller\ActionController;
@@ -106,6 +107,8 @@ abstract class BackendModuleController extends ActionController {
 	 * @return void
 	 */
 	protected function initializeAction() {
+		Utility::checkAndPerformRequiredUpdates();
+
 		$this->currentPageId = (int)\TYPO3\CMS\Core\Utility\GeneralUtility::_GET('id');
 		$this->databaseConnection = $GLOBALS['TYPO3_DB'];
 
