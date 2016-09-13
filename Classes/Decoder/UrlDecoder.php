@@ -1239,20 +1239,21 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 	}
 
 	/**
-	 * Merges $_GET from domains configuration if corresponding _GET parameter is
-	 * not set already.
+	 * Merges $_GET from domains configuration.
 	 */
 	protected function mergeGetVarsFromDomainsConfiguration() {
-		$modified = false;
-		$getVariables = GeneralUtility::_GET();
-		foreach ($this->configuration->getGetVarsToSet() as $getVarName => $getVarValue) {
-			if (!isset($getVariables[$getVarName])) {
-				$getVariables[$getVarName] = $getVarValue;
-				$modified = true;
+		// Convert the configuration into an $_GET-"friendly" format
+		$getVarsToSet = $this->makeRealPhpArrayFromRequestVars($this->configuration->getGetVarsToSet());
+		if (count($getVarsToSet) > 0) {
+			// Overwrite with $_GET-params that $_GET-parmas have a "higher" priority
+			$getVars = GeneralUtility::_GET();
+			if (!is_array($getVars)) {
+				$getVars = array();
 			}
-		}
-		if ($modified) {
-			GeneralUtility::_GETset($getVariables);
+			ArrayUtility::mergeRecursiveWithOverrule($getVars, $getVarsToSet, true, true, false);
+
+			// Store the "new" $_GET-params back
+			GeneralUtility::_GETset($getVars);
 		}
 	}
 
@@ -1576,4 +1577,3 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 		$this->caller->pageNotFoundAndExit($errorMessage);
 	}
 }
-
