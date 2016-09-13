@@ -143,4 +143,3 @@ interface CacheInterface {
 	public function putUrlToCache(UrlCacheEntry $cacheEntry);
 
 }
-
