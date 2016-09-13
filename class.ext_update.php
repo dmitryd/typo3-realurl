@@ -117,4 +117,3 @@ class ext_update {
 	}
 
 }
-

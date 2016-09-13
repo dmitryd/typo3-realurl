@@ -538,4 +538,3 @@ class ConfigurationReader {
 		}
 	}
 }
-

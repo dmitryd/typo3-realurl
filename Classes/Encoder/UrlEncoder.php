@@ -701,7 +701,7 @@ class UrlEncoder extends EncodeDecoderBase {
 			}
 		}
 
-		return is_null($result) ? $getVarValue : $result;
+		return $result;
 	}
 
 	/**

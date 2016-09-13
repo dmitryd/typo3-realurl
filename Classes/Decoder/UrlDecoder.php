@@ -1359,7 +1359,6 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 			$probablyMissingChash = $this->isChashMissing($cacheEntry);
 		}
 		$this->checkExpiration($cacheEntry);
-
 		$this->setRequestVariables($cacheEntry);
 
 		if ($newCacheEntry && !$probablyMissingChash) {
@@ -1580,4 +1579,3 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 		$this->caller->pageNotFoundAndExit($errorMessage);
 	}
 }
-
