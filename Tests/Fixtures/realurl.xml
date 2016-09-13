@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8"?>
+<dataset>
+	<sys_domain>
+		<uid>1</uid>
+		<pid>1</pid>
+		<domainName>www.example.com</domainName>
+	</sys_domain>
+<!--
+Page Tree:
+	- 1: Home
+		- 2: page2
+			- 5: subpage5-with-override (tx_realurl_pathoverride)
+			- 6: subpage6-with-alias (alias)
+			- 8: subpage8
+			- 9: 0 (Page with the title "0")
+		- 3: page3
+		- 4: page4 (tx_realurl_exclude=1)
+			- 7: subpage7-without-parent
+-->
+	<pages>
+		<uid>1</uid>
+		<pid>0</pid>
+		<doktype>1</doktype>
+		<deleted>0</deleted>
+		<title>Home</title>
+		<alias></alias>
+		<tx_realurl_pathsegment></tx_realurl_pathsegment>
+		<tx_realurl_pathoverride>0</tx_realurl_pathoverride>
+		<tx_realurl_exclude>0</tx_realurl_exclude>
+	</pages>
+	<pages>
+		<uid>2</uid>
+		<pid>1</pid>
+		<doktype>1</doktype>
+		<deleted>0</deleted>
+		<title>page2</title>
+		<alias></alias>
+		<tx_realurl_pathsegment></tx_realurl_pathsegment>
+		<tx_realurl_pathoverride>0</tx_realurl_pathoverride>
+		<tx_realurl_exclude>0</tx_realurl_exclude>
+	</pages>
+	<pages>
+		<uid>3</uid>
+		<pid>1</pid>
+		<doktype>1</doktype>
+		<deleted>0</deleted>
+		<title>page3</title>
+		<alias></alias>
+		<tx_realurl_pathsegment></tx_realurl_pathsegment>
+		<tx_realurl_pathoverride>0</tx_realurl_pathoverride>
+		<tx_realurl_exclude>0</tx_realurl_exclude>
+	</pages>
+	<pages>
+		<uid>4</uid>
+		<pid>1</pid>
+		<doktype>1</doktype>
+		<deleted>0</deleted>
+		<title>page4</title>
+		<alias></alias>
+		<tx_realurl_pathsegment></tx_realurl_pathsegment>
+		<tx_realurl_pathoverride>0</tx_realurl_pathoverride>
+		<tx_realurl_exclude>1</tx_realurl_exclude>
+	</pages>
+	<pages>
+		<uid>5</uid>
+		<pid>2</pid>
+		<doktype>1</doktype>
+		<deleted>0</deleted>
+		<title>subpage5-with-override</title>
+		<alias></alias>
+		<tx_realurl_pathsegment>page5-override</tx_realurl_pathsegment>
+		<tx_realurl_pathoverride>1</tx_realurl_pathoverride>
+		<tx_realurl_exclude>0</tx_realurl_exclude>
+	</pages>
+	<pages>
+		<uid>6</uid>
+		<pid>2</pid>
+		<doktype>1</doktype>
+		<deleted>0</deleted>
+		<title>subpage6-with-alias</title>
+		<alias>page6-alias</alias>
+		<tx_realurl_pathsegment></tx_realurl_pathsegment>
+		<tx_realurl_pathoverride>0</tx_realurl_pathoverride>
+		<tx_realurl_exclude>0</tx_realurl_exclude>
+	</pages>
+	<pages>
+		<uid>7</uid>
+		<pid>4</pid>
+		<doktype>1</doktype>
+		<deleted>0</deleted>
+		<title>subpage7-without-parent</title>
+		<alias></alias>
+		<tx_realurl_pathsegment></tx_realurl_pathsegment>
+		<tx_realurl_pathoverride>0</tx_realurl_pathoverride>
+		<tx_realurl_exclude>0</tx_realurl_exclude>
+	</pages>
+	<pages>
+		<uid>8</uid>
+		<pid>2</pid>
+		<doktype>1</doktype>
+		<deleted>0</deleted>
+		<title>subpage8</title>
+		<alias></alias>
+		<tx_realurl_pathsegment></tx_realurl_pathsegment>
+		<tx_realurl_pathoverride>0</tx_realurl_pathoverride>
+		<tx_realurl_exclude>0</tx_realurl_exclude>
+	</pages>
+	<pages>
+		<uid>9</uid>
+		<pid>2</pid>
+		<doktype>1</doktype>
+		<deleted>0</deleted>
+		<title>0</title>
+		<alias></alias>
+		<tx_realurl_pathsegment></tx_realurl_pathsegment>
+		<tx_realurl_pathoverride>0</tx_realurl_pathoverride>
+		<tx_realurl_exclude>0</tx_realurl_exclude>
+	</pages>
+</dataset>

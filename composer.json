@@ -25,6 +25,9 @@
         "typo3/cms-core": ">=6.2.0,<8.5.0",
         "php": ">=5.3.2"
     },
+    "require-dev": {
+        "phpunit/phpunit": "~4.8.0"
+    },
     "suggest": {
       "typo3-ter/static-info-tables": ">=6.2.0"
     },
@@ -33,11 +36,34 @@
             "DmitryDulepov\\Realurl\\": "Classes"
         }
     },
+    "autoload-dev": {
+        "psr-4": {
+            "DmitryDulepov\\Realurl\\Tests\\": "Tests/",
+            "TYPO3\\CMS\\Core\\Tests\\": ".Build/vendor/typo3/cms/typo3/sysext/core/Tests/"
+        }
+    },
     "authors": [
         {
             "name": "Dmitry Dulepov",
             "email": "dmitry.dulepov@gmail.com",
             "homepage": "http://www.dmitry-dulepov.com/"
         }
-    ]
+    ],
+    "config": {
+        "vendor-dir": ".Build/vendor",
+        "bin-dir": ".Build/bin"
+    },
+    "scripts": {
+        "post-autoload-dump": [
+            "mkdir -p .Build/Web/typo3conf/ext/",
+            "[ -L .Build/Web/typo3conf/ext/realurl ] || ln -snvf ../../../../. .Build/Web/typo3conf/ext/realurl"
+        ],
+        "test": "export TYPO3_PATH_WEB=`pwd`/.Build/Web; export typo3DatabaseName='realurl'; export typo3DatabaseHost='127.0.0.1'; export typo3DatabaseUsername='realurl'; export typo3DatabasePassword=''; .Build/bin/phpunit --colors -c .Build/vendor/typo3/cms/typo3/sysext/core/Build/UnitTests.xml Tests/Unit/; .Build/bin/phpunit --colors -c .Build/vendor/typo3/cms/typo3/sysext/core/Build/FunctionalTests.xml Tests/Functional/"
+    },
+    "extra": {
+        "typo3/cms": {
+            "cms-package-dir": "{$vendor-dir}/typo3/cms",
+            "web-dir": ".Build/Web"
+        }
+    }
 }
