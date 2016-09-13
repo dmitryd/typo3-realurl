@@ -1160,6 +1160,10 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 
 		$requestVariables = $cacheEntry->getRequestVariables();
 		if (!isset($requestVariables['cHash'])) {
+			if (!isset($requestVariables['id'])) {
+				// See https://typo3.org/teams/security/security-bulletins/typo3-core/typo3-core-sa-2016-022/
+				$requestVariables['id'] = $cacheEntry->getPageId();
+			}
 			$cacheHashCalculator = GeneralUtility::makeInstance('TYPO3\\CMS\\Frontend\\Page\\CacheHashCalculator');
 			/* @var \TYPO3\CMS\Frontend\Page\CacheHashCalculator $cacheHashCalculator */
 			$cHashParameters = $cacheHashCalculator->getRelevantParameters(GeneralUtility::implodeArrayForUrl('', $requestVariables));
