@@ -22,7 +22,7 @@
         "typo3-ter/realurl": "self.version"
     },
     "require": {
-        "typo3/cms-core": ">=6.2.0,<8.1.0",
+        "typo3/cms-core": ">=6.2.0,<8.5.0",
         "php": ">=5.3.2"
     },
     "suggest": {
