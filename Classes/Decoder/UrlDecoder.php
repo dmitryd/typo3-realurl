@@ -190,33 +190,6 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 	}
 
 	/**
-	 * Calculates and adds cHash to the entry. This function is only called
-	 * if we had to decode the entry, which was not in the cache. Even if we
-	 * had cHash in the URL, we force to re-calculate it because we could have
-	 * decoded parameters differently than the original URL had (for example,
-	 * skipped some noMatch parameters).
-	 *
-	 * cHash recalculation can have bad consequences for the page cache. For
-	 * details see the following links:
-	 * - https://typo3.org/teams/security/security-bulletins/typo3-extensions/typo3-ext-sa-2016-021/
-	 * - https://github.com/dmitryd/typo3-realurl/issues/244#issuecomment-245844501
-	 *
-	 * @param UrlCacheEntry $cacheEntry
-	 * @return void
-	 */
-	protected function calculateChash(UrlCacheEntry $cacheEntry) {
-		$requestVariables = $cacheEntry->getRequestVariables();
-		$cacheHashCalculator = GeneralUtility::makeInstance('TYPO3\\CMS\\Frontend\\Page\\CacheHashCalculator');
-		/* @var \TYPO3\CMS\Frontend\Page\CacheHashCalculator $cacheHashCalculator */
-		$cHashParameters = $cacheHashCalculator->getRelevantParameters(GeneralUtility::implodeArrayForUrl('', $requestVariables));
-
-		if (count($cHashParameters) > 0) {
-			$requestVariables['cHash'] = $cacheHashCalculator->calculateCacheHash($cHashParameters);
-			$cacheEntry->setRequestVariables($requestVariables);
-		}
-	}
-
-	/**
 	 * Calls user-defined hooks.
 	 *
 	 * @param array $params
