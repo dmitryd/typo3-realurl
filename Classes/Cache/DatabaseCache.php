@@ -181,7 +181,7 @@ class DatabaseCache implements CacheInterface, SingletonInterface {
 	 *
 	 * @param int $rootPageId
 	 * @param string $speakingUrl
-	 * @param int $languageId
+	 * @param int|null $languageId
 	 * @return UrlCacheEntry|null
 	 */
 	public function getUrlFromCacheBySpeakingUrl($rootPageId, $speakingUrl, $languageId) {
@@ -193,20 +193,29 @@ class DatabaseCache implements CacheInterface, SingletonInterface {
 				'', 'expire'
 		);
 
-		// See #103
 		$row = null;
 		foreach ($rows as $rowCandidate) {
-			$variables = @json_decode($rowCandidate['request_variables'], TRUE);
-			if (is_array($variables) && isset($variables['L'])) {
-				if ((int)$variables['L'] === (int)$languageId) {
-					// Found language!
-					$row = $rowCandidate;
-					break;
-				}
-			}
-			elseif ((int)$languageId === 0) {
-				// No 'L' means default language.
+			if (is_null($languageId)) {
+				// No language known, we retrieve only the URL with lowest expiration value
+				// See https://github.com/dmitryd/typo3-realurl/issues/250
 				$row = $rowCandidate;
+				break;
+			}
+			else {
+				// Should check for language match
+				// See https://github.com/dmitryd/typo3-realurl/issues/103
+				$variables = @json_decode($rowCandidate['request_variables'], TRUE);
+				if (is_array($variables) && isset($variables['L'])) {
+					if ((int)$variables['L'] === (int)$languageId) {
+						// Found language!
+						$row = $rowCandidate;
+						break;
+					}
+				}
+				elseif ($languageId === 0) {
+					// No L in URL parameters of the URL but default lamnguage requested. This is a match.
+					$row = $rowCandidate;
+				}
 			}
 		}
 

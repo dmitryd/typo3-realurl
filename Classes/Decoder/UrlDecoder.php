@@ -61,8 +61,18 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 	/** @var UrlCacheEntry */
 	protected $createdCacheEntry = null;
 
-	/** @var int */
-	protected $detectedLanguageId = 0;
+	/**
+	 * This attribute keeps a detected language id for the speaking URL. Firsts,
+	 * if _DOMAINS configuration has L parameter, it's value will be set to
+	 * $_GET['L']. Than this attribute will be set from $_GET['L'] (if set).
+	 * Finally preVar handling code will check for L after decoding and set
+	 * this attribute either to the decoded value or to zero. This value can
+	 * be null until preVars are decoded. After that it is either zero or
+	 * the decoded language uid.
+	 *
+	 * @var int|null
+	 */
+	protected $detectedLanguageId = null;
 
 	/** @var string */
 	protected $disallowedDoktypes;
@@ -597,6 +607,9 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 			if (isset($requestVariables['L'])) {
 				$this->detectedLanguageId = (int)$requestVariables['L'];
 			}
+		}
+		if (is_null($this->detectedLanguageId)) {
+			$this->detectedLanguageId = 0;
 		}
 
 		return $requestVariables;
@@ -1226,10 +1239,16 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 	 * not set already.
 	 */
 	protected function mergeGetVarsFromDomainsConfiguration() {
+		$modified = false;
+		$getVariables = GeneralUtility::_GET();
 		foreach ($this->configuration->getGetVarsToSet() as $getVarName => $getVarValue) {
-			if (empty($_GET[$getVarName])) {
-				$_GET[$getVarName] = $getVarValue;
+			if (!isset($getVariables[$getVarName])) {
+				$getVariables[$getVarName] = $getVarValue;
+				$modified = true;
 			}
+		}
+		if ($modified) {
+			GeneralUtility::_GETset($getVariables);
 		}
 	}
 
@@ -1499,7 +1518,10 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 	 * @return void
 	 */
 	protected function setLanguageFromQueryString() {
-		$this->detectedLanguageId = (int)GeneralUtility::_GP('L');
+		$language = GeneralUtility::_GP('L');
+		if (MathUtility::canBeInterpretedAsInteger($language)) {
+			$this->detectedLanguageId = (int)$language;
+		}
 	}
 
 	/**
@@ -1543,7 +1565,9 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 		// TODO Write to our own error log here
 
 		// Set language to allow localized error pages
-		$_GET['L'] = $this->detectedLanguageId;
+		if (MathUtility::canBeInterpretedAsInteger($this->detectedLanguageId)) {
+			$_GET['L'] = $this->detectedLanguageId;
+		}
 
 		$this->caller->pageNotFoundAndExit($errorMessage);
 	}

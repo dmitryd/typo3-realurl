@@ -99,7 +99,7 @@ interface CacheInterface {
 	 *
 	 * @param int $rootPageId
 	 * @param string $speakingUrl
-	 * @param int $languageId
+	 * @param int|null $languageId
 	 * @return UrlCacheEntry|null
 	 */
 	public function getUrlFromCacheBySpeakingUrl($rootPageId, $speakingUrl, $languageId);
