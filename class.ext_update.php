@@ -45,12 +45,13 @@ class ext_update {
 	 * Runs the update.
 	 */
 	public function main() {
-		$lock = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Locking\\LockFactory')->createLocker('tx_realurl_update');
-		/** @var \TYPO3\CMS\Core\Locking\LockingStrategyInterface $lock */
+		$locker = $this->getLocker();
 		try {
-			$lock->acquire();
+			if ($locker) {
+				$locker->acquire();
+			}
 		}
-		catch (\TYPO3\CMS\Core\Locking\Exception $e) {
+		catch (\Exception $e) {
 			// Nothing
 		}
 
@@ -61,8 +62,8 @@ class ext_update {
 			$this->databaseConnection->sql_query('ALTER TABLE tx_realurl_pathdata MODIFY uid int(11) NOT NULL auto_increment primary key');
 		}
 
-		if ($lock->isAcquired()) {
-			$lock->release();
+		if ($locker && (method_exists($locker, 'isAcquired') && $locker->isAcquired() || method_exists($locker, 'getLockStatus') && $locker->getLockStatus())) {
+			$locker->release();
 		}
 	}
 
@@ -98,6 +99,25 @@ class ext_update {
 				}
 			}
 		}
+	}
+
+	/**
+	 * Obtains the locker depending on the TYPO3 version.
+	 *
+	 * @return \TYPO3\CMS\Core\Locking\Locker|\TYPO3\CMS\Core\Locking\LockingStrategyInterface
+	 */
+	protected function getLocker() {
+		if (class_exists('\\TYPO3\\CMS\\Core\\Locking\\LockFactory')) {
+			$locker = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Locking\\LockFactory')->createLocker('tx_realurl_update');
+		}
+		elseif (class_exists('\\TYPO3\\CMS\\Core\\Locking\\Locker')) {
+			$locker = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Locking\\Locker', 'tx_realurl_update');
+		}
+		else {
+			$locker = null;
+		}
+
+		return $locker;
 	}
 
 	protected function hasOldCacheTables() {
