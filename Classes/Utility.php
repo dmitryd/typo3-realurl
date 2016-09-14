@@ -73,8 +73,8 @@ class Utility {
 			$processedTitle = $this->csConvertor->conv_case('utf-8', $processedTitle, 'toLower');
 		}
 		$processedTitle = strip_tags($processedTitle);
-		// \x20 is a non-breaking space
-		$processedTitle = preg_replace("/[\x20\s\-+_]+/u", $spaceCharacter, $processedTitle);
+		// \x{c2xa0} is a non-breaking space
+		$processedTitle = preg_replace("/[\x{c2a0}\s\-+_]+/u", $spaceCharacter, $processedTitle);
 		$processedTitle = $this->csConvertor->specCharsToASCII('utf-8', $processedTitle);
 		$processedTitle = preg_replace('/[^\p{L}0-9' . preg_quote($spaceCharacter) . ']/u', '', $processedTitle);
 		$processedTitle = preg_replace('/' . preg_quote($spaceCharacter) . '{2,}/', $spaceCharacter, $processedTitle);
