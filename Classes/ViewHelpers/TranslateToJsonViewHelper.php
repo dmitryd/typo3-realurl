@@ -30,6 +30,11 @@ use TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper;
 class TranslateToJsonViewHelper extends AbstractViewHelper  {
 
 	/**
+	 * @var boolean
+	 */
+	protected $escapeOutput = FALSE;
+
+	/**
 	 * Renders the translation and encodes to json string.
 	 *
 	 * @param string $key Translation Key
