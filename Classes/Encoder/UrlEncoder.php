@@ -497,14 +497,14 @@ class UrlEncoder extends EncodeDecoderBase {
 					unset($overlay);
 				}
 			}
-			// if pathoverride is set, use pathsegment also for all subpages to shorten the url and throw away all segments found so far
+
+			// if path override is set, use path segment also for all subpages to shorten the url and throw away all segments found so far
 			if ($page['tx_realurl_pathoverride'] && !empty($page['tx_realurl_pathsegment'])) {
 				$segment = $this->utility->convertToSafeString(trim($page['tx_realurl_pathsegment'], '/'), $this->separatorCharacter);
 				$components = array($segment);
 				continue;
 			}
 
-			
 			foreach (self::$pageTitleFields as $field) {
 				if (isset($page[$field]) && $page[$field] !== '') {
 					$segment = $this->utility->convertToSafeString($page[$field], $this->separatorCharacter);
@@ -802,7 +802,7 @@ class UrlEncoder extends EncodeDecoderBase {
 			}
 		}
 
-		return is_null($result) ? $getVarValue : $result;
+		return $result;
 	}
 
 	/**
@@ -983,7 +983,7 @@ class UrlEncoder extends EncodeDecoderBase {
 			}
 		}
 
-		return is_null($result) ? $getVarValue : $result;
+		return $result;
 	}
 
 	/**

@@ -1361,7 +1361,6 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 
 			$probablyMissingChash = $this->isChashMissing($cacheEntry);
 		}
-
 		$this->checkExpiration($cacheEntry);
 		$this->setRequestVariables($cacheEntry);
 
