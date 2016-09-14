@@ -497,6 +497,20 @@ class UrlEncoder extends EncodeDecoderBase {
 					unset($overlay);
 				}
 			}
+
+			// if path override is set, use path segment also for all subpages to shorten the url and throw away all segments found so far
+			if ($page['tx_realurl_pathoverride'] && $page['tx_realurl_pathsegment'] !== '') {
+				$segment = trim($page['tx_realurl_pathsegment'], '/');
+				$segments = explode('/', $segment);
+				array_walk($segments, function(&$segments, $key) {
+					$segments[$key] = $this->utility->convertToSafeString($segments[$key], $this->separatorCharacter);
+				});
+				// Technically we could do with `$components = $segments` but it fills better to have overriden string here
+				$segment = implode('/', $segments);
+				$components = array($segment);
+				continue;
+			}
+
 			foreach (self::$pageTitleFields as $field) {
 				if (isset($page[$field]) && $page[$field] !== '') {
 					$segment = $this->utility->convertToSafeString($page[$field], $this->separatorCharacter);
@@ -504,13 +518,15 @@ class UrlEncoder extends EncodeDecoderBase {
 						$segment = $this->emptySegmentValue;
 					}
 					$components[] = $segment;
-					$this->appendToEncodedUrl($segment);
 					continue 2;
 				}
 			}
 		}
 
 		if (count($components) > 0) {
+			foreach ($components as $segment) {
+				$this->appendToEncodedUrl($segment);
+			}
 			$this->addToPathCache(implode('/', $components));
 		}
 	}
