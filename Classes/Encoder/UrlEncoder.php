@@ -499,8 +499,14 @@ class UrlEncoder extends EncodeDecoderBase {
 			}
 
 			// if path override is set, use path segment also for all subpages to shorten the url and throw away all segments found so far
-			if ($page['tx_realurl_pathoverride'] && !empty($page['tx_realurl_pathsegment'])) {
-				$segment = $this->utility->convertToSafeString(trim($page['tx_realurl_pathsegment'], '/'), $this->separatorCharacter);
+			if ($page['tx_realurl_pathoverride'] && $page['tx_realurl_pathsegment'] !== '') {
+				$segment = trim($page['tx_realurl_pathsegment'], '/');
+				$segments = explode('/', $segment);
+				array_walk($segments, function(&$segments, $key) {
+					$segments[$key] = $this->utility->convertToSafeString($segments[$key], $this->separatorCharacter);
+				});
+				// Technically we could do with `$components = $segments` but it fills better to have overriden string here
+				$segment = implode('/', $segments);
 				$components = array($segment);
 				continue;
 			}
