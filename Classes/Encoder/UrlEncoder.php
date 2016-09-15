@@ -153,11 +153,15 @@ class UrlEncoder extends EncodeDecoderBase {
 				$testUrl = preg_replace('/https?:\/\/[^\/]+\/(.*)$/', $this->tsfe->absRefPrefix . '\1', $testUrl);
 			}
 
+			list($testUrl, $section) = GeneralUtility::revExplode('#', $testUrl, 2);
+
 			if (isset(self::$urlPrependRegister[$testUrl])) {
 				$urlKey = $url = $testUrl;
 
-
 				$url = self::$urlPrependRegister[$urlKey] . ($url{0} != '/' ? '/' : '') . $url;
+				if ($section) {
+					$url .= '#' . $section;
+				}
 
 				unset(self::$urlPrependRegister[$testUrl]);
 
