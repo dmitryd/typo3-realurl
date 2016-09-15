@@ -96,8 +96,7 @@ class Utility {
 			$processedTitle = $this->csConvertor->conv_case('utf-8', $processedTitle, 'toLower');
 		}
 		$processedTitle = strip_tags($processedTitle);
-		$processedTitle = preg_replace('/[\s\-+_]+/', $spaceCharacter, $processedTitle);
-		$processedTitle = preg_replace('/\x{00A0}/u', $spaceCharacter, $processedTitle);
+		$processedTitle = preg_replace('/[ \t\x{00A0}\-+_]+/u', $spaceCharacter, $processedTitle);
 		$processedTitle = $this->csConvertor->specCharsToASCII('utf-8', $processedTitle);
 		$processedTitle = preg_replace('/[^\p{L}0-9' . preg_quote($spaceCharacter) . ']/u', '', $processedTitle);
 		$processedTitle = preg_replace('/' . preg_quote($spaceCharacter) . '{2,}/', $spaceCharacter, $processedTitle);
