@@ -644,7 +644,7 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 			}
 		}
 		if (is_null($this->detectedLanguageId)) {
-			$this->detectedLanguageId = 0;
+			$this->detectedLanguageId = (int)$this->configuration->get('init/defaultLanguageUid');
 		}
 
 		return $requestVariables;
