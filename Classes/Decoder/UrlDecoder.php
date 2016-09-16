@@ -181,7 +181,7 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 
 			$createdUrl = $this->rebuildUrlFromTheCreatedCacheEntry();
 			if ($this->configuration->get('init/redirectOnChashError')) {
-				// Note: possible redirect looops!
+				// Note: possible redirect loops!
 				@ob_end_clean();
 				header(self::REDIRECT_INFO_HEADER);
 				header(self::REDIRECT_INFO_HEADER . ': redirecting due to cHash error');
