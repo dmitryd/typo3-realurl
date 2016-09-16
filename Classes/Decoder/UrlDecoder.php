@@ -1403,7 +1403,9 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 	}
 
 	/**
-	 * Rebuilds the URL from $this->createdCacheEntry with cHash.
+	 * Rebuilds the URL from $this->createdCacheEntry with cHash. This is called
+	 * from the pageNotFounder handler only and cannot be called from a normal
+	 * decoding process!
 	 *
 	 * @return string
 	 */
@@ -1415,9 +1417,9 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 		unset($requestVariables['id']);
 		$typolinkConfiguration = array(
 			'additionalParams' => GeneralUtility::implodeArrayForUrl('', $requestVariables),
-			'forceAbsoluteUrl' => TRUE,
+			'forceAbsoluteUrl' => true,
 			'parameter' => $this->createdCacheEntry->getPageId(),
-			'useCacheHash' => TRUE,
+			'useCacheHash' => true,
 		);
 		$createdUrl = $contentObject->typoLink_URL($typolinkConfiguration);
 
