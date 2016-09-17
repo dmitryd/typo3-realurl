@@ -33,11 +33,9 @@ namespace DmitryDulepov\Realurl\Tests\Functional\Encoder;
  ***************************************************************/
 
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController;
 
 use DmitryDulepov\Realurl\Configuration\ConfigurationReader;
 use DmitryDulepov\Realurl\Utility as RealurlUtility;
-use DmitryDulepov\Realurl\Encoder\UrlEncoder;
 
 /**
  * Testcase for class \DmitryDulepov\Realurl\Encoder\UrlEncoder
@@ -47,17 +45,17 @@ class UrlEncoderTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 	/**
 	 * Set up tests
 	 */
-	protected function setUp() {
+	public function setUp() {
 		$this->testExtensionsToLoad[] = 'typo3conf/ext/realurl/';
 
 		parent::setUp();
 
-		$GLOBALS['LANG'] = GeneralUtility::makeInstance(\TYPO3\CMS\Lang\LanguageService::class);
+		$GLOBALS['LANG'] = GeneralUtility::makeInstance('TYPO3\\CMS\\Lang\\LanguageService');
 		$GLOBALS['LANG']->init('default');
 
 		$this->importDataSet(__DIR__ . '/../../Fixtures/realurl.xml');
 
-		$GLOBALS['TSFE'] = $this->getMock(TypoScriptFrontendController::class, array(), array(), '', false);
+		$GLOBALS['TSFE'] = $this->getMock('TYPO3\\CMS\\Frontend\\Controller\\TypoScriptFrontendController', array(), array(), '', false);
 		$GLOBALS['TSFE']->config = ['config' => ['tx_realurl_enable' => 1]];
 		$GLOBALS['TSFE']->id = 1;
 
@@ -90,7 +88,7 @@ class UrlEncoderTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 	public function testEncodeHomeUrl() {
 		$parameters = $this->getParametersForPage(1);
 
-		$encoder = GeneralUtility::makeInstance(UrlEncoder::class);
+		$encoder = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\Encoder\\UrlEncoder');
 		$encoder->encodeUrl($parameters);
 		$this->assertNotNull($encoder->getConfiguration(), 'encoder configuration is null');
 		$this->assertEquals($encoder->getConfiguration()->get('init/emptyUrlReturnValue') ?: '/', $parameters['LD']['totalURL']);
@@ -104,13 +102,13 @@ class UrlEncoderTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 	public function testEncodeNormalPages() {
 		// Normal page without child-pages
 		$parameters = $this->getParametersForPage(3);
-		$encoder = GeneralUtility::makeInstance(UrlEncoder::class);
+		$encoder = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\Encoder\\UrlEncoder');
 		$encoder->encodeUrl($parameters);
 		$this->assertEquals('page3/', $parameters['LD']['totalURL'], 'Normal page without child-pages');
 
 		// Normal page with child-pages
 		$parameters = $this->getParametersForPage(2);
-		$encoder = GeneralUtility::makeInstance(UrlEncoder::class);
+		$encoder = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\Encoder\\UrlEncoder');
 		$encoder->encodeUrl($parameters);
 		$this->assertEquals('page2/', $parameters['LD']['totalURL'], 'Normal page with child-pages');
 	}
@@ -123,19 +121,19 @@ class UrlEncoderTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 	public function testEncodeNormalChildPages() {
 		// Normal Child
 		$parameters = $this->getParametersForPage(8);
-		$encoder = GeneralUtility::makeInstance(UrlEncoder::class);
+		$encoder = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\Encoder\\UrlEncoder');
 		$encoder->encodeUrl($parameters);
 		$this->assertEquals('page2/subpage8/', $parameters['LD']['totalURL'], 'Normal Child');
 
 		// Child with tx_realurl_pathoverride
 		$parameters = $this->getParametersForPage(5);
-		$encoder = GeneralUtility::makeInstance(UrlEncoder::class);
+		$encoder = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\Encoder\\UrlEncoder');
 		$encoder->encodeUrl($parameters);
 		$this->assertEquals('page5-override/', $parameters['LD']['totalURL'], 'Child with tx_realurl_pathoverride');
 
 		// Child with alias
 		$parameters = $this->getParametersForPage(6);
-		$encoder = GeneralUtility::makeInstance(UrlEncoder::class);
+		$encoder = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\Encoder\\UrlEncoder');
 		$encoder->encodeUrl($parameters);
 		$this->assertEquals('page2/page6-alias/', $parameters['LD']['totalURL'], 'Child with alias');
 	}
@@ -148,13 +146,13 @@ class UrlEncoderTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 	public function testEncodeExcludeFromUrl() {
 		// Page with tx_realurl_exclude=1 should appear in url, if it is the last segment
 		$parameters = $this->getParametersForPage(4);
-		$encoder = GeneralUtility::makeInstance(UrlEncoder::class);
+		$encoder = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\Encoder\\UrlEncoder');
 		$encoder->encodeUrl($parameters);
 		$this->assertEquals('page4/', $parameters['LD']['totalURL'], 'Page with tx_realurl_exclude=1');
 
 		// Child with a parent with tx_realurl_exclude=1
 		$parameters = $this->getParametersForPage(7);
-		$encoder = GeneralUtility::makeInstance(UrlEncoder::class);
+		$encoder = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\Encoder\\UrlEncoder');
 		$encoder->encodeUrl($parameters);
 		$this->assertEquals('subpage7-without-parent/', $parameters['LD']['totalURL'], 'Child with a parent with tx_realurl_exclude=1');
 	}
@@ -168,7 +166,7 @@ class UrlEncoderTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 	public function testEncodePageTitle0() {
 		// Page with tx_realurl_exclude=1 should appear in url, if it is the last segment
 		$parameters = $this->getParametersForPage(9);
-		$encoder = GeneralUtility::makeInstance(UrlEncoder::class);
+		$encoder = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\Encoder\\UrlEncoder');
 		$encoder->encodeUrl($parameters);
 		$this->assertEquals('page2/0/', $parameters['LD']['totalURL'], 'Page with title="0" is not encoded correctly');
 	}
