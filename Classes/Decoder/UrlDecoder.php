@@ -943,17 +943,24 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 	}
 
 	/**
-	 * Obtains a root page id for the given page.
+	 * Checks if the given page uid is inside
+	 * the rootline of the current root page
 	 *
 	 * @param int $pageUid
-	 * @return int
+	 * @return boolean
 	 */
-	protected function getRootPageIdForPage($pageUid) {
+	protected function isPageInRootlineOfRootPage($pageUid) {
 		$rootLineUtility = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Utility\\RootlineUtility', $pageUid);
 		/** @var \TYPO3\CMS\Core\Utility\RootlineUtility $rootLineUtility */
 		$rootLine = $rootLineUtility->get();
 
-		return is_array($rootLine) && count($rootLine) > 0 ? (int)$rootLine[0]['uid'] : 0;
+		foreach ((array) $rootLine as $page) {
+			if ($page['uid'] == $this->rootPageId) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	/**
@@ -1300,7 +1307,7 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 				'', 'sorting'
 		);
 		foreach ($rows as $row) {
-			if ($this->getRootPageIdForPage((int)$row['uid']) === $this->rootPageId) {
+			if ($this->isPageInRootlineOfRootPage((int)$row['uid'])) {
 				// Found it!
 				$result = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\Cache\\PathCacheEntry');
 				/** @var \DmitryDulepov\Realurl\Cache\PathCacheEntry $result */
@@ -1333,7 +1340,7 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 				$this->pageRepository->enableFields('pages', 1, array('fe_group' => true))
 		);
 		foreach ($rows as $row) {
-			if ($this->getRootPageIdForPage((int)$row['uid']) === $this->rootPageId) {
+			if ($this->isPageInRootlineOfRootPage((int)$row['uid'])) {
 				// Found it!
 				$result = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\Cache\\PathCacheEntry');
 				/** @var \DmitryDulepov\Realurl\Cache\PathCacheEntry $result */
