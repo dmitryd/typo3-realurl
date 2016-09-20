@@ -761,8 +761,10 @@ class UrlEncoder extends EncodeDecoderBase {
 				'setup' => $configuration,
 			);
 			$getVarValue = GeneralUtility::callUserFunction($configuration['userFunc'], $userFuncParameters, $this);
-			$segments[] = rawurlencode($getVarValue);
-			$result = TRUE;
+			if (is_numeric($getVarValue) || is_string($getVarValue)) {
+				$segments[] = rawurlencode($getVarValue);
+				$result = TRUE;
+			}
 		}
 
 		return $result;
