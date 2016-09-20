@@ -943,8 +943,8 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 	}
 
 	/**
-	 * Checks if the given page uid is inside
-	 * the rootline of the current root page
+	 * Checks if the current root page is inside the rootline
+	 * of the given page
 	 *
 	 * @param int $pageUid
 	 * @return boolean
