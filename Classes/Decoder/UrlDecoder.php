@@ -206,9 +206,24 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 	 */
 	public function storeCacheRecord() {
 		// If it is still not there (could have been added by other process!), than store it
-		if ($this->createdCacheEntry && !$this->isExpiredPath && !$this->getFromUrlCache($this->speakingUri)) {
+		if ($this->shouldStoreCacheRecord()) {
 			$this->putToUrlCache($this->createdCacheEntry);
 		}
+	}
+
+	/**
+	 * Returns true if $this->createdCacheEntry should be stored
+	 *
+	 * @return boolean
+	 */
+	protected function shouldStoreCacheRecord()
+	{
+	    return (
+	            $this->createdCacheEntry
+	            && !$this->isExpiredPath
+	            && !$this->getFromUrlCache($this->speakingUri)
+	            && strpos($this->speakingUri, '?') === false
+	    );
 	}
 
 	/**
