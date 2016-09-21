@@ -39,6 +39,9 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  */
 class DatabaseCache implements CacheInterface, SingletonInterface {
 
+	/** @var int */
+	static public $maximumNumberOfRecords = 500000;
+
 	/** @var \TYPO3\CMS\Core\Database\DatabaseConnection */
 	protected $databaseConnection;
 
@@ -47,6 +50,9 @@ class DatabaseCache implements CacheInterface, SingletonInterface {
 	 */
 	public function __construct() {
 		$this->databaseConnection = $GLOBALS['TYPO3_DB'];
+
+		list($usec, $sec) = explode(' ', microtime());
+		mt_srand($sec + $usec * 1000000);
 	}
 
 	/**
@@ -329,6 +335,7 @@ class DatabaseCache implements CacheInterface, SingletonInterface {
 		} else {
 			$this->databaseConnection->exec_INSERTquery('tx_realurl_pathdata', $data);
 			$cacheEntry->setCacheId($this->databaseConnection->sql_insert_id());
+			$this->limitTableRecords('tx_realurl_pathdata');
 		}
 	}
 
@@ -353,10 +360,38 @@ class DatabaseCache implements CacheInterface, SingletonInterface {
 				$data
 			);
 		} else {
+			$this->databaseConnection->sql_query('START TRANSACTION');
+
+			if ($this->limitTableRecords('tx_realurl_urldata')) {
+				$this->databaseConnection->sql_query('DELETE FROM tx_realurl_uniqalias_cache_map WHERE url_cache_id NOT IN (SELECT uid FROM tx_realurl_urldata)');
+			}
 			$this->databaseConnection->exec_INSERTquery('tx_realurl_urldata', $data);
 			$cacheEntry->setCacheId($this->databaseConnection->sql_insert_id());
+
+			$this->databaseConnection->sql_query('COMMIT');
 		}
 	}
 
+	/**
+	 * Limits amount of records in the table. This does not run often.
+	 * Records are removed in the uid order (oldest first). This is not a true
+	 * clean up, which would be based on the last access timestamp but good
+	 * enough to maintain performance.
+	 *
+	 * @param string $tableName
+	 * @return bool
+	 */
+	protected function limitTableRecords($tableName) {
+		$cleanedUp = false;
+		if ((mt_rand(0, mt_getrandmax()) % 5) == 0) {
+			$this->databaseConnection->sql_query('DELETE FROM ' . $tableName .
+				' WHERE uid <= (SELECT t2.uid FROM (SELECT uid FROM ' .
+				$tableName .
+				' ORDER BY uid DESC LIMIT ' . self::$maximumNumberOfRecords . ',1) t2)'
+			);
+			$cleanedUp = ($this->databaseConnection->sql_affected_rows() > 0);
+		}
 
+		return $cleanedUp;
+	}
 }
