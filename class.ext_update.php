@@ -93,9 +93,11 @@ class ext_update {
 				}
 				else {
 					if ((int)$tables[$newTableName]['Rows'] === 0) {
+						$this->databaseConnection->sql_query('DROP TABLE ' . $newTableName);
+						$this->databaseConnection->sql_query('CREATE TABLE ' . $newTableName . ' LIKE ' . $oldTableName);
 						$this->databaseConnection->sql_query('INSERT INTO ' . $newTableName . ' SELECT * FROM ' . $oldTableName);
 					}
-					$this->databaseConnection->sql_query('DROP TABLE' . $oldTableName);
+					$this->databaseConnection->sql_query('DROP TABLE ' . $oldTableName);
 				}
 			}
 		}
