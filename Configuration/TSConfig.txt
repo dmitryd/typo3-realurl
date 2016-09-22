@@ -1,0 +1,25 @@
+TCEFORM {
+	be_groups {
+		tables_select {
+			removeItems = tx_realurl_uniqalias,tx_realurl_urldata,tx_realurl_pathdata
+		}
+		tables_modify {
+			removeItems = tx_realurl_uniqalias,tx_realurl_urldata,tx_realurl_pathdata
+		}
+	}
+	sys_collection {
+		table_name {
+			removeItems = tx_realurl_uniqalias,tx_realurl_urldata,tx_realurl_pathdata
+		}
+	}
+	index_config {
+		table2index {
+			removeItems = tx_realurl_uniqalias,tx_realurl_urldata,tx_realurl_pathdata
+		}
+	}
+	sys_action {
+		t3_tables {
+			removeItems = tx_realurl_uniqalias,tx_realurl_urldata,tx_realurl_pathdata
+		}
+	}
+}

@@ -81,12 +81,13 @@ class ConfigurationReader {
 	 * @var array
 	 */
 	protected $defaultValues = array(
-		'cache/banUrlsRegExp' => '/tx_solr|tx_indexedsearch|(?:^|\?|&)q=/',
-		'cache/disable' => FALSE,
+		'cache/banUrlsRegExp' => '/tx_solr|tx_indexedsearch|tx_kesearch|(?:^|\?|&)q=/',
 		'fileName/acceptHTMLsuffix' => TRUE,
 		'fileName/defaultToHTMLsuffixOnPrev' => FALSE,
 		'init/appendMissingSlash' => 'ifNotFile,redirect[301]',
+		'init/defaultLanguageUid' => 0,
 		'init/emptySegmentValue' => '',
+		'init/redirectOnChashError' => false,
 		'pagePath/spaceCharacter' => '-', // undocumented & deprecated!
 	);
 
@@ -106,6 +107,7 @@ class ConfigurationReader {
 			$this->loadExtConfiguration();
 			$this->performAutomaticConfiguration();
 			$this->setConfigurationForTheCurrentDomain();
+			$this->postProcessConfiguration();
 		}
 		catch (\Exception $exception) {
 			$this->exception = $exception;
@@ -137,6 +139,15 @@ class ConfigurationReader {
 	 */
 	public function getGetVarsToSet() {
 		return $this->getVarsToSet;
+	}
+
+	/**
+	 * Returns the current mode.
+	 *
+	 * @return int
+	 */
+	public function getMode() {
+		return $this->mode;
 	}
 
 	/**
@@ -374,15 +385,17 @@ class ConfigurationReader {
 	 * @return void
 	 */
 	protected function setHostnames() {
-		if ($this->mode == self::MODE_DECODE) {
-			$this->setHostnamesForDecoding();
-		} else {
-			$this->setHostnamesForEncoding();
-		}
-		if (substr($this->hostName, 0, 4) === 'www.') {
-			$this->alternativeHostName = substr($this->hostName, 4);
-		} elseif (substr_count($this->hostName, '.') === 1) {
-			$this->alternativeHostName = 'www.' . $this->hostName;
+		if (is_array($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl'])) {
+			if ($this->mode == self::MODE_DECODE) {
+				$this->setHostnamesForDecoding();
+			} else {
+				$this->setHostnamesForEncoding();
+			}
+			if (substr($this->hostName, 0, 4) === 'www.') {
+				$this->alternativeHostName = substr($this->hostName, 4);
+			} elseif (substr_count($this->hostName, '.') === 1) {
+				$this->alternativeHostName = 'www.' . $this->hostName;
+			}
 		}
 	}
 
@@ -500,5 +513,30 @@ class ConfigurationReader {
 		$this->configuration['pagePath']['rootpage_id'] = (int)$rows[0]['uid'];
 
 		return TRUE;
+	}
+
+	/**
+	 * Runs post-processing hooks for extensions.
+	 *
+	 * @return void
+	 */
+	protected function postProcessConfiguration() {
+		if (is_array($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['ConfigurationReader_postProc'])) {
+			foreach ($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['ConfigurationReader_postProc'] as $userFunc) {
+				$parameters = array(
+					'configuration' => &$this->configuration,
+					'domainConfiguration' => &$this->domainConfiguration,
+					'exception' => &$this->exception,
+					'extConfiguration' => &$this->extConfiguration,
+					'hostName' => &$this->hostName,
+					'alternativeHostName' => &$this->alternativeHostName,
+					'urlParameters' => &$this->urlParameters,
+					'getVarsToSet' => &$this->getVarsToSet,
+					'utility' => $this->utility,
+					'pObj' => $this,
+				);
+				GeneralUtility::callUserFunction($userFunc, $parameters, $this);
+			}
+		}
 	}
 }

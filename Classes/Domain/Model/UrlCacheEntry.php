@@ -29,9 +29,12 @@ use TYPO3\CMS\Extbase\DomainObject\AbstractEntity;
  * This class represents a url cache entry, It is used in the Backend
  * administration module.
  *
- * @author Dmitry Dulepov <support@snowflake.ch>
+ * @author Dmitry Dulepov <dmitry.dulepov@gmail.com>
  */
 class UrlCacheEntry extends AbstractEntity {
+
+	/** @var int */
+	protected $expire;
 
 	/** @var string */
 	protected $originalUrl;
@@ -47,6 +50,13 @@ class UrlCacheEntry extends AbstractEntity {
 
 	/** @var string */
 	protected $speakingUrl;
+
+	/**
+	 * @return int
+	 */
+	public function getExpire() {
+		return $this->expire;
+	}
 
 	/**
 	 * @return string

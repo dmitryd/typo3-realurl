@@ -43,7 +43,7 @@
 				<source>The alias was deleted.</source>
 			</trans-unit>
 			<trans-unit id="module.aliases.all_deleted">
-				<source>Alias were deleted.</source>
+				<source>Aliases were deleted.</source>
 			</trans-unit>
 			<trans-unit id="module.aliases.edit.submit">
 				<source>Save</source>
@@ -82,22 +82,22 @@
 				<source>Reset</source>
 			</trans-unit>
 			<trans-unit id="module.url_cache">
-				<source>URL Cache</source>
+				<source>URL Data</source>
 			</trans-unit>
 			<trans-unit id="module.url_cache.intro">
-				<source>This module allows you to search, edit and remove cache entries for URLs. This cache contains complete URLs consisting from page path and any encoded parameters.</source>
+				<source><![CDATA[This module allows you to view and remove URLs for pages. URL data contains complete URLs consisting from page path and any encoded parameters. Note that it is <strong>extremely dangerous</strong> to manipulate these entries manually! Your installation can be broken if you do so.]]></source>
 			</trans-unit>
 			<trans-unit id="module.path_cache">
-				<source>Path Cache</source>
+				<source>Path Data</source>
 			</trans-unit>
 			<trans-unit id="module.path_cache.intro">
-				<source>This module allows you to search, edit and remove cache entries for the path cache. Generally, you should never touch entries in this cache unless you really know what you are doing.</source>
+				<source><![CDATA[This module allows you to view and remove page path data. Note that it is <strong>extremely dangerous</strong> to manipulate these entries manually! Your installation can be broken if you do so.]]></source>
 			</trans-unit>
 			<trans-unit id="module.configuration">
 				<source>Configuration</source>
 			</trans-unit>
 			<trans-unit id="module.configuration.intro">
-				<source>This module will show you RealURL configuration as RealURL will see it (including default values).&lt;/p&gt;&lt;p&gt;&lt;strong&gt;Note:&lt;/strong&gt; your TYPO3 solution provider may use its own ways to configure RealURL at runtime. If that's the case, this module may not show confguration accurately. If you suspect that this is the case, contact your TYPO3 solution provider.</source>
+				<source><![CDATA[]This module will show you RealURL configuration as RealURL will see it (including default values).</p><p><strong>Note:</strong> your TYPO3 solution provider may use its own ways to configure RealURL at runtime. If that's the case, this module may not show confguration accurately. If you suspect that this is the case, contact your TYPO3 solution provider.]]></source>
 			</trans-unit>
 			<trans-unit id="module.dateTimeFormat">
 				<source>d.m.Y H:i</source>
@@ -151,22 +151,22 @@
 				<source>Mount moint</source>
 			</trans-unit>
 			<trans-unit id="module.js.deleteSingleCacheEntry">
-				<source>Do you want to delete this cache entry?</source>
+				<source>Do you want to delete this entry? This can be harmful for your installation!</source>
 			</trans-unit>
 			<trans-unit id="module.js.deleteCacheEntries">
-				<source>Do you want to delete all cache entries for this page?</source>
+				<source>Do you want to delete all entries for this page? This can be harmful for your installation!</source>
 			</trans-unit>
 			<trans-unit id="module.deleteCacheEntriesForPage">
-				<source>Delete all cache entries for this page</source>
+				<source>Delete all entries for this page (harmful!)</source>
 			</trans-unit>
 			<trans-unit id="module.flushCache">
-				<source>Flush all entries</source>
+				<source>Flush all entries (harmful!)</source>
 			</trans-unit>
 			<trans-unit id="module.js.flushCache">
-				<source>Do you want to remove all cached entries? This WILL cause performance issues with the web site!</source>
+				<source>Do you want to remove all entries? This WILL cause performance issues with the web site and can make some pages inaccessible!</source>
 			</trans-unit>
 			<trans-unit id="module.url_cache.entry_deleted">
-				<source>Cache entry was removed.</source>
+				<source>Entry was removed.</source>
 			</trans-unit>
 			<trans-unit id="module.url_cache.all_entries_deleted">
 				<source>All entries for this page were removed.</source>
@@ -175,7 +175,7 @@
 				<source>All cache entries were removed.</source>
 			</trans-unit>
 			<trans-unit id="module.path_cache.entry_deleted">
-				<source>Cache entry was removed.</source>
+				<source>Entry was removed.</source>
 			</trans-unit>
 		</body>
 	</file>

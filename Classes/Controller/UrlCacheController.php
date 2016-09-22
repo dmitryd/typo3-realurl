@@ -30,7 +30,7 @@ use TYPO3\CMS\Extbase\Utility\LocalizationUtility;
 /**
  * This class implements management of RealURL url cache.
  *
- * @author Dmitry Dulepov <support@snowflake.ch>
+ * @author Dmitry Dulepov <dmitry.dulepov@gmail.com>
  */
 class UrlCacheController extends BackendModuleController {
 
@@ -48,7 +48,7 @@ class UrlCacheController extends BackendModuleController {
 	 */
 	public function deleteAction($uid) {
 		$this->databaseConnection->sql_query('START TRANSACTION');
-		$this->databaseConnection->exec_DELETEquery('tx_realurl_urlcache', 'uid=' . (int)$uid);
+		$this->databaseConnection->exec_DELETEquery('tx_realurl_urldata', 'uid=' . (int)$uid);
 		$this->databaseConnection->exec_DELETEquery('tx_realurl_uniqalias_cache_map', 'url_cache_id=' . (int)$uid);
 		$this->databaseConnection->sql_query('COMMIT');
 
@@ -65,9 +65,9 @@ class UrlCacheController extends BackendModuleController {
 	public function deleteAllAction() {
 		$this->databaseConnection->sql_query('START TRANSACTION');
 		$this->databaseConnection->sql_query('DELETE FROM tx_realurl_uniqalias_cache_map WHERE ' .
-			'url_cache_id IN (SELECT uid FROM tx_realurl_urlcache WHERE page_id=' . (int)GeneralUtility::_GP('id') . ')'
+			'url_cache_id IN (SELECT uid FROM tx_realurl_urldata WHERE page_id=' . (int)GeneralUtility::_GP('id') . ')'
 		);
-		$this->databaseConnection->sql_query('DELETE FROM tx_realurl_urlcache WHERE page_id=' . (int)GeneralUtility::_GP('id'));
+		$this->databaseConnection->sql_query('DELETE FROM tx_realurl_urldata WHERE page_id=' . (int)GeneralUtility::_GP('id'));
 		$this->databaseConnection->sql_query('COMMIT');
 
 		$this->addFlashMessage(LocalizationUtility::translate('module.url_cache.all_entries_deleted', 'realurl'));
@@ -84,7 +84,7 @@ class UrlCacheController extends BackendModuleController {
 		$this->databaseConnection->sql_query('START TRANSACTION');
 		// Not using TRUNCATE because of DBAL
 		$this->databaseConnection->sql_query('DELETE FROM tx_realurl_uniqalias_cache_map');
-		$this->databaseConnection->sql_query('DELETE FROM tx_realurl_urlcache');
+		$this->databaseConnection->sql_query('DELETE FROM tx_realurl_urldata');
 		$this->databaseConnection->sql_query('COMMIT');
 
 		$this->addFlashMessage(LocalizationUtility::translate('module.url_cache.flushed', 'realurl'));
@@ -112,6 +112,7 @@ class UrlCacheController extends BackendModuleController {
 		$query->setOrderings(array(
 			'speakingUrl' => QueryInterface::ORDER_ASCENDING,
 			'originalUrl' => QueryInterface::ORDER_ASCENDING,
+			'expire' => QueryInterface::ORDER_ASCENDING,
 		));
 		$query->matching($query->equals('pageId', $pageId));
 

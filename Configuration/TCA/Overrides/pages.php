@@ -10,7 +10,7 @@ if (!isset($GLOBALS['TCA']['pages']['columns']['tx_realurl_pathsegment'])) {
 			'config' => array (
 				'type' => 'input',
 				'max' => 255,
-				'eval' => 'trim,nospace,lower,uniqueInPid,DmitryDulepov\\Realurl\\Evaluator\\SegmentFieldCleaner'
+				'eval' => 'trim,nospace,lower,DmitryDulepov\\Realurl\\Evaluator\\SegmentFieldCleaner'
 			),
 		),
 		'tx_realurl_pathoverride' => array(
@@ -47,7 +47,7 @@ if (!isset($GLOBALS['TCA']['pages']['columns']['tx_realurl_pathsegment'])) {
 
 	$GLOBALS['TCA']['pages']['ctrl']['requestUpdate'] .= ',tx_realurl_exclude';
 
-	\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addToAllTCAtypes('pages', '--palette--;LLL:EXT:realurl/Resources/Private/Language/locallang_db.xlf:pages.palette_title;tx_realurl', '1', 'after:nav_title');
+	\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addToAllTCAtypes('pages', '--palette--;LLL:EXT:realurl/Resources/Private/Language/locallang_db.xlf:pages.palette_title;tx_realurl', '1,3', 'after:nav_title');
 	\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addToAllTCAtypes('pages', '--palette--;LLL:EXT:realurl/Resources/Private/Language/locallang_db.xlf:pages.palette_title;tx_realurl', '4,199,254', 'after:title');
 
 	$GLOBALS['TCA']['pages']['palettes']['tx_realurl'] = array(

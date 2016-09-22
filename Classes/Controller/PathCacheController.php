@@ -30,7 +30,7 @@ use TYPO3\CMS\Extbase\Utility\LocalizationUtility;
 /**
  * This class implements management of RealURL url cache.
  *
- * @author Dmitry Dulepov <support@snowflake.ch>
+ * @author Dmitry Dulepov <dmitry.dulepov@gmail.com>
  */
 class PathCacheController extends BackendModuleController {
 
@@ -47,7 +47,7 @@ class PathCacheController extends BackendModuleController {
 	 * @throws \TYPO3\CMS\Extbase\Mvc\Exception\StopActionException
 	 */
 	public function deleteAction($uid) {
-		$this->databaseConnection->exec_DELETEquery('tx_realurl_pathcache', 'uid=' . (int)$uid);
+		$this->databaseConnection->exec_DELETEquery('tx_realurl_pathdata', 'uid=' . (int)$uid);
 
 		$this->addFlashMessage(LocalizationUtility::translate('module.path_cache.entry_deleted', 'realurl'));
 

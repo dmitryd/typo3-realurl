@@ -22,9 +22,9 @@
 *  This copyright notice MUST APPEAR in all copies of the script!
 ***************************************************************/
 
-$GLOBALS['TCA']['tx_realurl_urlcache'] = array(
+$GLOBALS['TCA']['tx_realurl_pathdata'] = array(
 	'ctrl' => array(
-		'label' => '',
+		'label' => 'pagepath',
 		'hideTable' => 1,
 	),
 	'columns' => array(
@@ -42,24 +42,33 @@ $GLOBALS['TCA']['tx_realurl_urlcache'] = array(
 				'eval' => 'int,required',
 			)
 		),
-		'original_url' => array(
+		'language_id' => array(
+			'label' => '',
+			'config' => array(
+				'type' => 'input',
+				'eval' => 'int,required',
+			)
+		),
+		'mpvar' => array(
+			'label' => '',
+			'config' => array(
+				'type' => 'input',
+				'eval' => 'trim',
+			)
+		),
+		'pagepath' => array(
 			'label' => '',
 			'config' => array(
 				'type' => 'input',
 				'eval' => 'trim,required',
 			)
 		),
-		'speaking_url' => array(
+		'expire' => array(
 			'label' => '',
 			'config' => array(
 				'type' => 'input',
-				'eval' => 'trim,required',
-			)
-		),
-		'request_variables' => array(
-			'label' => '',
-			'config' => array(
-				'type' => 'input',
+				'eval' => 'datetime',
+				'default' => 0,
 			)
 		),
 	),

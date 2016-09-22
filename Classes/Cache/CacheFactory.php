@@ -39,10 +39,13 @@ class CacheFactory {
 	 * @return CacheInterface
 	 */
 	static public function getCache() {
+		// Warning! "cacheImplementation" is internal at the moment. It can
+		// disappear completely in future. Use at your own risk!
 		$cacheClassName = $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['realurl']['cacheImplementation'];
-		if (!class_exists($cacheClassName)) {
-			$cacheClassName = 'DmitryDulepov\\Realurl\\Cache\\NullCache';
+		if (!isset($cacheClassName) || !$cacheClassName || !class_exists($cacheClassName)) {
+			$cacheClassName = 'DmitryDulepov\\Realurl\\Cache\\DatabaseCache';
 		}
+
 		return GeneralUtility::makeInstance($cacheClassName);
 	}
 

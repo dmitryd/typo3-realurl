@@ -32,6 +32,7 @@ namespace DmitryDulepov\Realurl;
 use DmitryDulepov\Realurl\Cache\CacheFactory;
 use DmitryDulepov\Realurl\Cache\CacheInterface;
 use DmitryDulepov\Realurl\Configuration\ConfigurationReader;
+use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
@@ -60,17 +61,42 @@ class Utility {
 	}
 
 	/**
+	 * Checks if required update should run and runs it if necessary.
+	 *
+	 * @return void
+	 */
+	static public function checkAndPerformRequiredUpdates() {
+		$currentUpdateLevel = 1;
+
+		$registry = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Registry');
+		/** @var \TYPO3\CMS\Core\Registry $registry */
+		$updateLevel = (int)$registry->get('tx_realurl', 'updateLevel', 0);
+		if ($updateLevel < $currentUpdateLevel) {
+			require_once(ExtensionManagementUtility::extPath('realurl', 'class.ext_update.php'));
+			$updater = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\ext_update');
+			/** @var \DmitryDulepov\Realurl\ext_update $updater */
+			if ($updater->access()) {
+				$updater->main();
+			}
+			$registry->set('tx_realurl', 'updateLevel', $currentUpdateLevel);
+		}
+	}
+
+	/**
 	 * Converts a given string to a string that can be used as a URL segment.
 	 * The result is not url-encoded.
 	 *
-	 * @param string $string
+	 * @param string $processedTitle
 	 * @param string $spaceCharacter
+	 * @param bool $strToLower
 	 * @return string
 	 */
-	public function convertToSafeString($string, $spaceCharacter = '-') {
-		$processedTitle = $this->csConvertor->conv_case('utf-8', $string, 'toLower');
+	public function convertToSafeString($processedTitle, $spaceCharacter = '-', $strToLower = true) {
+		if ($strToLower) {
+			$processedTitle = $this->csConvertor->conv_case('utf-8', $processedTitle, 'toLower');
+		}
 		$processedTitle = strip_tags($processedTitle);
-		$processedTitle = preg_replace('/[ \-+_]+/', $spaceCharacter, $processedTitle);
+		$processedTitle = preg_replace('/[ \t\x{00A0}\-+_]+/u', $spaceCharacter, $processedTitle);
 		$processedTitle = $this->csConvertor->specCharsToASCII('utf-8', $processedTitle);
 		$processedTitle = preg_replace('/[^\p{L}0-9' . preg_quote($spaceCharacter) . ']/u', '', $processedTitle);
 		$processedTitle = preg_replace('/' . preg_quote($spaceCharacter) . '{2,}/', $spaceCharacter, $processedTitle);
@@ -78,7 +104,9 @@ class Utility {
 
 		// TODO Post-processing hook here
 
-		$processedTitle = strtolower($processedTitle);
+		if ($strToLower) {
+			$processedTitle = strtolower($processedTitle);
+		}
 
 		return $processedTitle;
 	}
@@ -89,11 +117,8 @@ class Utility {
 	 * @return CacheInterface
 	 */
 	public function getCache() {
-		if (TYPO3_MODE !== 'FE' || is_object($GLOBALS['BE_USER']) || $this->configuration->get('cache/disable')) {
-			$cache = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\Cache\\NullCache');
-		} else {
-			$cache = CacheFactory::getCache();
-		}
+		$cache = CacheFactory::getCache();
+
 		return $cache;
 	}
 

@@ -93,6 +93,33 @@ class UrlEncoder extends EncodeDecoderBase {
 	}
 
 	/**
+	 * Returns the configuration reader. This can be used in hooks.
+	 *
+	 * @return ConfigurationReader
+	 */
+	public function getConfiguration() {
+		return $this->configuration;
+	}
+
+	/**
+	 * Returns a coipy of original url parameters. This can be used in hooks.
+	 *
+	 * @return array
+	 */
+	public function getOriginalUrlParameters() {
+		return $this->originalUrlParameters;
+	}
+
+	/**
+	 * Returns $this->utility. This can be used in hooks.
+	 *
+	 * @return \DmitryDulepov\Realurl\Utility
+	 */
+	public function getUtility() {
+		return $this->utility;
+	}
+
+	/**
 	 * Entry point for the URL encoder.
 	 *
 	 * @param array $encoderParameters
@@ -103,7 +130,8 @@ class UrlEncoder extends EncodeDecoderBase {
 		$this->urlToEncode = $encoderParameters['LD']['totalURL'];
 		if ($this->canEncoderExecute()) {
 			$this->executeEncoder();
-			$encoderParameters['LD']['totalURL'] = $this->encodedUrl;
+			$encoderParameters['LD']['totalURL'] = $this->encodedUrl .
+				(isset($encoderParameters['LD']['sectionIndex']) ? $encoderParameters['LD']['sectionIndex'] : '');
 		}
 	}
 
@@ -125,11 +153,15 @@ class UrlEncoder extends EncodeDecoderBase {
 				$testUrl = preg_replace('/https?:\/\/[^\/]+\/(.*)$/', $this->tsfe->absRefPrefix . '\1', $testUrl);
 			}
 
+			list($testUrl, $section) = GeneralUtility::revExplode('#', $testUrl, 2);
+
 			if (isset(self::$urlPrependRegister[$testUrl])) {
 				$urlKey = $url = $testUrl;
 
-
 				$url = self::$urlPrependRegister[$urlKey] . ($url{0} != '/' ? '/' : '') . $url;
+				if ($section) {
+					$url .= '#' . $section;
+				}
 
 				unset(self::$urlPrependRegister[$testUrl]);
 
@@ -186,7 +218,7 @@ class UrlEncoder extends EncodeDecoderBase {
 	 * @return void
 	 */
 	protected function appendToEncodedUrl($stringToAppend, $addSlash = TRUE) {
-		if ($stringToAppend) {
+		if ($stringToAppend !== '') {
 			$this->encodedUrl = ($this->encodedUrl ? rtrim($this->encodedUrl, '/') . '/' : '') . $stringToAppend;
 			if ($addSlash) {
 				$this->encodedUrl .= '/';
@@ -216,7 +248,12 @@ class UrlEncoder extends EncodeDecoderBase {
 	 * @return bool
 	 */
 	protected function canEncoderExecute() {
-		return $this->isRealURLEnabled() && !$this->isInWorkspace() && $this->isTypo3Url() && $this->isProperTsfe();
+		return $this->isRealURLEnabled() &&
+			!$this->isSimulateStaticEnabled() &&
+			!$this->isInWorkspace() &&
+			$this->isTypo3Url() &&
+			$this->isProperTsfe()
+		;
 	}
 
 	/**
@@ -275,15 +312,6 @@ class UrlEncoder extends EncodeDecoderBase {
 	protected function createAliasForValue($getVarValue, array $configuration) {
 		$result = $getVarValue;
 
-		$languageEnabled = FALSE;
-		$fieldList = array();
-		if ($configuration['transOrigPointerField'] && $configuration['languageField']) {
-			$fieldList[] = 'uid';
-			$fieldList[] = $configuration['transOrigPointerField'];
-			$fieldList[] = $configuration['languageField'];
-			$languageEnabled = TRUE;
-		}
-
 		// Define the language for the alias
 		$languageUrlParameter = $configuration['languageGetVar'] ?: 'L';
 		$languageUid = isset($this->originalUrlParameters[$languageUrlParameter]) ? (int)$this->originalUrlParameters[$languageUrlParameter] : 0;
@@ -293,6 +321,19 @@ class UrlEncoder extends EncodeDecoderBase {
 
 		// First, test if there is an entry in cache for the id
 		if (!$configuration['useUniqueCache'] || $configuration['autoUpdate'] || !($result = $this->getFromAliasCache($configuration, $getVarValue, $languageUid))) {
+			$languageEnabled = FALSE;
+			$fieldList = array();
+			if ($configuration['table'] === 'pages') {
+				$fieldList[] = 'uid';
+				$languageEnabled = TRUE;
+			}
+			elseif ($configuration['transOrigPointerField'] && $configuration['languageField']) {
+				$fieldList[] = 'uid';
+				$fieldList[] = $configuration['transOrigPointerField'];
+				$fieldList[] = $configuration['languageField'];
+				$languageEnabled = TRUE;
+			}
+
 			$fieldList[] = $configuration['alias_field'];
 			$row = $this->databaseConnection->exec_SELECTgetSingleRow(implode(',', $fieldList), $configuration['table'],
 						$configuration['id_field'] . '=' . $this->databaseConnection->fullQuoteStr($getVarValue, $configuration['table']) .
@@ -300,11 +341,21 @@ class UrlEncoder extends EncodeDecoderBase {
 			if (is_array($row)) {
 				// Looking for localized version
 				if ($languageEnabled && $languageUid !== 0) {
-					/** @noinspection PhpUndefinedMethodInspection */
-					$localizedRow = $this->databaseConnection->exec_SELECTgetSingleRow($configuration['alias_field'], $configuration['table'],
-							$configuration['transOrigPointerField'] . '=' . (int)$row['uid'] . '
-							AND ' . $configuration['languageField'] . '=' . $languageUid . '
-							' . (isset($configuration['addWhereClause']) ? $configuration['addWhereClause'] : ''));
+					if ($configuration['table'] === 'pages') {
+						// Note: can't use $this->pageRepository->getPageOverlay() here because 'alias_field' can be an expression
+						$localizedRow = $this->databaseConnection->exec_SELECTgetSingleRow($configuration['alias_field'], 'pages_language_overlay',
+							'pid=' . (int)$row['uid'] . ' AND sys_language_uid=' . $languageUid .
+							(isset($configuration['addWhereClause']) ? $configuration['addWhereClause'] : '')
+						);
+					}
+					else {
+						// Note: can't use $this->pageRepository->getRecordOverlay() here because 'alias_field' can be an expression
+						$localizedRow = $this->databaseConnection->exec_SELECTgetSingleRow($configuration['alias_field'], $configuration['table'],
+							$configuration['transOrigPointerField'] . '=' . (int)$row['uid'] .
+							' AND ' . $configuration['languageField'] . '=' . $languageUid .
+							(isset($configuration['addWhereClause']) ? $configuration['addWhereClause'] : '')
+						);
+					}
 					if (is_array($localizedRow)) {
 						$row = $localizedRow;
 					}
@@ -326,7 +377,7 @@ class UrlEncoder extends EncodeDecoderBase {
 			}
 		}
 
-		return $result;
+		return is_null($result) ? $getVarValue : $result;
 	}
 
 	/**
@@ -381,14 +432,15 @@ class UrlEncoder extends EncodeDecoderBase {
 		$page = $this->databaseConnection->exec_SELECTgetSingleRow('*', 'pages',
 			'uid=' . (int)$this->urlParameters['id']
 		);
-		if ($this->sysLanguageUid > 0) {
+		$languageExceptionUids = (string)$this->configuration->get('pagePath/languageExceptionUids');
+		if ($this->sysLanguageUid > 0 && (empty($languageExceptionUids) || !GeneralUtility::inList($languageExceptionUids, $this->sysLanguageUid))) {
 			$overlay = $this->pageRepository->getPageOverlay($page, $this->sysLanguageUid);
 			if (is_array($overlay)) {
 				$page = $overlay;
 				unset($overlay);
 			}
 		}
-		if ($page['tx_realurl_pathoverride'] && !empty($page['tx_realurl_pathsegment'])) {
+		if ($page['tx_realurl_pathoverride'] && $page['tx_realurl_pathsegment'] !== '') {
 			$path = trim($page['tx_realurl_pathsegment'], '/');
 			$this->appendToEncodedUrl($path);
 			// Mount points do not work with path override. Having them will
@@ -430,7 +482,8 @@ class UrlEncoder extends EncodeDecoderBase {
 			}
 		}
 
-		$enableLanguageOverlay = ((int)$this->originalUrlParameters['L'] > 0);
+		$languageExceptionUids = (string)$this->configuration->get('pagePath/languageExceptionUids');
+		$enableLanguageOverlay = ((int)$this->originalUrlParameters['L'] > 0) && (empty($languageExceptionUids) || !GeneralUtility::inList($languageExceptionUids, $this->sysLanguageUid));
 
 		$components = array();
 		$reversedRootLine = array_reverse($rootLine);
@@ -448,6 +501,20 @@ class UrlEncoder extends EncodeDecoderBase {
 					unset($overlay);
 				}
 			}
+
+			// if path override is set, use path segment also for all subpages to shorten the url and throw away all segments found so far
+			if ($page['tx_realurl_pathoverride'] && $page['tx_realurl_pathsegment'] !== '') {
+				$segment = trim($page['tx_realurl_pathsegment'], '/');
+				$segments = explode('/', $segment);
+				array_walk($segments, function(&$segments, $key) {
+					$segments[$key] = $this->utility->convertToSafeString($segments[$key], $this->separatorCharacter);
+				});
+				// Technically we could do with `$components = $segments` but it fills better to have overriden string here
+				$segment = implode('/', $segments);
+				$components = array($segment);
+				continue;
+			}
+
 			foreach (self::$pageTitleFields as $field) {
 				if (isset($page[$field]) && $page[$field] !== '') {
 					$segment = $this->utility->convertToSafeString($page[$field], $this->separatorCharacter);
@@ -455,13 +522,15 @@ class UrlEncoder extends EncodeDecoderBase {
 						$segment = $this->emptySegmentValue;
 					}
 					$components[] = $segment;
-					$this->appendToEncodedUrl($segment);
 					continue 2;
 				}
 			}
 		}
 
 		if (count($components) > 0) {
+			foreach ($components as $segment) {
+				$this->appendToEncodedUrl($segment);
+			}
 			$this->addToPathCache(implode('/', $components));
 		}
 	}
@@ -692,8 +761,10 @@ class UrlEncoder extends EncodeDecoderBase {
 				'setup' => $configuration,
 			);
 			$getVarValue = GeneralUtility::callUserFunction($configuration['userFunc'], $userFuncParameters, $this);
-			$segments[] = rawurlencode($getVarValue);
-			$result = TRUE;
+			if (is_numeric($getVarValue) || is_string($getVarValue)) {
+				$segments[] = rawurlencode($getVarValue);
+				$result = TRUE;
+			}
 		}
 
 		return $result;
@@ -789,7 +860,7 @@ class UrlEncoder extends EncodeDecoderBase {
 		$result = FALSE;
 
 		$cacheEntry = $this->cache->getUrlFromCacheByOriginalUrl($this->rootPageId, $this->originalUrl);
-		if ($cacheEntry) {
+		if ($cacheEntry && $cacheEntry->getExpiration() === 0) {
 			$this->encodedUrl = $cacheEntry->getSpeakingUrl();
 			$result = TRUE;
 		}
@@ -805,9 +876,9 @@ class UrlEncoder extends EncodeDecoderBase {
 	 */
 	protected function fixEmptySegments(array &$segments) {
 		if ($this->emptySegmentValue !== '') {
-			foreach ($segments as &$segment) {
+			foreach ($segments as $key => $segment) {
 				if ($segment === '') {
-					$segment = $this->emptySegmentValue;
+					$segments[$key] = $this->emptySegmentValue;
 				}
 			}
 		}
@@ -973,6 +1044,17 @@ class UrlEncoder extends EncodeDecoderBase {
 	}
 
 	/**
+	 * Checks if simulatestatic is enabled.
+	 *
+	 * @return bool
+	 */
+	protected function isSimulateStaticEnabled() {
+		return isset($this->tsfe->config['config']['simulateStaticDocuments']) && (bool)$this->tsfe->config['config']['simulateStaticDocuments'] ||
+			isset($this->tsfe->TYPO3_CONF_VARS['FE']['simulateStaticDocuments']) && (bool)$this->tsfe->TYPO3_CONF_VARS['FE']['simulateStaticDocuments']
+		;
+	}
+
+	/**
 	 * Checks if a TYPO3 URL is going to be encoded.
 	 *
 	 * @return bool
@@ -1052,7 +1134,7 @@ class UrlEncoder extends EncodeDecoderBase {
 					// However it makes more sense to unset the var if 'urlPrepend' is set
 					// because 'urlPrepend' is typically used for language-based domains.
 					// But 'useConfiguration' can be used to localize postVarSet segment
-					// values. So we change the behavior here comapring to 1.x.
+					// values. So we change the behavior here comparing to 1.x.
 					unset($this->urlParameters[$getVarName]);
 				}
 			}
@@ -1160,20 +1242,24 @@ class UrlEncoder extends EncodeDecoderBase {
 	protected function storeInUrlCache() {
 		if ($this->canCacheUrl($this->originalUrl)) {
 			$cacheEntry = $this->cache->getUrlFromCacheByOriginalUrl($this->rootPageId, $this->originalUrl);
-			if (!$cacheEntry || $cacheEntry->getSpeakingUrl() !== $this->encodedUrl) {
+			/** @var \DmitryDulepov\Realurl\Cache\UrlCacheEntry $cacheEntry */
+			if ($cacheEntry && $cacheEntry->getExpiration() !== 0 && $cacheEntry->getSpeakingUrl() === $this->encodedUrl) {
+				// Unexpire
+				$cacheEntry->setExpiration(0);
+			}
+			elseif (!$cacheEntry || $cacheEntry->getSpeakingUrl() !== $this->encodedUrl) {
 				$cacheEntry = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\Cache\\UrlCacheEntry');
-				/** @var \DmitryDulepov\Realurl\Cache\UrlCacheEntry $cacheEntry */
-				$cacheEntry->setPageId($this->urlParameters['id']); // $this->originalUrlParameters['uid'] can be an alias, we need a number here!
+				$cacheEntry->setPageId($this->urlParameters['id']); // $this->originalUrlParameters['id'] can be an alias, we need a number here!
 				$cacheEntry->setRequestVariables($this->originalUrlParameters);
 				$cacheEntry->setRootPageId($this->rootPageId);
 				$cacheEntry->setOriginalUrl($this->originalUrl);
 				$cacheEntry->setSpeakingUrl($this->encodedUrl);
-				$this->cache->putUrlToCache($cacheEntry);
+			}
+			$this->cache->putUrlToCache($cacheEntry);
 
-				$cacheId = $cacheEntry->getCacheId();
-				if (!empty($cacheId)) {
-					$this->storeAliasToUrlCacheMapping($cacheId);
-				}
+			$cacheId = $cacheEntry->getCacheId();
+			if (!empty($cacheId)) {
+				$this->storeAliasToUrlCacheMapping($cacheId);
 			}
 		}
 	}

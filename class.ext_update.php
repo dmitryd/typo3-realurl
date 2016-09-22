@@ -22,11 +22,12 @@ namespace DmitryDulepov\Realurl;
 *
 *  This copyright notice MUST APPEAR in all copies of the script!
 ***************************************************************/
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * This class updates realurl from version 1.x to 2.x.
  *
- * @author Dmitry Dulepov <support@snowflake.ch>
+ * @author Dmitry Dulepov <dmitry.dulepov@gmail.com>
  */
 class ext_update {
 
@@ -44,10 +45,25 @@ class ext_update {
 	 * Runs the update.
 	 */
 	public function main() {
+		$locker = $this->getLocker();
+		try {
+			if ($locker) {
+				$locker->acquire();
+			}
+		}
+		catch (\Exception $e) {
+			// Nothing
+		}
+
+		$this->checkAndRenameTables();
 		if ($this->pathCacheNeedsUpdates()) {
-			$this->databaseConnection->sql_query('ALTER TABLE tx_realurl_pathcache CHANGE cache_id uid int(11) NOT NULL');
-			$this->databaseConnection->sql_query('ALTER TABLE tx_realurl_pathcache DROP PRIMARY KEY');
-			$this->databaseConnection->sql_query('ALTER TABLE tx_realurl_pathcache MODIFY uid int(11) NOT NULL auto_increment primary key');
+			$this->databaseConnection->sql_query('ALTER TABLE tx_realurl_pathdata CHANGE cache_id uid int(11) NOT NULL');
+			$this->databaseConnection->sql_query('ALTER TABLE tx_realurl_pathdata DROP PRIMARY KEY');
+			$this->databaseConnection->sql_query('ALTER TABLE tx_realurl_pathdata MODIFY uid int(11) NOT NULL auto_increment primary key');
+		}
+
+		if ($locker && (method_exists($locker, 'isAcquired') && $locker->isAcquired() || method_exists($locker, 'getLockStatus') && $locker->getLockStatus())) {
+			$locker->release();
 		}
 	}
 
@@ -57,7 +73,56 @@ class ext_update {
 	 * @return bool
 	 */
 	public function access() {
-		return $this->pathCacheNeedsUpdates();
+		return $this->hasOldCacheTables() || $this->pathCacheNeedsUpdates();
+	}
+
+	/**
+	 * Checks and renames *cache tables to *data tables.
+	 */
+	protected function checkAndRenameTables() {
+		$tableMap = array(
+			'tx_realurl_pathcache' => 'tx_realurl_pathdata',
+			'tx_realurl_urlcache' => 'tx_realurl_urldata',
+		);
+
+		$tables = $this->databaseConnection->admin_get_tables();
+		foreach ($tableMap as $oldTableName => $newTableName) {
+			if (isset($tables[$oldTableName])) {
+				if (!isset($tables[$newTableName])) {
+					$this->databaseConnection->sql_query('ALTER TABLE ' . $oldTableName . ' RENAME TO ' . $newTableName);
+				}
+				else {
+					if ((int)$tables[$newTableName]['Rows'] === 0) {
+						$this->databaseConnection->sql_query('INSERT INTO ' . $newTableName . ' SELECT * FROM ' . $oldTableName);
+					}
+					$this->databaseConnection->sql_query('DROP TABLE' . $oldTableName);
+				}
+			}
+		}
+	}
+
+	/**
+	 * Obtains the locker depending on the TYPO3 version.
+	 *
+	 * @return \TYPO3\CMS\Core\Locking\Locker|\TYPO3\CMS\Core\Locking\LockingStrategyInterface
+	 */
+	protected function getLocker() {
+		if (class_exists('\\TYPO3\\CMS\\Core\\Locking\\LockFactory')) {
+			$locker = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Locking\\LockFactory')->createLocker('tx_realurl_update');
+		}
+		elseif (class_exists('\\TYPO3\\CMS\\Core\\Locking\\Locker')) {
+			$locker = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Locking\\Locker', 'tx_realurl_update');
+		}
+		else {
+			$locker = null;
+		}
+
+		return $locker;
+	}
+
+	protected function hasOldCacheTables() {
+		$tables = $this->databaseConnection->admin_get_tables();
+		return isset($tables['tx_realurl_pathcache']) || isset($tables['tx_realurl_urlcache']);
 	}
 
 	/**
@@ -66,7 +131,7 @@ class ext_update {
 	 * @return bool
 	 */
 	protected function pathCacheNeedsUpdates() {
-		$fields = $this->databaseConnection->admin_get_fields('tx_realurl_pathcache');
+		$fields = $this->databaseConnection->admin_get_fields('tx_realurl_pathdata');
 
 		return isset($fields['cache_id']) || !isset($fields['uid']) || stripos($fields['uid']['Extra'], 'auto_increment') === false;
 	}

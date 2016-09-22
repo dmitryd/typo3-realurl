@@ -100,6 +100,9 @@ class AliasesController extends BackendModuleController {
 	public function editAction($uid, $selectedAlias) {
 		if ($this->request->hasArgument('submit')) {
 			if ($this->processEditSubmission()) {
+				$_GET['tx_realurl_web_realurlrealurl'] = array(
+					'controller' => $_GET['tx_realurl_web_realurlrealurl']['controller'],
+				);
 				$this->forward('index', null, null, $this->makeArgumentArray());
 			}
 		}
@@ -249,7 +252,7 @@ class AliasesController extends BackendModuleController {
 		$conditons[] = $query->equals('tablename', $selectedAlias);
 		if ($this->request->hasArgument('searchAlias')) {
 			$searchString = $this->request->getArgument('searchAlias');
-			$searchString = $GLOBALS['TYPO3_DB']->escapeStrForLike($searchString);
+			$searchString = $GLOBALS['TYPO3_DB']->escapeStrForLike($searchString, $selectedAlias);
 			$conditons[] = $query->like('valueAlias', '%' . $searchString . '%');
 		}
 		$query->matching(count($conditons) > 1 ? $query->logicalAnd($conditons) : reset($conditons));

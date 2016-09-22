@@ -1,9 +1,6 @@
 <?php
 namespace DmitryDulepov\Realurl\ViewHelpers;
 
-use TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper;
-use TYPO3\CMS\Fluid\ViewHelpers\TranslateViewHelper;
-
 /***************************************************************
 *  Copyright notice
 *
@@ -27,21 +24,24 @@ use TYPO3\CMS\Fluid\ViewHelpers\TranslateViewHelper;
 *  This copyright notice MUST APPEAR in all copies of the script!
 ***************************************************************/
 
-class TranslateToJsonViewHelper extends TranslateViewHelper {
+use TYPO3\CMS\Extbase\Utility\LocalizationUtility;
+use TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper;
+
+class TranslateToJsonViewHelper extends AbstractViewHelper  {
+
+	/**
+	 * @var boolean
+	 */
+	protected $escapeOutput = FALSE;
 
 	/**
 	 * Renders the translation and encodes to json string.
 	 *
 	 * @param string $key Translation Key
-	 * @param string $id Translation Key compatible to TYPO3 Flow
-	 * @param string $default If the given locallang key could not be found, this value is used. If this argument is not set, child nodes will be used to render the default
-	 * @param bool $htmlEscape TRUE if the result should be htmlescaped. This won't have an effect for the default value
-	 * @param array $arguments Arguments to be replaced in the resulting string
-	 * @param string $extensionName UpperCamelCased extension key (for example BlogExample)
 	 * @return string The translated key or tag body if key doesn't exist
 	 */
-	public function render($key = null, $id = null, $default = null, $htmlEscape = null, array $arguments = null, $extensionName = null) {
-		$result = (string)parent::render($key, $id, $default, $htmlEscape, $arguments, $extensionName);
+	public function render($key) {
+		$result = LocalizationUtility::translate($key, 'realurl');
 
 		return json_encode($result);
 	}

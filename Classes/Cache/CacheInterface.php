@@ -39,11 +39,11 @@ namespace DmitryDulepov\Realurl\Cache;
 interface CacheInterface {
 
 	/**
-	 * Removes expired path cache entries.
+	 * Removes expired cache entries.
 	 *
 	 * @return void
 	 */
-	public function clearExpiredPathCacheEntries();
+	public function clearExpiredCacheEntries();
 
 	/**
 	 * Empties the path cache for one page.
@@ -77,13 +77,13 @@ interface CacheInterface {
 	public function clearUrlCacheForPage($pageId);
 
 	/**
-	 * Expires path cache for the given page and language.
+	 * Expires cache for the given page and language.
 	 *
 	 * @param int $pageId
-	 * @param int $languageId
+	 * @param int|null $languageId
 	 * @return void
 	 */
-	public function expirePathCache($pageId, $languageId);
+	public function expireCache($pageId, $languageId = null);
 
 	/**
 	 * Gets the entry from cache.
@@ -99,7 +99,7 @@ interface CacheInterface {
 	 *
 	 * @param int $rootPageId
 	 * @param string $speakingUrl
-	 * @param int $languageId
+	 * @param int|null $languageId
 	 * @return UrlCacheEntry|null
 	 */
 	public function getUrlFromCacheBySpeakingUrl($rootPageId, $speakingUrl, $languageId);
@@ -119,11 +119,12 @@ interface CacheInterface {
 	 * Obtains path from the path cache.
 	 *
 	 * @param int $rootPageId
+	 * @param int $languageId
 	 * @param string|null $mountPoint null means exclude from search
 	 * @param string $pagePath
 	 * @return PathCacheEntry|null
 	 */
-	public function getPathFromCacheByPagePath($rootPageId, $mountPoint, $pagePath);
+	public function getPathFromCacheByPagePath($rootPageId, $languageId, $mountPoint, $pagePath);
 
 	/**
 	 * Puts path to the cache. This must override existing entry if cache id is set in the cache entry.

@@ -61,30 +61,29 @@
 
 	<d:setVariable name="entriesPerPage" value="20"/>
 	<d:setVariable name="entryCount" value="{foundAliases -> f:count()}"/>
-	<f:if condition="{entryCount} >= {entriesPerPage}">
-		<f:then>
-			<d:setVariable name="hasPager" value="1"/>
-		</f:then>
-		<f:else>
-			<d:setVariable name="hasPager" value="0"/>
-		</f:else>
-	</f:if>
-	<f:be.widget.paginate objects="{foundAliases}" as="aliases" configuration="{itemsPerPage: entriesPerPage, insertAbove: hasPager, insertBelow: hasPager, addQueryString: 1}">
-		<table class="table table-striped">
-			<tr>
-				<th class="col-sm-1"></th>
-				<th><f:translate key="module.tableHeader.alias"/></th>
-				<th class="col-sm-1"><f:translate key="module.tableHeader.id"/></th>
-				<th class="col-sm-2"><f:translate key="module.tableHeader.language"/></th>
-				<th class="col-sm-2"><f:translate key="module.tableHeader.expire"/></th>
-			</tr>
-			<f:for each="{aliases}" as="alias">
-				<f:render section="singleAliasRow" arguments="{alias: alias}"/>
-			</f:for>
-		</table>
-	</f:be.widget.paginate>
-
 	<f:if condition="{entryCount}">
+		<f:if condition="{entryCount} >= {entriesPerPage}">
+			<f:then>
+				<d:setVariable name="hasPager" value="1"/>
+			</f:then>
+			<f:else>
+				<d:setVariable name="hasPager" value="0"/>
+			</f:else>
+		</f:if>
+		<f:be.widget.paginate objects="{foundAliases}" as="aliases" configuration="{itemsPerPage: entriesPerPage, insertAbove: hasPager, insertBelow: hasPager}">
+			<table class="table table-striped">
+				<tr>
+					<th class="col-sm-1"></th>
+					<th><f:translate key="module.tableHeader.alias"/></th>
+					<th class="col-sm-1"><f:translate key="module.tableHeader.id"/></th>
+					<th class="col-sm-2"><f:translate key="module.tableHeader.language"/></th>
+					<th class="col-sm-2"><f:translate key="module.tableHeader.expire"/></th>
+				</tr>
+				<f:for each="{aliases}" as="alias">
+					<f:render section="singleAliasRow" arguments="{alias: alias}"/>
+				</f:for>
+			</table>
+		</f:be.widget.paginate>
 		<a class="btn btn-default" href="javascript:void(0)" onclick="tx_realurl_confirm(tx_realurl_strings.confirmTitle, tx_realurl_strings.deleteAliases,
 				 '{f:uri.action(action: 'deleteAll', controller: 'Aliases', addQueryString: 1)}')">
 			<c:icon identifier="actions-delete"/>

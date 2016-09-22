@@ -39,6 +39,9 @@ class UrlCacheEntry {
 	/** @var string */
 	protected $cacheId = 0;
 
+	/** @var int */
+	protected $expiration = 0;
+
 	/** @var string */
 	protected $originalUrl = '';
 
@@ -53,11 +56,20 @@ class UrlCacheEntry {
 	/** @var string */
 	protected $speakingUrl = '';
 
+	
+	
 	/**
 	 * @return string
 	 */
 	public function getCacheId() {
 		return $this->cacheId;
+	}
+
+	/**
+	 * @return int
+	 */
+	public function getExpiration() {
+		return (int)$this->expiration;
 	}
 
 	/**
@@ -100,6 +112,13 @@ class UrlCacheEntry {
 	 */
 	public function setCacheId($cacheId) {
 		$this->cacheId = $cacheId;
+	}
+
+	/**
+	 * @param int $expiration
+	 */
+	public function setExpiration($expiration) {
+		$this->expiration = $expiration;
 	}
 
 	/**

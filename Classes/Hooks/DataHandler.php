@@ -62,6 +62,27 @@ class DataHandler implements SingletonInterface {
 		if (($table === 'pages' || $table === 'pages_language_overlay') && MathUtility::canBeInterpretedAsInteger($id)) {
 			$this->cache->clearPathCacheForPage((int)$id);
 			$this->cache->clearUrlCacheForPage((int)$id);
+			$this->clearUrlCacheForAliasChanges($table, (int)$id);
+		}
+	}
+
+	/**
+	 * Expires caches if the page was moved.
+	 *
+	 * @param string $command
+	 * @param string $table
+	 * @param int $id
+	 */
+	public function processCmdmap_postProcess($command, $table, $id) {
+		if ($command === 'move' && $table === 'pages') {
+			$this->expireCachesForPageAndSubpages((int)$id, 0);
+
+			$languageOverlays = BackendUtility::getRecordsByField('pages_language_overlay', 'pid', $id);
+			if (is_array($languageOverlays)) {
+				foreach ($languageOverlays as $languageOverlay) {
+					$this->expireCachesForPageAndSubpages($languageOverlay['pid'], $languageOverlay['sys_language_uid']);
+				}
+			}
 		}
 	}
 
@@ -76,7 +97,7 @@ class DataHandler implements SingletonInterface {
 	 * @return void
 	 */
 	public function processDatamap_afterDatabaseOperations($status, $tableName, $recordId, array $databaseData, /** @noinspection PhpUnusedParameterInspection */ \TYPO3\CMS\Core\DataHandling\DataHandler $dataHandler) {
-		$this->expirePathCache($status, $tableName, $recordId, $databaseData);
+		$this->expireCache($status, $tableName, $recordId, $databaseData);
 		//$this->processContentUpdates($status, $tableName, $recordId, $databaseData, $dataHandler);
 		$this->clearAutoConfiguration($tableName, $databaseData);
 		if ($status !== 'new') {
@@ -108,7 +129,10 @@ class DataHandler implements SingletonInterface {
 	 * @return void
 	 */
 	protected function clearUrlCacheForAliasChanges($tableName, $recordId) {
-		if (!preg_match('/^(?:pages|sys_|cf_)/', $tableName)) {
+		if (!preg_match('/^(?:sys_|cf_)/', $tableName)) {
+			if ($tableName == 'pages_language_overlay') {
+				$tableName = 'pages';
+			}
 			$expirationTime = time() + 30*24*60*60;
 			// This check would be sufficient for most cases but only when id_field is 'uid' in the configuration
 			$result = $this->databaseConnection->sql_query(
@@ -132,7 +156,7 @@ class DataHandler implements SingletonInterface {
 	}
 
 	/**
-	 * Expires path cache of necessary when the record changes.
+	 * Expires cache if necessary when the record changes.
 	 *
 	 * @param string $status
 	 * @param string $tableName
@@ -140,7 +164,7 @@ class DataHandler implements SingletonInterface {
 	 * @param array $databaseData
 	 * @return void
 	 */
-	protected function expirePathCache($status, $tableName, $recordId, array $databaseData) {
+	protected function expireCache($status, $tableName, $recordId, array $databaseData) {
 		if ($status !== 'new' && ($tableName == 'pages' || $tableName == 'pages_language_overlay')) {
 			if ($tableName == 'pages') {
 				$languageId = 0;
@@ -165,25 +189,27 @@ class DataHandler implements SingletonInterface {
 	}
 
 	/**
-	 * Expires path cache fo the page and subpages.
+	 * Expires cache for the page and subpages.
 	 *
 	 * @param int $pageId
 	 * @param int $languageId
+	 * @param int $level
 	 * @return void
 	 */
-	protected function expireCachesForPageAndSubpages($pageId, $languageId) {
-		$this->cache->expirePathCache($pageId, $languageId);
-		$this->cache->clearUrlCacheForPage($pageId);
-		$subpages = BackendUtility::getRecordsByField('pages', 'pid', $pageId);
-		if (is_array($subpages)) {
-			$uidList = array();
-			foreach ($subpages as $subpage) {
-				$uidList[] = (int)$subpage['uid'];
-			}
-			unset($subpages);
-			foreach ($uidList as $uid) {
-				$this->cache->expirePathCache($uid, $languageId);
-				$this->expireCachesForPageAndSubpages($uid, $languageId);
+	protected function expireCachesForPageAndSubpages($pageId, $languageId, $level = 0) {
+		$this->cache->expireCache($pageId, $languageId);
+		if ($level++ < 20) {
+			$subpages = BackendUtility::getRecordsByField('pages', 'pid', $pageId);
+			if (is_array($subpages)) {
+				$uidList = array();
+				foreach ($subpages as $subpage) {
+					$uidList[] = (int)$subpage['uid'];
+				}
+				unset($subpages);
+				foreach ($uidList as $uid) {
+					$this->cache->expireCache($uid, $languageId);
+					$this->expireCachesForPageAndSubpages($uid, $languageId, $level);
+				}
 			}
 		}
 	}

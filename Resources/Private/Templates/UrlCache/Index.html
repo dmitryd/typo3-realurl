@@ -29,7 +29,8 @@
 			<tr>
 				<th class="col-sm-1"></th>
 				<th class="col-sm-5"><f:translate key="module.tableHeader.speaking_url"/></th>
-				<th class="col-sm-5"><f:translate key="module.tableHeader.original_url"/></th>
+				<th class="col-sm-4"><f:translate key="module.tableHeader.original_url"/></th>
+				<th class="col-sm-1"><f:translate key="module.tableHeader.expire"/></th>
 				<th class="col-sm-1"><f:translate key="module.tableHeader.rootpage_id"/></th>
 			</tr>
 			<f:for each="{cacheEntries}" as="cacheEntry">
@@ -37,6 +38,8 @@
 			</f:for>
 		</table>
 	</f:be.widget.paginate>
+<f:comment>
+	-- Disable emptying buttons --
 	<f:if condition="{entryCount}">
 		<a class="btn btn-default" href="javascript:void(0)" onclick="tx_realurl_confirm(tx_realurl_strings.confirmTitle, tx_realurl_strings.deleteCacheEntries,
 				 '{f:uri.action(action: 'deleteAll', controller: 'UrlCache', addQueryString: 1)}')">
@@ -50,6 +53,7 @@
 		<c:icon identifier="actions-delete"/>
 		<f:translate key="module.flushCache"/>
 	</a>
+</f:comment>
 </f:section>
 
 
@@ -63,6 +67,16 @@
 		</td>
 		<td>{cacheEntry.speakingUrl}</td>
 		<td>{cacheEntry.originalUrl}</td>
+		<td>
+			<f:if condition="{cacheEntry.expire}">
+				<f:then>
+					<f:format.date format="{f:translate(key: 'module.dateTimeFormat')}">{cacheEntry.expire}</f:format.date>
+				</f:then>
+				<f:else>
+					&ndash;
+				</f:else>
+			</f:if>
+		</td>
 		<td>{cacheEntry.rootPageId}</td>
 	</tr>
 </f:section>
