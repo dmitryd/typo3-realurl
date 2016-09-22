@@ -4,7 +4,8 @@
     "description": "Speaking URLs for TYPO3",
     "homepage": "https://github.com/dmitryd/typo3-realurl",
     "version": "2.1.0",
-    "license": "LGPL-3.0+",
+    "time": "2016-09-22",
+    "license": "GPL-3.0+",
     "conflict": {
         "bednee/cooluri": ">0.0.1",
         "typo3-ter/cooluri": ">=0.0.1",
