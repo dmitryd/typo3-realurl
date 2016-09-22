@@ -1399,6 +1399,10 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 	 * @return string
 	 */
 	protected function rebuildUrlFromTheCreatedCacheEntry() {
+		if (!$this->tsfe->tmpl) {
+			// Call from makeCacheHash, see https://github.com/dmitryd/typo3-realurl/issues/273
+			$this->tsfe->initTemplate();
+		}
 		$contentObject = GeneralUtility::makeInstance('TYPO3\\CMS\\Frontend\\ContentObject\\ContentObjectRenderer', $this->tsfe);
 		/** @var \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer $contentObject */
 		$contentObject->start(array());
