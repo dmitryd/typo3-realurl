@@ -57,11 +57,7 @@ class ext_update {
 		}
 
 		$this->checkAndRenameTables();
-		if ($this->pathCacheNeedsUpdates()) {
-			$this->databaseConnection->sql_query('ALTER TABLE tx_realurl_pathdata CHANGE cache_id uid int(11) NOT NULL');
-			$this->databaseConnection->sql_query('ALTER TABLE tx_realurl_pathdata DROP PRIMARY KEY');
-			$this->databaseConnection->sql_query('ALTER TABLE tx_realurl_pathdata MODIFY uid int(11) NOT NULL auto_increment primary key');
-		}
+		$this->checkAndUpdatePathCachePrimaryKey();
 		$this->updateRealurlTableStructure();
 
 		if ($locker && (method_exists($locker, 'isAcquired') && $locker->isAcquired() || method_exists($locker, 'getLockStatus') && $locker->getLockStatus())) {
@@ -103,6 +99,20 @@ class ext_update {
 					$this->databaseConnection->sql_query('DROP TABLE ' . $oldTableName);
 				}
 			}
+		}
+	}
+
+	/**
+	 * Checks if the primary key needs updates (this is something that TYPO3
+	 * sql parser fails to do for years) and does necessary changes.
+	 *
+	 * @return void
+	 */
+	protected function checkAndUpdatePathCachePrimaryKey() {
+		if ($this->pathCacheNeedsUpdates()) {
+			$this->databaseConnection->sql_query('ALTER TABLE tx_realurl_pathdata CHANGE cache_id uid int(11) NOT NULL');
+			$this->databaseConnection->sql_query('ALTER TABLE tx_realurl_pathdata DROP PRIMARY KEY');
+			$this->databaseConnection->sql_query('ALTER TABLE tx_realurl_pathdata MODIFY uid int(11) NOT NULL auto_increment PRIMARY KEY');
 		}
 	}
 
