@@ -172,11 +172,15 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 	 * it can cause infinite redirect loops. We avoid that and show a 404 to
 	 * the user once. May be, it can be configured to do such redirects.
 	 *
+	 * Note: this requires fully initialised TSFE, so we do not proceed if
+	 * the error handler is called to eraly. This may happen, for example,
+	 * if the call originates from makeCaceHash() method of TSFE.
+	 *
 	 * @param array $parameters
 	 * @return string
 	 */
 	public function pageNotFoundHandler(array $parameters) {
-		if ($this->hasReqChashOnTheStack()) {
+		if ($this->tsfe->tmpl && $this->hasReqChashOnTheStack()) {
 			$this->removeAllCacheEntriesForTheCurrentUrl();
 
 			$createdUrl = $this->rebuildUrlFromTheCreatedCacheEntry();
@@ -1399,10 +1403,6 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 	 * @return string
 	 */
 	protected function rebuildUrlFromTheCreatedCacheEntry() {
-		if (!$this->tsfe->tmpl) {
-			// Call from makeCacheHash, see https://github.com/dmitryd/typo3-realurl/issues/273
-			$this->tsfe->initTemplate();
-		}
 		$contentObject = GeneralUtility::makeInstance('TYPO3\\CMS\\Frontend\\ContentObject\\ContentObjectRenderer', $this->tsfe);
 		/** @var \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer $contentObject */
 		$contentObject->start(array());
