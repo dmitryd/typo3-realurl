@@ -22,6 +22,7 @@ namespace DmitryDulepov\Realurl;
 *
 *  This copyright notice MUST APPEAR in all copies of the script!
 ***************************************************************/
+use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
@@ -56,11 +57,8 @@ class ext_update {
 		}
 
 		$this->checkAndRenameTables();
-		if ($this->pathCacheNeedsUpdates()) {
-			$this->databaseConnection->sql_query('ALTER TABLE tx_realurl_pathdata CHANGE cache_id uid int(11) NOT NULL');
-			$this->databaseConnection->sql_query('ALTER TABLE tx_realurl_pathdata DROP PRIMARY KEY');
-			$this->databaseConnection->sql_query('ALTER TABLE tx_realurl_pathdata MODIFY uid int(11) NOT NULL auto_increment primary key');
-		}
+		$this->checkAndUpdatePathCachePrimaryKey();
+		$this->updateRealurlTableStructure();
 
 		if ($locker && (method_exists($locker, 'isAcquired') && $locker->isAcquired() || method_exists($locker, 'getLockStatus') && $locker->getLockStatus())) {
 			$locker->release();
@@ -68,7 +66,8 @@ class ext_update {
 	}
 
 	/**
-	 * Checks if the script should execute.
+	 * Checks if the script should execute. We check for everything except table
+	 * structure.
 	 *
 	 * @return bool
 	 */
@@ -100,6 +99,20 @@ class ext_update {
 					$this->databaseConnection->sql_query('DROP TABLE ' . $oldTableName);
 				}
 			}
+		}
+	}
+
+	/**
+	 * Checks if the primary key needs updates (this is something that TYPO3
+	 * sql parser fails to do for years) and does necessary changes.
+	 *
+	 * @return void
+	 */
+	protected function checkAndUpdatePathCachePrimaryKey() {
+		if ($this->pathCacheNeedsUpdates()) {
+			$this->databaseConnection->sql_query('ALTER TABLE tx_realurl_pathdata CHANGE cache_id uid int(11) NOT NULL');
+			$this->databaseConnection->sql_query('ALTER TABLE tx_realurl_pathdata DROP PRIMARY KEY');
+			$this->databaseConnection->sql_query('ALTER TABLE tx_realurl_pathdata MODIFY uid int(11) NOT NULL auto_increment PRIMARY KEY');
 		}
 	}
 
@@ -136,6 +149,40 @@ class ext_update {
 		$fields = $this->databaseConnection->admin_get_fields('tx_realurl_pathdata');
 
 		return isset($fields['cache_id']) || !isset($fields['uid']) || stripos($fields['uid']['Extra'], 'auto_increment') === false;
+	}
+
+	/**
+	 * Updates realurl table structure. The code is copied almost 1:1 from
+	 * ExtensionManagerTables class.
+	 *
+	 * We ignore any errors because nothing can be done about those really. The
+	 * client will have to do database update anyway, so he will see all failed
+	 * queries.
+	 *
+	 * @return void
+	 */
+	protected function updateRealurlTableStructure() {
+		$updateStatements = array();
+		
+		// Get all necessary statements for ext_tables.sql file
+		$rawDefinitions = file_get_contents(ExtensionManagementUtility::extPath('realurl', 'ext_tables.sql'));
+		$sqlParser = GeneralUtility::makeInstance(\TYPO3\CMS\Install\Service\SqlSchemaMigrationService::class);
+		$fieldDefinitionsFromFile = $sqlParser->getFieldDefinitions_fileContent($rawDefinitions);
+		if (count($fieldDefinitionsFromFile)) {
+			$fieldDefinitionsFromCurrentDatabase = $sqlParser->getFieldDefinitions_database();
+			$diff = $sqlParser->getDatabaseExtra($fieldDefinitionsFromFile, $fieldDefinitionsFromCurrentDatabase);
+			$updateStatements = $sqlParser->getUpdateSuggestions($diff);
+		}
+
+		foreach ((array)$updateStatements['add'] as $string) {
+			$this->databaseConnection->admin_query($string);
+		}
+		foreach ((array)$updateStatements['change'] as $string) {
+			$this->databaseConnection->admin_query($string);
+		}
+		foreach ((array)$updateStatements['create_table'] as $string) {
+			$this->databaseConnection->admin_query($string);
+		}
 	}
 
 }
