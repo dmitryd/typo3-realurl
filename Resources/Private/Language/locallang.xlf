@@ -97,7 +97,7 @@
 				<source>Configuration</source>
 			</trans-unit>
 			<trans-unit id="module.configuration.intro">
-				<source><![CDATA[]This module will show you RealURL configuration as RealURL will see it (including default values).</p><p><strong>Note:</strong> your TYPO3 solution provider may use its own ways to configure RealURL at runtime. If that's the case, this module may not show confguration accurately. If you suspect that this is the case, contact your TYPO3 solution provider.]]></source>
+				<source><![CDATA[This module will show you RealURL configuration as RealURL will see it (including default values).</p><p><strong>Note:</strong> your TYPO3 solution provider may use its own ways to configure RealURL at runtime. If that's the case, this module may not show confguration accurately. If you suspect that this is the case, contact your TYPO3 solution provider.]]></source>
 			</trans-unit>
 			<trans-unit id="module.dateTimeFormat">
 				<source>d.m.Y H:i</source>
