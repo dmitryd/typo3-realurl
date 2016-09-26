@@ -222,8 +222,8 @@ class DatabaseCache implements CacheInterface, SingletonInterface {
 						}
 					}
 				}
-				elseif ($languageId === 0 && !is_null($row)) {
-					// No L in URL parameters of the URL but default lamnguage requested. This is a match.
+				elseif ($languageId === 0 && is_null($row)) {
+					// No L in URL parameters of the URL but default language requested. This is a match.
 					$row = $rowCandidate;
 				}
 			}
