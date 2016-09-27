@@ -1431,12 +1431,13 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 	 * @return void
 	 */
 	protected function removeAllCacheEntriesForTheCurrentUrl() {
+		$maxEntries = 100;
 		do {
 			$cacheEntry = $this->cache->getUrlFromCacheBySpeakingUrl($this->createdCacheEntry->getRootPageId(), $this->createdCacheEntry->getSpeakingUrl(), null);
 			if ($cacheEntry) {
 				$this->cache->clearUrlCacheById($cacheEntry->getCacheId());
 			}
-		} while ($cacheEntry);
+		} while ($cacheEntry && $maxEntries--);
 	}
 
 	/**
