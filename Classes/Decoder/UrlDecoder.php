@@ -58,9 +58,6 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 	/** @var TypoScriptFrontendController */
 	protected $caller;
 
-	/** @var UrlCacheEntry */
-	protected $createdCacheEntry = null;
-
 	/**
 	 * This attribute keeps a detected language id for the speaking URL. Firsts,
 	 * if _DOMAINS configuration has L parameter, it's value will be set to
@@ -161,68 +158,6 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 				}
 			}
 		}
-	}
-
-	/**
-	 * If this handler is called and 'reqCHash()' is on the stack, than we
-	 * are here because cHash was required but missing. In such case we
-	 * rebuild the link with standard `typolink()`. This will put the url to the
-	 * cache and it will be correctly resolved next time. Than we go for the
-	 * previous handler. We could redirect to self but in some rear cases
-	 * it can cause infinite redirect loops. We avoid that and show a 404 to
-	 * the user once. May be, it can be configured to do such redirects.
-	 *
-	 * Note: this requires fully initialised TSFE, so we do not proceed if
-	 * the error handler is called to eraly. This may happen, for example,
-	 * if the call originates from makeCaceHash() method of TSFE.
-	 *
-	 * @param array $parameters
-	 * @return string
-	 */
-	public function pageNotFoundHandler(array $parameters) {
-		if ($this->tsfe->tmpl && $this->hasReqChashOnTheStack()) {
-			$this->removeAllCacheEntriesForTheCurrentUrl();
-
-			$createdUrl = $this->rebuildUrlFromTheCreatedCacheEntry();
-			if ($this->configuration->get('init/redirectOnChashError')) {
-				// Note: possible redirect loops!
-				@ob_end_clean();
-				header(self::REDIRECT_STATUS_HEADER);
-				header(self::REDIRECT_INFO_HEADER . ': redirecting due to cHash error');
-				header('Location: ' . $createdUrl);
-				exit;
-			}
-		}
-
-		$this->callOriginalPageNotFoundHandler($parameters);
-	}
-
-	/**
-	 * Stores decoded record to the URL cache. This function is called after
-	 * TSFE validates cHash. This way we avoid storing URLs with wrong cHash
-	 * in the cache that would always lead to a 404 until URL cache is cleared.
-	 *
-	 * Currently this function uses 'hook_eofe' because this hook
-	 * runs almost at the end and there was a chance for the encoder to put
-	 * generated speaking url like this to the cache with proper parameters
-	 * and cHash. This is better than other places because some plugins
-	 * will create this link anyway with correct cHash.
-	 */
-	public function storeCacheRecord() {
-		// If it is still not there (could have been added by other process!), than store it
-		if ($this->createdCacheEntry && !$this->isExpiredPath && !$this->getFromUrlCache($this->speakingUri)) {
-			$this->putToUrlCache($this->createdCacheEntry);
-		}
-	}
-
-	/**
-	 * Calls the original pageNotFoundHandler.
-	 *
-	 * @param array $parameters
-	 */
-	protected function callOriginalPageNotFoundHandler(array $parameters) {
-		$this->tsfe->TYPO3_CONF_VARS['FE']['pageNotFound_handling'] = $this->savedErrorHandler;
-		$this->tsfe->pageNotFoundAndExit($parameters['reasonText']);
 	}
 
 	/**
@@ -1371,76 +1306,6 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 	}
 
 	/**
-	 * Adds data to the url cache. This must run after $this->setRequestVariables().
-	 *
-	 * @param UrlCacheEntry $cacheEntry
-	 * @return void
-	 */
-	protected function putToUrlCache(UrlCacheEntry $cacheEntry) {
-		if (!$this->isExpiredPath) {
-			$requestVariables = $cacheEntry->getRequestVariables();
-			$requestVariables['id'] = $cacheEntry->getPageId();
-			$this->sortArrayDeep($requestVariables);
-
-			$originalUrl = $this->createQueryStringFromParameters($requestVariables);
-
-			if ($this->canCacheUrl($originalUrl)) {
-				$cacheEntry->setOriginalUrl($originalUrl);
-				$cacheEntry->setRequestVariables($requestVariables);
-				$cacheEntry->setRootPageId($this->rootPageId);
-				$cacheEntry->setSpeakingUrl($this->speakingUri);
-
-				$this->cache->putUrlToCache($cacheEntry);
-			}
-		}
-	}
-
-	/**
-	 * Rebuilds the URL from $this->createdCacheEntry with cHash. This is called
-	 * from the pageNotFounder handler only and cannot be called from a normal
-	 * decoding process!
-	 *
-	 * @return string
-	 */
-	protected function rebuildUrlFromTheCreatedCacheEntry() {
-		$contentObject = GeneralUtility::makeInstance('TYPO3\\CMS\\Frontend\\ContentObject\\ContentObjectRenderer', $this->tsfe);
-		/** @var \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer $contentObject */
-		$contentObject->start(array());
-		$requestVariables = $this->createdCacheEntry->getRequestVariables();
-		unset($requestVariables['id']);
-		$typolinkConfiguration = array(
-			'additionalParams' => GeneralUtility::implodeArrayForUrl('', $requestVariables),
-			'forceAbsoluteUrl' => true,
-			'parameter' => $this->createdCacheEntry->getPageId(),
-			'useCacheHash' => true,
-		);
-		$createdUrl = $contentObject->typoLink_URL($typolinkConfiguration);
-
-		return $createdUrl;
-	}
-
-	/**
-	 * Removes all cache entries for the newly created entry. This is used in our
-	 * pageNotFound handler in attempt to fix any possible broken URLs without
-	 * cHash.
-	 *
-	 * There is a loop to do that. The loop exists because many people ignore
-	 * rules about configuring languages (http://bit.ly/2crMyjx), and many
-	 * entries are created due to incorrect configuration. We clean them all.
-	 *
-	 * @return void
-	 */
-	protected function removeAllCacheEntriesForTheCurrentUrl() {
-		$maxEntries = 100;
-		do {
-			$cacheEntry = $this->cache->getUrlFromCacheBySpeakingUrl($this->createdCacheEntry->getRootPageId(), $this->createdCacheEntry->getSpeakingUrl(), null);
-			if ($cacheEntry) {
-				$this->cache->clearUrlCacheById($cacheEntry->getCacheId());
-			}
-		} while ($cacheEntry && $maxEntries--);
-	}
-
-	/**
 	 * Contains the actual decoding logic after $this->speakingUri is set.
 	 *
 	 * @return void
@@ -1448,28 +1313,18 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 	protected function runDecoding() {
 		$urlPath = $this->getUrlPath();
 
-		$newCacheEntry = false;
-		$probablyMissingChash = false;
-
 		$cacheEntry = $this->getFromUrlCache($this->speakingUri);
 		if (!$cacheEntry) {
-			$newCacheEntry = true;
-
 			$this->originalPath = $urlPath;
 			$cacheEntry = $this->doDecoding($urlPath);
-
-			$probablyMissingChash = $this->isChashMissing($cacheEntry);
+			// Note the newly created cache entry is not saved because it is unsafe!
+			// The user can suppy any number of free form parameters and those
+			// can get to the cache. On the other hand we cannot store URLs
+			// without parameters because those can be fully legal and entries
+			// without parameters will be useless.
 		}
 		$this->checkExpiration($cacheEntry);
 		$this->setRequestVariables($cacheEntry);
-
-		if ($newCacheEntry) {
-			$this->createdCacheEntry = $cacheEntry;
-			if ($probablyMissingChash) {
-				$this->savedErrorHandler = $this->tsfe->TYPO3_CONF_VARS['FE']['pageNotFound_handling'];
-				$this->tsfe->TYPO3_CONF_VARS['FE']['pageNotFound_handling'] = 'USER_FUNCTION:DmitryDulepov\\Realurl\\Decoder\\UrlDecoder->pageNotFoundHandler';
-			}
-		}
 	}
 
 	/**
