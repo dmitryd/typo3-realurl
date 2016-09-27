@@ -201,25 +201,29 @@ class DatabaseCache implements CacheInterface, SingletonInterface {
 
 		$row = null;
 		foreach ($rows as $rowCandidate) {
+			$variables = (array)@json_decode($rowCandidate['request_variables'], TRUE);
 			if (is_null($languageId)) {
 				// No language known, we retrieve only the URL with lowest expiration value
 				// See https://github.com/dmitryd/typo3-realurl/issues/250
 				$row = $rowCandidate;
-				break;
+				if (isset($variables['cHash'])) {
+					break;
+				}
 			}
 			else {
 				// Should check for language match
 				// See https://github.com/dmitryd/typo3-realurl/issues/103
-				$variables = @json_decode($rowCandidate['request_variables'], TRUE);
-				if (is_array($variables) && isset($variables['L'])) {
+				if (isset($variables['L'])) {
 					if ((int)$variables['L'] === (int)$languageId) {
 						// Found language!
 						$row = $rowCandidate;
-						break;
+						if (isset($variables['cHash'])) {
+							break;
+						}
 					}
 				}
-				elseif ($languageId === 0) {
-					// No L in URL parameters of the URL but default lamnguage requested. This is a match.
+				elseif ($languageId === 0 && is_null($row)) {
+					// No L in URL parameters of the URL but default language requested. This is a match.
 					$row = $rowCandidate;
 				}
 			}

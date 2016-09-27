@@ -166,7 +166,7 @@ class ext_update {
 		
 		// Get all necessary statements for ext_tables.sql file
 		$rawDefinitions = file_get_contents(ExtensionManagementUtility::extPath('realurl', 'ext_tables.sql'));
-		$sqlParser = GeneralUtility::makeInstance(\TYPO3\CMS\Install\Service\SqlSchemaMigrationService::class);
+		$sqlParser = GeneralUtility::makeInstance('TYPO3\\CMS\\Install\\Service\\SqlSchemaMigrationService');
 		$fieldDefinitionsFromFile = $sqlParser->getFieldDefinitions_fileContent($rawDefinitions);
 		if (count($fieldDefinitionsFromFile)) {
 			$fieldDefinitionsFromCurrentDatabase = $sqlParser->getFieldDefinitions_database();
