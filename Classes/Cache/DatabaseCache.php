@@ -369,6 +369,8 @@ class DatabaseCache implements CacheInterface, SingletonInterface {
 			if ($this->limitTableRecords('tx_realurl_urldata')) {
 				$this->databaseConnection->sql_query('DELETE FROM tx_realurl_uniqalias_cache_map WHERE url_cache_id NOT IN (SELECT uid FROM tx_realurl_urldata)');
 			}
+
+			$data['crdate'] = time();
 			$this->databaseConnection->exec_INSERTquery('tx_realurl_urldata', $data);
 			$cacheEntry->setCacheId($this->databaseConnection->sql_insert_id());
 
