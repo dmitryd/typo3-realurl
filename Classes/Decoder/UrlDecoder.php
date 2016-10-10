@@ -966,7 +966,7 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 			$this->throw404('Current URL is invalid');
 		}
 
-		return ltrim($urlPath, '/');
+		return strtolower(ltrim($urlPath, '/'));
 	}
 
 	/**
