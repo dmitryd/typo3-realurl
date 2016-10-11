@@ -137,6 +137,7 @@ class DatabaseCache implements CacheInterface, SingletonInterface {
 			foreach ($rows as $row) {
 				$requestVariables = @json_decode($row['request_variables'], TRUE);
 				if (is_array($requestVariables) && (int)$requestVariables['L'] === (int)$languageId) {
+					$requestVariables['L'] = (int)$requestVariables['L'] ;
 					$this->databaseConnection->exec_UPDATEquery('tx_realurl_urldata',
 						'uid=' . (int)$row['uid'], array('expire' => $expirationTime)
 					);
