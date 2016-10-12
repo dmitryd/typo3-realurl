@@ -1209,7 +1209,6 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 	protected function isSpeakingUrl() {
 		return $this->siteScript &&
 			substr($this->siteScript, 0, 9) !== 'index.php' &&
-			substr($this->siteScript, 0, 1) !== '?' &&
 			$this->siteScript !== 'favicon.ico' &&
 			(!$this->configuration->get('init/respectSimulateStaticURLs') || !preg_match('/^[a-z0-9\-]+\.(\d+)(\.\d+)?\.html/i', $this->siteScript))
 		;
