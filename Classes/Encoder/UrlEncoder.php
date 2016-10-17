@@ -1171,7 +1171,10 @@ class UrlEncoder extends EncodeDecoderBase {
 					// because 'urlPrepend' is typically used for language-based domains.
 					// But 'useConfiguration' can be used to localize postVarSet segment
 					// values. So we change the behavior here comparing to 1.x.
-					unset($this->urlParameters[$getVarName]);
+					// But you can prevent realurl from removing the var by using the keepParameter option
+					if (!isset($configuration['keepParameter']) && $configuration['keepParameter']) {
+						unset($this->urlParameters[$getVarName]);
+					}
 				}
 			}
 		}
