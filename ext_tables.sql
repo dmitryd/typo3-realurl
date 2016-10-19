@@ -26,7 +26,8 @@ CREATE TABLE tx_realurl_uniqalias_cache_map (
 	alias_uid int(11) DEFAULT '0' NOT NULL,
 	url_cache_id int(11) DEFAULT '0' NOT NULL,
 
-	KEY check_existence (alias_uid,url_cache_id)
+	KEY check_existence (alias_uid,url_cache_id),
+	KEY url_cache_id (url_cache_id)
 ) ENGINE=InnoDB;
 
 #
