@@ -566,6 +566,9 @@ class UrlEncoder extends EncodeDecoderBase {
 		);
 		if ($cacheEntry) {
 			$this->appendToEncodedUrl($cacheEntry->getPagePath());
+			if (isset($this->urlParameters['MP']) && $cacheEntry->getMountPoint() === $this->urlParameters['MP']) {
+				unset($this->urlParameters['MP']);
+			}
 		} else {
 			$this->createPathComponent();
 		}
