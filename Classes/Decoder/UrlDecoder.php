@@ -1455,6 +1455,7 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 	protected function setRequestVariables(UrlCacheEntry $cacheEntry) {
 		if ($cacheEntry) {
 			$requestVariables = $cacheEntry->getRequestVariables();
+			$this->restoreIgnoredUrlParameters($requestVariables);
 			$requestVariables['id'] = $cacheEntry->getPageId();
 			$_SERVER['QUERY_STRING'] = $this->createQueryStringFromParameters($requestVariables);
 
@@ -1475,7 +1476,7 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 	 * @return void
 	 */
 	protected function setSpeakingUriFromSiteScript() {
-		$this->speakingUri = ltrim($this->siteScript, '/');
+		$this->speakingUri = $this->removeIgnoredParametersFromURL(ltrim($this->siteScript, '/'));
 	}
 
 	/**
