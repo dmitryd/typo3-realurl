@@ -279,41 +279,6 @@ class UrlEncoder extends EncodeDecoderBase {
 	}
 
 	/**
-	 * Checks if current URL has cHash and the cache entry exists for the current
-	 * URL without cHash. If found, removes this entry because it is most likeky
-	 * a decoder mistake due to removed cHash recalculation in realurl >= 2.0.15.
-	 *
-	 * @return void
-	 */
-	protected function checkForMissingChashInCache() {
-		if (strpos($this->originalUrl, 'cHash') !== false) {
-			$sortedUrlParameters = $this->urlParameters;
-			$this->sortArrayDeep($sortedUrlParameters);
-
-			unset($sortedUrlParameters['cHash']);
-			$originalUrlWithoutCHash = $this->createQueryStringFromParameters($sortedUrlParameters);
-			$cacheEntry = $this->cache->getUrlFromCacheByOriginalUrl($this->rootPageId, $originalUrlWithoutCHash);
-			if ($cacheEntry) {
-				// We do not care about expiration here because the stored URL is clearly wrong!
-				$this->cache->clearUrlCacheById($cacheEntry->getCacheId());
-			}
-
-			if (!isset($sortedUrlParameters['L'])) {
-				// Deal also with case when there is no 'L' -> use current language.
-				// Usually this is misconfiguration on the client side but very common.
-				$sortedUrlParameters['L'] = $this->sysLanguageUid;
-				$this->sortArrayDeep($sortedUrlParameters);
-				$originalUrlWithoutCHash = $this->createQueryStringFromParameters($sortedUrlParameters);
-				$cacheEntry = $this->cache->getUrlFromCacheByOriginalUrl($this->rootPageId, $originalUrlWithoutCHash);
-				if ($cacheEntry) {
-					// We do not care about expiration here because the stored URL is clearly wrong!
-					$this->cache->clearUrlCacheById($cacheEntry->getCacheId());
-				}
-			}
-		}
-	}
-
-	/**
 	 * Cleans up the alias
 	 *
 	 * @param array $configuration Configuration array
@@ -865,7 +830,6 @@ class UrlEncoder extends EncodeDecoderBase {
 
 		$this->setLanguage();
 		$this->initializeUrlPrepend();
-		$this->checkForMissingChashInCache();
 		if (!$this->fetchFromtUrlCache()) {
 			$this->encodePreVars();
 			$this->encodePathComponents();
