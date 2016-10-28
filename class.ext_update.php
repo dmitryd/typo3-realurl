@@ -59,6 +59,7 @@ class ext_update {
 		$this->checkAndRenameTables();
 		$this->checkAndUpdatePathCachePrimaryKey();
 		$this->updateRealurlTableStructure();
+		$this->removeUrlDataEntriesWithIgnoredParameters();
 
 		if ($locker && (method_exists($locker, 'isAcquired') && $locker->isAcquired() || method_exists($locker, 'getLockStatus') && $locker->getLockStatus())) {
 			$locker->release();
@@ -149,6 +150,13 @@ class ext_update {
 		$fields = $this->databaseConnection->admin_get_fields('tx_realurl_pathdata');
 
 		return isset($fields['cache_id']) || !isset($fields['uid']) || stripos($fields['uid']['Extra'], 'auto_increment') === false;
+	}
+
+	/**
+	 * Removes entries with parameters that should be ignored.
+	 */
+	protected function removeUrlDataEntriesWithIgnoredParameters() {
+		$this->databaseConnection->exec_DELETEquery('tx_realurl_urlcache', 'original_url RLIKE \'(^|&)(utm_[a-z]+|pk_campaign|pk_kwd)=\'');
 	}
 
 	/**
