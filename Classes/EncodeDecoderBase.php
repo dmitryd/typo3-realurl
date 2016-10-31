@@ -94,19 +94,6 @@ abstract class EncodeDecoderBase {
 	}
 
 	/**
-	 * Checks if the URL can be cached. This function may prevent RealURL cache
-	 * pollution with Solr or Indexed search URLs.
-	 *
-	 * @param string $url
-	 * @return bool
-	 */
-	protected function canCacheUrl($url) {
-		$bannedUrlsRegExp = $this->configuration->get('cache/banUrlsRegExp');
-
-		return (!$bannedUrlsRegExp || !preg_match($bannedUrlsRegExp, $url));
-	}
-
-	/**
 	 * Creates a query string (without preceeding question mark) from
 	 * parameters.
 	 *

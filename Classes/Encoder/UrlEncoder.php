@@ -245,6 +245,30 @@ class UrlEncoder extends EncodeDecoderBase {
 	}
 
 	/**
+	 * Checks if the URL can be cached. This function may prevent RealURL cache
+	 * pollution with Solr or Indexed search URLs. Also some doktypes are ignored
+	 * for the cache.
+	 *
+	 * @param string $url
+	 * @return bool
+	 */
+	protected function canCacheUrl($url) {
+		$bannedUrlsRegExp = $this->configuration->get('cache/banUrlsRegExp');
+
+		$result = (!$bannedUrlsRegExp || !preg_match($bannedUrlsRegExp, $url));
+
+		if ($result) {
+			// Check page type: do not cache separators
+			$pageRecord = $this->pageRepository->getPage($this->urlParameters['id']);
+			if (is_array($pageRecord) && ($pageRecord['doktype'] == PageRepository::DOKTYPE_SPACER || $pageRecord['doktype'] == PageRepository::DOKTYPE_RECYCLER)) {
+				$result = false;
+			}
+		}
+
+		return $result;
+	}
+
+	/**
 	 * Checks if RealURL can encode URLs.
 	 *
 	 * @return bool
@@ -452,7 +476,9 @@ class UrlEncoder extends EncodeDecoderBase {
 			// about it in encodePathComponents() when we fetch from the cache.
 			// It is easier to have duplicate entries here (one with MP and
 			// another without it). It does not really matter.
-			$this->addToPathCache($path);
+			if ($page['doktype'] != PageRepository::DOKTYPE_SPACER && $page['doktype'] != PageRepository::DOKTYPE_RECYCLER) {
+				$this->addToPathCache($path);
+			}
 			$result = true;
 		}
 
@@ -533,7 +559,9 @@ class UrlEncoder extends EncodeDecoderBase {
 			foreach ($components as $segment) {
 				$this->appendToEncodedUrl($segment);
 			}
-			$this->addToPathCache(implode('/', $components));
+			if ($reversedRootLine[$rootLineMax]['doktype'] != PageRepository::DOKTYPE_SPACER && $reversedRootLine[$rootLineMax]['doktype'] != PageRepository::DOKTYPE_RECYCLER) {
+				$this->addToPathCache(implode('/', $components));
+			}
 		}
 	}
 
