@@ -176,10 +176,15 @@ class DataHandler implements SingletonInterface {
 				unset($fullRecord);
 			}
 			$expireCache = FALSE;
-			foreach (EncodeDecoderBase::$pageTitleFields as $fieldName) {
-				if (isset($databaseData[$fieldName])) {
-					$expireCache = TRUE;
-					break;
+			if (isset($databaseData['hidden'])) {
+				$expireCache = TRUE;
+			}
+			else {
+				foreach (EncodeDecoderBase::$pageTitleFields as $fieldName) {
+					if (isset($databaseData[$fieldName])) {
+						$expireCache = TRUE;
+						break;
+					}
 				}
 			}
 			if ($expireCache) {
