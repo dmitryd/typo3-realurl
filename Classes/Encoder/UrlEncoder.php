@@ -178,7 +178,9 @@ class UrlEncoder extends EncodeDecoderBase {
 	}
 
 	/**
-	 * Adds remaining parameters to the generated URL.
+	 * Adds remaining parameters to the generated URL. Note: parameters that
+	 * are ignored by the 'cache/ignoredGetParametersRegExp' configuration option
+	 * are not considered here!
 	 *
 	 * @return void
 	 */
@@ -832,6 +834,7 @@ class UrlEncoder extends EncodeDecoderBase {
 		$this->initialize();
 
 		$this->setLanguage();
+		$this->removeIgnoredUrlParameters();
 		$this->initializeUrlPrepend();
 		if (!$this->fetchFromtUrlCache()) {
 			$this->encodePreVars();
@@ -851,6 +854,7 @@ class UrlEncoder extends EncodeDecoderBase {
 		}
 		$this->reapplyAbsRefPrefix();
 		$this->callPostEncodeHooks();
+		$this->encodedUrl = $this->restoreIgnoredUrlParametersInURL($this->encodedUrl);
 		$this->prepareUrlPrepend();
 	}
 
@@ -1121,6 +1125,33 @@ class UrlEncoder extends EncodeDecoderBase {
 	}
 
 	/**
+	 * Removes ignored parameters from various members.
+	 */
+	protected function removeIgnoredUrlParameters() {
+		$this->urlParameters = $this->removeIgnoredUrlParametersFromArray($this->urlParameters);
+		$this->originalUrl = $this->removeIgnoredParametersFromQueryString($this->originalUrl);
+	}
+
+	/**
+	 * Removes ignored URL parameters from the parameter list.
+	 *
+	 * @param array $urlParameters
+	 * @return array
+	 */
+	protected function removeIgnoredUrlParametersFromArray(array $urlParameters) {
+		$ignoredParametersRegExp = $this->configuration->get('cache/ignoredGetParametersRegExp');
+		if ($ignoredParametersRegExp) {
+			foreach ($urlParameters as $parameterName => $parameterValue) {
+				if (preg_match($ignoredParametersRegExp, $parameterName)) {
+					unset($urlParameters[$parameterName]);
+				}
+			}
+		}
+
+		return $urlParameters;
+	}
+
+	/**
 	 * Checks if we should prpend URL according to _DOMAINS configuration.
 	 *
 	 * @return void
@@ -1253,7 +1284,7 @@ class UrlEncoder extends EncodeDecoderBase {
 			elseif (!$cacheEntry || $cacheEntry->getSpeakingUrl() !== $this->encodedUrl) {
 				$cacheEntry = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\Cache\\UrlCacheEntry');
 				$cacheEntry->setPageId($this->urlParameters['id']); // $this->originalUrlParameters['id'] can be an alias, we need a number here!
-				$cacheEntry->setRequestVariables($this->originalUrlParameters);
+				$cacheEntry->setRequestVariables($this->removeIgnoredUrlParametersFromArray($this->originalUrlParameters));
 				$cacheEntry->setRootPageId($this->rootPageId);
 				$cacheEntry->setOriginalUrl($this->originalUrl);
 				$cacheEntry->setSpeakingUrl($this->encodedUrl);
