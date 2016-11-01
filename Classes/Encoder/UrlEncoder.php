@@ -864,7 +864,7 @@ class UrlEncoder extends EncodeDecoderBase {
 		$this->setLanguage();
 		$this->removeIgnoredUrlParameters();
 		$this->initializeUrlPrepend();
-		if (!$this->fetchFromtUrlCache()) {
+		if (!$this->fetchFromUrlCache()) {
 			$this->encodePreVars();
 			$this->encodePathComponents();
 			$this->encodeFixedPostVars();
@@ -891,7 +891,7 @@ class UrlEncoder extends EncodeDecoderBase {
 	 *
 	 * @return bool
 	 */
-	protected function fetchFromtUrlCache() {
+	protected function fetchFromUrlCache() {
 		$result = FALSE;
 
 		$cacheEntry = $this->cache->getUrlFromCacheByOriginalUrl($this->rootPageId, $this->originalUrl);
