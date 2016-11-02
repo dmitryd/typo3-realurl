@@ -14,7 +14,7 @@ if (version_compare(TYPO3_version, '7.6.0', '>=')) {
 		),
 		array(
 			'access' => 'user,group',
-			'icon' => 'EXT:realurl/ext_icon.gif',
+			'icon' => 'EXT:realurl/Resources/Public/Icons/Module.svg',
 			'labels' => 'LLL:EXT:realurl/Resources/Private/Language/locallang.xlf',
 		)
 	);
