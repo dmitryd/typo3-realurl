@@ -400,9 +400,11 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 
 			$previousValue = '';
 			foreach ($postVars as $postVarConfiguration) {
+				if (!is_array($postVarConfiguration)) {
+					continue;
+				}
 				$this->decodeSingleVariable($postVarConfiguration, $pathSegments, $requestVariables, $previousValue);
-				if (count($pathSegments) == 0) {
-					// TODO Is it correct to break here? fixedPostVars should all present!
+				if (empty($postVars['requireFullEvaluation']) && count($pathSegments) === 0) {
 					break;
 				}
 			}
