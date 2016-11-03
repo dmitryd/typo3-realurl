@@ -38,8 +38,6 @@
 			</f:for>
 		</table>
 	</f:be.widget.paginate>
-<f:comment>
-	-- Disable emptying buttons --
 	<f:if condition="{entryCount}">
 		<a class="btn btn-default" href="javascript:void(0)" onclick="tx_realurl_confirm(tx_realurl_strings.confirmTitle, tx_realurl_strings.deleteCacheEntries,
 				 '{f:uri.action(action: 'deleteAll', controller: 'UrlCache', addQueryString: 1)}')">
@@ -53,7 +51,6 @@
 		<c:icon identifier="actions-delete"/>
 		<f:translate key="module.flushCache"/>
 	</a>
-</f:comment>
 </f:section>
 
 

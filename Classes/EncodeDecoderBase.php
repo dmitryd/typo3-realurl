@@ -30,6 +30,7 @@
 namespace DmitryDulepov\Realurl;
 
 use DmitryDulepov\Realurl\Cache\CacheInterface;
+use TYPO3\CMS\Core\Utility\ArrayUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController;
 use TYPO3\CMS\Frontend\Page\PageRepository;
@@ -53,6 +54,9 @@ abstract class EncodeDecoderBase {
 
 	/** @var string */
 	protected $emptySegmentValue;
+
+	/** @var array */
+	protected $ignoredUrlParameters = array();
 
 	/** @var PageRepository */
 	protected $pageRepository = NULL;
@@ -87,19 +91,6 @@ abstract class EncodeDecoderBase {
 		// $this->pageRepository->sys_language_uid must stay 0 because we will do overlays manually
 		$this->pageRepository = GeneralUtility::makeInstance('TYPO3\\CMS\\Frontend\\Page\\PageRepository');
 		$this->pageRepository->init(FALSE);
-	}
-
-	/**
-	 * Checks if the URL can be cached. This function may prevent RealURL cache
-	 * pollution with Solr or Indexed search URLs.
-	 *
-	 * @param string $url
-	 * @return bool
-	 */
-	protected function canCacheUrl($url) {
-		$bannedUrlsRegExp = $this->configuration->get('cache/banUrlsRegExp');
-
-		return (!$bannedUrlsRegExp || !preg_match($bannedUrlsRegExp, $url));
 	}
 
 	/**
@@ -233,6 +224,89 @@ abstract class EncodeDecoderBase {
 			$result = ($GLOBALS['BE_USER']->workspace !== 0);
 		}
 		return $result;
+	}
+
+	/**
+	 * Removes ignored parameters from the query string.
+	 *
+	 * @param string $queryString
+	 * @return string
+	 */
+	protected function removeIgnoredParametersFromQueryString($queryString) {
+		if ($queryString) {
+			$ignoredParametersRegExp = $this->configuration->get('cache/ignoredGetParametersRegExp');
+			if ($ignoredParametersRegExp) {
+				$collectedParameters = array();
+				foreach (explode('&', trim($queryString, '&')) as $parameterPair) {
+					list($parameterName, $parameterValue) = explode('=', $parameterPair, 2);
+					if ($parameterName !== '') {
+						$parameterName = urldecode($parameterName);
+						if (preg_match($ignoredParametersRegExp, $parameterName)) {
+							$this->ignoredUrlParameters[$parameterName] = $parameterValue;
+						}
+						else {
+							$collectedParameters[$parameterName] = urldecode($parameterValue);
+						}
+					}
+				}
+				$queryString = $this->createQueryStringFromParameters($collectedParameters);
+			}
+		}
+
+		return $queryString;
+	}
+
+	/**
+	 * Removes ignored parameters from the URL. Removed parameters are stored in
+	 * $this->ignoredUrlParameters and can be restored using restoreIgnoredUrlParameters.
+	 *
+	 * @param string $url
+	 * @return string
+	 */
+	protected function removeIgnoredParametersFromURL($url) {
+		list($path, $queryString) = explode('?', $url, 2);
+		$queryString = $this->removeIgnoredParametersFromQueryString($queryString);
+
+		$url = $path;
+		if ($queryString !== '') {
+			$url .= '?';
+		}
+		$url .= $queryString;
+
+		return $url;
+	}
+
+	/**
+	 * Restores ignored URL parameters.
+	 *
+	 * @param array $urlParameters
+	 */
+	protected function restoreIgnoredUrlParameters(array &$urlParameters) {
+		if (count($this->ignoredUrlParameters) > 0) {
+			ArrayUtility::mergeRecursiveWithOverrule($urlParameters, $this->ignoredUrlParameters);
+			$this->sortArrayDeep($urlParameters);
+		}
+	}
+
+	/**
+	 * Restores ignored URL parameters.
+	 *
+	 * @param string $url
+	 * @return string
+	 */
+	protected function restoreIgnoredUrlParametersInURL($url) {
+		if (count($this->ignoredUrlParameters) > 0) {
+			list($path, $queryString) = explode('?', $url);
+			$appendedPart = $this->createQueryStringFromParameters($this->ignoredUrlParameters);
+			if (!empty($queryString)) {
+				$queryString .= '&';
+			}
+			$queryString .= $appendedPart;
+
+			$url = $path . '?' . $queryString;
+		}
+
+		return $url;
 	}
 
 	/**

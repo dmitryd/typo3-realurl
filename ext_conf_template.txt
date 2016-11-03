@@ -9,3 +9,6 @@ autoConfFormat = 0
 
 # cat=basic/enable; type=boolean; label=Enable devLog:Debugging-only! Required any 3rd party devLog extension
 enableDevLog = 0
+
+# cat=basic/enable; type=options[Icon 1=0,Icon 2=1,Icon 3=2]; label=Select Backend module icon:Choose your favorite!
+moduleIcon = 0

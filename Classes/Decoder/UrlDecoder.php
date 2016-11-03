@@ -1106,24 +1106,6 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 	}
 
 	/**
-	 * Checks if 'reqCHash` is present in the calling stack.
-	 *
-	 * @return bool
-	 */
-	protected function hasReqChashOnTheStack() {
-		$hasReqChashOnTheStack = false;
-
-		$stack = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
-		array_walk($stack, function ($stackItem) use (&$hasReqChashOnTheStack) {
-			if (0 === strcasecmp('reqCHash', $stackItem['function'])) {
-				$hasReqChashOnTheStack = true;
-			}
-		});
-
-		return $hasReqChashOnTheStack;
-	}
-
-	/**
 	 * Initializes the decoder.
 	 *
 	 * @throws \Exception
@@ -1139,33 +1121,6 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 	 */
 	protected function initializeConfiguration() {
 		$this->configuration = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\Configuration\\ConfigurationReader', ConfigurationReader::MODE_DECODE);
-	}
-
-	/**
-	 * Checks if cHash is possibly missing from the URL.
-	 *
-	 * @param UrlCacheEntry $cacheEntry
-	 * @return bool
-	 */
-	protected function isChashMissing(UrlCacheEntry $cacheEntry) {
-		$result = false;
-
-		$requestVariables = $cacheEntry->getRequestVariables();
-		if (!isset($requestVariables['cHash'])) {
-			if (!isset($requestVariables['id'])) {
-				// See https://typo3.org/teams/security/security-bulletins/typo3-core/typo3-core-sa-2016-022/
-				$requestVariables['id'] = $cacheEntry->getPageId();
-			}
-			$cacheHashCalculator = GeneralUtility::makeInstance('TYPO3\\CMS\\Frontend\\Page\\CacheHashCalculator');
-			/* @var \TYPO3\CMS\Frontend\Page\CacheHashCalculator $cacheHashCalculator */
-			$cHashParameters = $cacheHashCalculator->getRelevantParameters(GeneralUtility::implodeArrayForUrl('', $requestVariables));
-
-			// Can't use 'doParametersRequireCacheHash' here because that checks only required, not all parameters!
-
-			$result = count($cHashParameters) > 0;
-		}
-
-		return $result;
 	}
 
 	/**
@@ -1500,6 +1455,7 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 	protected function setRequestVariables(UrlCacheEntry $cacheEntry) {
 		if ($cacheEntry) {
 			$requestVariables = $cacheEntry->getRequestVariables();
+			$this->restoreIgnoredUrlParameters($requestVariables);
 			$requestVariables['id'] = $cacheEntry->getPageId();
 			$_SERVER['QUERY_STRING'] = $this->createQueryStringFromParameters($requestVariables);
 
@@ -1520,7 +1476,7 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 	 * @return void
 	 */
 	protected function setSpeakingUriFromSiteScript() {
-		$this->speakingUri = ltrim($this->siteScript, '/');
+		$this->speakingUri = $this->removeIgnoredParametersFromURL(ltrim($this->siteScript, '/'));
 	}
 
 	/**

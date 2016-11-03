@@ -178,7 +178,9 @@ class UrlEncoder extends EncodeDecoderBase {
 	}
 
 	/**
-	 * Adds remaining parameters to the generated URL.
+	 * Adds remaining parameters to the generated URL. Note: parameters that
+	 * are ignored by the 'cache/ignoredGetParametersRegExp' configuration option
+	 * are not considered here!
 	 *
 	 * @return void
 	 */
@@ -243,6 +245,30 @@ class UrlEncoder extends EncodeDecoderBase {
 	}
 
 	/**
+	 * Checks if the URL can be cached. This function may prevent RealURL cache
+	 * pollution with Solr or Indexed search URLs. Also some doktypes are ignored
+	 * for the cache.
+	 *
+	 * @param string $url
+	 * @return bool
+	 */
+	protected function canCacheUrl($url) {
+		$bannedUrlsRegExp = $this->configuration->get('cache/banUrlsRegExp');
+
+		$result = (!$bannedUrlsRegExp || !preg_match($bannedUrlsRegExp, $url));
+
+		if ($result) {
+			// Check page type: do not cache separators
+			$pageRecord = $this->pageRepository->getPage($this->urlParameters['id']);
+			if (is_array($pageRecord) && ($pageRecord['doktype'] == PageRepository::DOKTYPE_SPACER || $pageRecord['doktype'] == PageRepository::DOKTYPE_RECYCLER)) {
+				$result = false;
+			}
+		}
+
+		return $result;
+	}
+
+	/**
 	 * Checks if RealURL can encode URLs.
 	 *
 	 * @return bool
@@ -274,41 +300,6 @@ class UrlEncoder extends EncodeDecoderBase {
 			}
 			if ($allSegmentsAreEmpty) {
 				$segments = array();
-			}
-		}
-	}
-
-	/**
-	 * Checks if current URL has cHash and the cache entry exists for the current
-	 * URL without cHash. If found, removes this entry because it is most likeky
-	 * a decoder mistake due to removed cHash recalculation in realurl >= 2.0.15.
-	 *
-	 * @return void
-	 */
-	protected function checkForMissingChashInCache() {
-		if (strpos($this->originalUrl, 'cHash') !== false) {
-			$sortedUrlParameters = $this->urlParameters;
-			$this->sortArrayDeep($sortedUrlParameters);
-
-			unset($sortedUrlParameters['cHash']);
-			$originalUrlWithoutCHash = $this->createQueryStringFromParameters($sortedUrlParameters);
-			$cacheEntry = $this->cache->getUrlFromCacheByOriginalUrl($this->rootPageId, $originalUrlWithoutCHash);
-			if ($cacheEntry) {
-				// We do not care about expiration here because the stored URL is clearly wrong!
-				$this->cache->clearUrlCacheById($cacheEntry->getCacheId());
-			}
-
-			if (!isset($sortedUrlParameters['L'])) {
-				// Deal also with case when there is no 'L' -> use current language.
-				// Usually this is misconfiguration on the client side but very common.
-				$sortedUrlParameters['L'] = $this->sysLanguageUid;
-				$this->sortArrayDeep($sortedUrlParameters);
-				$originalUrlWithoutCHash = $this->createQueryStringFromParameters($sortedUrlParameters);
-				$cacheEntry = $this->cache->getUrlFromCacheByOriginalUrl($this->rootPageId, $originalUrlWithoutCHash);
-				if ($cacheEntry) {
-					// We do not care about expiration here because the stored URL is clearly wrong!
-					$this->cache->clearUrlCacheById($cacheEntry->getCacheId());
-				}
 			}
 		}
 	}
@@ -485,7 +476,9 @@ class UrlEncoder extends EncodeDecoderBase {
 			// about it in encodePathComponents() when we fetch from the cache.
 			// It is easier to have duplicate entries here (one with MP and
 			// another without it). It does not really matter.
-			$this->addToPathCache($path);
+			if ($page['doktype'] != PageRepository::DOKTYPE_SPACER && $page['doktype'] != PageRepository::DOKTYPE_RECYCLER) {
+				$this->addToPathCache($path);
+			}
 			$result = true;
 		}
 
@@ -566,7 +559,9 @@ class UrlEncoder extends EncodeDecoderBase {
 			foreach ($components as $segment) {
 				$this->appendToEncodedUrl($segment);
 			}
-			$this->addToPathCache(implode('/', $components));
+			if ($reversedRootLine[$rootLineMax]['doktype'] != PageRepository::DOKTYPE_SPACER && $reversedRootLine[$rootLineMax]['doktype'] != PageRepository::DOKTYPE_RECYCLER) {
+				$this->addToPathCache(implode('/', $components));
+			}
 		}
 	}
 
@@ -601,6 +596,9 @@ class UrlEncoder extends EncodeDecoderBase {
 		);
 		if ($cacheEntry) {
 			$this->appendToEncodedUrl($cacheEntry->getPagePath());
+			if (isset($this->urlParameters['MP']) && $cacheEntry->getMountPoint() === $this->urlParameters['MP']) {
+				unset($this->urlParameters['MP']);
+			}
 		} else {
 			$this->createPathComponent();
 		}
@@ -856,6 +854,7 @@ class UrlEncoder extends EncodeDecoderBase {
 	 * Encodes the URL.
 	 *
 	 * @return void
+	 * @throws \Exception
 	 */
 	protected function executeEncoder() {
 		$this->parseUrlParameters();
@@ -864,11 +863,22 @@ class UrlEncoder extends EncodeDecoderBase {
 		$this->initialize();
 
 		$this->setLanguage();
+		$this->removeIgnoredUrlParameters();
 		$this->initializeUrlPrepend();
-		$this->checkForMissingChashInCache();
-		if (!$this->fetchFromtUrlCache()) {
+		if (!$this->fetchFromUrlCache()) {
 			$this->encodePreVars();
-			$this->encodePathComponents();
+			try {
+				$this->encodePathComponents();
+			}
+			catch (\Exception $exception) {
+				if ($exception->getCode() === 1343589451) {
+					// Rootline failure: "Could not fetch page data for uid X"
+					// Reset and quit. See https://github.com/dmitryd/typo3-realurl/issues/200
+					$this->encodedUrl = $this->urlToEncode;
+					return;
+				}
+				throw $exception;
+			}
 			$this->encodeFixedPostVars();
 			$this->encodePostVarSets();
 			$this->handleFileName();
@@ -884,6 +894,7 @@ class UrlEncoder extends EncodeDecoderBase {
 		}
 		$this->reapplyAbsRefPrefix();
 		$this->callPostEncodeHooks();
+		$this->encodedUrl = $this->restoreIgnoredUrlParametersInURL($this->encodedUrl);
 		$this->prepareUrlPrepend();
 	}
 
@@ -892,7 +903,7 @@ class UrlEncoder extends EncodeDecoderBase {
 	 *
 	 * @return bool
 	 */
-	protected function fetchFromtUrlCache() {
+	protected function fetchFromUrlCache() {
 		$result = FALSE;
 
 		$cacheEntry = $this->cache->getUrlFromCacheByOriginalUrl($this->rootPageId, $this->originalUrl);
@@ -1154,6 +1165,33 @@ class UrlEncoder extends EncodeDecoderBase {
 	}
 
 	/**
+	 * Removes ignored parameters from various members.
+	 */
+	protected function removeIgnoredUrlParameters() {
+		$this->urlParameters = $this->removeIgnoredUrlParametersFromArray($this->urlParameters);
+		$this->originalUrl = $this->removeIgnoredParametersFromQueryString($this->originalUrl);
+	}
+
+	/**
+	 * Removes ignored URL parameters from the parameter list.
+	 *
+	 * @param array $urlParameters
+	 * @return array
+	 */
+	protected function removeIgnoredUrlParametersFromArray(array $urlParameters) {
+		$ignoredParametersRegExp = $this->configuration->get('cache/ignoredGetParametersRegExp');
+		if ($ignoredParametersRegExp) {
+			foreach ($urlParameters as $parameterName => $parameterValue) {
+				if (preg_match($ignoredParametersRegExp, $parameterName)) {
+					unset($urlParameters[$parameterName]);
+				}
+			}
+		}
+
+		return $urlParameters;
+	}
+
+	/**
 	 * Checks if we should prpend URL according to _DOMAINS configuration.
 	 *
 	 * @return void
@@ -1286,7 +1324,7 @@ class UrlEncoder extends EncodeDecoderBase {
 			elseif (!$cacheEntry || $cacheEntry->getSpeakingUrl() !== $this->encodedUrl) {
 				$cacheEntry = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\Cache\\UrlCacheEntry');
 				$cacheEntry->setPageId($this->urlParameters['id']); // $this->originalUrlParameters['id'] can be an alias, we need a number here!
-				$cacheEntry->setRequestVariables($this->originalUrlParameters);
+				$cacheEntry->setRequestVariables($this->removeIgnoredUrlParametersFromArray($this->originalUrlParameters));
 				$cacheEntry->setRootPageId($this->rootPageId);
 				$cacheEntry->setOriginalUrl($this->originalUrl);
 				$cacheEntry->setSpeakingUrl($this->encodedUrl);

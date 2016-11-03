@@ -156,7 +156,10 @@ class DataHandler implements SingletonInterface {
 	}
 
 	/**
-	 * Expires cache if necessary when the record changes.
+	 * Expires cache if necessary when the record changes. For 'pages' we expire
+	 * cache only if the page was modified. For 'pages_language_overlay' we
+	 * do it on creation of a new translation too. For reasons see
+	 * https://github.com/dmitryd/typo3-realurl/issues/313#issuecomment-257268851
 	 *
 	 * @param string $status
 	 * @param string $tableName
@@ -165,7 +168,7 @@ class DataHandler implements SingletonInterface {
 	 * @return void
 	 */
 	protected function expireCache($status, $tableName, $recordId, array $databaseData) {
-		if ($status !== 'new' && ($tableName == 'pages' || $tableName == 'pages_language_overlay')) {
+		if ($status === 'update' && $tableName === 'pages' || $tableName === 'pages_language_overlay') {
 			if ($tableName == 'pages') {
 				$languageId = 0;
 				$pageId = $recordId;
@@ -176,10 +179,15 @@ class DataHandler implements SingletonInterface {
 				unset($fullRecord);
 			}
 			$expireCache = FALSE;
-			foreach (EncodeDecoderBase::$pageTitleFields as $fieldName) {
-				if (isset($databaseData[$fieldName])) {
-					$expireCache = TRUE;
-					break;
+			if (isset($databaseData['hidden'])) {
+				$expireCache = TRUE;
+			}
+			else {
+				foreach (EncodeDecoderBase::$pageTitleFields as $fieldName) {
+					if (isset($databaseData[$fieldName])) {
+						$expireCache = TRUE;
+						break;
+					}
 				}
 			}
 			if ($expireCache) {

@@ -82,12 +82,12 @@ class ConfigurationReader {
 	 */
 	protected $defaultValues = array(
 		'cache/banUrlsRegExp' => '/tx_solr|tx_indexedsearch|tx_kesearch|(?:^|\?|&)q=/',
+		'cache/ignoredGetParametersRegExp' => '/^(?:utm_[a-z]+|pk_campaign|pk_kwd)$/',
 		'fileName/acceptHTMLsuffix' => TRUE,
 		'fileName/defaultToHTMLsuffixOnPrev' => FALSE,
 		'init/appendMissingSlash' => 'ifNotFile,redirect[301]',
 		'init/defaultLanguageUid' => 0,
 		'init/emptySegmentValue' => '',
-		'init/redirectOnChashError' => false,
 		'pagePath/spaceCharacter' => '-', // undocumented & deprecated!
 	);
 

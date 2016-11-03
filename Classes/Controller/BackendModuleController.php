@@ -64,7 +64,7 @@ abstract class BackendModuleController extends ActionController {
 		if (!empty($moduleData)) {
 			$currentController = $this->getControllerName();
 			if ($moduleData['controller'] !== '' && $moduleData['controller'] !== $currentController) {
-				$this->forward(null, $moduleData['controller']);
+				$this->redirect(null, $moduleData['controller']);
 			}
 		}
 	}

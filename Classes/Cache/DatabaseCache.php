@@ -125,7 +125,7 @@ class DatabaseCache implements CacheInterface, SingletonInterface {
 		);
 
 		if (is_null($languageId)) {
-			$this->databaseConnection->exec_UPDATEquery('tx_realurl_pathdata',
+			$this->databaseConnection->exec_UPDATEquery('tx_realurl_urldata',
 				'page_id=' . (int)$pageId . ' AND expire=0',
 				array('expire' => $expirationTime)
 			);
@@ -369,6 +369,8 @@ class DatabaseCache implements CacheInterface, SingletonInterface {
 			if ($this->limitTableRecords('tx_realurl_urldata')) {
 				$this->databaseConnection->sql_query('DELETE FROM tx_realurl_uniqalias_cache_map WHERE url_cache_id NOT IN (SELECT uid FROM tx_realurl_urldata)');
 			}
+
+			$data['crdate'] = time();
 			$this->databaseConnection->exec_INSERTquery('tx_realurl_urldata', $data);
 			$cacheEntry->setCacheId($this->databaseConnection->sql_insert_id());
 
