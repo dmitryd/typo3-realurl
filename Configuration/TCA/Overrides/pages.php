@@ -51,7 +51,7 @@ if (!isset($GLOBALS['TCA']['pages']['columns']['tx_realurl_pathsegment'])) {
 	\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addToAllTCAtypes('pages', '--palette--;LLL:EXT:realurl/Resources/Private/Language/locallang_db.xlf:pages.palette_title;tx_realurl', '4,199,254', 'after:title');
 
 	$GLOBALS['TCA']['pages']['palettes']['tx_realurl'] = array(
-		'showitem' => 'tx_realurl_pathsegment,--linebreak--,tx_realurl_exclude,tx_realurl_pathoverride'
+		'showitem' => 'tx_realurl_pathsegment,--linebreak--,tx_realurl_exclude,tx_realurl_pathoverride,tx_realurl_nocache'
 	);
 
 }
