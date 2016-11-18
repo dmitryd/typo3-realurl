@@ -346,7 +346,7 @@ class UrlEncoder extends EncodeDecoderBase {
 		}
 
 		// First, test if there is an entry in cache for the id
-		if (!$configuration['useUniqueCache'] || $configuration['autoUpdate'] || !($result = $this->getFromAliasCache($configuration, $getVarValue, $languageUid))) {
+		if (!$configuration['useUniqueCache'] || !($result = $this->getFromAliasCache($configuration, $getVarValue, $languageUid))) {
 			$languageEnabled = FALSE;
 			$fieldList = array();
 			if ($configuration['table'] === 'pages') {
@@ -946,7 +946,8 @@ class UrlEncoder extends EncodeDecoderBase {
 	}
 
 	/**
-	 * Obtains the value from the alias cache.
+	 * Obtains the value from the alias cache. If a specific alias is requested,
+	 * this function may un-expire the alias if it is marked as expired.
 	 *
 	 * @param array $configuration
 	 * @param string $getVarValue
@@ -956,18 +957,26 @@ class UrlEncoder extends EncodeDecoderBase {
 	 */
 	protected function getFromAliasCache(array $configuration, $getVarValue, $languageUid, $onlyThisAlias = '') {
 		$result = NULL;
+		// We use 'expire=0' condition only if no specific alias is requested. If a specific alias
+		// is requested, we also can fetched expired aliases and un-expire them. This prevents
+		// multiple identical expired alias records.
 		$row = $this->databaseConnection->exec_SELECTgetSingleRow('*', 'tx_realurl_uniqalias',
 				'value_id=' . $this->databaseConnection->fullQuoteStr($getVarValue, 'tx_realurl_uniqalias') .
 				' AND field_alias=' . $this->databaseConnection->fullQuoteStr($configuration['alias_field'], 'tx_realurl_uniqalias') .
 				' AND field_id=' . $this->databaseConnection->fullQuoteStr($configuration['id_field'], 'tx_realurl_uniqalias') .
 				' AND tablename=' . $this->databaseConnection->fullQuoteStr($configuration['table'], 'tx_realurl_uniqalias') .
 				' AND lang=' . intval($languageUid) .
-				($onlyThisAlias ? ' AND value_alias=' . $this->databaseConnection->fullQuoteStr($onlyThisAlias, 'tx_realurl_uniqalias') : '') .
-				' AND expire=0'
+				($onlyThisAlias ? ' AND value_alias=' . $this->databaseConnection->fullQuoteStr($onlyThisAlias, 'tx_realurl_uniqalias') . ' AND expire=0' : ''),
+			'', 'expire'
 		);
 		if (is_array($row)) {
 			$this->usedAliases[] = $row['uid'];
 			$result = $row['value_alias'];
+
+			if ($onlyThisAlias && $row['expire'] > 0) {
+				// We use this alias and need to un-expire it
+				$this->databaseConnection->exec_UPDATEquery('tx_realurl_uniqalias', 'uid=' . $row['uid'], array('expire' => 0));
+			}
 		}
 
 		return $result;
@@ -1263,7 +1272,7 @@ class UrlEncoder extends EncodeDecoderBase {
 	protected function storeInAliasCache(array $configuration, $newAliasValue, $idValue, $languageUid) {
 		$newAliasValue = $this->cleanUpAlias($configuration, $newAliasValue);
 
-		if ($configuration['autoUpdate'] && $this->getFromAliasCache($configuration, $idValue, $languageUid, $newAliasValue)) {
+		if ($this->getFromAliasCache($configuration, $idValue, $languageUid, $newAliasValue)) {
 			return $newAliasValue;
 		}
 
