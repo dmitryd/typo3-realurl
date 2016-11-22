@@ -1230,7 +1230,7 @@ class UrlEncoder extends EncodeDecoderBase {
 	 * @return void
 	 */
 	protected function setLanguage() {
-		if (isset($this->urlParameters['L']) && MathUtility::canBeInterpretedAsInteger($this->urlParameters['L'])) {
+		if (isset($this->urlParameters['L']) && (MathUtility::canBeInterpretedAsInteger($this->urlParameters['L']) || $this->urlParameters['L'] === '')) {
 			$this->sysLanguageUid = (int)$this->urlParameters['L'];
 		} else {
 			$this->sysLanguageUid = (int)$this->tsfe->sys_language_uid;
