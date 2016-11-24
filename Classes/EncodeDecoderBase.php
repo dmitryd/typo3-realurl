@@ -267,7 +267,7 @@ abstract class EncodeDecoderBase {
 	 */
 	protected function removeIgnoredParametersFromURL($url) {
 		list($path, $queryString) = explode('?', $url, 2);
-		$queryString = $this->removeIgnoredParametersFromQueryString($queryString);
+		$queryString = $this->removeIgnoredParametersFromQueryString((string)$queryString);
 
 		$url = $path;
 		if (!empty($queryString)) {
