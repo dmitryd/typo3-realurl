@@ -2,9 +2,9 @@
 
 <f:be.container>
 	<f:be.pageRenderer includeCssFiles="{
-		1: '../typo3conf/ext/realurl/Resources/Public/realurl_be.css'
+		1: '{f:uri.resource(path:\'realurl_be.css\')}'
 	}" includeJsFiles="{
-		2: '../typo3conf/ext/realurl/Resources/Public/realurl_be.js'
+		2: '{f:uri.resource(path:\'realurl_be.js\')}'
 	}" loadJQuery="1"/>
 	<div class="typo3-fullDoc">
 		<div id="typo3-docheader">
