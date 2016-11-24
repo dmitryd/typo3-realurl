@@ -156,7 +156,7 @@ class ext_update {
 	 * Removes entries with parameters that should be ignored.
 	 */
 	protected function removeUrlDataEntriesWithIgnoredParameters() {
-		$this->databaseConnection->exec_DELETEquery('tx_realurl_urlcache', 'original_url RLIKE \'(^|&)(utm_[a-z]+|pk_campaign|pk_kwd)=\'');
+		$this->databaseConnection->exec_DELETEquery('tx_realurl_urldata', 'original_url RLIKE \'(^|&)(utm_[a-z]+|pk_campaign|pk_kwd)=\'');
 	}
 
 	/**
