@@ -251,6 +251,8 @@ abstract class EncodeDecoderBase {
 				}
 				$queryString = $this->createQueryStringFromParameters($collectedParameters);
 			}
+		} else {
+			$queryString = '';
 		}
 
 		return $queryString;
