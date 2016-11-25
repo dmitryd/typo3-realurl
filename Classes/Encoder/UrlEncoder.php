@@ -612,7 +612,7 @@ class UrlEncoder extends EncodeDecoderBase {
 	protected function encodePreVars() {
 		$preVars = (array)$this->configuration->get('preVars');
 		if (count($preVars) > 0) {
-			$segments = $this->encodeUrlParameterBlock($preVars);
+			$segments = $this->encodeUrlParameterBlock($preVars, true);
 			if (count($segments) > 0) {
 				$this->appendToEncodedUrl(implode('/', $segments));
 			}
@@ -688,12 +688,13 @@ class UrlEncoder extends EncodeDecoderBase {
 	 * Encodes pre- or postVars according to the given configuration.
 	 *
 	 * @param array $configurationArray
+     * @param bool $noCheck
 	 * @return string
 	 */
-	protected function encodeUrlParameterBlock(array $configurationArray) {
+	protected function encodeUrlParameterBlock(array $configurationArray, $noCheck = false) {
 		$segments = array();
 
-		if ($this->hasUrlParameters($configurationArray)) {
+		if ($noCheck || $this->hasUrlParameters($configurationArray)) {
 			$previousValue = '';
 			foreach ($configurationArray as $configuration) {
 				// Technically it must always be array!
