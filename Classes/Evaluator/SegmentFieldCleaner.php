@@ -38,6 +38,7 @@ class SegmentFieldCleaner {
 	 * @return string
 	 */
 	public function evaluateFieldValue($value) {
+        $value = str_replace('_', '-', $value);
 		return trim($value, '/');
 	}
 
