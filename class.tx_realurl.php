@@ -430,7 +430,7 @@ class tx_realurl extends tx_realurl_baseclass {
 		}
 
 		// Process cHash
-		$this->encodeSpURL_cHashProcessing($newUrl, $paramKeyValues);
+		$this->encodeSpURL_cHashProcessing($newUrl, $paramKeyValues, $page_id);
 
 		// Manage remaining GET parameters
 		if (count($paramKeyValues)) {
@@ -800,10 +800,11 @@ class tx_realurl extends tx_realurl_baseclass {
 	 *
 	 * @param string $newUrl URL path (being hashed to an integer and cHash value related to this.)
 	 * @param array $paramKeyValues Params $array array, passed by reference. If "cHash" is the only value left it will be put in the cache table and the value is unset in the array.
+	 * @param int $pageId
 	 * @return void
 	 * @see decodeSpURL_cHashCache()
 	 */
-	protected function encodeSpURL_cHashProcessing($newUrl, &$paramKeyValues) {
+	protected function encodeSpURL_cHashProcessing($newUrl, &$paramKeyValues, $pageId) {
 
 		// If "cHash" is the ONLY parameter left...
 		// (if there are others our problem is that the cHash probably covers those
@@ -824,6 +825,9 @@ class tx_realurl extends tx_realurl_baseclass {
 					unset($paramKeyValues['cHash']);
 				}
 				elseif (count($cHashParameters) > 1) {
+					if (isset($GLOBALS['TYPO3_CONF_VARS']['FE']['cHashIncludePageId']) && $GLOBALS['TYPO3_CONF_VARS']['FE']['cHashIncludePageId']) {
+						$paramKeyValues['id'] = $pageId;
+					}
 					$paramKeyValues['cHash'] = $this->apiWrapper->calculateChash($cHashParameters);
 				}
 				unset($cHashParameters);
