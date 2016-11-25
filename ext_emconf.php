@@ -10,7 +10,7 @@
 
 $EM_CONF[$_EXTKEY] = array (
   'title' => 'RealURL: speaking paths for TYPO3',
-  'description' => 'WARNING! This version is obsolete and unsupported! It was not tested by the author and its work is not guaranteed! If you find bugs in this versionm, they will not be fixed! Use at your own risk. Last stable version of RealURL 1.x is 1.13.6. Users of TYPO3 7.6+ are strongly recommended to wait for upcoming RealURL version 2.',
+  'description' => 'WARNING! This version is obsolete and unsupported! It was not tested by the author and its work is not guaranteed! If you find bugs in this version, they will not be fixed! Use at your own risk. Last stable version of RealURL 1.x is 1.13.6. Users of TYPO3 7.6+ are strongly recommended to wait for upcoming RealURL version 2.',
   'category' => 'fe',
   'shy' => 0,
   'dependencies' => '',
