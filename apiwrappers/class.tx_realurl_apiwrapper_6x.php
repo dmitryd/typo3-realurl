@@ -587,4 +587,14 @@ class tx_realurl_apiwrapper_6x extends tx_realurl_apiwrapper implements \TYPO3\C
 
 		return $db;
 	}
+
+	/**
+	 * Obtains site relative path to the extension.
+	 *
+	 * @param string $extKey
+	 * @return string
+	 */
+	public function siteRelPath($extKey) {
+		return \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::siteRelPath($extKey);
+	}
 }

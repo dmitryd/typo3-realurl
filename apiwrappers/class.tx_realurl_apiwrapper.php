@@ -444,4 +444,12 @@ abstract class tx_realurl_apiwrapper {
 	 * @return t3lib_db|\TYPO3\CMS\Core\Database\DatabaseConnection
 	 */
 	abstract public function getDatabaseConnection();
+
+	/**
+	 * Obtains site relative path to the extension.
+	 *
+	 * @param string $extKey
+	 * @return string
+	 */
+	abstract public function siteRelPath($extKey);
 }

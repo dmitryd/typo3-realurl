@@ -643,4 +643,14 @@ class tx_realurl_apiwrapper_4x extends tx_realurl_apiwrapper implements t3lib_Si
 
 		return $db;
 	}
+
+	/**
+	 * Obtains site relative path to the extension.
+	 *
+	 * @param string $extKey
+	 * @return string
+	 */
+	public function siteRelPath($extKey) {
+		return t3lib_extMgm::siteRelPath($extKey);
+	}
 }
