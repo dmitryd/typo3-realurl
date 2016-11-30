@@ -1472,7 +1472,10 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 	}
 
 	/**
-	 * @param array $requestVariables addCHashIfMissingAndEnabled
+	 * Calculates the cHash parameter if it is not set in requestVariables
+	 * and if calculateChashIfMissing is set to true in realurl init configuration.
+	 *
+	 * @param array $requestVariables
 	 *
 	 * @return array
 	 */
