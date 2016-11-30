@@ -1457,6 +1457,7 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 			$requestVariables = $cacheEntry->getRequestVariables();
 			$this->restoreIgnoredUrlParameters($requestVariables);
 			$requestVariables['id'] = $cacheEntry->getPageId();
+			$requestVariables = $this->addCHashIfMissingAndEnabled($requestVariables);
 			$_SERVER['QUERY_STRING'] = $this->createQueryStringFromParameters($requestVariables);
 
 			// Setting info in TSFE
@@ -1468,6 +1469,31 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 				$this->mimeType = null;
 			}
 		}
+	}
+
+	/**
+	 * @param array $requestVariables addCHashIfMissingAndEnabled
+	 *
+	 * @return array
+	 */
+	protected function addCHashIfMissingAndEnabled(array $requestVariables)
+	{
+		$initConf = $this->configuration->get('init');
+		if ((bool)$initConf['calculateChashIfMissing'] === true
+			&& !isset($requestVariables['cHash'])
+			&& !empty($requestVariables['cHash'])
+		) {
+			/** @var \TYPO3\CMS\Frontend\Page\CacheHashCalculator $cacheHashCalculator */
+			$cacheHashCalculator = GeneralUtility::makeInstance(\TYPO3\CMS\Frontend\Page\CacheHashCalculator::class);
+
+			$cHash = $cacheHashCalculator->generateForParameters(
+				$this->createQueryStringFromParameters($requestVariables)
+			);
+
+			$requestVariables['cHash'] = $cHash;
+		}
+
+		return $requestVariables;
 	}
 
 	/**
