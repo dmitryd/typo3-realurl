@@ -1482,21 +1482,48 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 	protected function addCHashIfMissingAndEnabled(array $requestVariables)
 	{
 		$initConf = $this->configuration->get('init');
-		if ((bool)$initConf['calculateChashIfMissing'] === true
-			&& !isset($requestVariables['cHash'])
-			&& !empty($requestVariables['cHash'])
+		$calculateChashIfMissing = (bool)$initConf['calculateChashIfMissing'];
+
+		if ($calculateChashIfMissing == true
+		    && !isset($requestVariables['cHash'])
+		    && empty($requestVariables['cHash'])
 		) {
-			/** @var \TYPO3\CMS\Frontend\Page\CacheHashCalculator $cacheHashCalculator */
-			$cacheHashCalculator = GeneralUtility::makeInstance(\TYPO3\CMS\Frontend\Page\CacheHashCalculator::class);
+			$cHash = '';
+			$queryStringForCHash = $this->generateQueryStringForCHash($requestVariables);
 
-			$cHash = $cacheHashCalculator->generateForParameters(
-				$this->createQueryStringFromParameters($requestVariables)
-			);
+			if ($queryStringForCHash !== ''){
+				/** @var \TYPO3\CMS\Frontend\Page\CacheHashCalculator $cacheHashCalculator */
+				$cacheHashCalculator = GeneralUtility::makeInstance(\TYPO3\CMS\Frontend\Page\CacheHashCalculator::class);
+				$cHash = $cacheHashCalculator->generateForParameters($queryStringForCHash);
+			}
 
-			$requestVariables['cHash'] = $cHash;
+			if ($cHash !== '') {
+				$requestVariables['cHash'] = $cHash;
+			}
 		}
 
 		return $requestVariables;
+	}
+
+	protected function generateQueryStringForCHash($requestVariables) {
+		$queryStringArray = [];
+		$initConf = $this->configuration->get('init');
+		$allPostVarSets = array_filter((array)$this->configuration->get('postVarSets'));
+		$postVarSets = $this->getConfigurationForPostVars($allPostVarSets, $requestVariables['id']);
+		foreach ($initConf['generateCHashFor'] as $postVarSetConfig) {
+			foreach ($postVarSets[$postVarSetConfig] as $item) {
+				if (array_key_exists($item['GETvar'], $requestVariables)) {
+					$queryStringArray[] = $item['GETvar'] . '=' . $requestVariables[$item['GETvar']];
+				} else {
+					if ($item['noMatch'] !== 'bypass') {
+						$queryStringArray = [];
+						break;
+					}
+				}
+			}
+		}
+
+		return implode('&', $queryStringArray);
 	}
 
 	/**
