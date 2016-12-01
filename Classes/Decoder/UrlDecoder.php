@@ -1268,7 +1268,7 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 	protected function runDecoding() {
 		$urlPath = $this->getUrlPath();
 
-		$cacheEntry = $this->getFromUrlCache($this->speakingUri);
+		$cacheEntry = $this->getFromUrlCache(urldecode($this->speakingUri));
 		if (!$cacheEntry) {
 			$this->originalPath = $urlPath;
 			$cacheEntry = $this->doDecoding($urlPath);

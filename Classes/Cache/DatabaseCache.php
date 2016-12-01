@@ -361,7 +361,7 @@ class DatabaseCache implements CacheInterface, SingletonInterface {
 			'page_id' => $cacheEntry->getPageId(),
 			'request_variables' => json_encode($requestVariables),
 			'rootpage_id' => $cacheEntry->getRootPageId(),
-			'speaking_url' => $cacheEntry->getSpeakingUrl(),
+			'speaking_url' => $this->prepareCacheUri($cacheEntry->getSpeakingUrl()),
 		);
 		if ($cacheEntry->getCacheId()) {
 			$this->databaseConnection->exec_UPDATEquery('tx_realurl_urldata',
@@ -393,6 +393,23 @@ class DatabaseCache implements CacheInterface, SingletonInterface {
 
 			$this->databaseConnection->sql_query('COMMIT');
 		}
+	}
+
+	/**
+	 * Prepares the url to be stored in cache table.
+	 *  - Add leading slash
+	 *  - do urldecode
+	 *
+	 * @param string $uri
+	 *
+	 * @return string
+	 */
+	protected function prepareCacheUri($uri) {
+		if (substr($uri,0,1) !== '/' && substr($uri,0,1) !== '?') {
+			$uri = '/' . $uri;
+		}
+		$uri = urldecode($uri);
+		return $uri;
 	}
 
 	/**
