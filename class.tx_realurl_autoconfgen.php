@@ -83,7 +83,7 @@ class tx_realurl_autoconfgen {
 		$fileName = PATH_site . TX_REALURL_AUTOCONF_FILE;
 
 		$lockObject = $this->apiWrapper->getLockObject($fileName);
-		$fd = @fopen($fileName, 'a+');
+		$fd = @fopen($fileName, 'w+');
 		if ($fd) {
 			// Check size
 			fseek($fd, 0, SEEK_END);
