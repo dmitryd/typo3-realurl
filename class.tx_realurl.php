@@ -816,18 +816,21 @@ class tx_realurl extends tx_realurl_baseclass {
 				$cHashParameters = array_merge($this->cHashParameters, $paramKeyValues);
 				unset($cHashParameters['cHash']);
 
+				$minCHashParameterCount = 1;
+				if (isset($GLOBALS['TYPO3_CONF_VARS']['FE']['cHashIncludePageId']) && $GLOBALS['TYPO3_CONF_VARS']['FE']['cHashIncludePageId']) {
+					$cHashParameters['id'] = $pageId;
+					$minCHashParameterCount++;
+				}
+
 				$cHashParameters = $this->apiWrapper->getRelevantChashParameters($this->apiWrapper->implodeArrayForUrl('', $cHashParameters));
 
 				unset($cHashParameters['']);
 
-				if (count($cHashParameters) == 1) {
+				if (count($cHashParameters) <= $minCHashParameterCount) {
 					// No cHash needed.
 					unset($paramKeyValues['cHash']);
 				}
-				elseif (count($cHashParameters) > 1) {
-					if (isset($GLOBALS['TYPO3_CONF_VARS']['FE']['cHashIncludePageId']) && $GLOBALS['TYPO3_CONF_VARS']['FE']['cHashIncludePageId']) {
-						$paramKeyValues['id'] = $pageId;
-					}
+				elseif (count($cHashParameters) > $minCHashParameterCount) {
 					$paramKeyValues['cHash'] = $this->apiWrapper->calculateChash($cHashParameters);
 				}
 				unset($cHashParameters);
