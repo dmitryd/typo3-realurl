@@ -1769,6 +1769,16 @@ class tx_realurl extends tx_realurl_baseclass {
 
 
 				if (!$this->isBEUserLoggedIn() && $this->canCachePageURL($cachedInfo['id'])) {
+					if (isset($cachedInfo['GET_VARS']) && count($cachedInfo['GET_VARS'])
+						&& !isset($cachedInfo['GET_VARS']['cHash'])
+						&& implode('', $cachedInfo['GET_VARS']) != ''
+					) {
+						//do not cache URLs with additional GET parameters but without cHash
+						//but do not require cHash if the get vars have no value
+						//disable page cache so the correct content is returned to the user
+						$GLOBALS['TSFE']->set_no_cache();
+						return;
+					}
 					$rootpage_id = intval($cachedInfo['rootpage_id']);
 					$hash = md5($speakingURIpath . $rootpage_id);
 
