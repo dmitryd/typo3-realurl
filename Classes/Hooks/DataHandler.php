@@ -107,7 +107,7 @@ class DataHandler implements SingletonInterface {
 
 	/**
 	 * Clears automatic configuration when necessary. Note: we do not check if
-	 * it iss enabled. Even if now it is disabled, later it can be re-enabled
+	 * it is enabled. Even if now it is disabled, later it can be re-enabled
 	 * and suddenly obsolete config will be used. So we clear always.
 	 *
 	 * @param string $tableName

@@ -1273,7 +1273,7 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 			$this->originalPath = $urlPath;
 			$cacheEntry = $this->doDecoding($urlPath);
 			// Note the newly created cache entry is not saved because it is unsafe!
-			// The user can suppy any number of free form parameters and those
+			// The user can supply any number of free form parameters and those
 			// can get to the cache. On the other hand we cannot store URLs
 			// without parameters because those can be fully legal and entries
 			// without parameters will be useless.
