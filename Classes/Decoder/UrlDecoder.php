@@ -234,7 +234,7 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 			if ($this->appendedSlash && count($options) > 0) {
 				foreach ($options as $option) {
 					$matches = array();
-					if (preg_match('/^redirect(\[(30[1237])\])?$/', $option, $matches)) {
+					if (preg_match('/^ifNotFile|redirect(\[(30[1237])\])?$/', $option, $matches)) {
 						$code = count($matches) > 1 ? $matches[2] : 301;
 						$status = 'HTTP/1.1 ' . $code . ' TYPO3 RealURL redirect';
 
