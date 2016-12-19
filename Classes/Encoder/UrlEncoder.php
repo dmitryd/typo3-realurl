@@ -1228,9 +1228,11 @@ class UrlEncoder extends EncodeDecoderBase {
 	 * Sets language for the encoder either from the URl or from the TSFE.
 	 *
 	 * @return void
+	 * @throws \Exception
 	 */
 	protected function setLanguage() {
-		if (isset($this->urlParameters['L']) && MathUtility::canBeInterpretedAsInteger($this->urlParameters['L'])) {
+		if (isset($this->urlParameters['L'])) {
+			$this->validateLanguageParameter($this->urlParameters['L']);
 			$this->sysLanguageUid = (int)$this->urlParameters['L'];
 		} else {
 			$this->sysLanguageUid = (int)$this->tsfe->sys_language_uid;
@@ -1354,6 +1356,42 @@ class UrlEncoder extends EncodeDecoderBase {
 		$regExp = '~(/{2,})$~';
 		if (preg_match($regExp, $this->encodedUrl)) {
 			$this->encodedUrl = preg_replace($regExp, '/', $this->encodedUrl);
+		}
+	}
+
+	/**
+	 * Checks if the language is available.
+	 *
+	 * @param int|string $sysLanguageUid
+	 * @throws \Exception
+	 */
+	protected function validateLanguageParameter($sysLanguageUid) {
+		static $sysLanguages = null;
+
+		if (!MathUtility::canBeInterpretedAsInteger($sysLanguageUid)) {
+			$isValidLanguageUid = false;
+		}
+		elseif ($sysLanguageUid != 0) {
+			if ($sysLanguages === null) {
+				$sysLanguages = array();
+				$rows = $this->databaseConnection->exec_SELECTgetRows('*', 'sys_language', '1=1' . $this->pageRepository->enableFields('sys_language'));
+				foreach ($rows as $row) {
+					$sysLanguages[(int)$row['uid']] = (int)$row['uid'];
+				}
+			}
+			$isValidLanguageUid = isset($sysLanguages[(int)$sysLanguageUid]);
+		}
+		else {
+			// It is zero
+			$isValidLanguageUid = true;
+		}
+
+		if (!$isValidLanguageUid) {
+			$errorMessage = 'RealURL detected a fatal error: wrong "L" ' .
+				'parameter value. Usually this means that "config.linksVars" does not have ' .
+				'proper limits for the "L" variable. Page generation is aborted due ' .
+				'to this fatal error. Please, re-configure the site correctly.';
+			throw new \Exception($errorMessage, 1482160086);
 		}
 	}
 }
