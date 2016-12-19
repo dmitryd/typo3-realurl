@@ -688,7 +688,7 @@ class UrlEncoder extends EncodeDecoderBase {
 	 * Encodes pre- or postVars according to the given configuration.
 	 *
 	 * @param array $configurationArray
-	 * @return string
+	 * @return array
 	 */
 	protected function encodeUrlParameterBlock(array $configurationArray) {
 		$segments = array();
