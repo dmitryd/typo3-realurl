@@ -23,11 +23,11 @@
         "typo3-ter/realurl": "self.version"
     },
     "require": {
-        "typo3/cms-core": ">=6.2.0,<8.5.0",
+        "typo3/cms-core": "^6.2.14 || ^7.6 || ^8.0",
         "php": ">=5.4.0"
     },
     "require-dev": {
-        "phpunit/phpunit": "~4.8.0"
+        "phpunit/phpunit": "^4.7 || ^5.0"
     },
     "suggest": {
       "typo3-ter/static-info-tables": ">=6.2.0"
@@ -52,7 +52,10 @@
     ],
     "config": {
         "vendor-dir": ".Build/vendor",
-        "bin-dir": ".Build/bin"
+        "bin-dir": ".Build/bin",
+        "preferred-install": {
+            "typo3/cms": "source"
+        }
     },
     "scripts": {
         "post-autoload-dump": [
