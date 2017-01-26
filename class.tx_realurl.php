@@ -1190,7 +1190,13 @@ class tx_realurl extends tx_realurl_baseclass {
 
 		// cHash handling
 		if ($cHashCache) {
+
+			if($GLOBALS['TYPO3_CONF_VARS']['FE']['cHashIncludePageId'] && !$cachedInfo['GET_VARS']['id']) {
+				$cachedInfo['GET_VARS']['id'] = $cachedInfo['id'];
+			}
+
 			$queryString = $this->apiWrapper->implodeArrayForUrl('', $cachedInfo['GET_VARS']);
+
 			$containsRelevantParametersForCHashCreation = count($this->apiWrapper->getRelevantChashParameters($queryString)) > 0;
 
 			if ($containsRelevantParametersForCHashCreation) {
