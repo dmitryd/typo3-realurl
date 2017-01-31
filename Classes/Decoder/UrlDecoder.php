@@ -951,7 +951,19 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 		/** @var \TYPO3\CMS\Core\Utility\RootlineUtility $rootLineUtility */
 		$rootLine = $rootLineUtility->get();
 
-		return is_array($rootLine) && count($rootLine) > 0 ? (int)$rootLine[0]['uid'] : 0;
+		$result = 0;
+		if (is_array($rootLine) && count($rootLine) > 0) {
+			$index = count($rootLine)-1;
+			while($index) {
+				if ($rootLine[$index]['is_siteroot']) {
+					$result=(int)$rootLine[$index]['uid'];
+					break;
+				}
+				$index--;
+			}
+		}
+		
+		return $result;
 	}
 
 	/**
