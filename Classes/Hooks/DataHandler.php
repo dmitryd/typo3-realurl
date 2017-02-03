@@ -181,8 +181,17 @@ class DataHandler implements SingletonInterface {
 			$expireCache = FALSE;
 			if (isset($databaseData['hidden'])) {
 				$expireCache = TRUE;
-			}
-			else {
+			} else if (isset($databaseData['tx_realurl_pathoverride']) || isset($databaseData['tx_realurl_exclude'])) {
+				$expireCache = TRUE;
+				
+				// Updating alternative language pages as well
+				$languageOverlays = BackendUtility::getRecordsByField('pages_language_overlay', 'pid', $pageId);
+				if (is_array($languageOverlays)) {
+					foreach ($languageOverlays as $languageOverlay) {
+						$this->expireCachesForPageAndSubpages($languageOverlay['pid'], $languageOverlay['sys_language_uid']);
+					}
+				}
+			} else {
 				foreach (EncodeDecoderBase::$pageTitleFields as $fieldName) {
 					if (isset($databaseData[$fieldName])) {
 						$expireCache = TRUE;
