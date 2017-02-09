@@ -468,6 +468,7 @@ class UrlEncoder extends EncodeDecoderBase {
 		}
 		if ($page['tx_realurl_pathoverride'] && $page['tx_realurl_pathsegment'] !== '') {
 			$path = trim($page['tx_realurl_pathsegment'], '/');
+			$path = rawurlencode($path);
 			$this->appendToEncodedUrl($path);
 			// Mount points do not work with path override. Having them will
 			// create duplicate path entries but we have to live with this to
@@ -477,6 +478,7 @@ class UrlEncoder extends EncodeDecoderBase {
 			// It is easier to have duplicate entries here (one with MP and
 			// another without it). It does not really matter.
 			if ($page['doktype'] != PageRepository::DOKTYPE_SPACER && $page['doktype'] != PageRepository::DOKTYPE_RECYCLER) {
+				$path = rawurlencode($path);
 				$this->addToPathCache($path);
 			}
 			$result = true;
@@ -539,6 +541,7 @@ class UrlEncoder extends EncodeDecoderBase {
 				});
 				// Technically we could do with `$components = $segments` but it fills better to have overriden string here
 				$segment = implode('/', $segments);
+				$segment = rawurlencode($segment);
 				$components = array($segment);
 				continue;
 			}
@@ -549,6 +552,7 @@ class UrlEncoder extends EncodeDecoderBase {
 					if ($segment === '') {
 						$segment = $this->emptySegmentValue;
 					}
+					$segment = rawurlencode($segment);
 					$components[] = $segment;
 					continue 2;
 				}
