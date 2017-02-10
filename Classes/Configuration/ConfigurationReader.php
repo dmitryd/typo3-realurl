@@ -435,6 +435,9 @@ class ConfigurationReader {
 					}
 				}
 			}
+			if (empty($this->hostName)) {
+				$this->hostName = $GLOBALS['TSFE']->getDomainNameForPid($id);
+			}
 		}
 		if (empty($this->hostName)) {
 			$this->alternativeHostName = $this->hostName = $this->utility->getCurrentHost();
@@ -465,7 +468,7 @@ class ConfigurationReader {
 		$result = FALSE;
 
 		// TODO Consider using PageRepository::getDomainStartPage()
-		$domainRecord = BackendUtility::getDomainStartPage($this->utility->getCurrentHost());
+		$domainRecord = BackendUtility::getDomainStartPage($this->hostName);
 		if (is_array($domainRecord)) {
 			$this->configuration['pagePath']['rootpage_id'] = (int)$domainRecord['pid'];
 			$result = TRUE;
