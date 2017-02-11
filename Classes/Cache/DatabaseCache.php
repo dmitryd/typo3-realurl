@@ -61,8 +61,8 @@ class DatabaseCache implements CacheInterface, SingletonInterface {
 	 * @return void
 	 */
 	public function clearExpiredCacheEntries() {
-		$this->databaseConnection->exec_DELETEquery('tx_realurl_pathdata', 'expire<' . time());
-		$this->databaseConnection->exec_DELETEquery('tx_realurl_urldata', 'expire<' . time());
+		$this->databaseConnection->exec_DELETEquery('tx_realurl_pathdata', 'expire>0 AND expire<' . time());
+		$this->databaseConnection->exec_DELETEquery('tx_realurl_urldata', 'expire>0 AND expire<' . time());
 	}
 
 	/**
