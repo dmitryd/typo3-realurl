@@ -94,7 +94,7 @@ abstract class EncodeDecoderBase {
 	}
 
 	/**
-	 * Creates a query string (without preceeding question mark) from
+	 * Creates a query string (without preceding question mark) from
 	 * parameters.
 	 *
 	 * @param array $parameters
