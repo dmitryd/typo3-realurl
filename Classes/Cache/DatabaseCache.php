@@ -406,7 +406,7 @@ class DatabaseCache implements CacheInterface, SingletonInterface {
 	 */
 	protected function limitTableRecords($tableName) {
 		$cleanedUp = false;
-		if ((mt_rand(0, mt_getrandmax()) % 5) == 0) {
+		if ((mt_rand(0, mt_getrandmax()) % 5000) == 0) {
 			$this->databaseConnection->sql_query('DELETE FROM ' . $tableName .
 				' WHERE uid <= (SELECT t2.uid FROM (SELECT uid FROM ' .
 				$tableName .
