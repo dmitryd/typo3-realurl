@@ -700,8 +700,9 @@ class UrlEncoder extends EncodeDecoderBase {
 		if ($this->hasUrlParameters($configurationArray)) {
 			$previousValue = '';
 			foreach ($configurationArray as $configuration) {
-				// Technically it must always be array!
-				$this->encodeSingleVariable($configuration, $previousValue, $segments);
+				if (is_array($configuration)) {
+					$this->encodeSingleVariable($configuration, $previousValue, $segments);
+				}
 			}
 		}
 
