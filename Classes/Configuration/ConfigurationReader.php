@@ -69,6 +69,9 @@ class ConfigurationReader {
 	/** @var int */
 	protected $mode;
 
+	/** @var \TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController */
+	protected $tsfe;
+
 	/** @var array */
 	protected $urlParameters;
 
@@ -99,6 +102,7 @@ class ConfigurationReader {
 	 */
 	public function __construct($mode, array $urlParameters = array()) {
 		$this->mode = $mode;
+		$this->tsfe = $GLOBALS['TSFE'];
 		$this->urlParameters = $urlParameters;
 		$this->utility = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\Utility', $this);
 
@@ -436,7 +440,7 @@ class ConfigurationReader {
 				}
 			}
 			if (empty($this->hostName)) {
-				$this->hostName = $GLOBALS['TSFE']->getDomainNameForPid($id);
+				$this->hostName = $this->tsfe->getDomainNameForPid($id);
 			}
 		}
 		if (empty($this->hostName)) {
@@ -467,7 +471,6 @@ class ConfigurationReader {
 	protected function setRootPageIdFromDomainRecord() {
 		$result = FALSE;
 
-		// TODO Consider using PageRepository::getDomainStartPage()
 		$domainRecord = BackendUtility::getDomainStartPage($this->hostName);
 		if (is_array($domainRecord)) {
 			$this->configuration['pagePath']['rootpage_id'] = (int)$domainRecord['pid'];
