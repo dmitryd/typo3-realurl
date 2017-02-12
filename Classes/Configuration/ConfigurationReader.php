@@ -439,7 +439,7 @@ class ConfigurationReader {
 					}
 				}
 			}
-			if (empty($this->hostName)) {
+			if (empty($this->hostName) && !$MP) {
 				$this->hostName = $this->tsfe->getDomainNameForPid($id);
 			}
 		}
