@@ -178,6 +178,8 @@ class ext_update {
 	 * Converts CJK characters to url-encoded form.
 	 *
 	 * @see https://github.com/dmitryd/typo3-realurl/issue/378
+	 * @see http://www.regular-expressions.info/unicode.html#script
+	 * @see http://php.net/manual/en/regexp.reference.unicode.php
 	 */
 	protected function updateCJKSpeakingUrls() {
 		$resource = $this->databaseConnection->exec_SELECTquery('uid, speaking_url', 'tx_realurl_urldata', 'speaking_url RLIKE \'' . self::MYSQL_REGEXP_FOR_NON_URL_CHARACTERS . '\'');
