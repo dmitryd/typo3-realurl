@@ -98,7 +98,6 @@ class DataHandler implements SingletonInterface {
 	 */
 	public function processDatamap_afterDatabaseOperations($status, $tableName, $recordId, array $databaseData, /** @noinspection PhpUnusedParameterInspection */ \TYPO3\CMS\Core\DataHandling\DataHandler $dataHandler) {
 		$this->expireCache($status, $tableName, $recordId, $databaseData);
-		//$this->processContentUpdates($status, $tableName, $recordId, $databaseData, $dataHandler);
 		$this->clearAutoConfiguration($tableName, $databaseData);
 		if ($status !== 'new') {
 			$this->clearUrlCacheForAliasChanges($tableName, (int)$recordId);
@@ -107,7 +106,7 @@ class DataHandler implements SingletonInterface {
 
 	/**
 	 * Clears automatic configuration when necessary. Note: we do not check if
-	 * it iss enabled. Even if now it is disabled, later it can be re-enabled
+	 * it is enabled. Even if now it is disabled, later it can be re-enabled
 	 * and suddenly obsolete config will be used. So we clear always.
 	 *
 	 * @param string $tableName
@@ -181,8 +180,17 @@ class DataHandler implements SingletonInterface {
 			$expireCache = FALSE;
 			if (isset($databaseData['hidden'])) {
 				$expireCache = TRUE;
-			}
-			else {
+			} else if (isset($databaseData['tx_realurl_pathoverride']) || isset($databaseData['tx_realurl_exclude'])) {
+				$expireCache = TRUE;
+				
+				// Updating alternative language pages as well
+				$languageOverlays = BackendUtility::getRecordsByField('pages_language_overlay', 'pid', $pageId);
+				if (is_array($languageOverlays)) {
+					foreach ($languageOverlays as $languageOverlay) {
+						$this->expireCachesForPageAndSubpages($languageOverlay['pid'], $languageOverlay['sys_language_uid']);
+					}
+				}
+			} else {
 				foreach (EncodeDecoderBase::$pageTitleFields as $fieldName) {
 					if (isset($databaseData[$fieldName])) {
 						$expireCache = TRUE;
@@ -205,18 +213,20 @@ class DataHandler implements SingletonInterface {
 	 * @return void
 	 */
 	protected function expireCachesForPageAndSubpages($pageId, $languageId, $level = 0) {
-		$this->cache->expireCache($pageId, $languageId);
-		if ($level++ < 20) {
-			$subpages = BackendUtility::getRecordsByField('pages', 'pid', $pageId);
-			if (is_array($subpages)) {
-				$uidList = array();
-				foreach ($subpages as $subpage) {
-					$uidList[] = (int)$subpage['uid'];
-				}
-				unset($subpages);
-				foreach ($uidList as $uid) {
-					$this->cache->expireCache($uid, $languageId);
-					$this->expireCachesForPageAndSubpages($uid, $languageId, $level);
+		if ($pageId) {
+			$this->cache->expireCache($pageId, $languageId);
+			if ($level++ < 20) {
+				$subpages = BackendUtility::getRecordsByField('pages', 'pid', $pageId);
+				if (is_array($subpages)) {
+					$uidList = array();
+					foreach ($subpages as $subpage) {
+						$uidList[] = (int)$subpage['uid'];
+					}
+					unset($subpages);
+					foreach ($uidList as $uid) {
+						$this->cache->expireCache($uid, $languageId);
+						$this->expireCachesForPageAndSubpages($uid, $languageId, $level);
+					}
 				}
 			}
 		}

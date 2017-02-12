@@ -400,9 +400,11 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 
 			$previousValue = '';
 			foreach ($postVars as $postVarConfiguration) {
+				if (!is_array($postVarConfiguration)) {
+					continue;
+				}
 				$this->decodeSingleVariable($postVarConfiguration, $pathSegments, $requestVariables, $previousValue);
-				if (count($pathSegments) == 0) {
-					// TODO Is it correct to break here? fixedPostVars should all present!
+				if (empty($postVars['requireFullEvaluation']) && count($pathSegments) === 0) {
 					break;
 				}
 			}
@@ -1273,7 +1275,7 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 			$this->originalPath = $urlPath;
 			$cacheEntry = $this->doDecoding($urlPath);
 			// Note the newly created cache entry is not saved because it is unsafe!
-			// The user can suppy any number of free form parameters and those
+			// The user can supply any number of free form parameters and those
 			// can get to the cache. On the other hand we cannot store URLs
 			// without parameters because those can be fully legal and entries
 			// without parameters will be useless.

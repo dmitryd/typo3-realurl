@@ -32,6 +32,9 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  */
 class ext_update {
 
+	/** Defines characters that cannot appear in the tx_realurl_data.spealing_url field */
+	const MYSQL_REGEXP_FOR_NON_URL_CHARACTERS = '[^a-zA-Z0-9\._%\-/\?=]';
+
 	/** @var \TYPO3\CMS\Core\Database\DatabaseConnection */
 	protected $databaseConnection;
 
@@ -60,6 +63,7 @@ class ext_update {
 		$this->checkAndUpdatePathCachePrimaryKey();
 		$this->updateRealurlTableStructure();
 		$this->removeUrlDataEntriesWithIgnoredParameters();
+		$this->updateCJKSpeakingUrls();
 
 		if ($locker && (method_exists($locker, 'isAcquired') && $locker->isAcquired() || method_exists($locker, 'getLockStatus') && $locker->getLockStatus())) {
 			$locker->release();
@@ -73,7 +77,7 @@ class ext_update {
 	 * @return bool
 	 */
 	public function access() {
-		return $this->hasOldCacheTables() || $this->pathCacheNeedsUpdates();
+		return $this->hasOldCacheTables() || $this->pathCacheNeedsUpdates() || $this->hasUnencodedCJKCharacters();
 	}
 
 	/**
@@ -142,6 +146,17 @@ class ext_update {
 	}
 
 	/**
+	 * Checks if tx_realurl_urldata has unencoded CJK characters.
+	 *
+	 * @return bool
+	 */
+	protected function hasUnencodedCJKCharacters() {
+		$count = $this->databaseConnection->exec_SELECTcountRows('*', 'tx_realurl_urldata', 'speaking_url RLIKE \'' . self::MYSQL_REGEXP_FOR_NON_URL_CHARACTERS . '\'');
+
+		return ($count > 0);
+	}
+
+	/**
 	 * Checks if path cache table is ok.
 	 *
 	 * @return bool
@@ -156,7 +171,37 @@ class ext_update {
 	 * Removes entries with parameters that should be ignored.
 	 */
 	protected function removeUrlDataEntriesWithIgnoredParameters() {
-		$this->databaseConnection->exec_DELETEquery('tx_realurl_urlcache', 'original_url RLIKE \'(^|&)(utm_[a-z]+|pk_campaign|pk_kwd)=\'');
+		$this->databaseConnection->exec_DELETEquery('tx_realurl_urldata', 'original_url RLIKE \'(^|&)(utm_[a-z]+|pk_campaign|pk_kwd)=\'');
+	}
+
+	/**
+	 * Converts CJK characters to url-encoded form.
+	 *
+	 * @see https://github.com/dmitryd/typo3-realurl/issue/378
+	 * @see http://www.regular-expressions.info/unicode.html#script
+	 * @see http://php.net/manual/en/regexp.reference.unicode.php
+	 */
+	protected function updateCJKSpeakingUrls() {
+		$resource = $this->databaseConnection->exec_SELECTquery('uid, speaking_url', 'tx_realurl_urldata', 'speaking_url RLIKE \'' . self::MYSQL_REGEXP_FOR_NON_URL_CHARACTERS . '\'');
+		while (false !== ($data = $this->databaseConnection->sql_fetch_assoc($resource))) {
+			if (preg_match('/[\p{Han}\p{Hangul}\p{Kannada}\p{Katakana}\p{Hiragana}\p{Tai_Tham}\p{Thai}]+/u', $data['speaking_url'])) {
+				// Note: cannot use parse_url() here because it corrupts CJK characters!
+				list($path, $query) = explode('?', $data['speaking_url']);
+				$segments = explode('/', $path);
+				array_walk($segments, function(&$segment) {
+					$segment = rawurlencode($segment);
+				});
+				$url = implode('/', $segments);
+				if (!empty($query)) {
+					$url .= '?' . $query;
+				}
+
+				$this->databaseConnection->exec_UPDATEquery('tx_realurl_urldata', 'uid=' . (int)$data['uid'], array(
+					'speaking_url' => $url
+				));
+			}
+		}
+		$this->databaseConnection->sql_free_result($resource);
 	}
 
 	/**

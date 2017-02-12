@@ -94,7 +94,7 @@ abstract class EncodeDecoderBase {
 	}
 
 	/**
-	 * Creates a query string (without preceeding question mark) from
+	 * Creates a query string (without preceding question mark) from
 	 * parameters.
 	 *
 	 * @param array $parameters
@@ -251,6 +251,8 @@ abstract class EncodeDecoderBase {
 				}
 				$queryString = $this->createQueryStringFromParameters($collectedParameters);
 			}
+		} else {
+			$queryString = '';
 		}
 
 		return $queryString;
@@ -265,10 +267,10 @@ abstract class EncodeDecoderBase {
 	 */
 	protected function removeIgnoredParametersFromURL($url) {
 		list($path, $queryString) = explode('?', $url, 2);
-		$queryString = $this->removeIgnoredParametersFromQueryString($queryString);
+		$queryString = $this->removeIgnoredParametersFromQueryString((string)$queryString);
 
 		$url = $path;
-		if ($queryString !== '') {
+		if (!empty($queryString)) {
 			$url .= '?';
 		}
 		$url .= $queryString;

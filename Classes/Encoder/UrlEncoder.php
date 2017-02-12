@@ -346,7 +346,7 @@ class UrlEncoder extends EncodeDecoderBase {
 		}
 
 		// First, test if there is an entry in cache for the id
-		if (!$configuration['useUniqueCache'] || $configuration['autoUpdate'] || !($result = $this->getFromAliasCache($configuration, $getVarValue, $languageUid))) {
+		if (!$configuration['useUniqueCache'] || !($result = $this->getFromAliasCache($configuration, $getVarValue, $languageUid))) {
 			$languageEnabled = FALSE;
 			$fieldList = array();
 			if ($configuration['table'] === 'pages') {
@@ -388,7 +388,7 @@ class UrlEncoder extends EncodeDecoderBase {
 				}
 
 				$maxAliasLengthLength = isset($configuration['maxLength']) ? (int)$configuration['maxLength'] : self::MAX_ALIAS_LENGTH;
-				$aliasValue = substr($row[$configuration['alias_field']], 0, $maxAliasLengthLength);
+				$aliasValue = $this->tsfe->csConvObj->substr('utf-8', $row[$configuration['alias_field']], 0, $maxAliasLengthLength);
 
 				# Do not allow aliases to be empty (see issue #1)
 				if (empty($aliasValue)) {
@@ -468,6 +468,7 @@ class UrlEncoder extends EncodeDecoderBase {
 		}
 		if ($page['tx_realurl_pathoverride'] && $page['tx_realurl_pathsegment'] !== '') {
 			$path = trim($page['tx_realurl_pathsegment'], '/');
+			$path = rawurlencode($path);
 			$this->appendToEncodedUrl($path);
 			// Mount points do not work with path override. Having them will
 			// create duplicate path entries but we have to live with this to
@@ -477,6 +478,7 @@ class UrlEncoder extends EncodeDecoderBase {
 			// It is easier to have duplicate entries here (one with MP and
 			// another without it). It does not really matter.
 			if ($page['doktype'] != PageRepository::DOKTYPE_SPACER && $page['doktype'] != PageRepository::DOKTYPE_RECYCLER) {
+				$path = rawurlencode($path);
 				$this->addToPathCache($path);
 			}
 			$result = true;
@@ -539,6 +541,7 @@ class UrlEncoder extends EncodeDecoderBase {
 				});
 				// Technically we could do with `$components = $segments` but it fills better to have overriden string here
 				$segment = implode('/', $segments);
+				$segment = rawurlencode($segment);
 				$components = array($segment);
 				continue;
 			}
@@ -549,6 +552,7 @@ class UrlEncoder extends EncodeDecoderBase {
 					if ($segment === '') {
 						$segment = $this->emptySegmentValue;
 					}
+					$segment = rawurlencode($segment);
 					$components[] = $segment;
 					continue 2;
 				}
@@ -688,7 +692,7 @@ class UrlEncoder extends EncodeDecoderBase {
 	 * Encodes pre- or postVars according to the given configuration.
 	 *
 	 * @param array $configurationArray
-	 * @return string
+	 * @return array
 	 */
 	protected function encodeUrlParameterBlock(array $configurationArray) {
 		$segments = array();
@@ -696,8 +700,9 @@ class UrlEncoder extends EncodeDecoderBase {
 		if ($this->hasUrlParameters($configurationArray)) {
 			$previousValue = '';
 			foreach ($configurationArray as $configuration) {
-				// Technically it must always be array!
-				$this->encodeSingleVariable($configuration, $previousValue, $segments);
+				if (is_array($configuration)) {
+					$this->encodeSingleVariable($configuration, $previousValue, $segments);
+				}
 			}
 		}
 
@@ -946,7 +951,8 @@ class UrlEncoder extends EncodeDecoderBase {
 	}
 
 	/**
-	 * Obtains the value from the alias cache.
+	 * Obtains the value from the alias cache. If a specific alias is requested,
+	 * this function may un-expire the alias if it is marked as expired.
 	 *
 	 * @param array $configuration
 	 * @param string $getVarValue
@@ -956,18 +962,26 @@ class UrlEncoder extends EncodeDecoderBase {
 	 */
 	protected function getFromAliasCache(array $configuration, $getVarValue, $languageUid, $onlyThisAlias = '') {
 		$result = NULL;
+		// We use 'expire=0' condition only if no specific alias is requested. If a specific alias
+		// is requested, we also can fetched expired aliases and un-expire them. This prevents
+		// multiple identical expired alias records.
 		$row = $this->databaseConnection->exec_SELECTgetSingleRow('*', 'tx_realurl_uniqalias',
 				'value_id=' . $this->databaseConnection->fullQuoteStr($getVarValue, 'tx_realurl_uniqalias') .
 				' AND field_alias=' . $this->databaseConnection->fullQuoteStr($configuration['alias_field'], 'tx_realurl_uniqalias') .
 				' AND field_id=' . $this->databaseConnection->fullQuoteStr($configuration['id_field'], 'tx_realurl_uniqalias') .
 				' AND tablename=' . $this->databaseConnection->fullQuoteStr($configuration['table'], 'tx_realurl_uniqalias') .
 				' AND lang=' . intval($languageUid) .
-				($onlyThisAlias ? ' AND value_alias=' . $this->databaseConnection->fullQuoteStr($onlyThisAlias, 'tx_realurl_uniqalias') : '') .
-				' AND expire=0'
+				($onlyThisAlias ? ' AND value_alias=' . $this->databaseConnection->fullQuoteStr($onlyThisAlias, 'tx_realurl_uniqalias') . ' AND expire=0' : ''),
+			'', 'expire'
 		);
 		if (is_array($row)) {
 			$this->usedAliases[] = $row['uid'];
 			$result = $row['value_alias'];
+
+			if ($onlyThisAlias && $row['expire'] > 0) {
+				// We use this alias and need to un-expire it
+				$this->databaseConnection->exec_UPDATEquery('tx_realurl_uniqalias', 'uid=' . $row['uid'], array('expire' => 0));
+			}
 		}
 
 		return $result;
@@ -1219,9 +1233,11 @@ class UrlEncoder extends EncodeDecoderBase {
 	 * Sets language for the encoder either from the URl or from the TSFE.
 	 *
 	 * @return void
+	 * @throws \Exception
 	 */
 	protected function setLanguage() {
-		if (isset($this->urlParameters['L']) && MathUtility::canBeInterpretedAsInteger($this->urlParameters['L'])) {
+		if (isset($this->urlParameters['L'])) {
+			$this->validateLanguageParameter($this->urlParameters['L']);
 			$this->sysLanguageUid = (int)$this->urlParameters['L'];
 		} else {
 			$this->sysLanguageUid = (int)$this->tsfe->sys_language_uid;
@@ -1263,7 +1279,7 @@ class UrlEncoder extends EncodeDecoderBase {
 	protected function storeInAliasCache(array $configuration, $newAliasValue, $idValue, $languageUid) {
 		$newAliasValue = $this->cleanUpAlias($configuration, $newAliasValue);
 
-		if ($configuration['autoUpdate'] && $this->getFromAliasCache($configuration, $idValue, $languageUid, $newAliasValue)) {
+		if ($this->getFromAliasCache($configuration, $idValue, $languageUid, $newAliasValue)) {
 			return $newAliasValue;
 		}
 
@@ -1345,6 +1361,42 @@ class UrlEncoder extends EncodeDecoderBase {
 		$regExp = '~(/{2,})$~';
 		if (preg_match($regExp, $this->encodedUrl)) {
 			$this->encodedUrl = preg_replace($regExp, '/', $this->encodedUrl);
+		}
+	}
+
+	/**
+	 * Checks if the language is available.
+	 *
+	 * @param int|string $sysLanguageUid
+	 * @throws \Exception
+	 */
+	protected function validateLanguageParameter($sysLanguageUid) {
+		static $sysLanguages = null;
+
+		if (!MathUtility::canBeInterpretedAsInteger($sysLanguageUid)) {
+			$isValidLanguageUid = false;
+		}
+		elseif ($sysLanguageUid != 0) {
+			if ($sysLanguages === null) {
+				$sysLanguages = array();
+				$rows = $this->databaseConnection->exec_SELECTgetRows('*', 'sys_language', '1=1' . $this->pageRepository->enableFields('sys_language'));
+				foreach ($rows as $row) {
+					$sysLanguages[(int)$row['uid']] = (int)$row['uid'];
+				}
+			}
+			$isValidLanguageUid = isset($sysLanguages[(int)$sysLanguageUid]);
+		}
+		else {
+			// It is zero
+			$isValidLanguageUid = true;
+		}
+
+		if (!$isValidLanguageUid) {
+			$errorMessage = 'RealURL detected a fatal error: wrong "L" ' .
+				'parameter value. Usually this means that "config.linksVars" does not have ' .
+				'proper limits for the "L" variable. Page generation is aborted due ' .
+				'to this fatal error. Please, re-configure the site correctly.';
+			throw new \Exception($errorMessage, 1482160086);
 		}
 	}
 }

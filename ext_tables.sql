@@ -30,7 +30,7 @@ CREATE TABLE tx_realurl_uniqalias_cache_map (
 ) ENGINE=InnoDB;
 
 #
-# Table structure for table 'tx_realurl_urlcache'
+# Table structure for table 'tx_realurl_urldata'
 #
 CREATE TABLE tx_realurl_urldata (
 	uid int(11) NOT NULL auto_increment,
@@ -51,7 +51,7 @@ CREATE TABLE tx_realurl_urldata (
 ) ENGINE=InnoDB;
 
 #
-# Table structure for table 'tx_realurl_pathcache'
+# Table structure for table 'tx_realurl_pathdata'
 #
 CREATE TABLE tx_realurl_pathdata (
 	uid int(11) NOT NULL auto_increment,
