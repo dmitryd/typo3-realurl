@@ -98,7 +98,6 @@ class DataHandler implements SingletonInterface {
 	 */
 	public function processDatamap_afterDatabaseOperations($status, $tableName, $recordId, array $databaseData, /** @noinspection PhpUnusedParameterInspection */ \TYPO3\CMS\Core\DataHandling\DataHandler $dataHandler) {
 		$this->expireCache($status, $tableName, $recordId, $databaseData);
-		//$this->processContentUpdates($status, $tableName, $recordId, $databaseData, $dataHandler);
 		$this->clearAutoConfiguration($tableName, $databaseData);
 		if ($status !== 'new') {
 			$this->clearUrlCacheForAliasChanges($tableName, (int)$recordId);
