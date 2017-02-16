@@ -183,7 +183,7 @@ class UrlEncoderTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 		$parameters = $this->getParametersForPage(2);
 		$encoder = GeneralUtility::makeInstance('DmitryDulepov\Realurl\Encoder\UrlEncoder');
 		$encoder->encodeUrl($parameters);
-		$this->assertEquals('index.php?id=2', $parameters['LD']['totalURL'], 'Normal page with child-pages');
+		$this->assertEquals('index.php?id=2', $parameters['LD']['totalURL'], 'tx_realurl_disable TSFE register does not disable encoding');
 	}
 
 	/**
