@@ -1397,7 +1397,7 @@ class UrlEncoder extends EncodeDecoderBase {
 
 		if (!$isValidLanguageUid) {
 			$errorMessage = 'RealURL detected a fatal error: wrong "L" ' .
-				'parameter value. Usually this means that "config.linksVars" does not have ' .
+				'parameter value. Usually this means that "config.linkVars" does not have ' .
 				'proper limits for the "L" variable. Page generation is aborted due ' .
 				'to this fatal error. Please, re-configure the site correctly.';
 			throw new \Exception($errorMessage, 1482160086);
