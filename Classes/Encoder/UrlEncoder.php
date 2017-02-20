@@ -1396,10 +1396,11 @@ class UrlEncoder extends EncodeDecoderBase {
 		}
 
 		if (!$isValidLanguageUid) {
+			$this->tsfe->set_no_cache(sprintf('Bad "L" parameter ("%s") was detected by realurl', addslashes($sysLanguageUid)));
 			$errorMessage = 'RealURL detected a fatal error: wrong "L" ' .
-				'parameter value. Usually this means that "config.linksVars" does not have ' .
-				'proper limits for the "L" variable. Page generation is aborted due ' .
-				'to this fatal error. Please, re-configure the site correctly.';
+				'parameter value. Usually this means that "config.linkVars" does not have ' .
+				'proper limits for the "L" variable or "typolink.addQueryString" is used incorrectly. ' .
+				'Read more at https://bit.ly/badLarg';
 			throw new \Exception($errorMessage, 1482160086);
 		}
 	}
