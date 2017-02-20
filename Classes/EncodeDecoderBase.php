@@ -242,7 +242,7 @@ abstract class EncodeDecoderBase {
 					if ($parameterName !== '') {
 						$parameterName = urldecode($parameterName);
 						if (preg_match($ignoredParametersRegExp, $parameterName)) {
-							$this->ignoredUrlParameters[$parameterName] = $parameterValue;
+							$this->ignoredUrlParameters[$parameterName] = urldecode($parameterValue);
 						}
 						else {
 							$collectedParameters[$parameterName] = urldecode($parameterValue);
