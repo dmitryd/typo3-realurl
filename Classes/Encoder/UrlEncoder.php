@@ -1397,10 +1397,9 @@ class UrlEncoder extends EncodeDecoderBase {
 
 		if (!$isValidLanguageUid) {
 			$this->tsfe->set_no_cache(sprintf('Bad "L" parameter ("%s") was detected by realurl', addslashes($sysLanguageUid)));
-			$errorMessage = 'RealURL detected a fatal error: wrong "L" ' .
-				'parameter value. Usually this means that "config.linkVars" does not have ' .
-				'proper limits for the "L" variable or "typolink.addQueryString" is used incorrectly. ' .
-				'Read more at https://bit.ly/badLarg';
+			$errorMessage = 'RealURL detected an invalid "L" ' .
+				'parameter value. Bad url is: "' . $this->urlToEncode . '". ' .
+				'More information can be found at https://bit.ly/badLarg';
 			throw new \Exception($errorMessage, 1482160086);
 		}
 	}
