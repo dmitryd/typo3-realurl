@@ -5,7 +5,6 @@ if (!isset($GLOBALS['TCA']['pages']['columns']['tx_realurl_pathsegment'])) {
 	\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addTCAcolumns('pages', array(
 		'tx_realurl_pathsegment' => array(
 			'label' => 'LLL:EXT:realurl/Resources/Private/Language/locallang_db.xlf:pages.tx_realurl_pathsegment',
-			'displayCond' => 'FIELD:tx_realurl_exclude:!=:1',
 			'exclude' => 1,
 			'config' => array (
 				'type' => 'input',
