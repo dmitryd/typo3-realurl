@@ -112,6 +112,42 @@ class Utility {
 	}
 
 	/**
+	 * Generates stack trace.
+	 *
+	 * @return string
+	 */
+	public function generateStackTrace() {
+		$trace = debug_backtrace();
+		array_shift($trace);
+		$traceCount = count($trace);
+		$tracePointer = 0;
+		$lines = array();
+		foreach ($trace as $traceEntry) {
+			$codeLine = '';
+			if (isset($traceEntry['class']) && $traceEntry['class']) {
+				$codeLine .= $traceEntry['class'];
+				$codeLine .= (isset($traceEntry['type']) && $traceEntry['type']) ? $traceEntry['type'] : '::';
+			}
+			if (isset($traceEntry['function']) && $traceEntry['function']) {
+				$codeLine .= $traceEntry['function'];
+				$codeLine .= isset($traceEntry['args']) && is_array($traceEntry['args']) ? $this->dumpFunctionArguments($traceEntry['args']) : '()';
+				$codeLine .= ' ';
+			}
+			$codeLine .= 'at ';
+			$codeLine .= ((isset($traceEntry['file']) && $traceEntry['file']) ? $traceEntry['file'] : '(unknown)');
+			$codeLine .= ':';
+			$codeLine .= ((isset($traceEntry['line']) && $traceEntry['line']) ? $traceEntry['line'] : '(?)');
+
+			$lines[] = sprintf('  %3d: %s', $traceCount - $tracePointer, $codeLine);
+			$tracePointer++;
+		}
+		// Free memory
+		unset($trace);
+
+		return implode(LF, $lines) . LF . LF;
+	}
+
+	/**
 	 * Returns the cache to use.
 	 *
 	 * @return CacheInterface
@@ -149,5 +185,42 @@ class Utility {
 		}
 
 		return $cachedHost;
+	}
+
+	/**
+	 * Dumps function arguments in a log-friendly way.
+	 *
+	 * @param array $arguments
+	 * @return string
+	 */
+	protected function dumpFunctionArguments(array $arguments) {
+		$dumpedArguments = array();
+		foreach ($arguments as $argument) {
+			if (is_numeric($argument)) {
+				$dumpedArguments[] = $argument;
+			} elseif (is_string($argument)) {
+				if (strlen($argument) > 80) {
+					$argument = substr($argument, 0, 30) . '...';
+				}
+				$argument = addslashes($argument);
+				$argument = preg_replace('/\r/', '\r', $argument);
+				$argument = preg_replace('/\n/', '\n', $argument);
+				$dumpedArguments[] = '\'' . $argument . '\'';
+			}
+			elseif (is_null($argument)) {
+				$dumpedArguments[] = 'null';
+			}
+			elseif (is_object($argument)) {
+				$dumpedArguments[] = get_class($argument);
+			}
+			elseif (is_array($argument)) {
+				$dumpedArguments[] = 'array(' . (count($arguments) ? '...' : '') . ')';
+			}
+			else {
+				$dumpedArguments[] = gettype($argument);
+			}
+		}
+
+		return '(' . implode(', ', $dumpedArguments) . ')';
 	}
 }
