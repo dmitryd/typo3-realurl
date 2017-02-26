@@ -98,10 +98,11 @@ abstract class EncodeDecoderBase {
 	 * parameters.
 	 *
 	 * @param array $parameters
+	 * @param bool  $rawurlencodeParamName
 	 * @return mixed
 	 */
-	protected function createQueryStringFromParameters(array $parameters) {
-		return substr(GeneralUtility::implodeArrayForUrl('', $parameters), 1);
+	protected function createQueryStringFromParameters(array $parameters, $rawurlencodeParamName = true) {
+		return substr(GeneralUtility::implodeArrayForUrl('', $parameters, '', false, $rawurlencodeParamName), 1);
 	}
 
 	/**
