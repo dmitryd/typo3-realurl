@@ -182,24 +182,6 @@ abstract class EncodeDecoderBase {
 	}
 
 	/**
-	 * Obtains URL with all query parameters sorted.
-	 *
-	 * @param string $url
-	 * @return string
-	 */
-	protected function getSortedUrl($url) {
-		$urlParts = parse_url($url);
-		$sortedUrl = $urlParts['path'];
-		if ($urlParts['query']) {
-			parse_str($url, $parameters);
-			$this->sortArrayDeep($parameters);
-			$sortedUrl .= '?' . $this->createQueryStringFromParameters($parameters);
-		}
-
-		return $sortedUrl;
-	}
-
-	/**
 	 * Initializes the instance.
 	 *
 	 * @throws \Exception
