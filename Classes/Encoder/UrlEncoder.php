@@ -278,7 +278,8 @@ class UrlEncoder extends EncodeDecoderBase {
 			!$this->isSimulateStaticEnabled() &&
 			!$this->isInWorkspace() &&
 			$this->isTypo3Url() &&
-			$this->isProperTsfe()
+			$this->isProperTsfe() &&
+			TYPO3_MODE == 'FE'
 		;
 	}
 
