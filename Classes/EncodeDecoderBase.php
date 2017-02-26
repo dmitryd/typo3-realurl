@@ -101,7 +101,7 @@ abstract class EncodeDecoderBase {
 	 * @return mixed
 	 */
 	protected function createQueryStringFromParameters(array $parameters) {
-		return substr(GeneralUtility::implodeArrayForUrl('', $parameters), 1);
+		return substr(GeneralUtility::implodeArrayForUrl('', $parameters, '', false, true), 1);
 	}
 
 	/**
