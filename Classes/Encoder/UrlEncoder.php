@@ -278,7 +278,8 @@ class UrlEncoder extends EncodeDecoderBase {
 			!$this->isSimulateStaticEnabled() &&
 			!$this->isInWorkspace() &&
 			$this->isTypo3Url() &&
-			$this->isProperTsfe()
+			$this->isProperTsfe() &&
+			TYPO3_MODE == 'FE'
 		;
 	}
 
@@ -975,7 +976,7 @@ class UrlEncoder extends EncodeDecoderBase {
 				' AND field_id=' . $this->databaseConnection->fullQuoteStr($configuration['id_field'], 'tx_realurl_uniqalias') .
 				' AND tablename=' . $this->databaseConnection->fullQuoteStr($configuration['table'], 'tx_realurl_uniqalias') .
 				' AND lang=' . intval($languageUid) .
-				($onlyThisAlias ? ' AND value_alias=' . $this->databaseConnection->fullQuoteStr($onlyThisAlias, 'tx_realurl_uniqalias') . ' AND expire=0' : ''),
+				($onlyThisAlias ? ' AND value_alias=' . $this->databaseConnection->fullQuoteStr($onlyThisAlias, 'tx_realurl_uniqalias') : ' AND expire=0'),
 			'', 'expire'
 		);
 		if (is_array($row)) {
@@ -1377,7 +1378,12 @@ class UrlEncoder extends EncodeDecoderBase {
 	protected function validateLanguageParameter($sysLanguageUid) {
 		static $sysLanguages = null;
 
-		if (!MathUtility::canBeInterpretedAsInteger($sysLanguageUid)) {
+		if (trim($sysLanguageUid) === '') {
+			// Allow this case because some people use "L=" for the default language.
+			// We convert this to 0 in the setLanguage().
+			$isValidLanguageUid = true;
+		}
+		elseif (!MathUtility::canBeInterpretedAsInteger($sysLanguageUid)) {
 			$isValidLanguageUid = false;
 		}
 		elseif ($sysLanguageUid != 0) {
@@ -1396,11 +1402,12 @@ class UrlEncoder extends EncodeDecoderBase {
 		}
 
 		if (!$isValidLanguageUid) {
-			$errorMessage = 'RealURL detected a fatal error: wrong "L" ' .
-				'parameter value. Usually this means that "config.linksVars" does not have ' .
-				'proper limits for the "L" variable. Page generation is aborted due ' .
-				'to this fatal error. Please, re-configure the site correctly.';
-			throw new \Exception($errorMessage, 1482160086);
+			$this->tsfe->set_no_cache(sprintf('Bad "L" parameter ("%s") was detected by realurl', addslashes($sysLanguageUid)));
+			$commonErrorMessagePart = 'RealURL could not process "' . $this->urlToEncode . '" because "L" parameter is invalid. ';
+			error_log($commonErrorMessagePart . 'Explanation can be found at ' .
+				'https://bit.ly/badLarg. Stack trace:' . LF . $this->utility->generateStackTrace()
+			);
+			throw new \Exception($commonErrorMessagePart . 'More information can be found in the web server error log.', 1482160086);
 		}
 	}
 }

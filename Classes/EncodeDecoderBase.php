@@ -101,7 +101,7 @@ abstract class EncodeDecoderBase {
 	 * @return mixed
 	 */
 	protected function createQueryStringFromParameters(array $parameters) {
-		return substr(GeneralUtility::implodeArrayForUrl('', $parameters), 1);
+		return substr(GeneralUtility::implodeArrayForUrl('', $parameters, '', false, true), 1);
 	}
 
 	/**
@@ -182,24 +182,6 @@ abstract class EncodeDecoderBase {
 	}
 
 	/**
-	 * Obtains URL with all query parameters sorted.
-	 *
-	 * @param string $url
-	 * @return string
-	 */
-	protected function getSortedUrl($url) {
-		$urlParts = parse_url($url);
-		$sortedUrl = $urlParts['path'];
-		if ($urlParts['query']) {
-			parse_str($url, $parameters);
-			$this->sortArrayDeep($parameters);
-			$sortedUrl .= '?' . $this->createQueryStringFromParameters($parameters);
-		}
-
-		return $sortedUrl;
-	}
-
-	/**
 	 * Initializes the instance.
 	 *
 	 * @throws \Exception
@@ -242,7 +224,7 @@ abstract class EncodeDecoderBase {
 					if ($parameterName !== '') {
 						$parameterName = urldecode($parameterName);
 						if (preg_match($ignoredParametersRegExp, $parameterName)) {
-							$this->ignoredUrlParameters[$parameterName] = $parameterValue;
+							$this->ignoredUrlParameters[$parameterName] = urldecode($parameterValue);
 						}
 						else {
 							$collectedParameters[$parameterName] = urldecode($parameterValue);
