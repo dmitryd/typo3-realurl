@@ -1115,7 +1115,7 @@ class UrlEncoder extends EncodeDecoderBase {
 	 */
 	protected function isSimulateStaticEnabled() {
 		return isset($this->tsfe->config['config']['simulateStaticDocuments']) && (bool)$this->tsfe->config['config']['simulateStaticDocuments'] ||
-			isset($this->tsfe->TYPO3_CONF_VARS['FE']['simulateStaticDocuments']) && (bool)$this->tsfe->TYPO3_CONF_VARS['FE']['simulateStaticDocuments']
+			isset($GLOBALS['TYPO3_CONF_VARS']['FE']['simulateStaticDocuments']) && (bool)$GLOBALS['TYPO3_CONF_VARS']['FE']['simulateStaticDocuments']
 		;
 	}
 
