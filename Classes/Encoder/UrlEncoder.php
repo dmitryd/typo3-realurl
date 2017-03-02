@@ -64,9 +64,6 @@ class UrlEncoder extends EncodeDecoderBase {
 	/** @var array */
 	protected $originalUrlParameters = array();
 
-	/** @var PageRepository */
-	protected $pageRepository;
-
 	/** @var int */
 	protected $sysLanguageUid;
 
