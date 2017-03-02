@@ -275,8 +275,7 @@ class UrlEncoder extends EncodeDecoderBase {
 			!$this->isSimulateStaticEnabled() &&
 			!$this->isInWorkspace() &&
 			$this->isTypo3Url() &&
-			$this->isProperTsfe() &&
-			TYPO3_MODE == 'FE'
+			$this->isProperTsfe()
 		;
 	}
 
@@ -1094,7 +1093,10 @@ class UrlEncoder extends EncodeDecoderBase {
 	 * @return bool
 	 */
 	protected function isProperTsfe() {
-		return ($this->tsfe instanceof TypoScriptFrontendController) && ($this->tsfe->id > 0);
+		return ($this->tsfe instanceof TypoScriptFrontendController) &&
+			($this->tsfe->id > 0) &&
+			(is_array($this->tsfe->config['config']))
+		;
 	}
 
 	/**
