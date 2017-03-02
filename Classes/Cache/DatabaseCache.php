@@ -407,11 +407,15 @@ class DatabaseCache implements CacheInterface, SingletonInterface {
 	protected function limitTableRecords($tableName) {
 		$cleanedUp = false;
 		if ((mt_rand(0, mt_getrandmax()) % 5000) == 0) {
-			$this->databaseConnection->sql_query('DELETE FROM ' . $tableName .
-				' WHERE uid <= (SELECT t2.uid FROM (SELECT uid FROM ' .
-				$tableName .
-				' ORDER BY uid DESC LIMIT ' . self::$maximumNumberOfRecords . ',1) t2)'
+			$this->databaseConnection->sql_query('START TRANSACTION');
+			// Using exec_SELECTgetRows instead of exec_SELECTsingleRow because we need to set the limit
+			list($row) = $this->databaseConnection->exec_SELECTgetRows('uid', $tableName,
+				'', '', 'uid DESC', self::$maximumNumberOfRecords . ',1'
 			);
+			if (is_array($row)) {
+				$this->databaseConnection->exec_DELETEquery($tableName, 'uid<=' . $row['uid']);
+			}
+			$this->databaseConnection->sql_query('COMMIT');
 			$cleanedUp = ($this->databaseConnection->sql_affected_rows() > 0);
 		}
 
