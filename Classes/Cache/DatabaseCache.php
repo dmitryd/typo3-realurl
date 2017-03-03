@@ -61,8 +61,14 @@ class DatabaseCache implements CacheInterface, SingletonInterface {
 	 * @return void
 	 */
 	public function clearExpiredCacheEntries() {
-		$this->databaseConnection->exec_DELETEquery('tx_realurl_pathdata', 'expire>0 AND expire<' . time());
-		$this->databaseConnection->exec_DELETEquery('tx_realurl_urldata', 'expire>0 AND expire<' . time());
+		$currentTime = time();
+		$this->databaseConnection->sql_query('START TRANSACTION');
+		$this->databaseConnection->exec_DELETEquery('tx_realurl_pathdata', 'expire>0 AND expire<' . $currentTime);
+		$this->databaseConnection->exec_DELETEquery('tx_realurl_urldata', 'expire>0 AND expire<' . $currentTime);
+		$this->databaseConnection->exec_DELETEquery('tx_realurl_uniqalias', 'expire>0 AND expire<' . $currentTime);
+		$this->databaseConnection->exec_DELETEquery('tx_realurl_uniqalias_cache_map',
+			'alias_uid NOT IN (SELECT uid FROM tx_realurl_uniqalias) OR url_cache_id NOT IN (SELECT uid FROM tx_realurl_urldata)');
+		$this->databaseConnection->sql_query('COMMIT');
 	}
 
 	/**
@@ -145,6 +151,19 @@ class DatabaseCache implements CacheInterface, SingletonInterface {
 		}
 
 		$this->databaseConnection->sql_query('COMMIT');
+	}
+
+	/**
+	 * Expires URL cache by cache id.
+	 *
+	 * @param string $cacheId
+	 * @param int $expirationTime
+	 * @return void
+	 */
+	public function expireUrlCacheById($cacheId, $expirationTime) {
+		$this->databaseConnection->exec_UPDATEquery('tx_realurl_urldata', 'uid=' . (int)$cacheId . ' AND expire<>0', array(
+			'expire' => $expirationTime
+		));
 	}
 
 	/**
