@@ -89,6 +89,15 @@ interface CacheInterface {
 	public function expireCache($pageId, $languageId = null);
 
 	/**
+	 * Expires URL cache by cache id.
+	 *
+	 * @param string $cacheId
+	 * @param int $expirationTime
+	 * @return void
+	 */
+	public function expireUrlCacheById($cacheId, $expirationTime);
+
+	/**
 	 * Gets the entry from cache.
 	 *
 	 * @param int $rootPageId

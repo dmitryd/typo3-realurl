@@ -132,17 +132,38 @@ class DataHandler implements SingletonInterface {
 			if ($tableName == 'pages_language_overlay') {
 				$tableName = 'pages';
 			}
+			$languageId = 0;
+			if (isset($GLOBALS['TCA'][$tableName]['ctrl']['languageField']) && isset($GLOBALS['TCA'][$tableName]['ctrl']['transOrigPointerField'])) {
+				// tx_realurl_uniqalias* tables store uid of records in the
+				// main language. We have to find the uid of the current
+				// record in the main language to proceed.
+				//
+				// We disable deleteClause here because this function is also
+				// called when the aliases record is deleted.
+				$record = BackendUtility::getRecord($tableName, $recordId, '*', '', false);
+				if ($record) {
+					$languageField = $GLOBALS['TCA'][$tableName]['ctrl']['languageField'];
+					$languageId = (int)$record[$languageField];
+					if ($languageId > 0) {
+						// Can't use !== 0 here because we need to ignore "$languageId === -1"
+						$transOrigPointerField = (int)$GLOBALS['TCA'][$tableName]['ctrl']['transOrigPointerField'];
+						$recordId = (int)$record[$transOrigPointerField];
+						unset($transOrigPointerField);
+					}
+				}
+				unset($record);
+			}
 			$expirationTime = time() + 30*24*60*60;
 			// This check would be sufficient for most cases but only when id_field is 'uid' in the configuration
 			$result = $this->databaseConnection->sql_query(
 				'SELECT uid,expire,url_cache_id FROM ' .
 				'tx_realurl_uniqalias LEFT JOIN tx_realurl_uniqalias_cache_map ON uid=alias_uid ' .
 				'WHERE tablename=' . $this->databaseConnection->fullQuoteStr($tableName, 'tx_realurl_uniqalias') . ' ' .
-				'AND value_id=' . $recordId
+				'AND value_id=' . $recordId . ' AND lang=' . $languageId
 			);
 			while (FALSE !== ($data = $this->databaseConnection->sql_fetch_assoc($result))) {
 				if ($data['url_cache_id']) {
-					$this->cache->clearUrlCacheById($data['url_cache_id']);
+					$this->cache->expireUrlCacheById($data['url_cache_id'], $expirationTime);
 				}
 				if ((int)$data['expire'] === 0) {
 					$this->databaseConnection->exec_UPDATEquery('tx_realurl_uniqalias', 'uid=' . (int)$data['uid'], array(
