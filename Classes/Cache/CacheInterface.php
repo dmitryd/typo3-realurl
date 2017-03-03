@@ -34,6 +34,9 @@ namespace DmitryDulepov\Realurl\Cache;
  * extensions can implement this interface and provide their own cache
  * implementations. The implementation class is set in the RealURL configuration.
  *
+ * WARNING! This interface is still not stable! It can be dropped in the future
+ * completly!
+ *
  * @package DmitryDulepov\Realurl\Cache
  */
 interface CacheInterface {
