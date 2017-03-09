@@ -8,6 +8,7 @@
     "license": "GPL-3.0+",
     "conflict": {
         "bednee/cooluri": ">0.0.1",
+		"helhum/realurl": ">0.0.1",
         "typo3-ter/cooluri": ">=0.0.1",
         "typo3-ter/simulatestatic": ">0.0.1"
     },
