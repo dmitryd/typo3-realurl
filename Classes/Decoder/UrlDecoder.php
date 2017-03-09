@@ -196,7 +196,7 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 		if ($cacheEntry->getExpiration() > 0) {
 			$newerCacheEntry = $this->cache->getUrlFromCacheByOriginalUrl($cacheEntry->getRootPageId(), $cacheEntry->getOriginalUrl());
 			if ($newerCacheEntry->getExpiration() === 0) {
-				// Note: the above check will fail the first time the oage is visited
+				// Note: the above check will fail the first time the page is visited
 				// because there will be no cache entry yet. However if the visited
 				// page has a URL to itself, then the entry will be detected and
 				// redirection happen starting from the second visit to the
