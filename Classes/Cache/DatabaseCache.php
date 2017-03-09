@@ -61,8 +61,14 @@ class DatabaseCache implements CacheInterface, SingletonInterface {
 	 * @return void
 	 */
 	public function clearExpiredCacheEntries() {
-		$this->databaseConnection->exec_DELETEquery('tx_realurl_pathdata', 'expire>0 AND expire<' . time());
-		$this->databaseConnection->exec_DELETEquery('tx_realurl_urldata', 'expire>0 AND expire<' . time());
+		$currentTime = time();
+		$this->databaseConnection->sql_query('START TRANSACTION');
+		$this->databaseConnection->exec_DELETEquery('tx_realurl_pathdata', 'expire>0 AND expire<' . $currentTime);
+		$this->databaseConnection->exec_DELETEquery('tx_realurl_urldata', 'expire>0 AND expire<' . $currentTime);
+		$this->databaseConnection->exec_DELETEquery('tx_realurl_uniqalias', 'expire>0 AND expire<' . $currentTime);
+		$this->databaseConnection->exec_DELETEquery('tx_realurl_uniqalias_cache_map',
+			'alias_uid NOT IN (SELECT uid FROM tx_realurl_uniqalias) OR url_cache_id NOT IN (SELECT uid FROM tx_realurl_urldata)');
+		$this->databaseConnection->sql_query('COMMIT');
 	}
 
 	/**
@@ -145,6 +151,19 @@ class DatabaseCache implements CacheInterface, SingletonInterface {
 		}
 
 		$this->databaseConnection->sql_query('COMMIT');
+	}
+
+	/**
+	 * Expires URL cache by cache id.
+	 *
+	 * @param string $cacheId
+	 * @param int $expirationTime
+	 * @return void
+	 */
+	public function expireUrlCacheById($cacheId, $expirationTime) {
+		$this->databaseConnection->exec_UPDATEquery('tx_realurl_urldata', 'uid=' . (int)$cacheId . ' AND expire<>0', array(
+			'expire' => $expirationTime
+		));
 	}
 
 	/**
@@ -407,11 +426,15 @@ class DatabaseCache implements CacheInterface, SingletonInterface {
 	protected function limitTableRecords($tableName) {
 		$cleanedUp = false;
 		if ((mt_rand(0, mt_getrandmax()) % 5000) == 0) {
-			$this->databaseConnection->sql_query('DELETE FROM ' . $tableName .
-				' WHERE uid <= (SELECT t2.uid FROM (SELECT uid FROM ' .
-				$tableName .
-				' ORDER BY uid DESC LIMIT ' . self::$maximumNumberOfRecords . ',1) t2)'
+			$this->databaseConnection->sql_query('START TRANSACTION');
+			// Using exec_SELECTgetRows instead of exec_SELECTsingleRow because we need to set the limit
+			list($row) = $this->databaseConnection->exec_SELECTgetRows('uid', $tableName,
+				'', '', 'uid DESC', self::$maximumNumberOfRecords . ',1'
 			);
+			if (is_array($row)) {
+				$this->databaseConnection->exec_DELETEquery($tableName, 'uid<=' . $row['uid']);
+			}
+			$this->databaseConnection->sql_query('COMMIT');
 			$cleanedUp = ($this->databaseConnection->sql_affected_rows() > 0);
 		}
 

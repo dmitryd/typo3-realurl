@@ -64,9 +64,6 @@ class UrlEncoder extends EncodeDecoderBase {
 	/** @var array */
 	protected $originalUrlParameters = array();
 
-	/** @var PageRepository */
-	protected $pageRepository;
-
 	/** @var int */
 	protected $sysLanguageUid;
 
@@ -278,8 +275,7 @@ class UrlEncoder extends EncodeDecoderBase {
 			!$this->isSimulateStaticEnabled() &&
 			!$this->isInWorkspace() &&
 			$this->isTypo3Url() &&
-			$this->isProperTsfe() &&
-			TYPO3_MODE == 'FE'
+			$this->isProperTsfe()
 		;
 	}
 
@@ -1097,7 +1093,10 @@ class UrlEncoder extends EncodeDecoderBase {
 	 * @return bool
 	 */
 	protected function isProperTsfe() {
-		return ($this->tsfe instanceof TypoScriptFrontendController) && ($this->tsfe->id > 0);
+		return ($this->tsfe instanceof TypoScriptFrontendController) &&
+			($this->tsfe->id > 0) &&
+			(is_array($this->tsfe->config['config']))
+		;
 	}
 
 	/**
@@ -1116,7 +1115,7 @@ class UrlEncoder extends EncodeDecoderBase {
 	 */
 	protected function isSimulateStaticEnabled() {
 		return isset($this->tsfe->config['config']['simulateStaticDocuments']) && (bool)$this->tsfe->config['config']['simulateStaticDocuments'] ||
-			isset($this->tsfe->TYPO3_CONF_VARS['FE']['simulateStaticDocuments']) && (bool)$this->tsfe->TYPO3_CONF_VARS['FE']['simulateStaticDocuments']
+			isset($GLOBALS['TYPO3_CONF_VARS']['FE']['simulateStaticDocuments']) && (bool)$GLOBALS['TYPO3_CONF_VARS']['FE']['simulateStaticDocuments']
 		;
 	}
 
