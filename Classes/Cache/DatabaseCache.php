@@ -109,8 +109,8 @@ class DatabaseCache implements CacheInterface, SingletonInterface {
 	 * @return void
 	 */
 	public function clearUrlCacheForPage($pageId) {
-		$this->databaseConnection->sql_query('DELETE FROM tx_realurl_uniqalias_cache_map WHERE url_cache_id IN (SELECT uid FROM tx_realurl_urldata WHERE page_id=' . (int)$pageId . ' AND expire=0)');
-		$this->databaseConnection->exec_DELETEquery('tx_realurl_urldata', 'page_id=' . (int)$pageId . ' AND expire=0');
+		$this->databaseConnection->sql_query('DELETE FROM tx_realurl_uniqalias_cache_map WHERE url_cache_id IN (SELECT uid FROM tx_realurl_urldata WHERE page_id=' . (int)$pageId . ')');
+		$this->databaseConnection->exec_DELETEquery('tx_realurl_urldata', 'page_id=' . (int)$pageId);
 	}
 
 	/**
