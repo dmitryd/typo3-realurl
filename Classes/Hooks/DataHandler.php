@@ -212,7 +212,7 @@ class DataHandler implements SingletonInterface {
 					}
 				}
 			} else {
-				foreach (EncodeDecoderBase::$pageTitleFields as $fieldName) {
+				foreach (EncodeDecoderBase::getPageTitleFields() as $fieldName) {
 					if (isset($databaseData[$fieldName])) {
 						$expireCache = TRUE;
 						break;

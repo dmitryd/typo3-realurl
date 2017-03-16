@@ -61,9 +61,6 @@ abstract class EncodeDecoderBase {
 	/** @var PageRepository */
 	protected $pageRepository = NULL;
 
-	/** @var array */
-	static public $pageTitleFields = array('tx_realurl_pathsegment', 'alias', 'nav_title', 'title', 'uid');
-
 	/** @var int */
 	protected $rootPageId;
 
@@ -195,7 +192,17 @@ abstract class EncodeDecoderBase {
 		$this->separatorCharacter = $this->configuration->get('pagePath/spaceCharacter');
 	}
 
-	/**
+    /**
+     * Gets page title fields from ext conf or default
+     *
+     * @return array
+     */
+    public static function getPageTitleFields() {
+        $configuration = @unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['realurl']);
+        return !empty($configuration['segTitleFieldList']) ? GeneralUtility::trimExplode(',', $configuration['segTitleFieldList']) : array('tx_realurl_pathsegment', 'alias', 'nav_title', 'title', 'uid');
+    }
+
+    /**
 	 * Checks if system runs in non-live workspace
 	 *
 	 * @return boolean

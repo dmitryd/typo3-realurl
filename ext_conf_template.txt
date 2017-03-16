@@ -7,6 +7,9 @@ enableAutoConf = 1
 # cat=basic/enable; type=options[Serialized=0,PHP source (slow!)=1]; label=Automatic configuration file format:Defines how autoconfiguration file is stored. Use "Serialized" because it is 10 times or more faster! Use "PHP source" if you are curious what is generated or want to copy and modify generated configuration.
 autoConfFormat = 0
 
+# cat=basic/enable; type=string; label=Order of page fields lookup for segment construction (old segTitleFieldList): Defaults to "tx_realurl_pathsegment, alias, nav_title, title, uid" if not set.
+segTitleFieldList =
+
 # cat=basic/enable; type=boolean; label=Enable devLog:Debugging-only! Required any 3rd party devLog extension
 enableDevLog = 0
 
