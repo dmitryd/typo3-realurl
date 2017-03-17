@@ -31,6 +31,7 @@ namespace DmitryDulepov\Realurl\Encoder;
 
 use DmitryDulepov\Realurl\Configuration\ConfigurationReader;
 use DmitryDulepov\Realurl\EncodeDecoderBase;
+use DmitryDulepov\Realurl\Exceptions\InvalidLanguageParameterException;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
 use TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer;
@@ -126,9 +127,19 @@ class UrlEncoder extends EncodeDecoderBase {
 		$this->encoderParameters = $encoderParameters;
 		$this->urlToEncode = $encoderParameters['LD']['totalURL'];
 		if ($this->canEncoderExecute()) {
-			$this->executeEncoder();
-			$encoderParameters['LD']['totalURL'] = $this->encodedUrl .
-				(isset($encoderParameters['LD']['sectionIndex']) ? $encoderParameters['LD']['sectionIndex'] : '');
+			try {
+				$this->executeEncoder();
+				$encoderParameters['LD']['totalURL'] = $this->encodedUrl .
+					(isset($encoderParameters['LD']['sectionIndex']) ? $encoderParameters['LD']['sectionIndex'] : '');
+			}
+			catch (InvalidLanguageParameterException $exception) {
+				GeneralUtility::devLog($exception->getMessage(), 'realurl',
+					GeneralUtility::SYSLOG_SEVERITY_WARNING, array(
+						'Stack trace' => $exception->getTrace()
+					)
+				);
+				// Pass through. We just return unencoded URL in such case.
+			}
 		}
 	}
 
@@ -1401,12 +1412,13 @@ class UrlEncoder extends EncodeDecoderBase {
 		}
 
 		if (!$isValidLanguageUid) {
-			$this->tsfe->set_no_cache(sprintf('Bad "L" parameter ("%s") was detected by realurl', addslashes($sysLanguageUid)));
-			$commonErrorMessagePart = 'RealURL could not process "' . $this->urlToEncode . '" because "L" parameter is invalid. ';
-			error_log($commonErrorMessagePart . 'Explanation can be found at ' .
-				'https://bit.ly/badLarg. Stack trace:' . LF . $this->utility->generateStackTrace()
+			$this->tsfe->set_no_cache(
+				sprintf('Bad "L" parameter ("%s") was detected by realurl. ' .
+					'Page caching is disabled to prevent spreading of wrong "L" value.',
+					addslashes($sysLanguageUid)
+				)
 			);
-			throw new \Exception($commonErrorMessagePart . 'More information can be found in the web server error log.', 1482160086);
+			throw new InvalidLanguageParameterException($sysLanguageUid);
 		}
 	}
 }
