@@ -883,8 +883,8 @@ class UrlEncoder extends EncodeDecoderBase {
 			$this->encodePostVarSets();
 			$this->handleFileName();
 
-			$this->addRemainingUrlParameters();
 			$this->trimMultipleSlashes();
+			$this->addRemainingUrlParameters();
 
 			if ($this->encodedUrl === '') {
 				$emptyUrlReturnValue = $this->configuration->get('init/emptyUrlReturnValue') ?: '/';
