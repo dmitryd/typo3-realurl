@@ -958,7 +958,19 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 		/** @var \TYPO3\CMS\Core\Utility\RootlineUtility $rootLineUtility */
 		$rootLine = $rootLineUtility->get();
 
-		return is_array($rootLine) && count($rootLine) > 0 ? (int)$rootLine[0]['uid'] : 0;
+		$result = 0;
+		if (is_array($rootLine) && count($rootLine) > 0) {
+			$index = count($rootLine)-1;
+			while($index) {
+				if ($rootLine[$index]['is_siteroot']) {
+					$result=(int)$rootLine[$index]['uid'];
+					break;
+				}
+				$index--;
+			}
+		}
+		
+		return $result;
 	}
 
 	/**
@@ -1173,7 +1185,7 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 			substr($this->siteScript, 0, 9) !== 'index.php' &&
 			substr($this->siteScript, 0, 1) !== '?' &&
 			$this->siteScript !== 'favicon.ico' &&
-			(!$this->configuration->get('init/respectSimulateStaticURLs') || !preg_match('/^[a-z0-9\-]+\.(\d+)(\.\d+)?\.html/i', $this->siteScript))
+			(!$this->configuration->get('init/respectSimulateStaticURLs') || !preg_match('/^[a-z0-9\-]+\.(.+)(\.\d+)?\.html/i', $this->siteScript))
 		;
 	}
 
