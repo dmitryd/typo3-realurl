@@ -809,6 +809,7 @@ class UrlEncoder extends EncodeDecoderBase {
 				'decodeAlias' => false,
 				'pathParts' => &$segments,
 				'setup' => $configuration,
+				'sysLanguageUid' => $this->sysLanguageUid,
 			);
 			$getVarValue = GeneralUtility::callUserFunction($configuration['userFunc'], $userFuncParameters, $this);
 			if (is_numeric($getVarValue) || is_string($getVarValue)) {
