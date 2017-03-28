@@ -92,15 +92,17 @@ class PathCacheController extends BackendModuleController {
 		}
 		ksort($pageIds);
 
-		$combination = $pagePath . '_' . implode('_', $pageIds);
-		if (!isset($addedCombinations[$combination])) {
-			$addedCombinations[$combination] = true;
+		if (count($pageIds) > 0) {
+			$combination = $pagePath . '_' . implode('_', $pageIds);
+			if (!isset($addedCombinations[$combination])) {
+				$addedCombinations[$combination] = true;
 
-			$message = LocalizationUtility::translate('module.path_cache.duplicate_path', 'realurl', array($pagePath, implode(', ', $pageIds)));
+				$message = LocalizationUtility::translate('module.path_cache.duplicate_path', 'realurl', array($pagePath, implode(', ', $pageIds)));
 
-			$flashMessage = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Messaging\\FlashMessage', $message, '', FlashMessage::ERROR);
-			/** @var \TYPO3\CMS\Core\Messaging\FlashMessage $flashMessage */
-			$this->controllerContext->getFlashMessageQueue()->enqueue($flashMessage);
+				$flashMessage = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Messaging\\FlashMessage', $message, '', FlashMessage::ERROR);
+				/** @var \TYPO3\CMS\Core\Messaging\FlashMessage $flashMessage */
+				$this->controllerContext->getFlashMessageQueue()->enqueue($flashMessage);
+			}
 		}
 	}
 

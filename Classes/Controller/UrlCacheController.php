@@ -130,13 +130,15 @@ class UrlCacheController extends BackendModuleController {
 		}
 		ksort($pageIds);
 
-		$combination = $speakingUrl . implode(' ', $pageIds);
-		if (!isset($addedCombinations[$combination])) {
-			$message = LocalizationUtility::translate('module.url_cache.duplicate_url', 'realurl', array($speakingUrl, implode(', ', $pageIds)));
+		if (count($pageIds) > 0) {
+			$combination = $speakingUrl . implode(' ', $pageIds);
+			if (!isset($addedCombinations[$combination])) {
+				$message = LocalizationUtility::translate('module.url_cache.duplicate_url', 'realurl', array($speakingUrl, implode(', ', $pageIds)));
 
-			$flashMessage = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Messaging\\FlashMessage', $message, '', FlashMessage::ERROR);
-			/** @var \TYPO3\CMS\Core\Messaging\FlashMessage $flashMessage */
-			$this->controllerContext->getFlashMessageQueue()->enqueue($flashMessage);
+				$flashMessage = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Messaging\\FlashMessage', $message, '', FlashMessage::ERROR);
+				/** @var \TYPO3\CMS\Core\Messaging\FlashMessage $flashMessage */
+				$this->controllerContext->getFlashMessageQueue()->enqueue($flashMessage);
+			}
 		}
 	}
 
