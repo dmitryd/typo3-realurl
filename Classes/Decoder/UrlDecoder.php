@@ -943,27 +943,6 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 	}
 
 	/**
-	 * Checks if the current root page is inside the rootline
-	 * of the given page
-	 *
-	 * @param int $pageUid
-	 * @return boolean
-	 */
-	protected function isPageInRootlineOfRootPage($pageUid) {
-		$rootLineUtility = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Utility\\RootlineUtility', $pageUid);
-		/** @var \TYPO3\CMS\Core\Utility\RootlineUtility $rootLineUtility */
-		$rootLine = $rootLineUtility->get();
-
-		foreach ((array) $rootLine as $page) {
-			if ($page['uid'] == $this->rootPageId) {
-				return true;
-			}
-		}
-
-		return false;
-	}
-
-	/**
 	 * Parses the URL and validates the result. This function will strip possible
 	 * query string from speaking URL (we only need to decode the speaking URL!)
 	 *
@@ -1130,6 +1109,30 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 	 */
 	protected function initializeConfiguration() {
 		$this->configuration = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\Configuration\\ConfigurationReader', ConfigurationReader::MODE_DECODE);
+	}
+
+	/**
+	 * Checks if the current root page is inside the rootline
+	 * of the given page
+	 *
+	 * @param int $pageUid
+	 * @return boolean
+	 */
+	protected function isPageInRootlineOfRootPage($pageUid) {
+		$result = false;
+
+		$rootLineUtility = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Utility\\RootlineUtility', $pageUid);
+		/** @var \TYPO3\CMS\Core\Utility\RootlineUtility $rootLineUtility */
+		$rootLine = $rootLineUtility->get();
+
+		foreach ((array)$rootLine as $page) {
+			if ($page['uid'] == $this->rootPageId) {
+				$result = true;
+				break;
+			}
+		}
+
+		return $result;
 	}
 
 	/**
