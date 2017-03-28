@@ -84,8 +84,10 @@ class PathCacheController extends BackendModuleController {
 			/** @var \DmitryDulepov\Realurl\Domain\Model\PathCacheEntry $entry */
 			$pageId = (int)$entry->getPageId();
 			if (!isset($pageIds[$pageId])) {
-				$recordPath = rtrim(BackendUtility::getRecordPath($pageId, '', 300), '/');
-				$pageIds[$pageId] = sprintf('%d (%s)', $pageId, $recordPath);
+				if ($this->doesBackendUserHaveAccessToPage($pageId)) {
+					$recordPath = rtrim(BackendUtility::getRecordPath($pageId, '', 300), '/');
+					$pageIds[$pageId] = sprintf('%d (%s)', $pageId, $recordPath);
+				}
 			}
 		}
 		ksort($pageIds);
