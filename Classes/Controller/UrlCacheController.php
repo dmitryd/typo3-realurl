@@ -23,8 +23,11 @@ namespace DmitryDulepov\Realurl\Controller;
 *  This copyright notice MUST APPEAR in all copies of the script!
 ***************************************************************/
 
+use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Persistence\QueryInterface;
+use TYPO3\CMS\Extbase\Persistence\QueryResultInterface;
 use TYPO3\CMS\Extbase\Utility\LocalizationUtility;
 
 /**
@@ -96,9 +99,43 @@ class UrlCacheController extends BackendModuleController {
 	 * Shows a list of URL cache entries.
 	 */
 	public function indexAction() {
+		$entries = $this->getCacheEntries();
+		$this->makeMessagesForDuplicates($entries);
+		$entries->rewind();
 		$this->view->assignMultiple(array(
-			'entries' => $this->getCacheEntries()
+			'entries' => $entries
 		));
+	}
+
+	/**
+	 * Adds a message about duplicate URLs.
+	 *
+	 * @param string $speakingUrl
+	 * @param QueryResultInterface $entries
+	 */
+	protected function addDuplicateMessage($speakingUrl, QueryResultInterface $entries) {
+		// The ugly variable below has to be used because Extbase misses DISTINCT for queries
+		static $addedCombinations = array();
+
+		$pageIds = array();
+		foreach ($entries as $entry) {
+			/** @var \DmitryDulepov\Realurl\Domain\Model\UrlCacheEntry $entry */
+			$pageId = (int)$entry->getPageId();
+			if (!isset($pageIds[$pageId])) {
+				$recordPath = rtrim(BackendUtility::getRecordPath($pageId, '', 300), '/');
+				$pageIds[$pageId] = sprintf('%d (%s)', $pageId, $recordPath);
+			}
+		}
+		ksort($pageIds);
+
+		$combination = $speakingUrl . implode(' ', $pageIds);
+		if (!isset($addedCombinations[$combination])) {
+			$message = LocalizationUtility::translate('module.url_cache.duplicate_url', 'realurl', array($speakingUrl, implode(', ', $pageIds)));
+
+			$flashMessage = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Messaging\\FlashMessage', $message, '', FlashMessage::ERROR);
+			/** @var \TYPO3\CMS\Core\Messaging\FlashMessage $flashMessage */
+			$this->controllerContext->getFlashMessageQueue()->enqueue($flashMessage);
+		}
 	}
 
 	/**
@@ -117,5 +154,38 @@ class UrlCacheController extends BackendModuleController {
 		$query->matching($query->equals('pageId', $pageId));
 
 		return $query->execute();
+	}
+
+	/**
+	 * Checks if there are any duplicates for this url and adds warnings.
+	 *
+	 * @param QueryResultInterface $entries
+	 */
+	protected function makeMessagesForDuplicates(QueryResultInterface $entries) {
+		foreach ($entries as $entry) {
+			/** @var \DmitryDulepov\Realurl\Domain\Model\UrlCacheEntry $entry */
+			$query = $this->repository->createQuery();
+			// Conditions (logical and):
+			// 1. Different page id
+			// 2. Same url
+			// 3. Same root page id
+			/** @noinspection PhpMethodParametersCountMismatchInspection */
+			$query->matching($query->logicalAnd(
+				$query->logicalNot($query->equals('pageId', $entry->getPageId())),
+				$query->equals('rootPageId', $entry->getRootPageId()),
+				$query->equals('speakingUrl', $entry->getSpeakingUrl())
+			));
+			$query->setOrderings(array(
+				'speakingUrl' => QueryInterface::ORDER_ASCENDING,
+			));
+
+			$result = $query->execute();
+			if ($result->count() > 0) {
+				$this->addDuplicateMessage($entry->getSpeakingUrl(), $result);
+			}
+
+			unset($result);
+			unset($query);
+		}
 	}
 }
