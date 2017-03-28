@@ -54,6 +54,9 @@ class UrlEncoder extends EncodeDecoderBase {
 	/** @var array */
 	protected $encoderParameters;
 
+	/** @var string[] */
+	static protected $malformedUrls = array();
+
 	/**
 	 * This is the URL with sorted GET parameters. It is used for cache
 	 * manipulation.
@@ -133,6 +136,7 @@ class UrlEncoder extends EncodeDecoderBase {
 					(isset($encoderParameters['LD']['sectionIndex']) ? $encoderParameters['LD']['sectionIndex'] : '');
 			}
 			catch (InvalidLanguageParameterException $exception) {
+				self::$malformedUrls[$this->urlToEncode] = true;
 				GeneralUtility::devLog($exception->getMessage(), 'realurl',
 					GeneralUtility::SYSLOG_SEVERITY_WARNING, array(
 						'Stack trace' => $exception->getTrace()
@@ -152,36 +156,8 @@ class UrlEncoder extends EncodeDecoderBase {
 	 */
 	public function postProcessEncodedUrl(array &$parameters, ContentObjectRenderer $pObj) {
 		if (isset($parameters['finalTagParts']['url'])) {
-
-			// We must check for absolute URLs here because typolink can force
-			// absolute URLs for pages with restricted access. It prepends
-			// current host always. See http://bugs.typo3.org/view.php?id=18200
-			$testUrl = $parameters['finalTagParts']['url'];
-			if (preg_match('/^https?:\/\/[^\/]+\//', $testUrl)) {
-				$testUrl = preg_replace('/https?:\/\/[^\/]+\/(.*)$/', $this->tsfe->absRefPrefix . '\1', $testUrl);
-			}
-
-			list($testUrl, $section) = GeneralUtility::revExplode('#', $testUrl, 2);
-
-			if (isset(self::$urlPrependRegister[$testUrl])) {
-				$urlKey = $url = $testUrl;
-
-				$url = self::$urlPrependRegister[$urlKey] . ($url{0} != '/' ? '/' : '') . $url;
-				if ($section) {
-					$url .= '#' . $section;
-				}
-
-				unset(self::$urlPrependRegister[$testUrl]);
-
-				// Adjust the URL
-				$parameters['finalTag'] = str_replace(
-					'"' . htmlspecialchars($parameters['finalTagParts']['url']) . '"',
-					'"' . htmlspecialchars($url) . '"',
-					$parameters['finalTag']
-				);
-				$parameters['finalTagParts']['url'] = $url;
-				$pObj->lastTypoLinkUrl = $url;
-			}
+			$this->postProcessEncodedUrlPrepend($parameters, $pObj);
+			$this->postProcessEncodedUrlMalformed($parameters);
 		}
 	}
 
@@ -1419,6 +1395,54 @@ class UrlEncoder extends EncodeDecoderBase {
 				)
 			);
 			throw new InvalidLanguageParameterException($sysLanguageUid);
+		}
+	}
+
+	protected function postProcessEncodedUrlMalformed(array &$parameters) {
+		$url = $parameters['finalTagParts']['url'];
+		if (!isset($parameters['conf']['returnLast']) && isset(self::$malformedUrls[$url]) && strpos($parameters['finalTagParts']['aTagParams'], 'nofollow') === false) {
+			$parameters['finalTagParts']['aTagParams'] .= ' rel="nofollow"';
+			$parameters['finalTag'] = str_replace('href=', 'rel="nofollow" href=', $parameters['finalTag']);
+			unset(self::$malformedUrls[$url]);
+		}
+	}
+
+	/**
+	 *
+	 *
+	 * @param array $parameters
+	 * @param ContentObjectRenderer $pObj
+	 * @return array
+	 */
+	protected function postProcessEncodedUrlPrepend(array &$parameters, ContentObjectRenderer $pObj) {
+		// We must check for absolute URLs here because typolink can force
+		// absolute URLs for pages with restricted access. It prepends
+		// current host always. See http://bugs.typo3.org/view.php?id=18200
+		$testUrl = $parameters['finalTagParts']['url'];
+		if (preg_match('/^https?:\/\/[^\/]+\//', $testUrl)) {
+			$testUrl = preg_replace('/https?:\/\/[^\/]+\/(.*)$/', $this->tsfe->absRefPrefix . '\1', $testUrl);
+		}
+
+		list($testUrl, $section) = GeneralUtility::revExplode('#', $testUrl, 2);
+
+		if (isset(self::$urlPrependRegister[$testUrl])) {
+			$urlKey = $url = $testUrl;
+
+			$url = self::$urlPrependRegister[$urlKey] . ($url{0} != '/' ? '/' : '') . $url;
+			if ($section) {
+				$url .= '#' . $section;
+			}
+
+			unset(self::$urlPrependRegister[$testUrl]);
+
+			// Adjust the URL
+			$parameters['finalTag'] = str_replace(
+				'"' . htmlspecialchars($parameters['finalTagParts']['url']) . '"',
+				'"' . htmlspecialchars($url) . '"',
+				$parameters['finalTag']
+			);
+			$parameters['finalTagParts']['url'] = $url;
+			$pObj->lastTypoLinkUrl = $url;
 		}
 	}
 }
