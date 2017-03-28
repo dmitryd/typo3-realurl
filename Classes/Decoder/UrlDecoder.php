@@ -1168,7 +1168,7 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 			substr($this->siteScript, 0, 9) !== 'index.php' &&
 			substr($this->siteScript, 0, 1) !== '?' &&
 			$this->siteScript !== 'favicon.ico' &&
-			(!$this->configuration->get('init/respectSimulateStaticURLs') || !preg_match('/^[a-z0-9\-]+\.(.+)(\.\d+)?\.html/i', $this->siteScript))
+			(!$this->configuration->get('init/respectSimulateStaticURLs') || !preg_match('/^[a-z0-9\-]+\.([a-z0-9_\-]+)(\.\d+)?\.html/i', $this->siteScript))
 		;
 	}
 
