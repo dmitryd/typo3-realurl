@@ -29,6 +29,7 @@
  ***************************************************************/
 namespace DmitryDulepov\Realurl\Encoder;
 
+use DmitryDulepov\Realurl\Cache\UrlCacheEntry;
 use DmitryDulepov\Realurl\Configuration\ConfigurationReader;
 use DmitryDulepov\Realurl\EncodeDecoderBase;
 use DmitryDulepov\Realurl\Exceptions\InvalidLanguageParameterException;
@@ -1361,11 +1362,31 @@ class UrlEncoder extends EncodeDecoderBase {
 				$cacheEntry->setOriginalUrl($this->originalUrl);
 				$cacheEntry->setSpeakingUrl($this->encodedUrl);
 			}
+			$this->storeInUrlCacheHooks($cacheEntry);
 			$this->cache->putUrlToCache($cacheEntry);
 
 			$cacheId = $cacheEntry->getCacheId();
 			if (!empty($cacheId)) {
 				$this->storeAliasToUrlCacheMapping($cacheId);
+			}
+		}
+	}
+
+	/**
+	 * Calls user-defined hooks before adding the entry to the cache. The hook function
+	 * may not unset the entry!
+	 *
+	 * @param UrlCacheEntry $cacheEntry
+	 * @return void
+	 */
+	protected function storeInUrlCacheHooks(UrlCacheEntry $cacheEntry) {
+		if (is_array($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['storeInUrlCache'])) {
+			foreach($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['storeInUrlCache'] as $userFunc) {
+				$hookParams = array(
+					'pObj' => $this,
+					'cacheEntry' => $cacheEntry,
+				);
+				GeneralUtility::callUserFunction($userFunc, $hookParams, $this);
 			}
 		}
 	}
