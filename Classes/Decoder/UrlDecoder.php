@@ -1089,7 +1089,7 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 				} while ($replaced > 0);
 			} else {
 				// There is a unrecognized postVarSetKey
-				$badPathPartPos = strpos($this->originalPath, $badPathPart);
+				$badPathPartPos = strrpos($this->originalPath, $badPathPart);
 				if ($badPathPartPos > 0) {
 					// We also want to get rid of one slash
 					$badPathPartPos--;
