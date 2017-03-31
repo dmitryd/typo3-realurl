@@ -245,7 +245,6 @@ class DataHandler implements SingletonInterface {
 					}
 					unset($subpages);
 					foreach ($uidList as $uid) {
-						$this->cache->expireCache($uid, $languageId);
 						$this->expireCachesForPageAndSubpages($uid, $languageId, $level);
 					}
 				}
