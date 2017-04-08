@@ -262,7 +262,7 @@ class UrlEncoder extends EncodeDecoderBase {
 		if (is_array($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['encodeSpURL_postProc'])) {
 			foreach($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['encodeSpURL_postProc'] as $userFunc) {
 				$hookParams = array(
-					'pObj' => &$this,
+					'pObj' => $this,
 					'params' => $this->encoderParameters,
 					'URL' => &$this->encodedUrl,
 				);
@@ -823,7 +823,7 @@ class UrlEncoder extends EncodeDecoderBase {
 		if (isset($configuration['userFunc'])) {
 			$previousValue = $getVarValue;
 			$userFuncParameters = array(
-				'pObj' => &$this,
+				'pObj' => $this,
 				'value' => $getVarValue,
 				'decodeAlias' => false,
 				'pathParts' => &$segments,

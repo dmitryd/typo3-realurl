@@ -771,7 +771,7 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 				'isFakeValue' => $isFakeValue,
 				'origValue' => $getVarValue,
 				'pathParts' => &$pathSegments,
-				'pObj' => &$this,
+				'pObj' => $this,
 				'sysLanguageUid' => $this->detectedLanguageId,
 				'value' => $getVarValue,
 				'setup' => $configuration
