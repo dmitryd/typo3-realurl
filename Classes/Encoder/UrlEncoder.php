@@ -125,6 +125,7 @@ class UrlEncoder extends EncodeDecoderBase {
 	 * @return void
 	 */
 	public function encodeUrl(array &$encoderParameters) {
+	    $this->callEarlyHook($encoderParameters);
 		$this->encoderParameters = $encoderParameters;
 		$this->urlToEncode = $encoderParameters['LD']['totalURL'];
 		if ($this->canEncoderExecute()) {
@@ -236,6 +237,23 @@ class UrlEncoder extends EncodeDecoderBase {
 			}
 		}
 	}
+
+    /**
+     * Early hook for the encoder.
+     *
+     * @param array $encoderParameters
+     */
+    protected function callEarlyHook(&$encoderParameters) {
+        if (is_array($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['encodeSpURL_earlyHook'])) {
+            foreach($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['encodeSpURL_earlyHook'] as $userFunc) {
+                $hookParams = array(
+                    'pObj' => $this,
+                    'params' => &$encoderParameters,
+                );
+                GeneralUtility::callUserFunction($userFunc, $hookParams, $this);
+            }
+        }
+    }
 
 	/**
 	 * Calls user-defined hooks after encoding
