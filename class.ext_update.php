@@ -151,7 +151,12 @@ class ext_update {
 	 * @return bool
 	 */
 	protected function hasUnencodedCJKCharacters() {
-		$count = $this->databaseConnection->exec_SELECTcountRows('*', 'tx_realurl_urldata', 'speaking_url RLIKE \'' . self::MYSQL_REGEXP_FOR_NON_URL_CHARACTERS . '\'');
+	    if (!ExtensionManagementUtility::isLoaded('dbal')) {
+		    $count = $this->databaseConnection->exec_SELECTcountRows('*', 'tx_realurl_urldata', 'speaking_url RLIKE \'' . self::MYSQL_REGEXP_FOR_NON_URL_CHARACTERS . '\'');
+        }
+        else {
+	        $count = 0;
+        }
 
 		return ($count > 0);
 	}
@@ -182,26 +187,28 @@ class ext_update {
 	 * @see http://php.net/manual/en/regexp.reference.unicode.php
 	 */
 	protected function updateCJKSpeakingUrls() {
-		$resource = $this->databaseConnection->exec_SELECTquery('uid, speaking_url', 'tx_realurl_urldata', 'speaking_url RLIKE \'' . self::MYSQL_REGEXP_FOR_NON_URL_CHARACTERS . '\'');
-		while (false !== ($data = $this->databaseConnection->sql_fetch_assoc($resource))) {
-			if (preg_match('/[\p{Han}\p{Hangul}\p{Kannada}\p{Katakana}\p{Hiragana}\p{Tai_Tham}\p{Thai}]+/u', $data['speaking_url'])) {
-				// Note: cannot use parse_url() here because it corrupts CJK characters!
-				list($path, $query) = explode('?', $data['speaking_url']);
-				$segments = explode('/', $path);
-				array_walk($segments, function(&$segment) {
-					$segment = rawurlencode($segment);
-				});
-				$url = implode('/', $segments);
-				if (!empty($query)) {
-					$url .= '?' . $query;
-				}
+	    if (!ExtensionManagementUtility::isLoaded('dbal')) {
+            $resource = $this->databaseConnection->exec_SELECTquery('uid, speaking_url', 'tx_realurl_urldata', 'speaking_url RLIKE \'' . self::MYSQL_REGEXP_FOR_NON_URL_CHARACTERS . '\'');
+            while (false !== ($data = $this->databaseConnection->sql_fetch_assoc($resource))) {
+                if (preg_match('/[\p{Han}\p{Hangul}\p{Kannada}\p{Katakana}\p{Hiragana}\p{Tai_Tham}\p{Thai}]+/u', $data['speaking_url'])) {
+                    // Note: cannot use parse_url() here because it corrupts CJK characters!
+                    list($path, $query) = explode('?', $data['speaking_url']);
+                    $segments = explode('/', $path);
+                    array_walk($segments, function(&$segment) {
+                        $segment = rawurlencode($segment);
+                    });
+                    $url = implode('/', $segments);
+                    if (!empty($query)) {
+                        $url .= '?' . $query;
+                    }
 
-				$this->databaseConnection->exec_UPDATEquery('tx_realurl_urldata', 'uid=' . (int)$data['uid'], array(
-					'speaking_url' => $url
-				));
-			}
-		}
-		$this->databaseConnection->sql_free_result($resource);
+                    $this->databaseConnection->exec_UPDATEquery('tx_realurl_urldata', 'uid=' . (int)$data['uid'], array(
+                        'speaking_url' => $url
+                    ));
+                }
+            }
+            $this->databaseConnection->sql_free_result($resource);
+        }
 	}
 
 	/**
