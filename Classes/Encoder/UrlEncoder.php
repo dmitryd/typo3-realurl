@@ -430,7 +430,7 @@ class UrlEncoder extends EncodeDecoderBase {
 		$testNewAliasValue = $newAliasValue;
 		while ($counter < $maxTry) {
 			// If the test-alias did NOT exist, it must be unique and we break out
-			$foundId = $this->getFromAliasCacheByAliasValue($configuration, $testNewAliasValue, false);
+			$foundId = $this->getFromAliasCacheByAliasValue($configuration, $testNewAliasValue);
 			if (!$foundId || $foundId == $idValue) {
 				$uniqueAlias = $testNewAliasValue;
 				break;
