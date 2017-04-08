@@ -23,8 +23,11 @@ namespace DmitryDulepov\Realurl\Controller;
 *  This copyright notice MUST APPEAR in all copies of the script!
 ***************************************************************/
 
+use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Persistence\QueryInterface;
+use TYPO3\CMS\Extbase\Persistence\QueryResultInterface;
 use TYPO3\CMS\Extbase\Utility\LocalizationUtility;
 
 /**
@@ -58,9 +61,49 @@ class PathCacheController extends BackendModuleController {
 	 * Shows a list of page path entries.
 	 */
 	public function indexAction() {
+		$entries = $this->getCacheEntries();
+		$this->makeMessagesForDuplicates($entries);
+		$entries->rewind();
 		$this->view->assignMultiple(array(
-			'entries' => $this->getCacheEntries()
+			'entries' => $entries
 		));
+	}
+
+	/**
+	 * Adds a message about duplicate URLs.
+	 *
+	 * @param string $pagePath
+	 * @param QueryResultInterface $entries
+	 */
+	protected function addDuplicateMessage($pagePath, QueryResultInterface $entries) {
+		// The ugly variable below has to be used because Extbase misses DISTINCT for queries
+		static $addedCombinations = array();
+
+		$pageIds = array();
+		foreach ($entries as $entry) {
+			/** @var \DmitryDulepov\Realurl\Domain\Model\PathCacheEntry $entry */
+			$pageId = (int)$entry->getPageId();
+			if (!isset($pageIds[$pageId])) {
+				if ($this->doesBackendUserHaveAccessToPage($pageId)) {
+					$recordPath = rtrim(BackendUtility::getRecordPath($pageId, '', 300), '/');
+					$pageIds[$pageId] = sprintf('%d (%s)', $pageId, $recordPath);
+				}
+			}
+		}
+		ksort($pageIds);
+
+		if (count($pageIds) > 0) {
+			$combination = $pagePath . '_' . implode('_', $pageIds);
+			if (!isset($addedCombinations[$combination])) {
+				$addedCombinations[$combination] = true;
+
+				$message = LocalizationUtility::translate('module.path_cache.duplicate_path', 'realurl', array($pagePath, implode(', ', $pageIds)));
+
+				$flashMessage = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Messaging\\FlashMessage', $message, '', FlashMessage::ERROR);
+				/** @var \TYPO3\CMS\Core\Messaging\FlashMessage $flashMessage */
+				$this->controllerContext->getFlashMessageQueue()->enqueue($flashMessage);
+			}
+		}
 	}
 
 	/**
@@ -80,4 +123,41 @@ class PathCacheController extends BackendModuleController {
 
 		return $query->execute();
 	}
+
+	/**
+	 * Checks if there are any duplicates for this url and adds warnings.
+	 *
+	 * @param QueryResultInterface $entries
+	 */
+	protected function makeMessagesForDuplicates(QueryResultInterface $entries) {
+		foreach ($entries as $entry) {
+			/** @var \DmitryDulepov\Realurl\Domain\Model\PathCacheEntry $entry */
+			$query = $this->repository->createQuery();
+			// Conditions (logical and):
+			// 1. Different page id
+			// 2. Same path
+			// 3. Same root page id
+			// 4. Same language id
+			/** @noinspection PhpMethodParametersCountMismatchInspection */
+			$query->matching($query->logicalAnd(
+				$query->logicalNot($query->equals('pageId', $entry->getPageId())),
+				$query->equals('rootPageId', $entry->getRootPageId()),
+				$query->equals('pagePath', $entry->getPagePath()),
+				$query->equals('languageId', $entry->getLanguageId())
+			));
+			$query->setOrderings(array(
+				'pagePath' => QueryInterface::ORDER_ASCENDING,
+				'languageId' => QueryInterface::ORDER_ASCENDING,
+			));
+
+			$result = $query->execute();
+			if ($result->count() > 0) {
+				$this->addDuplicateMessage($entry->getPagePath(), $result);
+			}
+
+			unset($result);
+			unset($query);
+		}
+	}
+
 }

@@ -196,7 +196,7 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 		if ($cacheEntry->getExpiration() > 0) {
 			$newerCacheEntry = $this->cache->getUrlFromCacheByOriginalUrl($cacheEntry->getRootPageId(), $cacheEntry->getOriginalUrl());
 			if ($newerCacheEntry->getExpiration() === 0) {
-				// Note: the above check will fail the first time the oage is visited
+				// Note: the above check will fail the first time the page is visited
 				// because there will be no cache entry yet. However if the visited
 				// page has a URL to itself, then the entry will be detected and
 				// redirection happen starting from the second visit to the
@@ -270,7 +270,7 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 
 		// First, test if there is an entry in cache for the alias
 		if ($configuration['useUniqueCache']) {
-			$cachedId = $this->getFromAliasCacheByAliasValue($configuration, $value, FALSE);
+			$cachedId = $this->getFromAliasCacheByAliasValue($configuration, $value);
 			if (MathUtility::canBeInterpretedAsInteger($cachedId)) {
 				$result = (int)$cachedId;
 			}
@@ -771,7 +771,8 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 				'isFakeValue' => $isFakeValue,
 				'origValue' => $getVarValue,
 				'pathParts' => &$pathSegments,
-				'pObj' => &$this,
+				'pObj' => $this,
+				'sysLanguageUid' => $this->detectedLanguageId,
 				'value' => $getVarValue,
 				'setup' => $configuration
 			);
@@ -948,20 +949,6 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 	}
 
 	/**
-	 * Obtains a root page id for the given page.
-	 *
-	 * @param int $pageUid
-	 * @return int
-	 */
-	protected function getRootPageIdForPage($pageUid) {
-		$rootLineUtility = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Utility\\RootlineUtility', $pageUid);
-		/** @var \TYPO3\CMS\Core\Utility\RootlineUtility $rootLineUtility */
-		$rootLine = $rootLineUtility->get();
-
-		return is_array($rootLine) && count($rootLine) > 0 ? (int)$rootLine[0]['uid'] : 0;
-	}
-
-	/**
 	 * Parses the URL and validates the result. This function will strip possible
 	 * query string from speaking URL (we only need to decode the speaking URL!)
 	 *
@@ -1131,6 +1118,30 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 	}
 
 	/**
+	 * Checks if the current root page is inside the rootline
+	 * of the given page
+	 *
+	 * @param int $pageUid
+	 * @return boolean
+	 */
+	protected function isPageInRootlineOfRootPage($pageUid) {
+		$result = false;
+
+		$rootLineUtility = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Utility\\RootlineUtility', $pageUid);
+		/** @var \TYPO3\CMS\Core\Utility\RootlineUtility $rootLineUtility */
+		$rootLine = $rootLineUtility->get();
+
+		foreach ((array)$rootLine as $page) {
+			if ($page['uid'] == $this->rootPageId) {
+				$result = true;
+				break;
+			}
+		}
+
+		return $result;
+	}
+
+	/**
 	 * Checks if the given segment is a name of the postVar.
 	 *
 	 * @param string $segment
@@ -1173,7 +1184,7 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 			substr($this->siteScript, 0, 9) !== 'index.php' &&
 			substr($this->siteScript, 0, 1) !== '?' &&
 			$this->siteScript !== 'favicon.ico' &&
-			(!$this->configuration->get('init/respectSimulateStaticURLs') || !preg_match('/^[a-z0-9\-]+\.(\d+)(\.\d+)?\.html/i', $this->siteScript))
+			(!$this->configuration->get('init/respectSimulateStaticURLs') || !preg_match('/^[a-z0-9\-]+\.([a-z0-9_\-]+)(\.\d+)?\.html/i', $this->siteScript))
 		;
 	}
 
@@ -1305,7 +1316,7 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 				'', 'sorting'
 		);
 		foreach ($rows as $row) {
-			if ($this->getRootPageIdForPage((int)$row['uid']) === $this->rootPageId) {
+			if ($this->isPageInRootlineOfRootPage((int)$row['uid'])) {
 				// Found it!
 				$result = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\Cache\\PathCacheEntry');
 				/** @var \DmitryDulepov\Realurl\Cache\PathCacheEntry $result */
@@ -1338,7 +1349,7 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 				$this->pageRepository->enableFields('pages', 1, array('fe_group' => true))
 		);
 		foreach ($rows as $row) {
-			if ($this->getRootPageIdForPage((int)$row['uid']) === $this->rootPageId) {
+			if ($this->isPageInRootlineOfRootPage((int)$row['uid'])) {
 				// Found it!
 				$result = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\Cache\\PathCacheEntry');
 				/** @var \DmitryDulepov\Realurl\Cache\PathCacheEntry $result */

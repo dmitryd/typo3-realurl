@@ -29,8 +29,10 @@
  ***************************************************************/
 namespace DmitryDulepov\Realurl\Encoder;
 
+use DmitryDulepov\Realurl\Cache\UrlCacheEntry;
 use DmitryDulepov\Realurl\Configuration\ConfigurationReader;
 use DmitryDulepov\Realurl\EncodeDecoderBase;
+use DmitryDulepov\Realurl\Exceptions\InvalidLanguageParameterException;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
 use TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer;
@@ -123,12 +125,23 @@ class UrlEncoder extends EncodeDecoderBase {
 	 * @return void
 	 */
 	public function encodeUrl(array &$encoderParameters) {
+	    $this->callEarlyHook($encoderParameters);
 		$this->encoderParameters = $encoderParameters;
 		$this->urlToEncode = $encoderParameters['LD']['totalURL'];
 		if ($this->canEncoderExecute()) {
-			$this->executeEncoder();
-			$encoderParameters['LD']['totalURL'] = $this->encodedUrl .
-				(isset($encoderParameters['LD']['sectionIndex']) ? $encoderParameters['LD']['sectionIndex'] : '');
+			try {
+				$this->executeEncoder();
+				$encoderParameters['LD']['totalURL'] = $this->encodedUrl .
+					(isset($encoderParameters['LD']['sectionIndex']) ? $encoderParameters['LD']['sectionIndex'] : '');
+			}
+			catch (InvalidLanguageParameterException $exception) {
+				GeneralUtility::devLog($exception->getMessage(), 'realurl',
+					GeneralUtility::SYSLOG_SEVERITY_WARNING, array(
+						'Stack trace' => $exception->getTrace()
+					)
+				);
+				// Pass through. We just return unencoded URL in such case.
+			}
 		}
 	}
 
@@ -225,6 +238,23 @@ class UrlEncoder extends EncodeDecoderBase {
 		}
 	}
 
+    /**
+     * Early hook for the encoder.
+     *
+     * @param array $encoderParameters
+     */
+    protected function callEarlyHook(&$encoderParameters) {
+        if (is_array($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['encodeSpURL_earlyHook'])) {
+            foreach($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['encodeSpURL_earlyHook'] as $userFunc) {
+                $hookParams = array(
+                    'pObj' => $this,
+                    'params' => &$encoderParameters,
+                );
+                GeneralUtility::callUserFunction($userFunc, $hookParams, $this);
+            }
+        }
+    }
+
 	/**
 	 * Calls user-defined hooks after encoding
 	 */
@@ -232,7 +262,7 @@ class UrlEncoder extends EncodeDecoderBase {
 		if (is_array($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['encodeSpURL_postProc'])) {
 			foreach($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['encodeSpURL_postProc'] as $userFunc) {
 				$hookParams = array(
-					'pObj' => &$this,
+					'pObj' => $this,
 					'params' => $this->encoderParameters,
 					'URL' => &$this->encodedUrl,
 				);
@@ -418,7 +448,7 @@ class UrlEncoder extends EncodeDecoderBase {
 		$testNewAliasValue = $newAliasValue;
 		while ($counter < $maxTry) {
 			// If the test-alias did NOT exist, it must be unique and we break out
-			$foundId = $this->getFromAliasCacheByAliasValue($configuration, $testNewAliasValue, TRUE);
+			$foundId = $this->getFromAliasCacheByAliasValue($configuration, $testNewAliasValue);
 			if (!$foundId || $foundId == $idValue) {
 				$uniqueAlias = $testNewAliasValue;
 				break;
@@ -793,11 +823,12 @@ class UrlEncoder extends EncodeDecoderBase {
 		if (isset($configuration['userFunc'])) {
 			$previousValue = $getVarValue;
 			$userFuncParameters = array(
-				'pObj' => &$this,
+				'pObj' => $this,
 				'value' => $getVarValue,
 				'decodeAlias' => false,
 				'pathParts' => &$segments,
 				'setup' => $configuration,
+				'sysLanguageUid' => $this->sysLanguageUid,
 			);
 			$getVarValue = GeneralUtility::callUserFunction($configuration['userFunc'], $userFuncParameters, $this);
 			if (is_numeric($getVarValue) || is_string($getVarValue)) {
@@ -889,8 +920,8 @@ class UrlEncoder extends EncodeDecoderBase {
 			$this->encodePostVarSets();
 			$this->handleFileName();
 
-			$this->addRemainingUrlParameters();
 			$this->trimMultipleSlashes();
+			$this->addRemainingUrlParameters();
 
 			if ($this->encodedUrl === '') {
 				$emptyUrlReturnValue = $this->configuration->get('init/emptyUrlReturnValue') ?: '/';
@@ -1349,11 +1380,31 @@ class UrlEncoder extends EncodeDecoderBase {
 				$cacheEntry->setOriginalUrl($this->originalUrl);
 				$cacheEntry->setSpeakingUrl($this->encodedUrl);
 			}
+			$this->storeInUrlCacheHooks($cacheEntry);
 			$this->cache->putUrlToCache($cacheEntry);
 
 			$cacheId = $cacheEntry->getCacheId();
 			if (!empty($cacheId)) {
 				$this->storeAliasToUrlCacheMapping($cacheId);
+			}
+		}
+	}
+
+	/**
+	 * Calls user-defined hooks before adding the entry to the cache. The hook function
+	 * may not unset the entry!
+	 *
+	 * @param UrlCacheEntry $cacheEntry
+	 * @return void
+	 */
+	protected function storeInUrlCacheHooks(UrlCacheEntry $cacheEntry) {
+		if (is_array($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['storeInUrlCache'])) {
+			foreach($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['storeInUrlCache'] as $userFunc) {
+				$hookParams = array(
+					'pObj' => $this,
+					'cacheEntry' => $cacheEntry,
+				);
+				GeneralUtility::callUserFunction($userFunc, $hookParams, $this);
 			}
 		}
 	}
@@ -1401,12 +1452,13 @@ class UrlEncoder extends EncodeDecoderBase {
 		}
 
 		if (!$isValidLanguageUid) {
-			$this->tsfe->set_no_cache(sprintf('Bad "L" parameter ("%s") was detected by realurl', addslashes($sysLanguageUid)));
-			$commonErrorMessagePart = 'RealURL could not process "' . $this->urlToEncode . '" because "L" parameter is invalid. ';
-			error_log($commonErrorMessagePart . 'Explanation can be found at ' .
-				'https://bit.ly/badLarg. Stack trace:' . LF . $this->utility->generateStackTrace()
+			$this->tsfe->set_no_cache(
+				sprintf('Bad "L" parameter ("%s") was detected by realurl. ' .
+					'Page caching is disabled to prevent spreading of wrong "L" value.',
+					addslashes($sysLanguageUid)
+				)
 			);
-			throw new \Exception($commonErrorMessagePart . 'More information can be found in the web server error log.', 1482160086);
+			throw new InvalidLanguageParameterException($sysLanguageUid);
 		}
 	}
 }

@@ -30,6 +30,7 @@ namespace DmitryDulepov\Realurl\Controller;
  ***************************************************************/
 use DmitryDulepov\Realurl\Utility;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Core\Type\Bitmask\Permission;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Mvc\Controller\ActionController;
 
@@ -99,6 +100,17 @@ abstract class BackendModuleController extends ActionController {
 
 		// We are here ony if the action did not throw exceptions (==successful and not forwarded). Save the action.
 		$this->storeLastModuleInformation();
+	}
+
+	/**
+	 * Checks if the BE user has access to the given page.
+	 *
+	 * @param int $pageId
+	 * @return bool
+	 */
+	protected function doesBackendUserHaveAccessToPage($pageId) {
+		$record = BackendUtility::getRecord('pages', $pageId);
+		return (0 !== ($GLOBALS['BE_USER']->calcPerms($record) & Permission::PAGE_SHOW));
 	}
 
 	/**

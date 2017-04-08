@@ -177,6 +177,12 @@
 			<trans-unit id="module.path_cache.entry_deleted">
 				<source>Entry was removed.</source>
 			</trans-unit>
+			<trans-unit id="module.url_cache.duplicate_url">
+				<source>URL conflict detected: '%s' is also used on page(s): %s</source>
+			</trans-unit>
+			<trans-unit id="module.path_cache.duplicate_path">
+				<source>Path conflict detected: '%s' is also used on page(s): %s</source>
+			</trans-unit>
 		</body>
 	</file>
 </xliff>

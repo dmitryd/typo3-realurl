@@ -9,7 +9,7 @@
 
 	<f:flashMessages/>
 
-	<f:render section="entries" arguments="{entries: entries}"/>
+	<f:render section="entries" arguments="{entries: entries, showFlushAllButton: showFlushAllButton, showFlushAllPageUrlsButton: showFlushAllPageUrlsButton}"/>
 </f:section>
 
 
@@ -39,18 +39,22 @@
 		</table>
 	</f:be.widget.paginate>
 	<f:if condition="{entryCount}">
-		<a class="btn btn-default" href="javascript:void(0)" onclick="tx_realurl_confirm(tx_realurl_strings.confirmTitle, tx_realurl_strings.deleteCacheEntries,
-				 '{f:uri.action(action: 'deleteAll', controller: 'UrlCache', addQueryString: 1)}')">
-			<c:icon identifier="actions-delete"/>
-			<f:translate key="module.deleteCacheEntriesForPage"/>
-		</a>
+		<f:if condition="{showFlushAllPageUrlsButton}">
+			<a class="btn btn-default" href="javascript:void(0)" onclick="tx_realurl_confirm(tx_realurl_strings.confirmTitle, tx_realurl_strings.deleteCacheEntries,
+					 '{f:uri.action(action: 'deleteAll', controller: 'UrlCache', addQueryString: 1)}')">
+				<c:icon identifier="actions-delete"/>
+				<f:translate key="module.deleteCacheEntriesForPage"/>
+			</a>
+		</f:if>
 		&nbsp;
 	</f:if>
-	<a class="btn btn-danger" href="javascript:void(0)" onclick="tx_realurl_confirm(tx_realurl_strings.confirmTitle, tx_realurl_strings.flushCacheEntries,
-			 '{f:uri.action(action: 'flush', controller: 'UrlCache', addQueryString: 1)}')">
-		<c:icon identifier="actions-delete"/>
-		<f:translate key="module.flushCache"/>
-	</a>
+	<f:if condition="{showFlushAllButton}">
+		<a class="btn btn-danger" href="javascript:void(0)" onclick="tx_realurl_confirm(tx_realurl_strings.confirmTitle, tx_realurl_strings.flushCacheEntries,
+				 '{f:uri.action(action: 'flush', controller: 'UrlCache', addQueryString: 1)}')">
+			<c:icon identifier="actions-delete"/>
+			<f:translate key="module.flushCache"/>
+		</a>
+	</f:if>
 </f:section>
 
 

@@ -112,42 +112,6 @@ class Utility {
 	}
 
 	/**
-	 * Generates stack trace.
-	 *
-	 * @return string
-	 */
-	public function generateStackTrace() {
-		$trace = debug_backtrace();
-		array_shift($trace);
-		$traceCount = count($trace);
-		$tracePointer = 0;
-		$lines = array();
-		foreach ($trace as $traceEntry) {
-			$codeLine = '';
-			if (isset($traceEntry['class']) && $traceEntry['class']) {
-				$codeLine .= $traceEntry['class'];
-				$codeLine .= (isset($traceEntry['type']) && $traceEntry['type']) ? $traceEntry['type'] : '::';
-			}
-			if (isset($traceEntry['function']) && $traceEntry['function']) {
-				$codeLine .= $traceEntry['function'];
-				$codeLine .= isset($traceEntry['args']) && is_array($traceEntry['args']) ? $this->dumpFunctionArguments($traceEntry['args']) : '()';
-				$codeLine .= ' ';
-			}
-			$codeLine .= 'at ';
-			$codeLine .= ((isset($traceEntry['file']) && $traceEntry['file']) ? $traceEntry['file'] : '(unknown)');
-			$codeLine .= ':';
-			$codeLine .= ((isset($traceEntry['line']) && $traceEntry['line']) ? $traceEntry['line'] : '(?)');
-
-			$lines[] = sprintf('  %3d: %s', $traceCount - $tracePointer, $codeLine);
-			$tracePointer++;
-		}
-		// Free memory
-		unset($trace);
-
-		return implode(LF, $lines) . LF . LF;
-	}
-
-	/**
 	 * Returns the cache to use.
 	 *
 	 * @return CacheInterface
