@@ -161,7 +161,7 @@ class DatabaseCache implements CacheInterface, SingletonInterface {
 	 * @return void
 	 */
 	public function expireUrlCacheById($cacheId, $expirationTime) {
-		$this->databaseConnection->exec_UPDATEquery('tx_realurl_urldata', 'uid=' . (int)$cacheId . ' AND expire<>0', array(
+		$this->databaseConnection->exec_UPDATEquery('tx_realurl_urldata', 'uid=' . (int)$cacheId . ' AND expire=0', array(
 			'expire' => $expirationTime
 		));
 	}
