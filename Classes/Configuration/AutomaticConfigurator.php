@@ -80,6 +80,14 @@ class AutomaticConfigurator {
 	 * @return void
 	 */
 	protected function addLanguages(array &$configuration) {
+		$configuration['preVars'] = array(
+			0 => array(
+				'GETvar' => 'L',
+				'valueMap' => array(
+				),
+				'noMatch' => 'bypass'
+			),
+		);
 		if (version_compare(TYPO3_branch, '7.6', '>=')) {
 			$languages = $this->databaseConnection->exec_SELECTgetRows('t1.uid AS uid,t1.language_isocode AS lg_iso_2', 'sys_language t1', 't1.hidden=0 AND t1.language_isocode<>\'\'');
 		}
@@ -90,14 +98,6 @@ class AutomaticConfigurator {
 			$languages = array();
 		}
 		if (count($languages) > 0) {
-			$configuration['preVars'] = array(
-				0 => array(
-					'GETvar' => 'L',
-					'valueMap' => array(
-					),
-					'noMatch' => 'bypass'
-				),
-			);
 			foreach ($languages as $lang) {
 				$configuration['preVars'][0]['valueMap'][strtolower($lang['lg_iso_2'])] = $lang['uid'];
 			}
