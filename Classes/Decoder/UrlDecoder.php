@@ -340,8 +340,17 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 			if ($this->detectedLanguageId > 0 && !isset($page['_PAGES_OVERLAY']) && (empty($languageExceptionUids) || !GeneralUtility::inList($languageExceptionUids, $this->detectedLanguageId))) {
 				$page = $this->pageRepository->getPageOverlay($page, (int)$this->detectedLanguageId);
 			}
+
+                        // initiate seperation character hooks
+                        $conditionHooks = array();
+                        if (is_array($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['linkvalidator']['checkLinks'])) {
+                                foreach ($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['spaceCharacter'] as $key => $classRef) {
+                                        $conditionHooks[] =  \TYPO3\CMS\Core\Utility\GeneralUtility::getUserObj($classRef);
+                                }
+                        }
+
 			foreach (self::$pageTitleFields as $field) {
-				if (isset($page[$field]) && $page[$field] !== '' && $this->utility->convertToSafeString($page[$field], $this->separatorCharacter) === $segment) {
+				if (isset($page[$field]) && $page[$field] !== '' && ($this->utility->convertToSafeString($page[$field], $this->separatorCharacter) === $segment || $this->applyConditionHooks($conditionHooks, $page[$field], $segment))) {
 					$result = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\Cache\\PathCacheEntry');
 					/** @var \DmitryDulepov\Realurl\Cache\PathCacheEntry $result */
 					$result->setPageId((int)$page['uid']);
@@ -1513,4 +1522,22 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 
 		$this->caller->pageNotFoundAndExit($errorMessage);
 	}
+
+        /**
+         * Evaluates all given condition hooks
+         *
+         * @param array $hooks reference to an array consisting of all hooks
+         */
+        protected function applyConditionHooks(&$hooks, $pageIdentifier, $segment)
+        {
+                // execute all hooks
+                foreach ($hooks as $key => $hook) {
+                        $callable = array($this->utility, "convertToSafeString");
+                        if($hook->evaluateAdditionalUnionCondition($pageIdentifier, $segment, $callable) === true) {
+                                return true;
+                        }
+                }
+
+                return false;
+        }
 }
