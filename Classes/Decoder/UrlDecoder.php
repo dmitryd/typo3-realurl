@@ -329,16 +329,22 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
                     $GLOBALS['TT'] = new \TYPO3\CMS\Core\TimeTracker\TimeTracker();
                     $GLOBALS['TT']->start();
                 }*/
-
-                $GLOBALS['TSFE'] = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance( $name,  $GLOBALS['TYPO3_CONF_VARS'], $page['uid'], $type );
-		$GLOBALS['TSFE']->showHiddenPage = true;
-                $GLOBALS['TSFE']->connectToDB();
-                $GLOBALS['TSFE']->initFEuser();
-                //\TYPO3\CMS\Core\Utility\GeneralUtility::devLog("Retrieving sys_language_uid: ", "realurl", 1, array(0.5));
-                $GLOBALS['TSFE']->determineId();
-                //\TYPO3\CMS\Core\Utility\GeneralUtility::devLog("Retrieving sys_language_uid: ", "realurl", 1, array(1));
-                $GLOBALS['TSFE']->initTemplate();
-                $GLOBALS['TSFE']->getConfigArray();
+		try
+                {
+                	$GLOBALS['TSFE'] = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance( $name,  $GLOBALS['TYPO3_CONF_VARS'], $page['uid'], $type );
+			$GLOBALS['TSFE']->showHiddenPage = true;
+                	$GLOBALS['TSFE']->connectToDB();
+                	$GLOBALS['TSFE']->initFEuser();
+                	//\TYPO3\CMS\Core\Utility\GeneralUtility::devLog("Retrieving sys_language_uid: ", "realurl", 1, array(0.5));
+                	$GLOBALS['TSFE']->determineId();
+                	//\TYPO3\CMS\Core\Utility\GeneralUtility::devLog("Retrieving sys_language_uid: ", "realurl", 1, array(1));
+                	$GLOBALS['TSFE']->initTemplate();
+                	$GLOBALS['TSFE']->getConfigArray();
+		}
+		catch(\TYPO3\TypoScript\Exception\RuntimeException $exception) {
+			\TYPO3\CMS\Core\Utility\GeneralUtility::devLog("error during sys_language_uid chack", "realurl", 1, array($exception));
+			return 0;
+		}
 
                 //\TYPO3\CMS\Core\Utility\GeneralUtility::devLog("LOBALS['TSFE']->getConfigArray(): ", "realurl", 1, $GLOBALS['TSFE']->config);
                 return $GLOBALS['TSFE']->config['config']['sys_language_uid'];
@@ -387,7 +393,7 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
                                 $languageID = $perPageSysLangID;
                         }
 
-			\TYPO3\CMS\Core\Utility\GeneralUtility::devLog("checking fields for page: ", "realurl", 1, array($page['title'], $languageID));
+			//\TYPO3\CMS\Core\Utility\GeneralUtility::devLog("checking fields for page: ", "realurl", 1, array($page['title'], $languageID));
 
 
 			if ($languageID > 0 && !isset($page['_PAGES_OVERLAY']) && (empty($languageExceptionUids) || !GeneralUtility::inList($languageExceptionUids, $languageID))) {
