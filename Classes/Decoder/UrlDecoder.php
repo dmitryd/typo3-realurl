@@ -333,8 +333,16 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
                 {
                 	$GLOBALS['TSFE'] = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance( $name,  $GLOBALS['TYPO3_CONF_VARS'], $page['uid'], $type );
 			$GLOBALS['TSFE']->showHiddenPage = true;
+			$GLOBALS['TSFE']->login_user = true;
                 	$GLOBALS['TSFE']->connectToDB();
                 	$GLOBALS['TSFE']->initFEuser();
+
+			$GLOBALS['TSFE']->fe_user->checkPid = '';
+			$info = $GLOBALS['TSFE']->fe_user->getAuthInfoArray();
+			$user = $GLOBALS['TSFE']->fe_user->fetchUserRecord($info['db_user'], 'mitarbeiter');
+			$GLOBALS['TSFE']->fe_user->createUserSession($user);
+			$GLOBALS['TSFE']->fe_user->user = $GLOBALS['TSFE']->fe_user->fetchUserSession();
+
                 	//\TYPO3\CMS\Core\Utility\GeneralUtility::devLog("Retrieving sys_language_uid: ", "realurl", 1, array(0.5));
                 	$GLOBALS['TSFE']->determineId();
                 	//\TYPO3\CMS\Core\Utility\GeneralUtility::devLog("Retrieving sys_language_uid: ", "realurl", 1, array(1));
