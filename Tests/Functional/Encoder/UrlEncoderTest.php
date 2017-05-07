@@ -68,6 +68,7 @@ class UrlEncoderTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 			'enableAutoConf' => 1,
 			'autoConfFormat' => 0,
 			'enableDevLog' => 0,
+            'segTitleFieldList' => ''
 		]);
 	}
 
