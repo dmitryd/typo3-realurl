@@ -61,6 +61,9 @@ abstract class EncodeDecoderBase {
 	/** @var PageRepository */
 	protected $pageRepository = NULL;
 
+	/** @var array */
+	static public $pageTitleFields = array('tx_realurl_pathsegment', 'alias', 'nav_title', 'title', 'uid');
+
 	/** @var int */
 	protected $rootPageId;
 
@@ -88,6 +91,7 @@ abstract class EncodeDecoderBase {
 		// $this->pageRepository->sys_language_uid must stay 0 because we will do overlays manually
 		$this->pageRepository = GeneralUtility::makeInstance('TYPO3\\CMS\\Frontend\\Page\\PageRepository');
 		$this->pageRepository->init(FALSE);
+		self::overwritePageTitleFieldsFromConfiguration();
 	}
 
 	/**
@@ -192,17 +196,24 @@ abstract class EncodeDecoderBase {
 		$this->separatorCharacter = $this->configuration->get('pagePath/spaceCharacter');
 	}
 
-    /**
-     * Gets page title fields from ext conf or default
-     *
-     * @return array
-     */
-    public static function getPageTitleFields() {
-        $configuration = @unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['realurl']);
-        return !empty($configuration['segTitleFieldList']) ? GeneralUtility::trimExplode(',', $configuration['segTitleFieldList']) : array('tx_realurl_pathsegment', 'alias', 'nav_title', 'title', 'uid');
-    }
+	/**
+	 * Overwrites page title fields from extension configuration. This function
+	 * is used from the constructor and also from DataHandler hook, thus made
+	 * public.
+	 *
+	 * @return void
+	 */
+	public static function overwritePageTitleFieldsFromConfiguration() {
+		$configuration = @unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['realurl']);
+		if (!empty($configuration['segTitleFieldList'])) {
+			$segTitleFieldList = GeneralUtility::trimExplode(',', $configuration['segTitleFieldList']);
+			if (count($segTitleFieldList) > 0) {
+				self::$pageTitleFields = $segTitleFieldList;
+			}
+		}
+	}
 
-    /**
+	/**
 	 * Checks if system runs in non-live workspace
 	 *
 	 * @return boolean

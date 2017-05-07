@@ -50,6 +50,7 @@ class DataHandler implements SingletonInterface {
 	public function __construct() {
 		$this->cache = CacheFactory::getCache();
 		$this->databaseConnection = $GLOBALS['TYPO3_DB'];
+		EncodeDecoderBase::overwritePageTitleFieldsFromConfiguration();
 	}
 
 	/**
@@ -212,7 +213,7 @@ class DataHandler implements SingletonInterface {
 					}
 				}
 			} else {
-				foreach (EncodeDecoderBase::getPageTitleFields() as $fieldName) {
+				foreach (EncodeDecoderBase::$pageTitleFields as $fieldName) {
 					if (isset($databaseData[$fieldName])) {
 						$expireCache = TRUE;
 						break;
