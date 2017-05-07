@@ -98,9 +98,9 @@ class DataHandler implements SingletonInterface {
 	 * @return void
 	 */
 	public function processDatamap_afterDatabaseOperations($status, $tableName, $recordId, array $databaseData, /** @noinspection PhpUnusedParameterInspection */ \TYPO3\CMS\Core\DataHandling\DataHandler $dataHandler) {
-	    if (!MathUtility::canBeInterpretedAsInteger($recordId)) {
-	        $recordId = (int)$dataHandler->substNEWwithIDs[$recordId];
-        }
+		if (!MathUtility::canBeInterpretedAsInteger($recordId)) {
+			$recordId = (int)$dataHandler->substNEWwithIDs[$recordId];
+		}
 		$this->expireCache($status, $tableName, $recordId, $databaseData);
 		$this->clearAutoConfiguration($tableName, $databaseData);
 		if ($status !== 'new') {
