@@ -107,9 +107,9 @@ class ConfigurationReader {
 		$this->utility = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\Utility', $this);
 
 		try {
-			$this->setHostnames();
 			$this->loadExtConfiguration();
 			$this->performAutomaticConfiguration();
+			$this->setHostnames();
 			$this->setConfigurationForTheCurrentDomain();
 			$this->postProcessConfiguration();
 		}
