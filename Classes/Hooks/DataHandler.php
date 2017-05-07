@@ -61,6 +61,10 @@ class DataHandler implements SingletonInterface {
 	 */
 	public function processCmdmap_deleteAction($table, $id) {
 		if (($table === 'pages' || $table === 'pages_language_overlay') && MathUtility::canBeInterpretedAsInteger($id)) {
+			if ($table === 'pages_language_overlay') {
+				$record = BackendUtility::getRecord($table, $id);
+				$id = $record['pid'];
+			}
 			$this->cache->clearPathCacheForPage((int)$id);
 			$this->cache->clearUrlCacheForPage((int)$id);
 			$this->clearUrlCacheForAliasChanges($table, (int)$id);
