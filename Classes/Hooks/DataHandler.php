@@ -50,6 +50,7 @@ class DataHandler implements SingletonInterface {
 	public function __construct() {
 		$this->cache = CacheFactory::getCache();
 		$this->databaseConnection = $GLOBALS['TYPO3_DB'];
+		EncodeDecoderBase::overwritePageTitleFieldsFromConfiguration();
 	}
 
 	/**
