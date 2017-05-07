@@ -174,16 +174,16 @@ class UrlEncoderTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 	}
 
 	/**
-	 * Tests if the register tx_realurl_disable disables URL encoding.
+	 * Tests if the register tx_realurl_enable=0 disables URL encoding.
 	 *
 	 * @test
 	 */
 	public function testRegisterDisablesEncoding() {
-		$this->getTypoScriptFrontendController()->register['tx_realurl_disable'] = true;
+		$this->getTypoScriptFrontendController()->register['tx_realurl_enable'] = false;
 		$parameters = $this->getParametersForPage(2);
 		$encoder = GeneralUtility::makeInstance('DmitryDulepov\Realurl\Encoder\UrlEncoder');
 		$encoder->encodeUrl($parameters);
-		$this->assertEquals('index.php?id=2', $parameters['LD']['totalURL'], 'tx_realurl_disable TSFE register does not disable encoding');
+		$this->assertEquals('index.php?id=2', $parameters['LD']['totalURL'], 'tx_realurl_enable=0 TSFE register does not disable encoding');
 	}
 
 	/**

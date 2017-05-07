@@ -1105,8 +1105,10 @@ class UrlEncoder extends EncodeDecoderBase {
 	 * @return bool
 	 */
 	protected function isRealURLEnabled() {
-		return (bool)$this->tsfe->config['config']['tx_realurl_enable']
-			&& empty($this->tsfe->register['tx_realurl_disable']);
+		return (bool)$this->tsfe->config['config']['tx_realurl_enable'] && (
+			!isset($this->tsfe->register['tx_realurl_enable']) ||
+			(bool)$this->tsfe->register['tx_realurl_enable']
+		);
 	}
 
 	/**
