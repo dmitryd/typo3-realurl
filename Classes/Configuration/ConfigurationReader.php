@@ -493,7 +493,7 @@ class ConfigurationReader {
 		$rows = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('uid', 'pages', 'is_siteroot=1 AND deleted=0 AND hidden=0');
 		if (count($rows) > 1) {
 			// Cannot be done: too many of them!
-			throw new \Exception('RealURL was not able to find the root page id for the domain "' . $this->utility->getCurrentHost() . '"', 1420480928);
+			throw new \Exception('RealURL was not able to find the root page id for the domain "' . $this->utility->getCurrentHost() . '" as there was more than one root page with this domain.', 1420480928);
 		} elseif (count($rows) !== 0) {
 			$this->configuration['pagePath']['rootpage_id'] = (int)$rows[0]['uid'];
 			$result = TRUE;
