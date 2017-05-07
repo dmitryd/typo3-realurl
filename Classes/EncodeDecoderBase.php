@@ -197,6 +197,19 @@ abstract class EncodeDecoderBase {
 	}
 
 	/**
+	 * Checks if system runs in non-live workspace
+	 *
+	 * @return boolean
+	 */
+	protected function isInWorkspace() {
+		$result = false;
+		if ($this->tsfe->beUserLogin) {
+			$result = ($GLOBALS['BE_USER']->workspace !== 0);
+		}
+		return $result;
+	}
+
+	/**
 	 * Overwrites page title fields from extension configuration. This function
 	 * is used from the constructor and also from DataHandler hook, thus made
 	 * public.
@@ -211,19 +224,6 @@ abstract class EncodeDecoderBase {
 				self::$pageTitleFields = $segTitleFieldList;
 			}
 		}
-	}
-
-	/**
-	 * Checks if system runs in non-live workspace
-	 *
-	 * @return boolean
-	 */
-	protected function isInWorkspace() {
-		$result = false;
-		if ($this->tsfe->beUserLogin) {
-			$result = ($GLOBALS['BE_USER']->workspace !== 0);
-		}
-		return $result;
 	}
 
 	/**
