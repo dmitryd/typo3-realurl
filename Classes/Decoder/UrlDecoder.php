@@ -532,7 +532,18 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 			$this->throw404('Cannot decode "' . implode('/', $pathSegments) . '"');
 		}
 
-		return $result ? $result->getPageId() : ((int)$currentPid === (int)$this->rootPageId ? $currentPid : 0);
+		$pageId = 0;
+		if ($result) {
+			if ($result->getMountPoint()) {
+				$this->mountPointVariable = $result->getMountPoint();
+			}
+
+			$pageId = $result->getPageId();
+		} elseif ((int)$currentPid === (int)$this->rootPageId) {
+			$pageId = $currentPid;
+		}
+
+		return $pageId;
 	}
 
 	/**
