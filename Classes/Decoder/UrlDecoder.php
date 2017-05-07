@@ -1079,14 +1079,24 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 		if ($failureMode == 'redirect_goodUpperDir') {
 			$nonProcessedArray = array($postVarSetKey) + $pathSegments;
 			$badPathPart = implode('/', $nonProcessedArray);
-			$badPathPartPos = strpos($this->originalPath, $badPathPart);
 			$badPathPartLength = strlen($badPathPart);
-			if ($badPathPartPos > 0) {
-				// We also want to get rid of one slash
-				$badPathPartPos--;
-				$badPathPartLength++;
+			if (strpos($badPathPart, '/') !== FALSE || $badPathPartLength === 0) {
+				// There are two or more adjacent slashes in the URL, e.g. "good/good//index.html" or "good/good//bad///index.html"
+				$goodPath = $this->originalPath;
+				// Remove multiple slashes
+				do {
+					$goodPath = str_replace('//', '/', $goodPath, $replaced);
+				} while ($replaced > 0);
+			} else {
+				// There is a unrecognized postVarSetKey
+				$badPathPartPos = strrpos($this->originalPath, $badPathPart);
+				if ($badPathPartPos > 0) {
+					// We also want to get rid of one slash
+					$badPathPartPos--;
+					$badPathPartLength++;
+				}
+				$goodPath = substr($this->originalPath, 0, $badPathPartPos) . substr($this->originalPath, $badPathPartPos + $badPathPartLength);
 			}
-			$goodPath = substr($this->originalPath, 0, $badPathPartPos) . substr($this->originalPath, $badPathPartPos + $badPathPartLength);
 			@ob_end_clean();
 			header(self::REDIRECT_STATUS_HEADER);
 			header(self::REDIRECT_INFO_HEADER  . ': postVarSet_failureMode redirect for ' . $postVarSetKey);
