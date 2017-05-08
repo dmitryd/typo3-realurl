@@ -250,6 +250,9 @@ class DatabaseCache implements CacheInterface, SingletonInterface {
 					$row = $rowCandidate;
 				}
 			}
+			if(is_array($rows) && $row === null) {
+				$row = reset($rows);
+			}
 		}
 
 		if (is_array($row)) {
