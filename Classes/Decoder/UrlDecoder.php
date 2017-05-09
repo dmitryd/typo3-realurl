@@ -178,6 +178,22 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 		}
 	}
 
+        /**
+         * Evaluates all regsitered pre segment comparison hooks and creates a disjunction of all their decisions
+         *
+         * @param array $hooks reference to an array consisting of all hooks
+         */
+        protected function callPreSegmentComparisonHooks($params)
+        {
+		$comparison = false;
+		if (is_array($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['decodeSpURL_preSegmentComparison'])) {
+			foreach($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['decodeSpURL_preSegmentComparison'] as $classRef) {
+				$comparison = $comparison || \TYPO3\CMS\Core\Utility\GeneralUtility::getUserObj($classRef)->preSegmentComparisonHook($this, $params, $this->speakingUri);
+			}
+                }
+		return $comparison;
+        }
+
 	/**
 	 * Checks if the decoder can execute.
 	 *
@@ -341,16 +357,15 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 				$page = $this->pageRepository->getPageOverlay($page, (int)$this->detectedLanguageId);
 			}
 
-                        // initiate seperation character hooks
-                        $conditionHooks = array();
-                        if (is_array($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['linkvalidator']['checkLinks'])) {
-                                foreach ($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['spaceCharacter'] as $key => $classRef) {
-                                        $conditionHooks[] =  \TYPO3\CMS\Core\Utility\GeneralUtility::getUserObj($classRef);
-                                }
-                        }
 
 			foreach (self::$pageTitleFields as $field) {
-				if (isset($page[$field]) && $page[$field] !== '' && ($this->utility->convertToSafeString($page[$field], $this->separatorCharacter) === $segment || $this->applyConditionHooks($conditionHooks, $page[$field], $segment))) {
+				$identifierSegmentComparison = $this->utility->convertToSafeString($page[$field], $this->separatorCharacter) === $segment;
+				$hookParams = array(	'pageIdentifier' => $page[$field],
+							'urlSegment' => $segment,
+							'utility' => &$this->utility);
+
+				// calling the hook in the condition supports early evaluation if e.g. the pageidentifier is empty
+				if (isset($page[$field]) && $page[$field] !== '' && ($identifierSegmentComparison ||  $this->callPreSegmentComparisonHooks($hookParams))) {
 					$result = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\Cache\\PathCacheEntry');
 					/** @var \DmitryDulepov\Realurl\Cache\PathCacheEntry $result */
 					$result->setPageId((int)$page['uid']);
@@ -1522,22 +1537,4 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 
 		$this->caller->pageNotFoundAndExit($errorMessage);
 	}
-
-        /**
-         * Evaluates all given condition hooks
-         *
-         * @param array $hooks reference to an array consisting of all hooks
-         */
-        protected function applyConditionHooks(&$hooks, $pageIdentifier, $segment)
-        {
-                // execute all hooks
-                foreach ($hooks as $key => $hook) {
-                        $callable = array($this->utility, "convertToSafeString");
-                        if($hook->evaluateAdditionalUnionCondition($pageIdentifier, $segment, $callable) === true) {
-                                return true;
-                        }
-                }
-
-                return false;
-        }
 }
