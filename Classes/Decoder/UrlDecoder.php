@@ -181,7 +181,7 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
         /**
          * Evaluates all regsitered pre segment comparison hooks and creates a disjunction of all their decisions
          *
-         * @param array $hooks reference to an array consisting of all hooks
+         * @param array $params
          */
         protected function callPreSegmentComparisonHooks($params)
         {
