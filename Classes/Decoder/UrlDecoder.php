@@ -178,6 +178,25 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 		}
 	}
 
+        /**
+         * Calls user-defined hooks.
+         *
+         * @param array $params
+         */
+        protected function callPreLanguageOverlayHooks(array $params) {
+                if (is_array($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['decodeSpURL_preLanguageOverlay'])) {
+			foreach($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['decodeSpURL_preLanguageOverlay'] as $classRef) {
+                                $hookParams = array(
+                                        'pObj' => &$this,
+                                        'params' => $params,
+                                        'URL' => &$this->speakingUri,
+                                );
+				\TYPO3\CMS\Core\Utility\GeneralUtility::getUserObj($classRef)->preLanguageOverlayDecoderHook($this, $params, $this->speakingUri);
+                        }
+                }
+        }
+
+
 	/**
 	 * Checks if the decoder can execute.
 	 *
@@ -313,52 +332,6 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 		return $result;
 	}
 
-        public static function getSysLanguageUid( &$page )
-        {
-		//\TYPO3\CMS\Extbase\Utility\DebuggerUtility::var_dump("chacking page id:" . $page['uid'] . " title: " . $page['title']);
-		//\TYPO3\CMS\Core\Utility\GeneralUtility::devLog("hidden?: ", "realurl", 1, array($page));
-                if($page['doktype'] == '254' || $page['doktype'] == '199') {
-			//\TYPO3\CMS\Core\Utility\GeneralUtility::devLog("page hidden, returning 0: ", "realurl", 1, array($page));
-                        return 0;
-		}
-                //\TYPO3\CMS\Core\Utility\GeneralUtility::devLog("Retrieving sys_language_uid: ", "realurl", 1, array(0));
-                $type = 0;
-                $name = 'TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController';
-                /*if( !is_object( $GLOBALS['TT'] ) )
-                {
-                    $GLOBALS['TT'] = new \TYPO3\CMS\Core\TimeTracker\TimeTracker();
-                    $GLOBALS['TT']->start();
-                }*/
-		try
-                {
-                	$GLOBALS['TSFE'] = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance( $name,  $GLOBALS['TYPO3_CONF_VARS'], $page['uid'], $type );
-			$GLOBALS['TSFE']->showHiddenPage = true;
-			$GLOBALS['TSFE']->login_user = true;
-                	$GLOBALS['TSFE']->connectToDB();
-                	$GLOBALS['TSFE']->initFEuser();
-
-			$GLOBALS['TSFE']->fe_user->checkPid = '';
-			$info = $GLOBALS['TSFE']->fe_user->getAuthInfoArray();
-			$user = $GLOBALS['TSFE']->fe_user->fetchUserRecord($info['db_user'], 'mitarbeiter');
-			$GLOBALS['TSFE']->fe_user->createUserSession($user);
-			$GLOBALS['TSFE']->fe_user->user = $GLOBALS['TSFE']->fe_user->fetchUserSession();
-
-                	//\TYPO3\CMS\Core\Utility\GeneralUtility::devLog("Retrieving sys_language_uid: ", "realurl", 1, array(0.5));
-                	$GLOBALS['TSFE']->determineId();
-                	//\TYPO3\CMS\Core\Utility\GeneralUtility::devLog("Retrieving sys_language_uid: ", "realurl", 1, array(1));
-                	$GLOBALS['TSFE']->initTemplate();
-                	$GLOBALS['TSFE']->getConfigArray();
-		}
-		catch(\TYPO3\TypoScript\Exception\RuntimeException $exception) {
-			\TYPO3\CMS\Core\Utility\GeneralUtility::devLog("error during sys_language_uid chack", "realurl", 1, array($exception));
-			return 0;
-		}
-
-                //\TYPO3\CMS\Core\Utility\GeneralUtility::devLog("LOBALS['TSFE']->getConfigArray(): ", "realurl", 1, $GLOBALS['TSFE']->config);
-                return $GLOBALS['TSFE']->config['config']['sys_language_uid'];
-        }
-
-
 	/**
 	 * Find a page entry for the current segment and returns a PathCacheEntry for it.
 	 *
@@ -384,25 +357,8 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 			}
 			$languageExceptionUids = (string)$this->configuration->get('pagePath/languageExceptionUids');
 
-                        //\TYPO3\CMS\Core\Utility\GeneralUtility::devLog("Language uid foo: ", "realurl", 1, array($this->detectedLanguageId, $page['_PAGES_OVERLAY'], $languageExceptionUids, $languageExceptionUids));
-                        //\TYPO3\CMS\Core\Utility\GeneralUtility::devLog("Sys Language uid: ", "realurl", 1, array($page['uid'], $this->initFrontend($page['uid'])));
-
-                        try {
-                                $perPageSysLangID = $this->getSysLanguageUid($page);
-                        }
-                        catch(Exception $exception)
-                        {
-                                \TYPO3\CMS\Core\Utility\GeneralUtility::devLog("caught exception ", "realurl", 1, array($exception));
-                        }
-
                         $languageID = $this->detectedLanguageId;
-                        if($perPageSysLangID != 0)
-                        {
-                                $languageID = $perPageSysLangID;
-                        }
-
-			//\TYPO3\CMS\Core\Utility\GeneralUtility::devLog("checking fields for page: ", "realurl", 1, array($page['title'], $languageID));
-
+			$this->callPreLanguageOverlayHooks(array('languageID' => &$languageID, 'page' => $page));
 
 			if ($languageID > 0 && !isset($page['_PAGES_OVERLAY']) && (empty($languageExceptionUids) || !GeneralUtility::inList($languageExceptionUids, $languageID))) {
 				$page = $this->pageRepository->getPageOverlay($page, (int)$languageID);
@@ -428,7 +384,6 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 				}
 			}
 		}
-		//die;
 
 		return $result;
 	}
