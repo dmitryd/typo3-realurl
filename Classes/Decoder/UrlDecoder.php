@@ -357,7 +357,8 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 			}
 			$languageExceptionUids = (string)$this->configuration->get('pagePath/languageExceptionUids');
 
-                        $languageID = $this->detectedLanguageId;
+			$languageID = $this->detectedLanguageId;
+			// pass languageID as a reference, so the hooks can modify it
 			$this->callPreLanguageOverlayHooks(array('languageID' => &$languageID, 'page' => $page));
 
 			if ($languageID > 0 && !isset($page['_PAGES_OVERLAY']) && (empty($languageExceptionUids) || !GeneralUtility::inList($languageExceptionUids, $languageID))) {
