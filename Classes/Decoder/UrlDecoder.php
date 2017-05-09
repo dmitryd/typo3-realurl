@@ -186,11 +186,6 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
         protected function callPreLanguageOverlayHooks(array $params) {
                 if (is_array($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['decodeSpURL_preLanguageOverlay'])) {
 			foreach($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['decodeSpURL_preLanguageOverlay'] as $classRef) {
-                                $hookParams = array(
-                                        'pObj' => &$this,
-                                        'params' => $params,
-                                        'URL' => &$this->speakingUri,
-                                );
 				\TYPO3\CMS\Core\Utility\GeneralUtility::getUserObj($classRef)->preLanguageOverlayDecoderHook($this, $params, $this->speakingUri);
                         }
                 }
