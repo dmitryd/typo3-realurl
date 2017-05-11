@@ -68,6 +68,7 @@ class UrlEncoderTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 			'enableAutoConf' => 1,
 			'autoConfFormat' => 0,
 			'enableDevLog' => 0,
+			'segTitleFieldList' => ''
 		]);
 	}
 
@@ -171,5 +172,25 @@ class UrlEncoderTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 		$encoder = GeneralUtility::makeInstance(UrlEncoder::class);
 		$encoder->encodeUrl($parameters);
 		$this->assertEquals('page2/0/', $parameters['LD']['totalURL'], 'Page with title="0" is not encoded correctly');
+	}
+
+	/**
+	 * Tests if the register tx_realurl_enable=0 disables URL encoding.
+	 *
+	 * @test
+	 */
+	public function testRegisterDisablesEncoding() {
+		$this->getTypoScriptFrontendController()->register['tx_realurl_enable'] = false;
+		$parameters = $this->getParametersForPage(2);
+		$encoder = GeneralUtility::makeInstance('DmitryDulepov\Realurl\Encoder\UrlEncoder');
+		$encoder->encodeUrl($parameters);
+		$this->assertEquals('index.php?id=2', $parameters['LD']['totalURL'], 'tx_realurl_enable=0 TSFE register does not disable encoding');
+	}
+
+	/**
+	 * @return TypoScriptFrontendController
+	 */
+	protected function getTypoScriptFrontendController() {
+		return $GLOBALS['TSFE'];
 	}
 }

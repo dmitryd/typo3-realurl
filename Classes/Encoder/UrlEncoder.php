@@ -125,7 +125,7 @@ class UrlEncoder extends EncodeDecoderBase {
 	 * @return void
 	 */
 	public function encodeUrl(array &$encoderParameters) {
-	    $this->callEarlyHook($encoderParameters);
+		$this->callEarlyHook($encoderParameters);
 		$this->encoderParameters = $encoderParameters;
 		$this->urlToEncode = $encoderParameters['LD']['totalURL'];
 		if ($this->canEncoderExecute()) {
@@ -160,7 +160,7 @@ class UrlEncoder extends EncodeDecoderBase {
 			// current host always. See http://bugs.typo3.org/view.php?id=18200
 			$testUrl = $parameters['finalTagParts']['url'];
 			if (preg_match('/^https?:\/\/[^\/]+\//', $testUrl)) {
-				$testUrl = preg_replace('/https?:\/\/[^\/]+\/(.*)$/', $this->tsfe->absRefPrefix . '\1', $testUrl);
+				$testUrl = preg_replace('/^https?:\/\/[^\/]+\/(.*)$/', '\1', $testUrl);
 			}
 
 			list($testUrl, $section) = GeneralUtility::revExplode('#', $testUrl, 2);
@@ -238,22 +238,22 @@ class UrlEncoder extends EncodeDecoderBase {
 		}
 	}
 
-    /**
-     * Early hook for the encoder.
-     *
-     * @param array $encoderParameters
-     */
-    protected function callEarlyHook(&$encoderParameters) {
-        if (is_array($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['encodeSpURL_earlyHook'])) {
-            foreach($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['encodeSpURL_earlyHook'] as $userFunc) {
-                $hookParams = array(
-                    'pObj' => $this,
-                    'params' => &$encoderParameters,
-                );
-                GeneralUtility::callUserFunction($userFunc, $hookParams, $this);
-            }
-        }
-    }
+	/**
+	 * Early hook for the encoder.
+	 *
+	 * @param array $encoderParameters
+	 */
+	protected function callEarlyHook(&$encoderParameters) {
+		if (is_array($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['encodeSpURL_earlyHook'])) {
+			foreach($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['encodeSpURL_earlyHook'] as $userFunc) {
+				$hookParams = array(
+					'pObj' => $this,
+					'params' => &$encoderParameters,
+				);
+				GeneralUtility::callUserFunction($userFunc, $hookParams, $this);
+			}
+		}
+	}
 
 	/**
 	 * Calls user-defined hooks after encoding
@@ -1119,6 +1119,30 @@ class UrlEncoder extends EncodeDecoderBase {
 	}
 
 	/**
+	 * Checks if we are linking across domains. We check if $this->rootPageId is
+	 * in $this->tsfe->rootLine. If root page id is not in TSFE's rootline, we
+	 * are encoding to another domain.
+	 *
+	 * @return bool
+	 */
+	protected function isLinkingAcrossDomains() {
+		$result = true;
+
+		foreach (array_reverse($this->tsfe->rootLine) as $page) {
+			if ($page['uid'] == $this->rootPageId) {
+				$result = false;
+				break;
+			}
+			if ($page['php_tree_stop'] || $page['is_siteroot']) {
+				// Pages beyond this one cannot be root pages (we do not support nested domains!)
+				break;
+			}
+		}
+
+		return $result;
+	}
+
+	/**
 	 * Checks if TSFE is initialized correctly.
 	 *
 	 * @return bool
@@ -1136,7 +1160,10 @@ class UrlEncoder extends EncodeDecoderBase {
 	 * @return bool
 	 */
 	protected function isRealURLEnabled() {
-		return (bool)$this->tsfe->config['config']['tx_realurl_enable'];
+		return (bool)$this->tsfe->config['config']['tx_realurl_enable'] && (
+			!isset($this->tsfe->register['tx_realurl_enable']) ||
+			(bool)$this->tsfe->register['tx_realurl_enable']
+		);
 	}
 
 	/**
@@ -1198,10 +1225,13 @@ class UrlEncoder extends EncodeDecoderBase {
 	/**
 	 * Reapplies absRefPrefix if necessary.
 	 *
+	 * If we have urlPrepend, we skip absRefPrefix.
+	 * Also it should not be applied if we are linking across domains.
+	 *
 	 * @return void
 	 */
 	protected function reapplyAbsRefPrefix() {
-		if ($this->tsfe->absRefPrefix) {
+		if ($this->tsfe->absRefPrefix && $this->urlPrepend === '' && !$this->isLinkingAcrossDomains()) {
 			$reapplyAbsRefPrefix = $this->configuration->get('init/reapplyAbsRefPrefix');
 			if ($reapplyAbsRefPrefix === '' || $reapplyAbsRefPrefix) {
 				// Prevent // in case of absRefPrefix ending with / and emptyUrlReturnValue=/

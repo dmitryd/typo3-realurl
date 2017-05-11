@@ -104,8 +104,8 @@ class UrlCacheController extends BackendModuleController {
 		$entries->rewind();
 		$this->view->assignMultiple(array(
 			'entries' => $entries,
-            'showFlushAllButton' => $this->shouldShowFlushAllButton(),
-            'showFlushAllPageUrlsButton' => $this->shouldShowFlushAllPageUrlsButton(),
+			'showFlushAllButton' => $this->shouldShowFlushAllButton(),
+			'showFlushAllPageUrlsButton' => $this->shouldShowFlushAllPageUrlsButton(),
 		));
 	}
 
@@ -162,22 +162,22 @@ class UrlCacheController extends BackendModuleController {
 		return $query->execute();
 	}
 
-    /**
-     * Gets restrictions TSConfig part.
-     *
-     * @param string $restrictionPropertyName
-     * @param bool $defaultValue
-     * @return bool
-     */
-    protected function getTsConfigRestriction($restrictionPropertyName, $defaultValue = false) {
-	    $result = $defaultValue;
+	/**
+	 * Gets restrictions TSConfig part.
+	 *
+	 * @param string $restrictionPropertyName
+	 * @param bool $defaultValue
+	 * @return bool
+	 */
+	protected function getTsConfigRestriction($restrictionPropertyName, $defaultValue = false) {
+		$result = $defaultValue;
 
-        $tsConfig = BackendUtility::getModTSconfig((int)GeneralUtility::_GP('id'), 'mod.tx_realurl');
-        if (is_array($tsConfig['properties']) && is_array($tsConfig['properties']['restrictions.']) && isset($tsConfig['properties']['restrictions.'][$restrictionPropertyName])) {
-            $result = (bool)$tsConfig['properties']['restrictions.'][$restrictionPropertyName];
-        }
+		$tsConfig = BackendUtility::getModTSconfig((int)GeneralUtility::_GP('id'), 'mod.tx_realurl');
+		if (is_array($tsConfig['properties']) && is_array($tsConfig['properties']['restrictions.']) && isset($tsConfig['properties']['restrictions.'][$restrictionPropertyName])) {
+			$result = (bool)$tsConfig['properties']['restrictions.'][$restrictionPropertyName];
+		}
 
-        return $result;
+		return $result;
 	}
 
 	/**
@@ -213,16 +213,16 @@ class UrlCacheController extends BackendModuleController {
 		}
 	}
 
-    /**
-     * Checks if flush all entries should be visible.
-     *
-     * @return bool
-     */
-    protected function shouldShowFlushAllButton() {
-        return $GLOBALS['BE_USER']->isAdmin() || !$this->getTsConfigRestriction('disableFlushAllUrls');
+	/**
+	 * Checks if flush all entries should be visible.
+	 *
+	 * @return bool
+	 */
+	protected function shouldShowFlushAllButton() {
+		return $GLOBALS['BE_USER']->isAdmin() || !$this->getTsConfigRestriction('disableFlushAllUrls');
 	}
 
-    protected function shouldShowFlushAllPageUrlsButton() {
-        return $GLOBALS['BE_USER']->isAdmin() || !$this->getTsConfigRestriction('disableFlushAllPageUrls');
+	protected function shouldShowFlushAllPageUrlsButton() {
+		return $GLOBALS['BE_USER']->isAdmin() || !$this->getTsConfigRestriction('disableFlushAllPageUrls');
 	}
 }
