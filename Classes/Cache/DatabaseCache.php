@@ -218,6 +218,15 @@ class DatabaseCache implements CacheInterface, SingletonInterface {
 				'', 'expire'
 		);
 
+		// More than one urldata entry? Then prefer those with cHash
+		if (count($rows) > 1) {
+			if (preg_match('/cHash/', json_encode($rows))) {
+				$rows = array_filter($rows, function ($row) {
+					return strpos($row['original_url'], 'cHash') !== false ? true : false;
+				});
+			}
+		}
+
 		$row = null;
 		foreach ($rows as $rowCandidate) {
 			$variables = (array)@json_decode($rowCandidate['request_variables'], TRUE);
