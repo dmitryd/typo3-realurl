@@ -205,6 +205,8 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 					@ob_end_clean();
 					header(self::REDIRECT_STATUS_HEADER);
 					header(self::REDIRECT_INFO_HEADER . ': redirecting expired URL to a fresh one');
+					header('Content-length: 0');
+					header('Connection: close');
 					header('Location: ' . GeneralUtility::locationHeaderUrl($newerCacheEntry->getSpeakingUrl()));
 					die;
 				}
@@ -249,6 +251,8 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 							@ob_end_clean();
 							header($status);
 							header(self::REDIRECT_INFO_HEADER . ': redirect for missing slash');
+							header('Content-length: 0');
+							header('Connection: close');
 							header('Location: ' . GeneralUtility::locationHeaderUrl($this->speakingUri));
 							exit;
 						}
@@ -522,6 +526,8 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 				@ob_end_clean();
 				header(self::REDIRECT_STATUS_HEADER);
 				header(self::REDIRECT_INFO_HEADER . ': redirect for expired page path');
+				header('Content-length: 0');
+				header('Connection: close');
 				header('Location: ' . GeneralUtility::locationHeaderUrl($newUrl));
 				die;
 			}
@@ -1111,6 +1117,8 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 			@ob_end_clean();
 			header(self::REDIRECT_STATUS_HEADER);
 			header(self::REDIRECT_INFO_HEADER  . ': postVarSet_failureMode redirect for ' . $postVarSetKey);
+			header('Content-length: 0');
+			header('Connection: close');
 			header('Location: ' . GeneralUtility::locationHeaderUrl($goodPath));
 			exit;
 		} elseif ($failureMode == 'ignore') {
