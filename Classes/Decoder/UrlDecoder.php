@@ -603,7 +603,8 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 			}
 
 			if (isset($requestVariables['L'])) {
-				$this->detectedLanguageId = (int)$requestVariables['L'];
+				$requestVariables['L'] = (int)$requestVariables['L'] ;
+				$this->detectedLanguageId = $requestVariables['L'];
 			}
 		}
 		if (is_null($this->detectedLanguageId)) {
