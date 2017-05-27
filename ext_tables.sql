@@ -45,7 +45,7 @@ CREATE TABLE tx_realurl_urldata (
 
 	PRIMARY KEY (uid),
 	KEY parent (pid),
-	KEY pathq1 (rootpage_id,original_url(32),expire),
+	KEY pathq1 (rootpage_id,expire,original_url(32)),
 	KEY pathq2 (rootpage_id,speaking_url(32)),
 	KEY page_id (page_id)
 ) ENGINE=InnoDB;

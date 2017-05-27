@@ -388,15 +388,10 @@ class DatabaseCache implements CacheInterface, SingletonInterface {
 				$data
 			);
 		} else {
-			$this->databaseConnection->sql_query('START TRANSACTION');
 
 			if ($this->limitTableRecords('tx_realurl_urldata')) {
 				$this->databaseConnection->sql_query('DELETE FROM tx_realurl_uniqalias_cache_map WHERE url_cache_id NOT IN (SELECT uid FROM tx_realurl_urldata)');
 			}
-
-			$data['crdate'] = time();
-			$this->databaseConnection->exec_INSERTquery('tx_realurl_urldata', $data);
-			$cacheEntry->setCacheId($this->databaseConnection->sql_insert_id());
 
 			// Remove expired URLs with the same path
 			$languageStatement = '';
@@ -410,7 +405,10 @@ class DatabaseCache implements CacheInterface, SingletonInterface {
 					$languageStatement
 			);
 
-			$this->databaseConnection->sql_query('COMMIT');
+			// Add this entry
+			$data['crdate'] = time();
+			$this->databaseConnection->exec_INSERTquery('tx_realurl_urldata', $data);
+			$cacheEntry->setCacheId($this->databaseConnection->sql_insert_id());
 		}
 	}
 
