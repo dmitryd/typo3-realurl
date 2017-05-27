@@ -1216,6 +1216,7 @@ class UrlEncoder extends EncodeDecoderBase {
 			if (count($cHashParameters) === 0) {
 				unset($sortedUrlParameters['cHash']);
 				unset($this->urlParameters['cHash']);
+				unset($this->originalUrlParameters['cHash']);
 			}
 		}
 
