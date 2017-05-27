@@ -1129,7 +1129,7 @@ class UrlEncoder extends EncodeDecoderBase {
 	protected function isLinkingAcrossDomains() {
 		$result = true;
 
-		foreach (array_reverse($this->tsfe->rootLine) as $page) {
+		foreach ($this->tsfe->rootLine as $page) {
 			if ($page['uid'] == $this->rootPageId) {
 				$result = false;
 				break;

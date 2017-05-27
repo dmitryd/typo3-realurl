@@ -1165,6 +1165,10 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 				$result = true;
 				break;
 			}
+			if ($page['php_tree_stop'] || $page['is_siteroot']) {
+				// Pages beyond this one cannot be root pages (we do not support nested domains!)
+				break;
+			}
 		}
 
 		return $result;
