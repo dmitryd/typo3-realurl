@@ -1211,13 +1211,13 @@ class UrlEncoder extends EncodeDecoderBase {
 		$this->sortArrayDeep($sortedUrlParameters);
 
 		if (isset($sortedUrlParameters['cHash'])) {
-            $cacheHashCalculator = GeneralUtility::makeInstance(CacheHashCalculator::class);
-            $cHashParameters = $cacheHashCalculator->getRelevantParameters(GeneralUtility::implodeArrayForUrl('', $sortedUrlParameters));
-            if (count($cHashParameters) === 0) {
-                unset($sortedUrlParameters['cHash']);
-                unset($this->urlParameters['cHash']);
-            }
-        }
+			$cacheHashCalculator = GeneralUtility::makeInstance(CacheHashCalculator::class);
+			$cHashParameters = $cacheHashCalculator->getRelevantParameters(GeneralUtility::implodeArrayForUrl('', $sortedUrlParameters));
+			if (count($cHashParameters) === 0) {
+				unset($sortedUrlParameters['cHash']);
+				unset($this->urlParameters['cHash']);
+			}
+		}
 
 		$this->originalUrl = $this->createQueryStringFromParameters($sortedUrlParameters);
 	}
