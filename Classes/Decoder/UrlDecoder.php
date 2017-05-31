@@ -1504,6 +1504,7 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 			$requestVariables = $cacheEntry->getRequestVariables();
 			$this->restoreIgnoredUrlParameters($requestVariables);
 			$requestVariables['id'] = $cacheEntry->getPageId();
+			$requestVariables = $this->addCHashIfMissingAndEnabled($requestVariables);
 			$_SERVER['QUERY_STRING'] = $this->createQueryStringFromParameters($requestVariables);
 
 			// Setting info in TSFE
@@ -1515,6 +1516,61 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 				$this->mimeType = null;
 			}
 		}
+	}
+
+	/**
+	 * Calculates the cHash parameter if it is not set in requestVariables
+	 * and if calculateChashIfMissing is set to true in realurl init configuration.
+	 *
+	 * @param array $requestVariables
+	 *
+	 * @return array
+	 */
+	protected function addCHashIfMissingAndEnabled(array $requestVariables)
+	{
+		$initConf = $this->configuration->get('init');
+		$calculateChashIfMissing = (bool)$initConf['calculateChashIfMissing'];
+
+		if ($calculateChashIfMissing == true
+		    && !isset($requestVariables['cHash'])
+		    && empty($requestVariables['cHash'])
+		) {
+			$cHash = '';
+			$queryStringForCHash = $this->generateQueryStringForCHash($requestVariables);
+
+			if ($queryStringForCHash !== ''){
+				/** @var \TYPO3\CMS\Frontend\Page\CacheHashCalculator $cacheHashCalculator */
+				$cacheHashCalculator = GeneralUtility::makeInstance(\TYPO3\CMS\Frontend\Page\CacheHashCalculator::class);
+				$cHash = $cacheHashCalculator->generateForParameters($queryStringForCHash);
+			}
+
+			if ($cHash !== '') {
+				$requestVariables['cHash'] = $cHash;
+			}
+		}
+
+		return $requestVariables;
+	}
+
+	protected function generateQueryStringForCHash($requestVariables) {
+		$queryStringArray = [];
+		$initConf = $this->configuration->get('init');
+		$allPostVarSets = array_filter((array)$this->configuration->get('postVarSets'));
+		$postVarSets = $this->getConfigurationForPostVars($allPostVarSets, $requestVariables['id']);
+		foreach ($initConf['generateCHashFor'] as $postVarSetConfig) {
+			foreach ($postVarSets[$postVarSetConfig] as $item) {
+				if (array_key_exists($item['GETvar'], $requestVariables)) {
+					$queryStringArray[] = $item['GETvar'] . '=' . $requestVariables[$item['GETvar']];
+				} else {
+					if ($item['noMatch'] !== 'bypass') {
+						$queryStringArray = [];
+						break;
+					}
+				}
+			}
+		}
+
+		return implode('&', $queryStringArray);
 	}
 
 	/**
