@@ -1209,10 +1209,11 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 	 * @return bool
 	 */
 	protected function isSpeakingUrl() {
+		$tss = ltrim($this->siteScript, "/"); // possibly remove leading slash
 		return $this->siteScript &&
-			substr($this->siteScript, 0, 9) !== 'index.php' &&
-			substr($this->siteScript, 0, 1) !== '?' &&
-			$this->siteScript !== 'favicon.ico' &&
+			substr($tss, 0, 9) !== 'index.php' &&
+			substr($tss, 0, 1) !== '?' &&
+			$tss !== 'favicon.ico' &&
 			(!$this->configuration->get('init/respectSimulateStaticURLs') || !preg_match('/^[a-z0-9\-]+\.([a-z0-9_\-]+)(\.\d+)?\.html/i', $this->siteScript))
 		;
 	}
