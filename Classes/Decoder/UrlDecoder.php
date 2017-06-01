@@ -178,6 +178,22 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 		}
 	}
 
+        /**
+         * Evaluates all regsitered pre segment comparison hooks and creates a disjunction of all their decisions
+         *
+         * @param array $params
+         */
+        protected function callPreSegmentComparisonHooks($params)
+        {
+		$comparison = false;
+		if (is_array($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['decodeSpURL_preSegmentComparison'])) {
+			foreach($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['decodeSpURL_preSegmentComparison'] as $classRef) {
+				$comparison = $comparison || \TYPO3\CMS\Core\Utility\GeneralUtility::getUserObj($classRef)->preSegmentComparisonHook($this, $params, $this->speakingUri);
+			}
+                }
+		return $comparison;
+        }
+
 	/**
 	 * Checks if the decoder can execute.
 	 *
@@ -344,8 +360,16 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 			if ($this->detectedLanguageId > 0 && !isset($page['_PAGES_OVERLAY']) && (empty($languageExceptionUids) || !GeneralUtility::inList($languageExceptionUids, $this->detectedLanguageId))) {
 				$page = $this->pageRepository->getPageOverlay($page, (int)$this->detectedLanguageId);
 			}
+
+
 			foreach (self::$pageTitleFields as $field) {
-				if (isset($page[$field]) && $page[$field] !== '' && $this->utility->convertToSafeString($page[$field], $this->separatorCharacter) === $segment) {
+				$identifierSegmentComparison = $this->utility->convertToSafeString($page[$field], $this->separatorCharacter) === $segment;
+				$hookParams = array(	'pageIdentifier' => $page[$field],
+							'urlSegment' => $segment,
+							'utility' => &$this->utility);
+
+				// calling the hook in the condition supports early evaluation if e.g. the pageidentifier is empty
+				if (isset($page[$field]) && $page[$field] !== '' && ($identifierSegmentComparison ||  $this->callPreSegmentComparisonHooks($hookParams))) {
 					$result = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\Cache\\PathCacheEntry');
 					/** @var \DmitryDulepov\Realurl\Cache\PathCacheEntry $result */
 					$result->setPageId((int)$page['uid']);
