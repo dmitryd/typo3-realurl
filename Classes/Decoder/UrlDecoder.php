@@ -518,11 +518,12 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 			$remainingPathSegments = $savedRemainingPathSegments;
 		}
 		if ($result && $this->expiredPath) {
-			$startPosition = (int)strpos($this->speakingUri, $this->expiredPath);
+			$speakingUri = urldecode($this->speakingUri);
+			$startPosition = (int)strpos($speakingUri, $this->expiredPath);
 			if ($startPosition !== FALSE) {
-				$newUrl = substr($this->speakingUri, 0, $startPosition) .
+				$newUrl = substr($speakingUri, 0, $startPosition) .
 					$result->getPagePath() .
-					substr($this->speakingUri, $startPosition + strlen($this->expiredPath));
+					substr($speakingUri, $startPosition + strlen($this->expiredPath));
 				@ob_end_clean();
 				header(self::REDIRECT_STATUS_HEADER);
 				header(self::REDIRECT_INFO_HEADER . ': redirect for expired page path');
