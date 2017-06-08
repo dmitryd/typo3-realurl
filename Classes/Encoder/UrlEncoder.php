@@ -1407,7 +1407,16 @@ class UrlEncoder extends EncodeDecoderBase {
 	 * @return void
 	 */
 	protected function storeInUrlCache() {
-		if ($this->canCacheUrl($this->originalUrl)) {
+
+                $cacheDeactivated = $this->databaseConnection->exec_SELECTgetRows(
+                        'tx_realurl_nocache',
+                        'pages',
+                        'uid = ' . $this->urlParameters['id'],
+                        '',
+                        '',
+                        '')[0]['tx_realurl_nocache'];
+
+		if ($this->canCacheUrl($this->originalUrl)  && !$cacheDeactivated) {
 			$cacheEntry = $this->cache->getUrlFromCacheByOriginalUrl($this->rootPageId, $this->originalUrl);
 			/** @var \DmitryDulepov\Realurl\Cache\UrlCacheEntry $cacheEntry */
 			if ($cacheEntry && $cacheEntry->getExpiration() !== 0 && $cacheEntry->getSpeakingUrl() === $this->encodedUrl) {
