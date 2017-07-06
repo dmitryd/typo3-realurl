@@ -23,9 +23,11 @@ CREATE TABLE tx_realurl_uniqalias (
 # Table structure for table 'tx_realurl_uniqalias_cache_map'
 #
 CREATE TABLE tx_realurl_uniqalias_cache_map (
+    uid int(11) NOT NULL auto_increment,
 	alias_uid int(11) DEFAULT '0' NOT NULL,
 	url_cache_id int(11) DEFAULT '0' NOT NULL,
 
+	PRIMARY KEY (uid),
 	KEY check_existence (alias_uid,url_cache_id)
 ) ENGINE=InnoDB;
 
