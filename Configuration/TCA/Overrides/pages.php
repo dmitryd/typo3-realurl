@@ -32,16 +32,6 @@ if (!isset($GLOBALS['TCA']['pages']['columns']['tx_realurl_pathsegment'])) {
 				)
 			)
 		),
-		'tx_realurl_nocache' => array(
-			'label' => 'LLL:EXT:realurl/Resources/Private/Language/locallang_db.xlf:pages.tx_realurl_nocache',
-			'exclude' => 1,
-			'config' => array (
-				'type' => 'check',
-				'items' => array(
-					array('LLL:EXT:lang/locallang_core.xlf:labels.enabled', ''),
-				),
-			),
-		)
 	));
 
 	\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addToAllTCAtypes('pages', '--palette--;LLL:EXT:realurl/Resources/Private/Language/locallang_db.xlf:pages.palette_title;tx_realurl', '1,3', 'after:nav_title');

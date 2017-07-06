@@ -12,9 +12,6 @@
 			<trans-unit id="pages.tx_realurl_path_override" xml:space="preserve">
 				<source>Override the whole page path</source>
 			</trans-unit>
-			<trans-unit id="pages.tx_realurl_nocache" xml:space="preserve">
-				<source>Disable RealURL cache</source>
-			</trans-unit>
 			<trans-unit id="pages.palette_title" xml:space="preserve">
 				<source>Speaking URL</source>
 			</trans-unit>
