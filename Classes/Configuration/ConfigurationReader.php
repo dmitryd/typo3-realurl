@@ -85,7 +85,7 @@ class ConfigurationReader {
 	 */
 	protected $defaultValues = array(
 		'cache/banUrlsRegExp' => '/tx_powermail_pi1%5Baction%5D=create|tx_solr|tx_indexedsearch|tx_kesearch|(?:^|\?|&)q=/',
-		'cache/ignoredGetParametersRegExp' => '/^(?:gclid|utm_(source|medium|campaign|term|content)|pk_campaign|pk_kwd|TSFE_ADMIN_PANEL.*)$/',
+		'cache/ignoredGetParametersRegExp' => '/^(?:gclid|utm_(?:source|medium|campaign|term|content)|pk_campaign|pk_kwd|TSFE_ADMIN_PANEL.*)$/',
 		'fileName/acceptHTMLsuffix' => TRUE,
 		'fileName/defaultToHTMLsuffixOnPrev' => FALSE,
 		'init/appendMissingSlash' => 'ifNotFile,redirect[301]',
