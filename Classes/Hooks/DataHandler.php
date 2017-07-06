@@ -82,7 +82,7 @@ class DataHandler implements SingletonInterface {
 		if ($command === 'move' && $table === 'pages') {
 			$this->expireCachesForPageAndSubpages((int)$id, 0);
 
-			$languageOverlays = BackendUtility::getRecordsByField('pages_language_overlay', 'pid', $id);
+			$languageOverlays = $this->getRecordsByField('pages_language_overlay', 'pid', $id);
 			if (is_array($languageOverlays)) {
 				foreach ($languageOverlays as $languageOverlay) {
 					$this->expireCachesForPageAndSubpages($languageOverlay['pid'], $languageOverlay['sys_language_uid']);
@@ -213,7 +213,7 @@ class DataHandler implements SingletonInterface {
 				$expireCache = TRUE;
 				
 				// Updating alternative language pages as well
-				$languageOverlays = BackendUtility::getRecordsByField('pages_language_overlay', 'pid', $pageId);
+				$languageOverlays = $this->getRecordsByField('pages_language_overlay', 'pid', $pageId);
 				if (is_array($languageOverlays)) {
 					foreach ($languageOverlays as $languageOverlay) {
 						$this->expireCachesForPageAndSubpages($languageOverlay['pid'], $languageOverlay['sys_language_uid']);
@@ -245,7 +245,7 @@ class DataHandler implements SingletonInterface {
 		if ($pageId) {
 			$this->cache->expireCache($pageId, $languageId);
 			if ($level++ < 20) {
-				$subpages = BackendUtility::getRecordsByField('pages', 'pid', $pageId);
+				$subpages = $this->getRecordsByField('pages', 'pid', $pageId);
 				if (is_array($subpages)) {
 					$uidList = array();
 					foreach ($subpages as $subpage) {
@@ -258,5 +258,25 @@ class DataHandler implements SingletonInterface {
 				}
 			}
 		}
+	}
+
+	/**
+	 * Fetches records from the database by the field name. This is a replacement for the
+	 * BackendUtility::getRecordsByField() method, which is deprecated since TYPO3 8.7.
+	 *
+	 * @param string $tableName
+	 * @param string $fieldName
+	 * @param mixed $fieldValue
+	 * @return array
+	 */
+	protected function getRecordsByField($tableName, $fieldName, $fieldValue)
+	{
+		$rows = $this->databaseConnection->exec_SELECTgetRows(
+			'*',
+			$tableName,
+			$fieldName . '=' . $this->databaseConnection->fullQuoteStr($fieldValue, $tableName)
+		);
+
+		return (array)$rows;
 	}
 }

@@ -50,6 +50,9 @@ class Utility {
 	/** @var ConfigurationReader */
 	protected $configuration;
 
+	/** @var  \TYPO3\CMS\Core\Database\DatabaseConnection */
+	protected $databaseConnection;
+
 	/**
 	 * Initializes the class.
 	 *
@@ -58,6 +61,7 @@ class Utility {
 	public function __construct(ConfigurationReader $configuration) {
 		$this->csConvertor = TYPO3_MODE == 'BE' ? $GLOBALS['LANG']->csConvObj : $GLOBALS['TSFE']->csConvObj;
 		$this->configuration = $configuration;
+		$this->databaseConnection = $GLOBALS['TYPO3_DB'];
 	}
 
 	/**
