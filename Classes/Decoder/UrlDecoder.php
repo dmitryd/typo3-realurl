@@ -740,6 +740,10 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 	 */
 	protected function decodeUrlParameterBlockUseAsIs(array $configuration, $getVarValue, array &$requestVariables) {
 		// TODO Possible conditions: if int, if notEmpty, etc
+    // skip optional params
+    if(isset($configuration['optional']) && $configuration['optional']) {
+      return false;
+    }
 		$requestVariables[$configuration['GETvar']] = $getVarValue;
 
 		return TRUE;
@@ -759,7 +763,7 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 		if (isset($configuration['lookUpTable'])) {
 			$value = $this->convertAliasToId($configuration['lookUpTable'], $getVarValue);
 			if (!MathUtility::canBeInterpretedAsInteger($value) && $value === $getVarValue) {
-				if ($configuration['lookUpTable']['enable404forInvalidAlias']) {
+				if ($configuration['lookUpTable']['enable404forInvalidAlias'] && (!isset($configuration['optional']) || !$configuration['optional']) ) {
 					$this->throw404('Could not map alias "' . $value . '" to an id.');
 				}
 			} else {
