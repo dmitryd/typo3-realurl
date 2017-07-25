@@ -1574,6 +1574,12 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 			$_GET['L'] = $this->detectedLanguageId;
 		}
 
-		$this->caller->pageNotFoundAndExit($errorMessage);
+		if ($this->configuration->get('init/override_404_page_handling')) {
+            $override404PageHandling = $this->configuration->get('init/override_404_page_handling');
+            $override404PageHeader = $this->configuration->get('init/override_404_page_header');
+            $this->caller->pageErrorHandler($override404PageHandling, $override404PageHeader, $errorMessage);
+        } else {
+            $this->caller->pageNotFoundAndExit($errorMessage);
+        }
 	}
 }
