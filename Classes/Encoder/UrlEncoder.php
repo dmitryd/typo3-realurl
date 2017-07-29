@@ -1210,8 +1210,7 @@ class UrlEncoder extends EncodeDecoderBase {
 				$result = false;
 				break;
 			}
-			if ($page['php_tree_stop'] || $page['is_siteroot']) {
-				// Pages beyond this one cannot be root pages (we do not support nested domains!)
+			if ($page['php_tree_stop']) {
 				break;
 			}
 		}
