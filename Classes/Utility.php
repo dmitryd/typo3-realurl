@@ -97,7 +97,7 @@ class Utility {
 	 */
 	public function convertToSafeString($processedTitle, $spaceCharacter = '-', $strToLower = true) {
 		if ($strToLower) {
-			$processedTitle = $this->csConvertor->conv_case('utf-8', $processedTitle, 'toLower');
+			$processedTitle = mb_strtolower($processedTitle, 'UTF-8');
 		}
 		$processedTitle = strip_tags($processedTitle);
 		$processedTitle = preg_replace('/[ \t\x{00A0}\-+_]+/u', $spaceCharacter, $processedTitle);
