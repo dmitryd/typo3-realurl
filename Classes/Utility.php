@@ -70,14 +70,15 @@ class Utility {
 	 * @return void
 	 */
 	static public function checkAndPerformRequiredUpdates() {
-		$currentUpdateLevel = 3;
+		$currentUpdateLevel = 4;
 
-		$registry = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Registry');
+		$registry = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Registry');
 		/** @var \TYPO3\CMS\Core\Registry $registry */
 		$updateLevel = (int)$registry->get('tx_realurl', 'updateLevel', 0);
 		if ($updateLevel < $currentUpdateLevel) {
+			/** @noinspection PhpIncludeInspection */
 			require_once(ExtensionManagementUtility::extPath('realurl', 'class.ext_update.php'));
-			$updater = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\ext_update');
+			$updater = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\ext_update');
 			/** @var \DmitryDulepov\Realurl\ext_update $updater */
 			if ($updater->access()) {
 				$updater->main();

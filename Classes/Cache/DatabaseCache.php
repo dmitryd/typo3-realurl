@@ -178,6 +178,7 @@ class DatabaseCache implements CacheInterface, SingletonInterface {
 
 		$row = $this->databaseConnection->exec_SELECTgetSingleRow('*', 'tx_realurl_urldata',
 			'rootpage_id=' . (int)$rootPageId . ' AND ' .
+				'original_url_hash=' . crc32($originalUrl) . ' AND ' .
 				'original_url=' . $this->databaseConnection->fullQuoteStr($originalUrl, 'tx_realurl_urldata'),
 				'', 'expire'
 		);
@@ -214,6 +215,7 @@ class DatabaseCache implements CacheInterface, SingletonInterface {
 
 		$rows = $this->databaseConnection->exec_SELECTgetRows('*', 'tx_realurl_urldata',
 			'rootpage_id=' . (int)$rootPageId . ' AND ' .
+				'speaking_url_hash=' . crc32($speakingUrl) . ' AND ' .
 				'speaking_url=' . $this->databaseConnection->fullQuoteStr($speakingUrl, 'tx_realurl_urldata'),
 				'', 'expire'
 		);
@@ -377,10 +379,12 @@ class DatabaseCache implements CacheInterface, SingletonInterface {
 		$data = array(
 			'expire' => $cacheEntry->getExpiration(),
 			'original_url' => $cacheEntry->getOriginalUrl(),
+			'original_url_hash' => crc32($cacheEntry->getOriginalUrl()),
 			'page_id' => $cacheEntry->getPageId(),
 			'request_variables' => json_encode($requestVariables),
 			'rootpage_id' => $cacheEntry->getRootPageId(),
 			'speaking_url' => $cacheEntry->getSpeakingUrl(),
+			'speaking_url_hash' => crc32($cacheEntry->getSpeakingUrl()),
 		);
 		if ($cacheEntry->getCacheId()) {
 			$this->databaseConnection->exec_UPDATEquery('tx_realurl_urldata',
