@@ -164,8 +164,8 @@ class DataHandler implements SingletonInterface {
 			$expirationTime = time() + 30*24*60*60;
 			// This check would be sufficient for most cases but only when id_field is 'uid' in the configuration
 			$result = $this->databaseConnection->sql_query(
-				'SELECT uid,expire,url_cache_id FROM ' .
-				'tx_realurl_uniqalias LEFT JOIN tx_realurl_uniqalias_cache_map ON uid=alias_uid ' .
+				'SELECT tx_realurl_uniqalias.uid,expire,url_cache_id FROM ' .
+				'tx_realurl_uniqalias LEFT JOIN tx_realurl_uniqalias_cache_map ON tx_realurl_uniqalias.uid=alias_uid ' .
 				'WHERE tablename=' . $this->databaseConnection->fullQuoteStr($tableName, 'tx_realurl_uniqalias') . ' ' .
 				'AND value_id=' . $recordId . ' AND lang=' . $languageId
 			);
