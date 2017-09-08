@@ -154,7 +154,7 @@ class DataHandler implements SingletonInterface {
 					$languageId = (int)$record[$languageField];
 					if ($languageId > 0) {
 						// Can't use !== 0 here because we need to ignore "$languageId === -1"
-						$transOrigPointerField = (int)$GLOBALS['TCA'][$tableName]['ctrl']['transOrigPointerField'];
+						$transOrigPointerField = $GLOBALS['TCA'][$tableName]['ctrl']['transOrigPointerField'];
 						$recordId = (int)$record[$transOrigPointerField];
 						unset($transOrigPointerField);
 					}
