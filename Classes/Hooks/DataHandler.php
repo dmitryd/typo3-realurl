@@ -79,7 +79,7 @@ class DataHandler implements SingletonInterface {
 	 * @param int $id
 	 */
 	public function processCmdmap_postProcess($command, $table, $id) {
-		if ($command === 'move' && $table === 'pages') {
+		if ( ( $command === 'move' || $command === "version" ) && $table === 'pages') {
 			$this->expireCachesForPageAndSubpages((int)$id, 0);
 
 			$languageOverlays = $this->getRecordsByField('pages_language_overlay', 'pid', $id);
