@@ -404,6 +404,7 @@ class DatabaseCache implements CacheInterface, SingletonInterface {
 			}
 			$this->databaseConnection->exec_DELETEquery('tx_realurl_urldata',
 				'rootpage_id=' . (int)$cacheEntry->getRootPageId() . ' AND ' .
+					'speaking_url_hash=' . sprintf('%u', crc32($cacheEntry->getSpeakingUrl())) . ' AND ' .
 					'expire>0 AND ' .
 					'speaking_url=' . $this->databaseConnection->fullQuoteStr($cacheEntry->getSpeakingUrl(), 'tx_realurl_urldata') .
 					$languageStatement
