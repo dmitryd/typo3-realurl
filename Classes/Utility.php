@@ -76,6 +76,9 @@ class Utility {
 		/** @var \TYPO3\CMS\Core\Registry $registry */
 		$updateLevel = (int)$registry->get('tx_realurl', 'updateLevel', 0);
 		if ($updateLevel < $currentUpdateLevel) {
+			// Change it at once in order to prevent parallel updates
+			$registry->set('tx_realurl', 'updateLevel', $currentUpdateLevel);
+
 			/** @noinspection PhpIncludeInspection */
 			require_once(ExtensionManagementUtility::extPath('realurl', 'class.ext_update.php'));
 			$updater = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\ext_update');
@@ -83,7 +86,6 @@ class Utility {
 			if ($updater->access()) {
 				$updater->main();
 			}
-			$registry->set('tx_realurl', 'updateLevel', $currentUpdateLevel);
 		}
 	}
 
