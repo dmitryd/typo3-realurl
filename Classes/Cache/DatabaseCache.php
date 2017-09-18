@@ -217,7 +217,7 @@ class DatabaseCache implements CacheInterface, SingletonInterface {
 			'rootpage_id=' . (int)$rootPageId . ' AND ' .
 				'speaking_url_hash=' . sprintf('%u', crc32($speakingUrl)) . ' AND ' .
 				'speaking_url=' . $this->databaseConnection->fullQuoteStr($speakingUrl, 'tx_realurl_urldata'),
-				'', 'expire'
+				'', 'expire, uid DESC'
 		);
 
 		$row = null;
