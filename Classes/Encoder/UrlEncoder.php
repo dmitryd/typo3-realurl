@@ -1304,7 +1304,7 @@ class UrlEncoder extends EncodeDecoderBase {
 		if (isset($sortedUrlParameters['cHash'])) {
 			$cacheHashCalculator = GeneralUtility::makeInstance('TYPO3\\CMS\\Frontend\\Page\\CacheHashCalculator');
 			$cHashParameters = $cacheHashCalculator->getRelevantParameters(GeneralUtility::implodeArrayForUrl('', $sortedUrlParameters));
-			if (count($cHashParameters) === 0) {
+			if (count($cHashParameters) === 0 || (count($sortedUrlParameters) === 2 && !empty($sortedUrlParameters['L']))) {
 				unset($sortedUrlParameters['cHash']);
 				unset($this->urlParameters['cHash']);
 				unset($this->originalUrlParameters['cHash']);
