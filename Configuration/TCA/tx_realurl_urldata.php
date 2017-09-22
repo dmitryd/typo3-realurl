@@ -66,6 +66,7 @@ $GLOBALS['TCA']['tx_realurl_urldata'] = array(
 			'label' => '',
 			'config' => array(
 				'type' => 'input',
+				'renderType' => 'inputDateTime',
 				'eval' => 'datetime',
 				'default' => 0,
 			)
