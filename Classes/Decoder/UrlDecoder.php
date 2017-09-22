@@ -1378,6 +1378,9 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 				$this->pageRepository->enableFields('pages', 1, array('fe_group' => true)),
 				'', 'sorting'
 		);
+		if (!is_array($rows)){
+			return $result;
+		}
 		foreach ($rows as $row) {
 			if ($this->isPageInRootlineOfRootPage((int)$row['uid'])) {
 				// Found it!
