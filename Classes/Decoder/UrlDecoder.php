@@ -318,7 +318,7 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 			$row = $this->databaseConnection->exec_SELECTgetSingleRow(implode(',', $fieldList),
 				$configuration['table'],
 				$configuration['alias_field'] . '=' . $this->databaseConnection->fullQuoteStr($value, $configuration['table']) .
-				' ' . $configuration['addWhereClause']);
+				$configuration['addWhereClause']);
 			if (is_array($row)) {
 				$result = (int)$row[$configuration['id_field']];
 
