@@ -41,9 +41,9 @@ CREATE TABLE tx_realurl_urldata (
 	page_id int(11) DEFAULT '0' NOT NULL,
 	rootpage_id int(11) DEFAULT '0' NOT NULL,
 	original_url text,
-    original_url_hash int(11) UNSIGNED DEFAULT '0' NOT NULL,
+    original_url_hash int(11) unsigned DEFAULT '0' NOT NULL,
 	speaking_url text,
-    speaking_url_hash int(11) UNSIGNED DEFAULT '0' NOT NULL,
+    speaking_url_hash int(11) unsigned DEFAULT '0' NOT NULL,
 	request_variables text,
 	expire int(11) DEFAULT '0' NOT NULL,
 
