@@ -10,7 +10,7 @@
 
 $EM_CONF[$_EXTKEY] = array (
   'title' => 'Speaking URLs for TYPO3',
-  'description' => 'Makes TYPO3 URLs search engine friendly. Donations are welcome to dmitry.dulepov@gmail.com. They help to support the extension!',
+  'description' => 'READ BEFORE UPGRADING: http://bit.ly/2xUvCjw !!! // Makes TYPO3 URLs search engine friendly. Donations are welcome to dmitry.dulepov@gmail.com. They help to support the extension!',
   'category' => 'services',
   'version' => '2.2.1',
   'state' => 'stable',
