@@ -3,8 +3,8 @@
     "type": "typo3-cms-extension",
     "description": "Speaking URLs for TYPO3",
     "homepage": "https://github.com/dmitryd/typo3-realurl",
-    "version": "2.2.1",
-    "time": "2017-05-11",
+    "version": "2.3.0",
+    "time": "2017-10-05",
     "license": "GPL-3.0+",
     "conflict": {
         "bednee/cooluri": ">0.0.1",
@@ -25,7 +25,8 @@
     },
     "require": {
         "typo3/cms-core": ">=6.2.0,<8.7.999",
-        "php": ">=5.4.0"
+        "php": ">=5.4.0",
+        "ext-mbstring": "*"
     },
     "require-dev": {
         "phpunit/phpunit": "~4.8.0"

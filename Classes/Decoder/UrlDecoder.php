@@ -202,9 +202,18 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 				// redirection happen starting from the second visit to the
 				// expired url.
 				if ($cacheEntry->getSpeakingUrl() !== $newerCacheEntry->getSpeakingUrl()) {
+					$this->logger->notice(
+						sprintf(
+							'RealURL redirects expired URL "%s" to a newer URL "%s"',
+							$cacheEntry->getSpeakingUrl(),
+							$newerCacheEntry->getSpeakingUrl()
+						)
+					);
 					@ob_end_clean();
 					header(self::REDIRECT_STATUS_HEADER);
 					header(self::REDIRECT_INFO_HEADER . ': redirecting expired URL to a fresh one');
+					header('Content-length: 0');
+					header('Connection: close');
 					header('Location: ' . GeneralUtility::locationHeaderUrl($newerCacheEntry->getSpeakingUrl()));
 					die;
 				}
@@ -222,7 +231,7 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 	 * @return void
 	 */
 	protected function checkMissingSlash() {
-		$this->speakingUri = rtrim($this->speakingUri, '?');
+		$originalUri = $this->speakingUri = rtrim($this->speakingUri, '?');
 
 		$regexp = '~^([^\?]*[^/])(\?.*)?$~';
 		if (preg_match($regexp, $this->speakingUri)) { // Only process if a slash is missing:
@@ -246,9 +255,19 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 						// Check path segment to be relative for the current site.
 						// parse_url() does not work with relative URLs, so we use it to test
 						if (!@parse_url($this->speakingUri, PHP_URL_HOST)) {
+							$this->logger->notice(
+								sprintf(
+									'RealURL redirects from "%s" to "%s" due to missing slash',
+									$originalUri,
+									$this->speakingUri
+								)
+							);
+
 							@ob_end_clean();
 							header($status);
 							header(self::REDIRECT_INFO_HEADER . ': redirect for missing slash');
+							header('Content-length: 0');
+							header('Connection: close');
 							header('Location: ' . GeneralUtility::locationHeaderUrl($this->speakingUri));
 							exit;
 						}
@@ -519,9 +538,18 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 				$newUrl = substr($this->speakingUri, 0, $startPosition) .
 					$result->getPagePath() .
 					substr($this->speakingUri, $startPosition + strlen($this->expiredPath));
+				$this->logger->debug(
+					sprintf(
+						'RealURL is redirecting from "%s" to "%s" because the former is expired',
+						$this->speakingUri,
+						$newUrl
+					)
+				);
 				@ob_end_clean();
 				header(self::REDIRECT_STATUS_HEADER);
 				header(self::REDIRECT_INFO_HEADER . ': redirect for expired page path');
+				header('Content-length: 0');
+				header('Connection: close');
 				header('Location: ' . GeneralUtility::locationHeaderUrl($newUrl));
 				die;
 			}
@@ -529,6 +557,12 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 		if ($result || (int)$currentPid === (int)$this->rootPageId) {
 			$pathSegments = $remainingPathSegments;
 		} else {
+			$this->logger->error(
+				sprintf(
+					'Decoder was not able to decode "%s" and will throw a 404 now',
+					implode('/', $pathSegments)
+				)
+			);
 			$this->throw404('Cannot decode "' . implode('/', $pathSegments) . '"');
 		}
 
@@ -1111,6 +1145,8 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 			@ob_end_clean();
 			header(self::REDIRECT_STATUS_HEADER);
 			header(self::REDIRECT_INFO_HEADER  . ': postVarSet_failureMode redirect for ' . $postVarSetKey);
+			header('Content-length: 0');
+			header('Connection: close');
 			header('Location: ' . GeneralUtility::locationHeaderUrl($goodPath));
 			exit;
 		} elseif ($failureMode == 'ignore') {
@@ -1316,6 +1352,12 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 			// can get to the cache. On the other hand we cannot store URLs
 			// without parameters because those can be fully legal and entries
 			// without parameters will be useless.
+			$this->logger->notice(
+				sprintf(
+					'URL "%s" was not found in RealURL cache when decoding.',
+					$urlPath
+				)
+			);
 		}
 		$this->checkExpiration($cacheEntry);
 		$this->setRequestVariables($cacheEntry);

@@ -64,6 +64,7 @@ class ext_update {
 		$this->updateRealurlTableStructure();
 		$this->removeUrlDataEntriesWithIgnoredParameters();
 		$this->updateCJKSpeakingUrls();
+		$this->updateUrlHashes();
 
 		if ($locker && (method_exists($locker, 'isAcquired') && $locker->isAcquired() || method_exists($locker, 'getLockStatus') && $locker->getLockStatus())) {
 			$locker->release();
@@ -77,7 +78,9 @@ class ext_update {
 	 * @return bool
 	 */
 	public function access() {
-		return $this->hasOldCacheTables() || $this->pathCacheNeedsUpdates() || $this->hasUnencodedCJKCharacters();
+		return $this->hasOldCacheTables() || $this->pathCacheNeedsUpdates() || $this->hasUnencodedCJKCharacters() ||
+			$this->hasEmptyUrlHashes()
+		;
 	}
 
 	/**
@@ -140,6 +143,29 @@ class ext_update {
 		return $locker;
 	}
 
+	/**
+	 * Checks if the database has empty url hashes.
+	 *
+	 * @return bool
+	 */
+	protected function hasEmptyUrlHashes() {
+		$count = $this->databaseConnection->exec_SELECTcountRows(
+			'*',
+			'tx_realurl_urldata',
+			'original_url_hash=0 OR speaking_url_hash=0'
+		);
+
+		// If $count is false, it means that fields are missing. So we force
+		// the update because table structure will be also fixed by the updater.
+
+		return $count === false || $count > 0;
+	}
+
+	/**
+	 * Checks if the system has old cache tables.
+	 *
+	 * @return bool
+	 */
 	protected function hasOldCacheTables() {
 		$tables = $this->databaseConnection->admin_get_tables();
 		return isset($tables['tx_realurl_pathcache']) || isset($tables['tx_realurl_urlcache']);
@@ -245,4 +271,14 @@ class ext_update {
 		}
 	}
 
+	/**
+	 * Updates URL hashes.
+	 */
+	protected function updateUrlHashes() {
+		$this->databaseConnection->sql_query('UPDATE tx_realurl_urldata SET
+			original_url_hash=CRC32(original_url),
+			speaking_url_hash=CRC32(speaking_url)
+			WHERE original_url_hash=0 OR speaking_url_hash=0 
+		');
+	}
 }

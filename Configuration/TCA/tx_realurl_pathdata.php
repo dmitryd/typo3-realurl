@@ -24,52 +24,61 @@
 
 $GLOBALS['TCA']['tx_realurl_pathdata'] = array(
 	'ctrl' => array(
+		'title' => 'LLL:EXT:realurl/Resources/Private/Language/locallang_db.xlf:tx_realurl_pathdata',
 		'label' => 'pagepath',
+		'iconfile' => 'EXT:realurl/Resources/Public/Icons/Extension.svg',
 		'hideTable' => 1,
+		'rootLevel' => 1,
 	),
 	'columns' => array(
 		'page_id' => array(
-			'label' => '',
+			'label' => 'LLL:EXT:realurl/Resources/Private/Language/locallang_db.xlf:tx_realurl_pathdata.page_id',
 			'config' => array(
 				'type' => 'input',
 				'eval' => 'int,required',
 			)
 		),
 		'rootpage_id' => array(
-			'label' => '',
+			'label' => 'LLL:EXT:realurl/Resources/Private/Language/locallang_db.xlf:tx_realurl_pathdata.rootpage_id',
 			'config' => array(
 				'type' => 'input',
 				'eval' => 'int,required',
 			)
 		),
 		'language_id' => array(
-			'label' => '',
+			'label' => 'LLL:EXT:realurl/Resources/Private/Language/locallang_db.xlf:tx_realurl_pathdata.language_id',
 			'config' => array(
 				'type' => 'input',
 				'eval' => 'int,required',
 			)
 		),
 		'mpvar' => array(
-			'label' => '',
+				'label' => 'LLL:EXT:realurl/Resources/Private/Language/locallang_db.xlf:tx_realurl_pathdata.mpvar',
 			'config' => array(
 				'type' => 'input',
 				'eval' => 'trim',
 			)
 		),
 		'pagepath' => array(
-			'label' => '',
+			'label' => 'LLL:EXT:realurl/Resources/Private/Language/locallang_db.xlf:tx_realurl_pathdata.pagepath',
 			'config' => array(
 				'type' => 'input',
 				'eval' => 'trim,required',
 			)
 		),
 		'expire' => array(
-			'label' => '',
+			'label' => 'LLL:EXT:realurl/Resources/Private/Language/locallang_db.xlf:tx_realurl_pathdata.expire',
 			'config' => array(
 				'type' => 'input',
+				'renderType' => 'inputDateTime',
 				'eval' => 'datetime',
 				'default' => 0,
 			)
+		),
+	),
+	'types' => array(
+		0 => array(
+			'showitem' => '',
 		),
 	),
 );

@@ -24,20 +24,24 @@
 
 $GLOBALS['TCA']['tx_realurl_uniqalias'] = array(
 	'ctrl' => array(
+		'title' => 'LLL:EXT:realurl/Resources/Private/Language/locallang_db.xlf:tx_realurl_uniqalias',
 		'label' => 'value_alias',
+		'iconfile' => 'EXT:realurl/Resources/Public/Icons/Extension.svg',
 		'hideTable' => 1,
+		'rootLevel' => 1,
 	),
 	'columns' => array(
 		'expire' => array(
-			'label' => '',
+			'label' => 'LLL:EXT:realurl/Resources/Private/Language/locallang_db.xlf:tx_realurl_uniqalias.expire',
 			'config' => array(
 				'type' => 'input',
+				'renderType' => 'inputDateTime',
 				'eval' => 'datetime',
 				'default' => 0,
 			)
 		),
 		'lang' => array(
-			'label' => '',
+			'label' => 'LLL:EXT:realurl/Resources/Private/Language/locallang_db.xlf:tx_realurl_uniqalias.lang',
 			'config' => array(
 				'type' => 'input',
 				'eval' => 'int,required',
@@ -45,39 +49,46 @@ $GLOBALS['TCA']['tx_realurl_uniqalias'] = array(
 			)
 		),
 		'tablename' => array(
-			'label' => '',
+			'label' => 'LLL:EXT:realurl/Resources/Private/Language/locallang_db.xlf:tx_realurl_uniqalias.tablename',
 			'config' => array(
 				'type' => 'input',
 				'eval' => 'required',
 			)
 		),
 		'value_alias' => array(
-			'label' => '',
+			'label' => 'LLL:EXT:realurl/Resources/Private/Language/locallang_db.xlf:tx_realurl_uniqalias.value_alias',
 			'config' => array(
 				'type' => 'input',
 				'eval' => 'required',
 			)
 		),
 		'value_id' => array(
-			'label' => '',
+			'label' => 'LLL:EXT:realurl/Resources/Private/Language/locallang_db.xlf:tx_realurl_uniqalias.value_id',
 			'config' => array(
 				'type' => 'input',
 				'eval' => 'int,required',
 			)
 		),
 		'field_alias' => array(
-			'label' => '',
+			'label' => 'LLL:EXT:realurl/Resources/Private/Language/locallang_db.xlf:tx_realurl_uniqalias.field_alias',
 			'config' => array(
 				'type' => 'input',
 				'eval' => 'required',
 			)
 		),
 		'field_id' => array(
-			'label' => '',
+			'label' => 'LLL:EXT:realurl/Resources/Private/Language/locallang_db.xlf:tx_realurl_uniqalias.field_id',
 			'config' => array(
 				'type' => 'input',
 				'eval' => 'required',
 			)
 		),
-	)
+	),
+	'types' => array(
+		'types' => array(
+			0 => array(
+				'showitem' => '',
+			),
+		),
+	),
 );

@@ -24,51 +24,60 @@
 
 $GLOBALS['TCA']['tx_realurl_urldata'] = array(
 	'ctrl' => array(
+		'title' => 'LLL:EXT:realurl/Resources/Private/Language/locallang_db.xlf:tx_realurl_urldata',
 		'label' => 'speaking_url',
+		'iconfile' => 'EXT:realurl/Resources/Public/Icons/Extension.svg',
 		'hideTable' => 1,
+		'rootLevel' => 1,
 	),
 	'columns' => array(
 		'page_id' => array(
-			'label' => '',
+			'label' => 'LLL:EXT:realurl/Resources/Private/Language/locallang_db.xlf:tx_realurl_urldata.page_id',
 			'config' => array(
 				'type' => 'input',
 				'eval' => 'int,required',
 			)
 		),
 		'rootpage_id' => array(
-			'label' => '',
+			'label' => 'LLL:EXT:realurl/Resources/Private/Language/locallang_db.xlf:tx_realurl_urldata.rootpage_id',
 			'config' => array(
 				'type' => 'input',
 				'eval' => 'int,required',
 			)
 		),
 		'original_url' => array(
-			'label' => '',
+			'label' => 'LLL:EXT:realurl/Resources/Private/Language/locallang_db.xlf:tx_realurl_urldata.original_url',
 			'config' => array(
 				'type' => 'input',
 				'eval' => 'trim,required',
 			)
 		),
 		'speaking_url' => array(
-			'label' => '',
+			'label' => 'LLL:EXT:realurl/Resources/Private/Language/locallang_db.xlf:tx_realurl_urldata.speaking_url',
 			'config' => array(
 				'type' => 'input',
 				'eval' => 'trim,required',
 			)
 		),
 		'request_variables' => array(
-			'label' => '',
+			'label' => 'LLL:EXT:realurl/Resources/Private/Language/locallang_db.xlf:tx_realurl_urldata.request_variables',
 			'config' => array(
 				'type' => 'input',
 			)
 		),
 		'expire' => array(
-			'label' => '',
+			'label' => 'LLL:EXT:realurl/Resources/Private/Language/locallang_db.xlf:tx_realurl_urldata.expire',
 			'config' => array(
 				'type' => 'input',
+				'renderType' => 'inputDateTime',
 				'eval' => 'datetime',
 				'default' => 0,
 			)
+		),
+	),
+	'types' => array(
+		0 => array(
+			'showitem' => '',
 		),
 	),
 );

@@ -37,6 +37,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
 use TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer;
 use TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController;
+use TYPO3\CMS\Frontend\Page\CacheHashCalculator;
 use TYPO3\CMS\Frontend\Page\PageRepository;
 
 /**
@@ -133,15 +134,27 @@ class UrlEncoder extends EncodeDecoderBase {
 				$this->executeEncoder();
 				$encoderParameters['LD']['totalURL'] = $this->encodedUrl .
 					(isset($encoderParameters['LD']['sectionIndex']) ? $encoderParameters['LD']['sectionIndex'] : '');
+
+				$this->logger->debug(
+					sprintf(
+						'Created speaking url "%s" from "%s"',
+						$encoderParameters['LD']['totalURL'],
+						$this->originalUrl
+					),
+					$encoderParameters
+				);
 			}
 			catch (InvalidLanguageParameterException $exception) {
-				GeneralUtility::devLog($exception->getMessage(), 'realurl',
-					GeneralUtility::SYSLOG_SEVERITY_WARNING, array(
-						'Stack trace' => $exception->getTrace()
-					)
-				);
 				// Pass through. We just return unencoded URL in such case.
 			}
+		}
+		else {
+			$this->logger->debug(
+				sprintf(
+					'URL "%s" cannot be encoded by realurl',
+					$this->urlToEncode
+				)
+			);
 		}
 	}
 
@@ -183,6 +196,14 @@ class UrlEncoder extends EncodeDecoderBase {
 				);
 				$parameters['finalTagParts']['url'] = $url;
 				$pObj->lastTypoLinkUrl = $url;
+
+				$this->logger->debug(
+					sprintf(
+						'Post-processed encoded url "%s" to "%s"',
+						$testUrl,
+						$url
+					)
+				);
 			}
 		}
 	}
@@ -290,6 +311,14 @@ class UrlEncoder extends EncodeDecoderBase {
 			if (is_array($pageRecord) && ($pageRecord['doktype'] == PageRepository::DOKTYPE_SPACER || $pageRecord['doktype'] == PageRepository::DOKTYPE_RECYCLER)) {
 				$result = false;
 			}
+		}
+		else {
+			$this->logger->debug(
+				sprintf(
+					'URL "%s" will not be cached',
+					$url
+				)
+			);
 		}
 
 		return $result;
@@ -513,6 +542,14 @@ class UrlEncoder extends EncodeDecoderBase {
 				$this->addToPathCache($path);
 			}
 			$result = true;
+
+			$this->logger->debug(
+				sprintf(
+					'Created page path "%s" through override for page %d',
+					$path,
+					(int)$this->urlParameters['id']
+				)
+			);
 		}
 
 		return $result;
@@ -524,6 +561,8 @@ class UrlEncoder extends EncodeDecoderBase {
 	 * @return void
 	 */
 	protected function createPathComponentUsingRootline() {
+		$this->logger->debug('Starting path generation');
+
 		$mountPointParameter = '';
 		if (isset($this->urlParameters['MP'])) {
 			$mountPointParameter = $this->urlParameters['MP'];
@@ -553,6 +592,12 @@ class UrlEncoder extends EncodeDecoderBase {
 			$page = $reversedRootLine[$current];
 			// Skip if this page is excluded
 			if ($page['tx_realurl_exclude'] && $current !== $rootLineMax) {
+				$this->logger->debug(
+					sprintf(
+						'Page %d is excluded from realurl',
+						(int)$page['uid']
+					)
+				);
 				continue;
 			}
 			if ($enableLanguageOverlay) {
@@ -565,6 +610,12 @@ class UrlEncoder extends EncodeDecoderBase {
 
 			// if path override is set, use path segment also for all subpages to shorten the url and throw away all segments found so far
 			if ($page['tx_realurl_pathoverride'] && $page['tx_realurl_pathsegment'] !== '') {
+				$this->logger->debug(
+					sprintf(
+						'Path override detected for page %d',
+						(int)$page['uid']
+					)
+				);
 				$segment = trim($page['tx_realurl_pathsegment'], '/');
 				$segments = explode('/', $segment);
 				array_walk($segments, function(&$segment) {
@@ -585,19 +636,36 @@ class UrlEncoder extends EncodeDecoderBase {
 					}
 					$segment = rawurlencode($segment);
 					$components[] = $segment;
+					$this->logger->debug(
+						sprintf(
+							'Found path segment "%s" using field "%s"',
+							$segment,
+							$field
+						)
+					);
 					continue 2;
 				}
 			}
 		}
 
 		if (count($components) > 0) {
+			$generatedPath = implode('/', $components);
+
 			foreach ($components as $segment) {
 				$this->appendToEncodedUrl($segment);
 			}
 			if ($reversedRootLine[$rootLineMax]['doktype'] != PageRepository::DOKTYPE_SPACER && $reversedRootLine[$rootLineMax]['doktype'] != PageRepository::DOKTYPE_RECYCLER) {
-				$this->addToPathCache(implode('/', $components));
+				$this->addToPathCache($generatedPath);
 			}
+
+			$this->logger->debug(
+				sprintf(
+					'Generated path: "%s"',
+					$generatedPath
+				)
+			);
 		}
+		$this->logger->debug('Finished path generation');
 	}
 
 	/**
@@ -947,6 +1015,15 @@ class UrlEncoder extends EncodeDecoderBase {
 		if ($cacheEntry && $cacheEntry->getExpiration() === 0) {
 			$this->encodedUrl = $cacheEntry->getSpeakingUrl();
 			$result = TRUE;
+
+			$this->logger->debug(
+				sprintf(
+					'Found speaking url "%s" for original url "%s" and root page id %d in cache',
+					$this->encodedUrl,
+					$this->originalUrl,
+					$this->rootPageId
+				)
+			);
 		}
 
 		return $result;
@@ -1208,6 +1285,24 @@ class UrlEncoder extends EncodeDecoderBase {
 
 		$sortedUrlParameters = $this->urlParameters;
 		$this->sortArrayDeep($sortedUrlParameters);
+
+		if (isset($sortedUrlParameters['cHash'])) {
+			$cacheHashCalculator = GeneralUtility::makeInstance(CacheHashCalculator::class);
+			$cHashParameters = $cacheHashCalculator->getRelevantParameters(GeneralUtility::implodeArrayForUrl('', $sortedUrlParameters));
+			if (count($cHashParameters) === 0) {
+				unset($sortedUrlParameters['cHash']);
+				unset($this->urlParameters['cHash']);
+				unset($this->originalUrlParameters['cHash']);
+
+				$this->logger->warning(
+					sprintf(
+						'URL "%s" contains cHash but there are no relevant parameters for cHash (did you use addQueryString?). This will cause error during decoding. cHash was removed.',
+						$this->urlToEncode
+					)
+				);
+			}
+		}
+
 		$this->originalUrl = $this->createQueryStringFromParameters($sortedUrlParameters);
 	}
 
@@ -1240,6 +1335,9 @@ class UrlEncoder extends EncodeDecoderBase {
 				}
 				$this->encodedUrl = $this->tsfe->absRefPrefix . $this->encodedUrl;
 			}
+		}
+		if (empty($this->tsfe->absRefPrefix)) {
+			$this->logger->warning('config.absRefPrefix is not set! Please, check your TypoScript configuration!');
 		}
 	}
 
@@ -1482,12 +1580,13 @@ class UrlEncoder extends EncodeDecoderBase {
 		}
 
 		if (!$isValidLanguageUid) {
-			$this->tsfe->set_no_cache(
-				sprintf('Bad "L" parameter ("%s") was detected by realurl. ' .
-					'Page caching is disabled to prevent spreading of wrong "L" value.',
-					addslashes($sysLanguageUid)
-				)
+			$message = sprintf(
+				'Bad "L" parameter ("%s") was detected by realurl. ' .
+				'Page caching is disabled to prevent spreading of wrong "L" value.',
+				addslashes($sysLanguageUid)
 			);
+			$this->tsfe->set_no_cache($message);
+			$this->logger->error($message, debug_backtrace());
 			throw new InvalidLanguageParameterException($sysLanguageUid);
 		}
 	}

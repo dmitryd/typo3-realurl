@@ -82,7 +82,7 @@ class DataHandler implements SingletonInterface {
 		if ($command === 'move' && $table === 'pages') {
 			$this->expireCachesForPageAndSubpages((int)$id, 0);
 
-			$languageOverlays = BackendUtility::getRecordsByField('pages_language_overlay', 'pid', $id);
+			$languageOverlays = $this->getRecordsByField('pages_language_overlay', 'pid', $id);
 			if (is_array($languageOverlays)) {
 				foreach ($languageOverlays as $languageOverlay) {
 					$this->expireCachesForPageAndSubpages($languageOverlay['pid'], $languageOverlay['sys_language_uid']);
@@ -154,7 +154,7 @@ class DataHandler implements SingletonInterface {
 					$languageId = (int)$record[$languageField];
 					if ($languageId > 0) {
 						// Can't use !== 0 here because we need to ignore "$languageId === -1"
-						$transOrigPointerField = (int)$GLOBALS['TCA'][$tableName]['ctrl']['transOrigPointerField'];
+						$transOrigPointerField = $GLOBALS['TCA'][$tableName]['ctrl']['transOrigPointerField'];
 						$recordId = (int)$record[$transOrigPointerField];
 						unset($transOrigPointerField);
 					}
@@ -164,8 +164,8 @@ class DataHandler implements SingletonInterface {
 			$expirationTime = time() + 30*24*60*60;
 			// This check would be sufficient for most cases but only when id_field is 'uid' in the configuration
 			$result = $this->databaseConnection->sql_query(
-				'SELECT uid,expire,url_cache_id FROM ' .
-				'tx_realurl_uniqalias LEFT JOIN tx_realurl_uniqalias_cache_map ON uid=alias_uid ' .
+				'SELECT tx_realurl_uniqalias.uid,expire,url_cache_id FROM ' .
+				'tx_realurl_uniqalias LEFT JOIN tx_realurl_uniqalias_cache_map ON tx_realurl_uniqalias.uid=alias_uid ' .
 				'WHERE tablename=' . $this->databaseConnection->fullQuoteStr($tableName, 'tx_realurl_uniqalias') . ' ' .
 				'AND value_id=' . $recordId . ' AND lang=' . $languageId
 			);
@@ -213,7 +213,7 @@ class DataHandler implements SingletonInterface {
 				$expireCache = TRUE;
 				
 				// Updating alternative language pages as well
-				$languageOverlays = BackendUtility::getRecordsByField('pages_language_overlay', 'pid', $pageId);
+				$languageOverlays = $this->getRecordsByField('pages_language_overlay', 'pid', $pageId);
 				if (is_array($languageOverlays)) {
 					foreach ($languageOverlays as $languageOverlay) {
 						$this->expireCachesForPageAndSubpages($languageOverlay['pid'], $languageOverlay['sys_language_uid']);
@@ -245,7 +245,7 @@ class DataHandler implements SingletonInterface {
 		if ($pageId) {
 			$this->cache->expireCache($pageId, $languageId);
 			if ($level++ < 20) {
-				$subpages = BackendUtility::getRecordsByField('pages', 'pid', $pageId);
+				$subpages = $this->getRecordsByField('pages', 'pid', $pageId);
 				if (is_array($subpages)) {
 					$uidList = array();
 					foreach ($subpages as $subpage) {
@@ -258,5 +258,25 @@ class DataHandler implements SingletonInterface {
 				}
 			}
 		}
+	}
+
+	/**
+	 * Fetches records from the database by the field name. This is a replacement for the
+	 * BackendUtility::getRecordsByField() method, which is deprecated since TYPO3 8.7.
+	 *
+	 * @param string $tableName
+	 * @param string $fieldName
+	 * @param mixed $fieldValue
+	 * @return array
+	 */
+	protected function getRecordsByField($tableName, $fieldName, $fieldValue)
+	{
+		$rows = $this->databaseConnection->exec_SELECTgetRows(
+			'*',
+			$tableName,
+			$fieldName . '=' . $this->databaseConnection->fullQuoteStr($fieldValue, $tableName)
+		);
+
+		return (array)$rows;
 	}
 }

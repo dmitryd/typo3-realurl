@@ -178,6 +178,7 @@ class DatabaseCache implements CacheInterface, SingletonInterface {
 
 		$row = $this->databaseConnection->exec_SELECTgetSingleRow('*', 'tx_realurl_urldata',
 			'rootpage_id=' . (int)$rootPageId . ' AND ' .
+				'original_url_hash=' . sprintf('%u', crc32($originalUrl)) . ' AND ' .
 				'original_url=' . $this->databaseConnection->fullQuoteStr($originalUrl, 'tx_realurl_urldata'),
 				'', 'expire'
 		);
@@ -214,6 +215,7 @@ class DatabaseCache implements CacheInterface, SingletonInterface {
 
 		$rows = $this->databaseConnection->exec_SELECTgetRows('*', 'tx_realurl_urldata',
 			'rootpage_id=' . (int)$rootPageId . ' AND ' .
+				'speaking_url_hash=' . sprintf('%u', crc32($speakingUrl)) . ' AND ' .
 				'speaking_url=' . $this->databaseConnection->fullQuoteStr($speakingUrl, 'tx_realurl_urldata'),
 				'', 'expire'
 		);
@@ -377,10 +379,12 @@ class DatabaseCache implements CacheInterface, SingletonInterface {
 		$data = array(
 			'expire' => $cacheEntry->getExpiration(),
 			'original_url' => $cacheEntry->getOriginalUrl(),
+			'original_url_hash' => sprintf('%u', crc32($cacheEntry->getOriginalUrl())),
 			'page_id' => $cacheEntry->getPageId(),
 			'request_variables' => json_encode($requestVariables),
 			'rootpage_id' => $cacheEntry->getRootPageId(),
 			'speaking_url' => $cacheEntry->getSpeakingUrl(),
+			'speaking_url_hash' => sprintf('%u', crc32($cacheEntry->getSpeakingUrl())),
 		);
 		if ($cacheEntry->getCacheId()) {
 			$this->databaseConnection->exec_UPDATEquery('tx_realurl_urldata',
@@ -388,15 +392,10 @@ class DatabaseCache implements CacheInterface, SingletonInterface {
 				$data
 			);
 		} else {
-			$this->databaseConnection->sql_query('START TRANSACTION');
 
 			if ($this->limitTableRecords('tx_realurl_urldata')) {
 				$this->databaseConnection->sql_query('DELETE FROM tx_realurl_uniqalias_cache_map WHERE url_cache_id NOT IN (SELECT uid FROM tx_realurl_urldata)');
 			}
-
-			$data['crdate'] = time();
-			$this->databaseConnection->exec_INSERTquery('tx_realurl_urldata', $data);
-			$cacheEntry->setCacheId($this->databaseConnection->sql_insert_id());
 
 			// Remove expired URLs with the same path
 			$languageStatement = '';
@@ -405,12 +404,16 @@ class DatabaseCache implements CacheInterface, SingletonInterface {
 			}
 			$this->databaseConnection->exec_DELETEquery('tx_realurl_urldata',
 				'rootpage_id=' . (int)$cacheEntry->getRootPageId() . ' AND ' .
+					'speaking_url_hash=' . sprintf('%u', crc32($cacheEntry->getSpeakingUrl())) . ' AND ' .
 					'expire>0 AND ' .
 					'speaking_url=' . $this->databaseConnection->fullQuoteStr($cacheEntry->getSpeakingUrl(), 'tx_realurl_urldata') .
 					$languageStatement
 			);
 
-			$this->databaseConnection->sql_query('COMMIT');
+			// Add this entry
+			$data['crdate'] = time();
+			$this->databaseConnection->exec_INSERTquery('tx_realurl_urldata', $data);
+			$cacheEntry->setCacheId($this->databaseConnection->sql_insert_id());
 		}
 	}
 
@@ -426,7 +429,6 @@ class DatabaseCache implements CacheInterface, SingletonInterface {
 	protected function limitTableRecords($tableName) {
 		$cleanedUp = false;
 		if ((mt_rand(0, mt_getrandmax()) % 5000) == 0) {
-			$this->databaseConnection->sql_query('START TRANSACTION');
 			// Using exec_SELECTgetRows instead of exec_SELECTsingleRow because we need to set the limit
 			list($row) = $this->databaseConnection->exec_SELECTgetRows('uid', $tableName,
 				'', '', 'uid DESC', self::$maximumNumberOfRecords . ',1'
@@ -434,7 +436,6 @@ class DatabaseCache implements CacheInterface, SingletonInterface {
 			if (is_array($row)) {
 				$this->databaseConnection->exec_DELETEquery($tableName, 'uid<=' . $row['uid']);
 			}
-			$this->databaseConnection->sql_query('COMMIT');
 			$cleanedUp = ($this->databaseConnection->sql_affected_rows() > 0);
 		}
 

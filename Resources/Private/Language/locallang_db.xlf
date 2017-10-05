@@ -12,11 +12,74 @@
 			<trans-unit id="pages.tx_realurl_path_override" xml:space="preserve">
 				<source>Override the whole page path</source>
 			</trans-unit>
-			<trans-unit id="pages.tx_realurl_nocache" xml:space="preserve">
-				<source>Disable RealURL cache</source>
-			</trans-unit>
 			<trans-unit id="pages.palette_title" xml:space="preserve">
 				<source>Speaking URL</source>
+			</trans-unit>
+			<trans-unit id="tx_realurl_pathdata">
+				<source>RealURL Path Data</source>
+			</trans-unit>
+			<trans-unit id="tx_realurl_pathdata.page_id">
+				<source>Page id:</source>
+			</trans-unit>
+			<trans-unit id="tx_realurl_pathdata.rootpage_id">
+				<source>Root page id:</source>
+			</trans-unit>
+			<trans-unit id="tx_realurl_pathdata.language_id">
+				<source>Language id:</source>
+			</trans-unit>
+			<trans-unit id="tx_realurl_pathdata.mpvar">
+				<source>MP parameter:</source>
+			</trans-unit>
+			<trans-unit id="tx_realurl_pathdata.pagepath">
+				<source>Page path:</source>
+			</trans-unit>
+			<trans-unit id="tx_realurl_pathdata.expire">
+				<source>Expires:</source>
+			</trans-unit>
+			<trans-unit id="tx_realurl_uniqalias">
+				<source>RealURL Unique Alias</source>
+			</trans-unit>
+			<trans-unit id="tx_realurl_uniqalias.expire">
+				<source>Expires:</source>
+			</trans-unit>
+			<trans-unit id="tx_realurl_uniqalias.lang">
+				<source>Language id:</source>
+			</trans-unit>
+			<trans-unit id="tx_realurl_uniqalias.tablename">
+				<source>Table name:</source>
+			</trans-unit>
+			<trans-unit id="tx_realurl_uniqalias.value_alias">
+				<source>Value alias:</source>
+			</trans-unit>
+			<trans-unit id="tx_realurl_uniqalias.value_id">
+				<source>Value id:</source>
+			</trans-unit>
+			<trans-unit id="tx_realurl_uniqalias.field_alias">
+				<source>Field alias:</source>
+			</trans-unit>
+			<trans-unit id="tx_realurl_uniqalias.field_id">
+				<source>Field id:</source>
+			</trans-unit>
+			<trans-unit id="tx_realurl_urldata">
+				<source>RealURL URL Data</source>
+			</trans-unit>
+			<trans-unit id="tx_realurl_urldata.page_id">
+				<source>Page id:</source>
+			</trans-unit>
+			<trans-unit id="tx_realurl_urldata.rootpage_id">
+				<source>Root page id:</source>
+			</trans-unit>
+			<trans-unit id="tx_realurl_urldata.original_url">
+				<source>Original URL:</source>
+			</trans-unit>
+			<trans-unit id="tx_realurl_urldata.speaking_url">
+				<source>Speaking URL:</source>
+			</trans-unit>
+			<trans-unit id="tx_realurl_urldata.request_variables">
+				<source>Request variables:</source>
+			</trans-unit>
+			<trans-unit id="tx_realurl_urldata.expire">
+				<source>Expires:</source>
 			</trans-unit>
 		</body>
 	</file>

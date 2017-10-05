@@ -50,6 +50,9 @@ class Utility {
 	/** @var ConfigurationReader */
 	protected $configuration;
 
+	/** @var  \TYPO3\CMS\Core\Database\DatabaseConnection */
+	protected $databaseConnection;
+
 	/**
 	 * Initializes the class.
 	 *
@@ -58,6 +61,7 @@ class Utility {
 	public function __construct(ConfigurationReader $configuration) {
 		$this->csConvertor = TYPO3_MODE == 'BE' ? $GLOBALS['LANG']->csConvObj : $GLOBALS['TSFE']->csConvObj;
 		$this->configuration = $configuration;
+		$this->databaseConnection = $GLOBALS['TYPO3_DB'];
 	}
 
 	/**
@@ -66,19 +70,22 @@ class Utility {
 	 * @return void
 	 */
 	static public function checkAndPerformRequiredUpdates() {
-		$currentUpdateLevel = 3;
+		$currentUpdateLevel = 4;
 
-		$registry = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Registry');
+		$registry = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Registry');
 		/** @var \TYPO3\CMS\Core\Registry $registry */
 		$updateLevel = (int)$registry->get('tx_realurl', 'updateLevel', 0);
 		if ($updateLevel < $currentUpdateLevel) {
+			// Change it at once in order to prevent parallel updates
+			$registry->set('tx_realurl', 'updateLevel', $currentUpdateLevel);
+
+			/** @noinspection PhpIncludeInspection */
 			require_once(ExtensionManagementUtility::extPath('realurl', 'class.ext_update.php'));
-			$updater = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\ext_update');
+			$updater = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\ext_update');
 			/** @var \DmitryDulepov\Realurl\ext_update $updater */
 			if ($updater->access()) {
 				$updater->main();
 			}
-			$registry->set('tx_realurl', 'updateLevel', $currentUpdateLevel);
 		}
 	}
 
@@ -93,7 +100,7 @@ class Utility {
 	 */
 	public function convertToSafeString($processedTitle, $spaceCharacter = '-', $strToLower = true) {
 		if ($strToLower) {
-			$processedTitle = $this->csConvertor->conv_case('utf-8', $processedTitle, 'toLower');
+			$processedTitle = mb_strtolower($processedTitle, 'UTF-8');
 		}
 		$processedTitle = strip_tags($processedTitle);
 		$processedTitle = preg_replace('/[ \t\x{00A0}\-+_]+/u', $spaceCharacter, $processedTitle);
