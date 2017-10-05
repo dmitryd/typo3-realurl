@@ -28,6 +28,7 @@ $GLOBALS['TCA']['tx_realurl_uniqalias'] = array(
 		'label' => 'value_alias',
 		'iconfile' => 'EXT:realurl/Resources/Public/Icons/Extension.svg',
 		'hideTable' => 1,
+		'rootLevel' => 1,
 	),
 	'columns' => array(
 		'expire' => array(
