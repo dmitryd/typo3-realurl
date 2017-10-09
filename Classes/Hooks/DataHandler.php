@@ -350,7 +350,7 @@ class DataHandler implements SingletonInterface {
 	private function getPageOverlayCopyHeader($table, $pid, $value, $count, $sysLanguageUid, $prevTitle = '') {
 		// Set title value to check for:
 		if ($count) {
-		    $checkTitle = $value . rtrim(' ' . sprintf($this->dataHandler->prependLabel($table), $count));
+		    $checkTitle = $value . rtrim(' ' . sprintf($this->dataHandler->prependLabel('pages'), $count));
 		} else {
 		    $checkTitle = $value;
 		}
