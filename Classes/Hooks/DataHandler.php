@@ -43,6 +43,16 @@ class DataHandler implements SingletonInterface {
 
 	/** @var \TYPO3\CMS\Dbal\Database\DatabaseConnection */
 	protected $databaseConnection;
+	
+	/**
+	 * For the list of modified language overlay titles
+	 *
+	 * @var array
+	 */
+	private $newTitles = [];
+	
+	/** @var \TYPO3\CMS\Core\DataHandling\DataHandler */
+	protected $dataHandler;
 
 	/**
 	 * Initializes the class.
@@ -279,4 +289,79 @@ class DataHandler implements SingletonInterface {
 
 		return (array)$rows;
 	}
+	
+	/**
+	 * Store changed language overlay titles of copied pages into $newTitles
+	 *
+	 * @param string $command
+	 * @param string $table
+	 * @param int $id
+	 * @param int $destPid 
+	 * @param DataHandler $ref DataHandler reference
+	 */
+	public function processCmdmap_preProcess($command, $table, $id, $destPid, $ref) {
+		if ($command === 'copy' && $table === 'pages') {
+			// Checking if we need to append (copy x)
+			$this->dataHandler = $ref;
+			$tscPID = BackendUtility::getTSconfig_pidValue($table, $id, $destPid);
+			$TSConfig = $this->dataHandler->getTCEMAIN_TSconfig($tscPID);
+			$tE = $this->dataHandler->getTableEntries($table, $TSConfig);
+			if ($GLOBALS['TCA'][$table]['ctrl']['prependAtCopy'] && !$tE['disablePrependAtCopy']) {
+				$languageOverlays = BackendUtility::getRecordsByField('pages_language_overlay', 'pid', $id);
+				if (is_array($languageOverlays)) {
+					foreach ($languageOverlays as $languageOverlay) {
+						// Storing the new language overlay title into $this->newTitles
+						$this->newTitles[$languageOverlay['uid']] = $this->getPageOverlayCopyHeader('pages_language_overlay', $this->dataHandler->resolvePid($table, $destPid), $this->dataHandler->clearPrefixFromValue('pages_language_overlay', $languageOverlay['title']), 0, $languageOverlay['sys_language_uid']);
+					}
+				}
+			}
+		}
+	}
+	
+	/**
+	 * Change language overlay titles of copied pages, after copyMappingArray has been updated (to retrieve the new Ids)
+	 *
+	 * @param DataHandler $ref DataHandler reference
+	 */
+	public function processCmdmap_afterFinish($ref)	{
+		if (count($this->newTitles)) {
+			$data = [];
+			foreach ($this->newTitles as $oldId => $newTitle) {
+				$newId = $ref->copyMappingArray_merged['pages_language_overlay'][$oldId];
+				$data['pages_language_overlay'][$newId]['title'] = $newTitle;
+			}
+			$ref->start($data, array());
+			$ref->process_datamap();
+		}
+	}
+	
+	/**
+	 * Get modified page language overlay title for a copied page (adapted from DataHandler::getCopyHeader)
+	 *
+	 * @param string $table Table name
+	 * @param int $pid PID value in which other records to test might be
+	 * @param string $value Current field value
+	 * @param int $count Counter (number of recursions)
+	 * @param int $sysLanguageUid Language uid
+	 * @param int $count Counter (number of recursions)	 
+	 * @param string $prevTitle Previous title we checked for (in previous recursion)
+	 * @return string The field value, possibly appended with a "copy label
+	 */
+	private function getPageOverlayCopyHeader($table, $pid, $value, $count, $sysLanguageUid, $prevTitle = '') {
+		// Set title value to check for:
+		if ($count) {
+		    $checkTitle = $value . rtrim(' ' . sprintf($this->dataHandler->prependLabel($table), $count));
+		} else {
+		    $checkTitle = $value;
+		}
+		// Do check:
+		if ($prevTitle != $checkTitle || $count < 100) {
+		    $rowCount = $this->databaseConnection->exec_SELECTcountRows('pages_language_overlay.uid', 'pages_language_overlay INNER JOIN pages ON pages.uid = pages_language_overlay.pid', 'pages_language_overlay.sys_language_uid =' . (int)$sysLanguageUid . ' AND pages.pid=' . (int)$pid . ' AND pages_language_overlay.title =' . $this->databaseConnection->fullQuoteStr($checkTitle, $table) . $this->dataHandler->deleteClause($table));
+		    if ($rowCount) {
+			return $this->getPageOverlayCopyHeader($table, $pid, $value, $count + 1, $sysLanguageUid, $checkTitle);
+		    }
+		}
+		// Default is to just return the current input title if no other was returned before:
+		return $checkTitle;
+	}	
 }
