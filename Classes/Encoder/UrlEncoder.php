@@ -687,7 +687,7 @@ class UrlEncoder extends EncodeDecoderBase {
 		if ((int)$page['doktype'] === PageRepository::DOKTYPE_SHORTCUT) {
 			try{
 				$page = $this->tsfe->getPageShortcut($page['shortcut'], $page['shortcut_mode'], $pageId);
-				$pageId = $page['id'];
+				$pageId = $page['uid'];
 			} catch (\RuntimeException $ex) {
 				if ($ex->getCode() === 1294587212) {
 					$this->logger->warning('Maximum iteration of shortcuts reached on pageId #' . $pageId . '!'
