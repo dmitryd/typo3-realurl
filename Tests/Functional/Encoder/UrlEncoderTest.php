@@ -188,6 +188,84 @@ class UrlEncoderTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 	}
 
 	/**
+	 * Test shortcut encoding with disabled shortcut resolving
+	 *
+	 * @test
+	 */
+	public function testDontResolveShortcuts() {
+		$parameters = $this->getParametersForPage(10);
+		$encoder = GeneralUtility::makeInstance(UrlEncoder::class);
+		$encoder->encodeUrl($parameters);
+		$this->assertEquals('page10/', $parameters['LD']['totalURL'], 'Encode shortcut with pagePath/dontResolveShortcuts="TRUE"');
+	}
+
+	/**
+	 * Test shortcut encoding of shortcut type "First subpage" with enabled shortcut resolving
+	 *
+	 * @test
+	 */
+	public function testEncodeShortcutFirstSubpage() {
+		$this->enableShortcutResolving();
+		$parameters = $this->getParametersForPage(10);
+		$encoder = GeneralUtility::makeInstance(UrlEncoder::class);
+		$encoder->encodeUrl($parameters);
+		$this->assertEquals('subpage11/', $parameters['LD']['totalURL'], 'Shortcut to first subpage failed');
+	}
+
+	/**
+	 * Test shortcut encoding of shortcut type "Parent page" with enabled shortcut resolving
+	 *
+	 * @test
+	 */
+	public function testEncodeShortcutParentPage() {
+		$this->enableShortcutResolving();
+		$parameters = $this->getParametersForPage(12);
+		$encoder = GeneralUtility::makeInstance(UrlEncoder::class);
+		$encoder->encodeUrl($parameters);
+		$this->assertEquals('/', $parameters['LD']['totalURL'], 'Shortcut to parent page failed');
+	}
+
+	/**
+	 * Test various shortcut encodings with enabled shortcut resolving
+	 *
+	 * @test
+	 */
+	public function testEncodeShortcut() {
+		$this->enableShortcutResolving();
+		$parameters = $this->getParametersForPage(13);
+		$encoder = GeneralUtility::makeInstance(UrlEncoder::class);
+		$encoder->encodeUrl($parameters);
+		$this->assertEquals('shortcut13/subpage15/', $parameters['LD']['totalURL'], 'Normal shortcut to second subpage failed');
+
+		$parameters = $this->getParametersForPage(16);
+		$encoder = GeneralUtility::makeInstance(UrlEncoder::class);
+		$encoder->encodeUrl($parameters);
+		$this->assertEquals('page2/subpage8/', $parameters['LD']['totalURL'], 'Shortcut from a shortcut child to a page in another branch of the pagetree failed');
+
+		$parameters = $this->getParametersForPage(17);
+		$encoder = GeneralUtility::makeInstance(UrlEncoder::class);
+		$encoder->encodeUrl($parameters);
+		$this->assertEquals('page3/', $parameters['LD']['totalURL'], 'Shortcut to neighboring page failed');
+
+		$parameters = $this->getParametersForPage(18);
+		$encoder = GeneralUtility::makeInstance(UrlEncoder::class);
+		$encoder->encodeUrl($parameters);
+		$this->assertEquals('page2/subpage8/', $parameters['LD']['totalURL'], 'Chained shortcut failed');
+	}
+
+	/**
+	 * Enables the shortcut resolving
+	 */
+	protected function enableShortcutResolving() {
+		// adjust the configuration to enable shortcut handling
+		$realUrlConf = unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['realurl']);
+		$realUrlConf['_DEFAULT']['pagePath'] = [
+			'dontResolveShortcuts' => FALSE
+		];
+		$GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['realurl'] = serialize($realUrlConf);
+	}
+
+	/**
 	 * @return TypoScriptFrontendController
 	 */
 	protected function getTypoScriptFrontendController() {

@@ -177,6 +177,7 @@ class AutomaticConfigurator {
 				'emptyUrlReturnValue' => GeneralUtility::getIndpEnv('TYPO3_SITE_PATH')
 			),
 			'pagePath' => array(
+				'dontResolveShortcuts' => TRUE
 			),
 			'fileName' => array(
 				'defaultToHTMLsuffixOnPrev' => 0,

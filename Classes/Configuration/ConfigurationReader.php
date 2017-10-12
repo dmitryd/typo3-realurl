@@ -92,6 +92,7 @@ class ConfigurationReader {
 		'init/defaultLanguageUid' => 0,
 		'init/emptySegmentValue' => '',
 		'pagePath/spaceCharacter' => '-', // undocumented & deprecated!
+		'pagePath/dontResolveShortcuts' => TRUE
 	);
 
 	/**
