@@ -994,8 +994,13 @@ class UrlEncoder extends EncodeDecoderBase {
 			if ($this->encodedUrl === '') {
 				$emptyUrlReturnValue = $this->configuration->get('init/emptyUrlReturnValue') ?: '/';
 				$this->encodedUrl = $emptyUrlReturnValue;
+				// store only correct roots
+				if ($this->urlParameters['id'] == $this->rootPageId) {
+					$this->storeInUrlCache();
+				}
+			} else {
+				$this->storeInUrlCache();
 			}
-			$this->storeInUrlCache();
 		}
 		$this->reapplyAbsRefPrefix();
 		$this->callPostEncodeHooks();
