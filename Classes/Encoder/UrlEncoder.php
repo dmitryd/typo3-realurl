@@ -126,6 +126,7 @@ class UrlEncoder extends EncodeDecoderBase {
 	 * @return void
 	 */
 	public function encodeUrl(array &$encoderParameters) {
+	    	$this->encodedUrl = '';
 		$this->callEarlyHook($encoderParameters);
 		$this->encoderParameters = $encoderParameters;
 		$this->urlToEncode = $encoderParameters['LD']['totalURL'];
