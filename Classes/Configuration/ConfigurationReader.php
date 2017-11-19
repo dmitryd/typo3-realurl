@@ -297,6 +297,10 @@ class ConfigurationReader {
 
 			/** @noinspection PhpIncludeInspection */
 			require_once(PATH_site . TX_REALURL_AUTOCONF_FILE);
+			if (!isset($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl'])) {
+				/** @noinspection PhpIncludeInspection */
+				require(PATH_site . TX_REALURL_AUTOCONF_FILE);
+			}
 		}
 	}
 
