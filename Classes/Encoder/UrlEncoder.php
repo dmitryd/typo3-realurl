@@ -1400,8 +1400,7 @@ class UrlEncoder extends EncodeDecoderBase {
 	 */
 	protected function setLanguage() {
 		if (isset($this->urlParameters['L'])) {
-			$this->validateLanguageParameter($this->urlParameters['L']);
-			$this->sysLanguageUid = (int)$this->urlParameters['L'];
+			$this->sysLanguageUid = $this->validateLanguageParameter($this->urlParameters['L']);
 		} else {
 			$this->sysLanguageUid = (int)$this->tsfe->sys_language_uid;
 		}
@@ -1551,15 +1550,17 @@ class UrlEncoder extends EncodeDecoderBase {
 	 * Checks if the language is available.
 	 *
 	 * @param int|string $sysLanguageUid
-	 * @throws \Exception
+	 * @return language parsed or default language if wrong language given
 	 */
 	protected function validateLanguageParameter($sysLanguageUid) {
 		static $sysLanguages = null;
+		static $warnDone = false;
 
 		if (trim($sysLanguageUid) === '') {
 			// Allow this case because some people use "L=" for the default language.
 			// We convert this to 0 in the setLanguage().
 			$isValidLanguageUid = true;
+			$sysLanguageUid = (int)$this->tsfe->sys_language_uid;
 		}
 		elseif (!MathUtility::canBeInterpretedAsInteger($sysLanguageUid)) {
 			$isValidLanguageUid = false;
@@ -1580,14 +1581,22 @@ class UrlEncoder extends EncodeDecoderBase {
 		}
 
 		if (!$isValidLanguageUid) {
-			$message = sprintf(
-				'Bad "L" parameter ("%s") was detected by realurl. ' .
-				'Page caching is disabled to prevent spreading of wrong "L" value.',
-				addslashes($sysLanguageUid)
-			);
+			if (!$warnDone) {
+				$message = sprintf(
+					'Bad "L" parameter ("%s") was detected by realurl. ' .
+					'Page caching is disabled to prevent spreading of wrong "L" value. ' .
+					'Using default language. ' .
+					'Consider to redirect the following URL to prevent duplicated content : %s.',
+					addslashes($sysLanguageUid),
+					$this->urlToEncode
+				    );
+				$this->logger->error($message);
+				$warnDone = true;
+			}
 			$this->tsfe->set_no_cache($message);
-			$this->logger->error($message, debug_backtrace());
-			throw new InvalidLanguageParameterException($sysLanguageUid);
+			$sysLanguageUid = (int)$this->tsfe->sys_language_uid;
 		}
+
+		return $sysLanguageUid;
 	}
 }
