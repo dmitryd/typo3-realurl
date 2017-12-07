@@ -37,7 +37,6 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
 use TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer;
 use TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController;
-use TYPO3\CMS\Frontend\Page\CacheHashCalculator;
 use TYPO3\CMS\Frontend\Page\PageRepository;
 
 /**
@@ -1287,7 +1286,7 @@ class UrlEncoder extends EncodeDecoderBase {
 		$this->sortArrayDeep($sortedUrlParameters);
 
 		if (isset($sortedUrlParameters['cHash'])) {
-			$cacheHashCalculator = GeneralUtility::makeInstance(CacheHashCalculator::class);
+			$cacheHashCalculator = GeneralUtility::makeInstance('TYPO3\\CMS\\Frontend\\Page\\CacheHashCalculator');
 			$cHashParameters = $cacheHashCalculator->getRelevantParameters(GeneralUtility::implodeArrayForUrl('', $sortedUrlParameters));
 			if (count($cHashParameters) === 0) {
 				unset($sortedUrlParameters['cHash']);
