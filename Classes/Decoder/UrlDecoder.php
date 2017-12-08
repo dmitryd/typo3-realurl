@@ -133,6 +133,15 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 		parent::__construct();
 		$this->siteScript = GeneralUtility::getIndpEnv('TYPO3_SITE_SCRIPT');
 	}
+	
+	/**
+	 * Returns $this->rootPageId. This can be used in hooks.
+	 *
+	 * @return int
+	 */
+	public function getRootPageId() {
+		return $this->rootPageId;
+	}
 
 	/**
 	 * Decodes the URL. This function is called from \TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController::checkAlternativeIdMethods()
