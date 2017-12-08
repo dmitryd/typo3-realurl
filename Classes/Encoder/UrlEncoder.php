@@ -101,7 +101,7 @@ class UrlEncoder extends EncodeDecoderBase {
 			(isset($this->tsfe->config['config']['absRefPrefix']) ? $this->tsfe->config['config']['absRefPrefix'] : '');
 
 		if ($absRefPrefix === 'auto') {
-	       $absRefPrefix = GeneralUtility::getIndpEnv('TYPO3_SITE_PATH');
+			$absRefPrefix = GeneralUtility::getIndpEnv('TYPO3_SITE_PATH');
 		}
 
 		return $absRefPrefix;
