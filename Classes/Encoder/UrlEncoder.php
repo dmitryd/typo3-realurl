@@ -1335,9 +1335,6 @@ class UrlEncoder extends EncodeDecoderBase {
 				$this->encodedUrl = $this->tsfe->absRefPrefix . $this->encodedUrl;
 			}
 		}
-		if (empty($this->tsfe->absRefPrefix)) {
-			$this->logger->warning('config.absRefPrefix is not set! Please, check your TypoScript configuration!');
-		}
 	}
 
 	/**
