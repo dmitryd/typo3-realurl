@@ -92,6 +92,22 @@ class UrlEncoder extends EncodeDecoderBase {
 	}
 
 	/**
+	 * Fetches absRefPrefix. See https://github.com/dmitryd/typo3-realurl/issues/548
+	 *
+	 * @return string
+	 */
+	protected function getAbsRefPrefix() {
+		$absRefPrefix = $this->tsfe->absRefPrefix ? $this->tsfe->absRefPrefix :
+			(isset($this->tsfe->config['config']['absRefPrefix']) ? $this->tsfe->config['config']['absRefPrefix'] : '');
+
+		if ($absRefPrefix === 'auto') {
+	       $absRefPrefix = GeneralUtility::getIndpEnv('TYPO3_SITE_PATH');
+		}
+
+		return $absRefPrefix;
+	}
+
+	/**
 	 * Returns the configuration reader. This can be used in hooks.
 	 *
 	 * @return ConfigurationReader
@@ -1259,7 +1275,7 @@ class UrlEncoder extends EncodeDecoderBase {
 	 * @return bool
 	 */
 	protected function isTypo3Url() {
-		$prefix = $this->tsfe->absRefPrefix . 'index.php';
+		$prefix = $this->getAbsRefPrefix() . 'index.php';
 		return substr($this->urlToEncode, 0, strlen($prefix)) === $prefix;
 	}
 
@@ -1325,17 +1341,18 @@ class UrlEncoder extends EncodeDecoderBase {
 	 * @return void
 	 */
 	protected function reapplyAbsRefPrefix() {
-		if ($this->tsfe->absRefPrefix && $this->urlPrepend === '' && !$this->isLinkingAcrossDomains()) {
+		$absRefPrefix = $this->getAbsRefPrefix();
+		if ($absRefPrefix && $this->urlPrepend === '' && !$this->isLinkingAcrossDomains()) {
 			$reapplyAbsRefPrefix = $this->configuration->get('init/reapplyAbsRefPrefix');
 			if ($reapplyAbsRefPrefix === '' || $reapplyAbsRefPrefix) {
 				// Prevent // in case of absRefPrefix ending with / and emptyUrlReturnValue=/
-				if (substr($this->tsfe->absRefPrefix, -1, 1) == '/' && substr($this->encodedUrl, 0, 1) == '/') {
+				if (substr($absRefPrefix, -1, 1) == '/' && substr($this->encodedUrl, 0, 1) == '/') {
 					$this->encodedUrl = (string)substr($this->encodedUrl, 1);
 				}
-				$this->encodedUrl = $this->tsfe->absRefPrefix . $this->encodedUrl;
+				$this->encodedUrl = $absRefPrefix . $this->encodedUrl;
 			}
 		}
-		if (empty($this->tsfe->absRefPrefix)) {
+		if (empty($absRefPrefix)) {
 			$this->logger->warning('config.absRefPrefix is not set! Please, check your TypoScript configuration!');
 		}
 	}
