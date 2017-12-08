@@ -182,7 +182,7 @@ abstract class EncodeDecoderBase {
 				' AND field_alias=' . $this->databaseConnection->fullQuoteStr($configuration['alias_field'], 'tx_realurl_uniqalias') .
 				' AND field_id=' . $this->databaseConnection->fullQuoteStr($configuration['id_field'], 'tx_realurl_uniqalias') .
 				' AND tablename=' . $this->databaseConnection->fullQuoteStr($configuration['table'], 'tx_realurl_uniqalias') .
-				' AND page_id=' . intval($pageId) .
+				(intval($pageId) > 0 ? ' AND page_id=' . intval($pageId) : '') .
 				' AND (expire=0 OR expire>' . time() . ')');
 
 		return (is_array($row) ? (int)$row['value_id'] : false);
