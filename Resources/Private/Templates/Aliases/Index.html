@@ -77,6 +77,7 @@
 					<th><f:translate key="module.tableHeader.alias"/></th>
 					<th class="col-sm-1"><f:translate key="module.tableHeader.id"/></th>
 					<th class="col-sm-2"><f:translate key="module.tableHeader.language"/></th>
+					<th class="col-sm-2"><f:translate key="module.tableHeader.page_id"/></th>
 					<th class="col-sm-2"><f:translate key="module.tableHeader.expire"/></th>
 				</tr>
 				<f:for each="{aliases}" as="alias">
@@ -107,6 +108,7 @@
 		<td>{alias.valueAlias}</td>
 		<td class="col-sm-1">{alias.valueId}</td>
 		<td class="col-sm-2">{d:languageFromId(language: alias.lang)}</td>
+		<td class="col-sm-2">{alias.pageId}</td>
 		<td class="col-sm-2">
 			<f:if condition="{alias.expire}">
 				<f:then>

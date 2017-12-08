@@ -282,14 +282,15 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 	 *
 	 * @param array $configuration
 	 * @param string $value
+	 * @param int $pageId
 	 * @return int|string
 	 */
-	protected function convertAliasToId(array $configuration, $value) {
+	protected function convertAliasToId(array $configuration, $value, $pageId) {
 		$result = (string)$value;
 
 		// First, test if there is an entry in cache for the alias
 		if ($configuration['useUniqueCache']) {
-			$cachedId = $this->getFromAliasCacheByAliasValue($configuration, $value);
+			$cachedId = $this->getFromAliasCacheByAliasValue($configuration, $value, $pageId);
 			if (MathUtility::canBeInterpretedAsInteger($cachedId)) {
 				$result = (int)$cachedId;
 			}
@@ -757,7 +758,7 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 		$result = FALSE;
 
 		if (isset($configuration['lookUpTable'])) {
-			$value = $this->convertAliasToId($configuration['lookUpTable'], $getVarValue);
+			$value = $this->convertAliasToId($configuration['lookUpTable'], $getVarValue, $requestVariables['id']);
 			if (!MathUtility::canBeInterpretedAsInteger($value) && $value === $getVarValue) {
 				if ($configuration['lookUpTable']['enable404forInvalidAlias']) {
 					$this->throw404('Could not map alias "' . $value . '" to an id.');

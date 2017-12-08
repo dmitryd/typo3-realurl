@@ -60,6 +60,9 @@
 			<trans-unit id="tx_realurl_uniqalias.field_id">
 				<source>Field id:</source>
 			</trans-unit>
+			<trans-unit id="tx_realurl_uniqalias.page_id">
+				<source>Page id:</source>
+			</trans-unit>
 			<trans-unit id="tx_realurl_urldata">
 				<source>RealURL URL Data</source>
 			</trans-unit>

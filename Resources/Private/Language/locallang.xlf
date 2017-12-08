@@ -63,6 +63,9 @@
 			<trans-unit id="module.aliases.edit.alias_info.field_value">
 				<source>Field value:</source>
 			</trans-unit>
+			<trans-unit id="module.aliases.edit.alias_info.page_id">
+				<source>Page id:</source>
+			</trans-unit>
 			<trans-unit id="module.aliases.edit.saved">
 				<source>Alias successfully updated.</source>
 			</trans-unit>
@@ -110,6 +113,9 @@
 			</trans-unit>
 			<trans-unit id="module.tableHeader.language">
 				<source>Language</source>
+			</trans-unit>
+			<trans-unit id="module.tableHeader.page_id">
+				<source>Page id</source>
 			</trans-unit>
 			<trans-unit id="module.tableHeader.expire">
 				<source>Expires</source>
