@@ -1067,7 +1067,7 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 
 					$extension = '.' . pathinfo($fileNameSegment, PATHINFO_EXTENSION);
 					if (in_array($extension, $validExtensions)) {
-						$fileNameSegment = pathinfo($fileNameSegment, PATHINFO_FILENAME);
+                        $fileNameSegment = explode('.', $fileNameSegment)[0];
 					}
 					// If no match, we leave it as is => 404.
 				}
