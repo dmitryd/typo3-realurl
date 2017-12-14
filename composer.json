@@ -3,8 +3,8 @@
     "type": "typo3-cms-extension",
     "description": "Speaking URLs for TYPO3",
     "homepage": "https://github.com/dmitryd/typo3-realurl",
-    "version": "2.3.0",
-    "time": "2017-10-05",
+    "version": "2.3.1",
+    "time": "2017-12-14",
     "license": "GPL-3.0+",
     "conflict": {
         "bednee/cooluri": ">0.0.1",
