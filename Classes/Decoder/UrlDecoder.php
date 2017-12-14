@@ -834,6 +834,10 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 			if (is_numeric($value) || is_string($value)) {
 				$requestVariables[$configuration['GETvar']] = $value;
 				$result = TRUE;
+			} else {
+				if ($configuration['enable404forInvalidAlias']) {
+					$this->throw404('Could not find element with id or name like "' . $value . '".');
+				}
 			}
 		}
 
