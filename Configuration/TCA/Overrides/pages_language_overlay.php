@@ -13,6 +13,7 @@ if (!isset($GLOBALS['TCA']['pages_language_overlay']['columns']['tx_realurl_path
 		),
 	));
 
-	\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addToAllTCAtypes('pages_language_overlay', 'tx_realurl_pathsegment', '', 'after:nav_title');
+	\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addToAllTCAtypes('pages_language_overlay', 'tx_realurl_pathsegment', '1,3,4,6,7', 'after:nav_title');
+    \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addToAllTCAtypes('pages_language_overlay', 'tx_realurl_pathsegment', '254', 'after:title');
 }
 
