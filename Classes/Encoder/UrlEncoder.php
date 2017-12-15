@@ -917,6 +917,8 @@ class UrlEncoder extends EncodeDecoderBase {
 			if (is_numeric($getVarValue) || is_string($getVarValue)) {
 				$segments[] = rawurlencode($getVarValue);
 				$result = TRUE;
+			} else {
+				$result = $previousValue;
 			}
 		}
 
