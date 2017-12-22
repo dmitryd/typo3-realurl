@@ -1602,7 +1602,11 @@ class UrlEncoder extends EncodeDecoderBase {
 				addslashes($sysLanguageUid)
 			);
 			$this->tsfe->set_no_cache($message);
-			$this->logger->error($message, debug_backtrace());
+			$this->logger->error($message);
+			if (version_compare(TYPO3_version, '7.6.0', '>=')) {
+				$this->logger->debug($message, debug_backtrace());
+			}
+
 			throw new InvalidLanguageParameterException($sysLanguageUid);
 		}
 	}
