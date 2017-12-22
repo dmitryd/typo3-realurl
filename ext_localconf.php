@@ -26,7 +26,8 @@ if (!function_exists('includeRealurlConfiguration')) {
 
 		$realurlConfigurationFile = trim($configuration['configFile']);
 		if ($realurlConfigurationFile && @file_exists(PATH_site . $realurlConfigurationFile)) {
-			\TYPO3\CMS\Core\Utility\GeneralUtility::requireOnce(PATH_site . $realurlConfigurationFile);
+			/** @noinspection PhpIncludeInspection */
+			require_once(PATH_site . $realurlConfigurationFile);
 		}
 		elseif ($configuration['enableAutoConf']) {
 			/** @noinspection PhpIncludeInspection */
