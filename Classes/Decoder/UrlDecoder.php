@@ -298,7 +298,7 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 
 		// First, test if there is an entry in cache for the alias
 		if ($configuration['useUniqueCache']) {
-			$cachedId = $this->getFromAliasCacheByAliasValue($configuration, $value);
+			$cachedId = $this->getFromAliasCacheByAliasValue($configuration, $value, $this->detectedLanguageId);
 			if (MathUtility::canBeInterpretedAsInteger($cachedId)) {
 				$result = (int)$cachedId;
 			}

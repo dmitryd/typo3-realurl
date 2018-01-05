@@ -172,14 +172,16 @@ abstract class EncodeDecoderBase {
 	 *
 	 * @param array $configuration
 	 * @param string $aliasValue
+	 * @param int $languageUid
 	 * @return int ID integer. If none is found: false
 	 */
-	protected function getFromAliasCacheByAliasValue(array $configuration, $aliasValue) {
+	protected function getFromAliasCacheByAliasValue(array $configuration, $aliasValue, $languageUid) {
 		$row = $this->databaseConnection->exec_SELECTgetSingleRow('value_id', 'tx_realurl_uniqalias',
 				'value_alias=' . $this->databaseConnection->fullQuoteStr($aliasValue, 'tx_realurl_uniqalias') .
 				' AND field_alias=' . $this->databaseConnection->fullQuoteStr($configuration['alias_field'], 'tx_realurl_uniqalias') .
 				' AND field_id=' . $this->databaseConnection->fullQuoteStr($configuration['id_field'], 'tx_realurl_uniqalias') .
 				' AND tablename=' . $this->databaseConnection->fullQuoteStr($configuration['table'], 'tx_realurl_uniqalias') .
+				($configuration['aliasUniqueForLanguage'] ? ' AND lang=' . (int)$languageUid : '').
 				' AND (expire=0 OR expire>' . time() . ')');
 
 		return (is_array($row) ? (int)$row['value_id'] : false);

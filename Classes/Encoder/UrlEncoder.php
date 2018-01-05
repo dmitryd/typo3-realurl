@@ -483,16 +483,17 @@ class UrlEncoder extends EncodeDecoderBase {
 	 * @param array $configuration
 	 * @param $newAliasValue
 	 * @param $idValue
+	 * @param int $languageUid
 	 * @return string
 	 */
-	protected function createUniqueAlias(array $configuration, $newAliasValue, $idValue) {
+	protected function createUniqueAlias(array $configuration, $newAliasValue, $idValue, $languageUid) {
 		$uniqueAlias = '';
 		$counter = 0;
 		$maxTry = 100;
 		$testNewAliasValue = $newAliasValue;
 		while ($counter < $maxTry) {
 			// If the test-alias did NOT exist, it must be unique and we break out
-			$foundId = $this->getFromAliasCacheByAliasValue($configuration, $testNewAliasValue);
+			$foundId = $this->getFromAliasCacheByAliasValue($configuration, $testNewAliasValue, $languageUid);
 			if (!$foundId || $foundId == $idValue) {
 				$uniqueAlias = $testNewAliasValue;
 				break;
@@ -1465,7 +1466,7 @@ class UrlEncoder extends EncodeDecoderBase {
 			return $newAliasValue;
 		}
 
-		$uniqueAlias = $this->createUniqueAlias($configuration, $newAliasValue, $idValue);
+		$uniqueAlias = $this->createUniqueAlias($configuration, $newAliasValue, $idValue, $languageUid);
 
 		// if no unique alias was found in the process above, just suffix a hash string and assume that is unique...
 		if (!$uniqueAlias) {
