@@ -431,6 +431,8 @@ class UrlEncoder extends EncodeDecoderBase {
 				$languageEnabled = TRUE;
 			}
 
+            // Suffix with alias
+            $configuration['alias_field'] = $configuration['alias_field'] . " AS `alias_field`";
 			$fieldList[] = $configuration['alias_field'];
 			$row = $this->databaseConnection->exec_SELECTgetSingleRow(implode(',', $fieldList), $configuration['table'],
 						$configuration['id_field'] . '=' . $this->databaseConnection->fullQuoteStr($getVarValue, $configuration['table']) .
@@ -459,7 +461,7 @@ class UrlEncoder extends EncodeDecoderBase {
 				}
 
 				$maxAliasLengthLength = isset($configuration['maxLength']) ? (int)$configuration['maxLength'] : self::MAX_ALIAS_LENGTH;
-				$aliasValue = $this->tsfe->csConvObj->substr('utf-8', $row[$configuration['alias_field']], 0, $maxAliasLengthLength);
+				$aliasValue = $this->tsfe->csConvObj->substr('utf-8', $row['alias_field'], 0, $maxAliasLengthLength);
 
 				# Do not allow aliases to be empty (see issue #1)
 				if (empty($aliasValue)) {
