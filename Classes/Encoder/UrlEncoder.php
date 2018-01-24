@@ -1596,10 +1596,16 @@ class UrlEncoder extends EncodeDecoderBase {
 		}
 
 		if (!$isValidLanguageUid) {
+			if (!empty($_SERVER['HTTP_CLIENT_IP'])) {
+		                $ipAddress = $_SERVER['HTTP_CLIENT_IP'];
+            		} else {
+                		$ipAddress = GeneralUtility::getIndpEnv('REMOTE_ADDR');
+            		}
 			$message = sprintf(
-				'Bad "L" parameter ("%s") was detected by realurl. ' .
+				'Bad "L" parameter ("%s") was detected by realurl for IP %s. ' .
 				'Page caching is disabled to prevent spreading of wrong "L" value.',
-				addslashes($sysLanguageUid)
+				addslashes($sysLanguageUid),
+				$ipAddress
 			);
 			$this->tsfe->set_no_cache($message);
 			$this->logger->error($message);
