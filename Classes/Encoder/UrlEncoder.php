@@ -1275,7 +1275,7 @@ class UrlEncoder extends EncodeDecoderBase {
 	 * @return bool
 	 */
 	protected function isTypo3Url() {
-		$prefix = $this->getAbsRefPrefix() . 'index.php';
+		$prefix = $this->tsfe->absRefPrefix . 'index.php';
 		return substr($this->urlToEncode, 0, strlen($prefix)) === $prefix;
 	}
 
