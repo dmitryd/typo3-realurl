@@ -59,7 +59,7 @@ class Utility {
 	 * @param ConfigurationReader $configuration
 	 */
 	public function __construct(ConfigurationReader $configuration) {
-		$this->csConvertor = TYPO3_MODE == 'BE' ? $GLOBALS['LANG']->csConvObj : $GLOBALS['TSFE']->csConvObj;
+		$this->csConvertor = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Charset\\CharsetConverter');
 		$this->configuration = $configuration;
 		$this->databaseConnection = $GLOBALS['TYPO3_DB'];
 	}
