@@ -187,6 +187,20 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 		}
 	}
 
+        /**
+         * Calls user-defined hooks.
+         *
+         * @param array $params
+         */
+        protected function callPreLanguageOverlayHooks(array $params) {
+                if (is_array($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['decodeSpURL_preLanguageOverlay'])) {
+			foreach($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['decodeSpURL_preLanguageOverlay'] as $classRef) {
+				\TYPO3\CMS\Core\Utility\GeneralUtility::getUserObj($classRef)->preLanguageOverlayDecoderHook($this, $params, $this->speakingUri);
+                        }
+                }
+        }
+
+
 	/**
 	 * Checks if the decoder can execute.
 	 *
@@ -365,8 +379,13 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 				}
 			}
 			$languageExceptionUids = (string)$this->configuration->get('pagePath/languageExceptionUids');
-			if ($this->detectedLanguageId > 0 && !isset($page['_PAGES_OVERLAY']) && (empty($languageExceptionUids) || !GeneralUtility::inList($languageExceptionUids, $this->detectedLanguageId))) {
-				$page = $this->pageRepository->getPageOverlay($page, (int)$this->detectedLanguageId);
+
+			$languageID = $this->detectedLanguageId;
+			// pass languageID as a reference, so the hooks can modify it
+			$this->callPreLanguageOverlayHooks(array('languageID' => &$languageID, 'page' => $page));
+
+			if ($languageID > 0 && !isset($page['_PAGES_OVERLAY']) && (empty($languageExceptionUids) || !GeneralUtility::inList($languageExceptionUids, $languageID))) {
+				$page = $this->pageRepository->getPageOverlay($page, (int)$languageID);
 			}
 			foreach (self::$pageTitleFields as $field) {
 				if (isset($page[$field]) && $page[$field] !== '' && $this->utility->convertToSafeString($page[$field], $this->separatorCharacter) === $segment) {
