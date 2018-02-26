@@ -324,7 +324,7 @@ class ConfigurationReader {
 			$autoconfigurator->configure();
 
 			/** @noinspection PhpIncludeInspection */
-			require_once(PATH_site . TX_REALURL_AUTOCONF_FILE);
+			require(PATH_site . TX_REALURL_AUTOCONF_FILE);
 		}
 	}
 
