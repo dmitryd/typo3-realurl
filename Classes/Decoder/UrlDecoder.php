@@ -37,6 +37,7 @@ use TYPO3\CMS\Core\SingletonInterface;
 use TYPO3\CMS\Core\Utility\ArrayUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
+use TYPO3\CMS\Core\Utility\PathUtility;
 use TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController;
 use TYPO3\CMS\Frontend\Page\PageRepository;
 
@@ -1067,7 +1068,7 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 
 					$extension = '.' . pathinfo($fileNameSegment, PATHINFO_EXTENSION);
 					if (in_array($extension, $validExtensions)) {
-                        $fileNameSegment = explode('.', $fileNameSegment)[0];
+                        $fileNameSegment = PathUtility::pathinfo($fileNameSegment, PATHINFO_FILENAME);
 					}
 					// If no match, we leave it as is => 404.
 				}
