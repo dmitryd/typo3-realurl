@@ -1275,7 +1275,10 @@ class UrlEncoder extends EncodeDecoderBase {
 	 * @return bool
 	 */
 	protected function isTypo3Url() {
-		$prefix = $this->getAbsRefPrefix() . 'index.php';
+		// cannot use getAbsRefPrefix here because a TYPO3 generated URL
+		// always uses the absRefPrefix in TSFE whereas for the URL generation itself
+		// a proper absRefPrefix is always required by using getAbsRefPrefix
+		$prefix = $this->tsfe->absRefPrefix . 'index.php';
 		return substr($this->urlToEncode, 0, strlen($prefix)) === $prefix;
 	}
 
@@ -1602,7 +1605,11 @@ class UrlEncoder extends EncodeDecoderBase {
 				addslashes($sysLanguageUid)
 			);
 			$this->tsfe->set_no_cache($message);
-			$this->logger->error($message, debug_backtrace());
+			$this->logger->error($message);
+			if (version_compare(TYPO3_version, '7.6.0', '>=')) {
+				$this->logger->debug($message, debug_backtrace());
+			}
+
 			throw new InvalidLanguageParameterException($sysLanguageUid);
 		}
 	}
