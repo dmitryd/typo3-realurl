@@ -1340,6 +1340,14 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 		if ($cacheEntry->getExpiration() !== 0) {
 			$cacheEntry->setExpiration(0);
 		}
+
+		// https://github.com/dmitryd/typo3-realurl/issues/578
+		$pathSegments = explode('/', $pagePath);
+		array_walk($pathSegments, function(&$segment) {
+			$segment = rawurlencode($this->utility->convertToSafeString($segment, $this->separatorCharacter));
+		});
+		$pagePath = implode('/', $pathSegments);
+
 		$cacheEntry->setPagePath($pagePath);
 		$this->cache->putPathToCache($cacheEntry);
 	}
@@ -1501,7 +1509,13 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 		$removedSegments = array();
 
 		do {
-			$path = implode('/', $pathSegments);
+			// https://github.com/dmitryd/typo3-realurl/issues/578
+			$pathSegmentsCopy = $pathSegments;
+			array_walk($pathSegmentsCopy, function(&$segment) {
+				$segment = rawurlencode($this->utility->convertToSafeString($segment, $this->separatorCharacter));
+			});
+			$path = implode('/', $pathSegmentsCopy);
+
 			// Since we know nothing about mount point at this stage, we exclude it from search by passing null as the second argument
 			$cacheEntry = $this->cache->getPathFromCacheByPagePath($this->rootPageId, $this->detectedLanguageId, null, $path);
 			if ($cacheEntry) {
