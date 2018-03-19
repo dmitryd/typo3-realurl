@@ -24,13 +24,24 @@ if (!function_exists('includeRealurlConfiguration')) {
 			);
 		}
 
+		$existingConfiguration = $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl'];
+
 		$realurlConfigurationFile = trim($configuration['configFile']);
 		if ($realurlConfigurationFile && @file_exists(PATH_site . $realurlConfigurationFile)) {
-			\TYPO3\CMS\Core\Utility\GeneralUtility::requireOnce(PATH_site . $realurlConfigurationFile);
-		}
-		elseif ($configuration['enableAutoConf']) {
 			/** @noinspection PhpIncludeInspection */
-			@include_once(PATH_site . TX_REALURL_AUTOCONF_FILE);
+			require_once(PATH_site . $realurlConfigurationFile);
+		}
+		elseif ($configuration['enableAutoConf'] && file_exists(PATH_site . TX_REALURL_AUTOCONF_FILE)) {
+			/** @noinspection PhpIncludeInspection */
+			require_once(PATH_site . TX_REALURL_AUTOCONF_FILE);
+		}
+
+		if (is_array($existingConfiguration)) {
+			\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule(
+				$existingConfiguration,
+				$GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']
+			);
+			$GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl'] = $existingConfiguration;
 		}
 	}
 }

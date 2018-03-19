@@ -169,6 +169,34 @@ class ConfigurationReader {
 	}
 
 	/**
+	 * Checks if RealURL configuration exists.
+	 *
+	 * @return bool
+	 */
+	protected function doesConfigurationExist() {
+		$result = false;
+
+		if (isset($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl'])) {
+			$hookList = array(
+				'ConfigurationReader_postProc',
+				'decodeSpURL_preProc',
+				'encodeSpURL_earlyHook',
+				'encodeSpURL_postProc',
+				'getHost',
+				'storeInUrlCache',
+			);
+			$configurationCopy = $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl'];
+			foreach ($hookList as $hook) {
+				unset($configurationCopy[$hook]);
+			}
+
+			$result = count($configurationCopy) > 0;
+		}
+
+		return $result;
+	}
+
+	/**
 	 * Obtains the configuration key to use.
 	 *
 	 * @return string
@@ -290,7 +318,7 @@ class ConfigurationReader {
 	 * @return void
 	 */
 	protected function performAutomaticConfiguration() {
-		if (!isset($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']) && $this->extConfiguration['enableAutoConf']) {
+		if ($this->extConfiguration['enableAutoConf'] && !$this->doesConfigurationExist()) {
 			$autoconfigurator = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\Configuration\\AutomaticConfigurator');
 			/** @var \DmitryDulepov\Realurl\Configuration\AutomaticConfigurator $autoconfigurator */
 			$autoconfigurator->configure();
