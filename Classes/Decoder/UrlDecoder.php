@@ -305,11 +305,11 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 		}
 
 		if (!is_int($result) && $configuration['table'] !== 'pages') {
-			// If no cached entry, look it up directly in the table. Note: this will
-			// most likely fail. When encoding we convert alias field to a nice
-			// looking URL segment, which usually looks differently from the field.
-			// But this is the only thing we can do without fetching each record and
-			// re-encoding the field to find the match.
+			// If no cached entry, try looking it up directly in the table using
+			// %my%%path%segments% style wildcard pattern. This will find
+			// 'my path segment' as well as 'my! awesome, path. segment'.
+			// Ordering by the alias_field length will yield us the shortest
+			// entry matching the pattern.
 
 			// Assemble list of fields to look up. This includes localization related fields
 			$translationEnabled = FALSE;
@@ -322,12 +322,33 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 				}
 				$translationEnabled = TRUE;
 			}
-
+            
+			$where = $configuration['alias_field'];
+			$orderBy = '';
+			if(MathUtility::canBeInterpretedAsInteger($value)) {
+				$where .= '=' . (int) $value;
+			} else {
+				$parts = explode('-', $value);
+				$where .= ' LIKE ' . $this->databaseConnection->fullQuoteStr(
+					'%' . implode('%%', $parts) . '%', $configuration['table'])
+					. ' ' . $configuration['addWhereClause'];
+				$orderBy = 'CHAR_LENGTH(' . $configuration['alias_field'] . ') ASC';
+			}
 			$fieldList[] = $configuration['id_field'];
-			$row = $this->databaseConnection->exec_SELECTgetSingleRow(implode(',', $fieldList),
-				$configuration['table'],
-				$configuration['alias_field'] . '=' . $this->databaseConnection->fullQuoteStr($value, $configuration['table']) .
-				' ' . $configuration['addWhereClause']);
+            
+			// In case TYPO3 is run on a database without support for the
+			// CHAR_LENGTH function (e.g. MS SQL), we don't use ORDER BY.
+			// TODO: If we assume that a SELECT without ORDER BY won't return
+			// too many rows, we could filter them in PHP as a fallback.
+			$row = $this->databaseConnection->exec_SELECTgetSingleRow(
+					implode(',', $fieldList), $configuration['table'], $where, '', $orderBy);
+			if (gettype($row) === 'NULL') {// Nothing found: BOOLEAN. Error: NULL.
+					$row = $this->databaseConnection->exec_SELECTgetSingleRow(
+						implode(',', $fieldList), $configuration['table'], $where);
+				$this->logger->debug(
+					sprintf('RealURL is trying to look up "%s" but may not reliably find it because the database apparently does not support the CHAR_LENGTH function', $value)
+				);
+			}
 			if (is_array($row)) {
 				$result = (int)$row[$configuration['id_field']];
 
