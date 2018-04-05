@@ -542,7 +542,7 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 			$remainingPathSegments = $savedRemainingPathSegments;
 		}
 		if ($result && $this->expiredPath) {
-			$startPosition = (int)strpos($this->speakingUri, $this->expiredPath);
+			$startPosition = (int)stripos($this->speakingUri, $this->expiredPath);
 			if ($startPosition !== FALSE) {
 				$newUrl = substr($this->speakingUri, 0, $startPosition) .
 					$result->getPagePath() .
@@ -1526,6 +1526,11 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 						$this->expiredPath = $cacheEntry->getPagePath();
 						$cacheEntry = $nonExpiredCacheEntry;
 					}
+				}
+				// Check if the cached result differs in case spelling
+				elseif ($path !== $cacheEntry->getPagePath() && strtolower($path) === strtolower($cacheEntry->getPagePath())) {
+					$this->isExpiredPath = TRUE;
+					$this->expiredPath = $path;
 				}
 				$result = $cacheEntry;
 			} else {
