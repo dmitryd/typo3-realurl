@@ -327,6 +327,8 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 			$orderBy = '';
 			if(MathUtility::canBeInterpretedAsInteger($value)) {
 				$where .= '=' . (int) $value;
+            } elseif (empty($value)) {
+                $where .= '=""';
 			} else {
 				$parts = explode('-', $value);
 				$where .= ' LIKE ' . $this->databaseConnection->fullQuoteStr(
