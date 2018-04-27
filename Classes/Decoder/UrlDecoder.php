@@ -772,6 +772,21 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 	 */
 	protected function decodeUrlParameterBlockUseAsIs(array $configuration, $getVarValue, array &$requestVariables) {
 		// TODO Possible conditions: if int, if notEmpty, etc
+        // 
+        // forceType of the $getVarValue, currently 'int' is supported; prevents
+        // creation of URLs with unwanted parameters.
+        if (array_key_exists('forceType', $configuration)) {
+            switch($configuration['forceType']) {
+                case 'int':
+                case 'integer':
+                    if (!MathUtility::canBeInterpretedAsInteger($getVarValue)) {
+                        $this->throw404('"' . $getVarValue . '" was not of type "int".');
+                    }
+                    break;
+
+                default:
+            }
+        }
 		$requestVariables[$configuration['GETvar']] = $getVarValue;
 
 		return TRUE;
