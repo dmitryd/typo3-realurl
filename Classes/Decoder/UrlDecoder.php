@@ -489,7 +489,13 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 			reset($pathSegments);
 			if (!$this->isPostVar(current($pathSegments))) {
 				if ($result) {
-					$processedPathSegments = array_diff($pathSegments, $remainingPathSegments);
+					$processedPathSegments = [];
+					foreach ($pathSegments as $pathSegment){
+						if($pathSegment == $remainingPathSegments[0]){
+							break;
+						}
+						$processedPathSegments[] = $pathSegment;
+					}
 					$currentPid = $result->getPageId();
 				} else {
 					$processedPathSegments = array();
