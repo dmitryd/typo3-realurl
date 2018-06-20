@@ -88,6 +88,7 @@ class ConfigurationReader {
 		'cache/ignoredGetParametersRegExp' => '/^(?:gclid|utm_(?:source|medium|campaign|term|content)|pk_campaign|pk_kwd|TSFE_ADMIN_PANEL.*)$/',
 		'fileName/acceptHTMLsuffix' => TRUE,
 		'fileName/defaultToHTMLsuffixOnPrev' => FALSE,
+		'init/appendFromDefaultGetVars' => TRUE,
 		'init/appendMissingSlash' => 'ifNotFile,redirect[301]',
 		'init/defaultLanguageUid' => 0,
 		'init/emptySegmentValue' => '',

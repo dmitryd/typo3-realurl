@@ -259,6 +259,23 @@ class UrlEncoder extends EncodeDecoderBase {
 	}
 
 	/**
+	 * Appends value from 'config.defaultGetVars' to url parameters.
+	 */
+	protected function appendFromDefaultGetVars() {
+		$config = $this->tsfe->config['config'];
+		if (isset($config['defaultGetVars.']) && !empty($config['linkVars'])) {
+			preg_match_all('/(.+?)(\([^)]+\))?(?:,|$)/i', $config['linkVars'], $matches);
+			for ($i = 0; $i < count($matches[0]); $i++) {
+				$linkVar = $matches[1][$i];
+				if (isset($config['defaultGetVars.'][$linkVar]) && !isset($this->urlParameters[$linkVar])) {
+					$value = $config['defaultGetVars.'][$linkVar];
+					$this->urlParameters[$linkVar] = $value;
+				}
+			}
+		}
+	}
+
+	/**
 	 * Appends a string to $this->encodedUrl properly handling slashes in between.
 	 *
 	 * @param string $stringToAppend
@@ -1298,6 +1315,9 @@ class UrlEncoder extends EncodeDecoderBase {
 				// Remember: urldecode(), not rawurldecode()!
 				$this->urlParameters[urldecode($parameter)] = urldecode($value);
 			}
+		}
+		if ($this->configuration->get('init/appendFromDefaultGetVars')) {
+			$this->appendFromDefaultGetVars();
 		}
 		$this->originalUrlParameters = $this->urlParameters;
 
