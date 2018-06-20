@@ -1316,9 +1316,8 @@ class UrlEncoder extends EncodeDecoderBase {
 				$this->urlParameters[urldecode($parameter)] = urldecode($value);
 			}
 		}
-		if ($this->configuration->get('init/appendFromDefaultGetVars')) {
-			$this->appendFromDefaultGetVars();
-		}
+		$this->appendFromDefaultGetVars();
+
 		$this->originalUrlParameters = $this->urlParameters;
 
 		$sortedUrlParameters = $this->urlParameters;
