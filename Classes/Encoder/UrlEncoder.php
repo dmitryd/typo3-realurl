@@ -607,12 +607,28 @@ class UrlEncoder extends EncodeDecoderBase {
 		$rootLine = $rootLineUtility->get();
 
 		// Skip from the root of the tree to the first level of pages
+		$rootLineIsOk = false;
 		while (count($rootLine) !== 0) {
 			$page = array_pop($rootLine);
 			if ($page['uid'] == $this->rootPageId) {
+				// This works only if correct root page id is found for the page.
+				$rootLineIsOk = true;
 				break;
 			}
 		}
+		if (!$rootLineIsOk) {
+			$message = sprintf(
+				'URL cannot be generated because we were unable to find root page for pid=%d. ' .
+					'Usually this means that domain is not configured in realurl configuration ' .
+					'and you try to link across domains. Fix your configuration by configuring ' .
+					'ALL domains there!',
+				$this->urlParameters['id']
+			);
+			$this->logger->warning($message);
+			/** @noinspection PhpUnhandledExceptionInspection */
+			throw new \Exception($message, 1530116654);
+		}
+		unset($rootLineIsOk);
 
 		$languageExceptionUids = (string)$this->configuration->get('pagePath/languageExceptionUids');
 		$enableLanguageOverlay = ((int)$this->originalUrlParameters['L'] > 0) && (empty($languageExceptionUids) || !GeneralUtility::inList($languageExceptionUids, $this->sysLanguageUid));
@@ -1008,8 +1024,10 @@ class UrlEncoder extends EncodeDecoderBase {
 				$this->encodePathComponents();
 			}
 			catch (\Exception $exception) {
-				if ($exception->getCode() === 1343589451) {
-					// Rootline failure: "Could not fetch page data for uid X"
+				if ($exception->getCode() === 1343589451 || $exception->getCode() === 1530116654) {
+					// 1343589451: Rootline failure: "Could not fetch page data for uid X"
+					// 1530116654: Cannot find root page in the root line (see createPathComponentUsingRootline())
+					//
 					// Reset and quit. See https://github.com/dmitryd/typo3-realurl/issues/200
 					$this->encodedUrl = $this->urlToEncode;
 					return;
@@ -1224,6 +1242,7 @@ class UrlEncoder extends EncodeDecoderBase {
 	 */
 	protected function initializeConfiguration() {
 		$this->configuration = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\Configuration\\ConfigurationReader', ConfigurationReader::MODE_ENCODE, $this->urlParameters);
+		/** @noinspection PhpUnhandledExceptionInspection */
 		$this->configuration->validate();
 	}
 
