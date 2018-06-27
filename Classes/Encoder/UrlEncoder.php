@@ -617,16 +617,35 @@ class UrlEncoder extends EncodeDecoderBase {
 			}
 		}
 		if (!$rootLineIsOk) {
-			$message = sprintf(
-				'URL cannot be generated because we were unable to find root page for pid=%d. ' .
-					'Usually this means that domain is not configured in realurl configuration ' .
-					'and you try to link across domains. Fix your configuration by configuring ' .
-					'ALL domains there!',
-				$this->urlParameters['id']
-			);
-			$this->logger->warning($message);
-			/** @noinspection PhpUnhandledExceptionInspection */
-			throw new \Exception($message, 1530116654);
+			// User error: domain is not configured in realurl & linking across domains. Attempt a workaround.
+			$domainData = $this->tsfe->getDomainDataForPid($this->urlParameters['id']);
+			if (is_array($domainData)) {
+				$rootLine = $rootLineUtility->get();
+				while (count($rootLine) !== 0) {
+					$page = array_pop($rootLine);
+					if ($page['uid'] == $domainData['pid']) {
+						$rootLineIsOk = true;
+						// Hotfix root page id. Note: this will put cache entries
+						// to correct pages but will still use pre/postVars from the
+						// current domain! On the other hand, this is incorrect config
+						// we are trying to fix here, so it is user's fault!
+						$this->rootPageId = $domainData['pid'];
+						break;
+					}
+				}
+			}
+			if (!$rootLineIsOk) {
+				$message = sprintf(
+					'URL cannot be generated because we were unable to find root page for pid=%d. ' .
+						'Usually this means that domain is not configured in realurl configuration ' .
+						'and you try to link across domains. Fix your configuration by configuring ' .
+						'ALL domains there!',
+					$this->urlParameters['id']
+				);
+				$this->logger->warning($message);
+				/** @noinspection PhpUnhandledExceptionInspection */
+				throw new \Exception($message, 1530116654);
+			}
 		}
 		unset($rootLineIsOk);
 
