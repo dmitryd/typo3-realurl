@@ -108,15 +108,6 @@ class UrlEncoder extends EncodeDecoderBase {
 	}
 
 	/**
-	 * Returns the configuration reader. This can be used in hooks.
-	 *
-	 * @return ConfigurationReader
-	 */
-	public function getConfiguration() {
-		return $this->configuration;
-	}
-
-	/**
 	 * Returns a coipy of original url parameters. This can be used in hooks.
 	 *
 	 * @return array
