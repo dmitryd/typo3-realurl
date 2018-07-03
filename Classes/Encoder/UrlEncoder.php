@@ -76,10 +76,7 @@ class UrlEncoder extends EncodeDecoderBase {
 	protected $urlParameters = array();
 
 	/** @var string */
-	protected $urlPrepend = '';
-
-	/** @var array */
-	static protected $urlPrependRegister = array();
+	static protected $urlPrepend = '';
 
 	/** @var array */
 	protected $usedAliases = array();
@@ -156,45 +153,33 @@ class UrlEncoder extends EncodeDecoderBase {
 	 * @return void
 	 */
 	public function postProcessEncodedUrl(array &$parameters, ContentObjectRenderer $pObj) {
-		if (isset($parameters['finalTagParts']['url'])) {
+		if (self::$urlPrepend !== '' && isset($parameters['finalTagParts']['url'])) {
 
 			// We must check for absolute URLs here because typolink can force
 			// absolute URLs for pages with restricted access. It prepends
 			// current host always. See http://bugs.typo3.org/view.php?id=18200
-			$testUrl = $parameters['finalTagParts']['url'];
-			if (preg_match('/^https?:\/\/[^\/]+\//', $testUrl)) {
-				$testUrl = preg_replace('/^https?:\/\/[^\/]+\/(.*)$/', '\1', $testUrl);
+			$url = $parameters['finalTagParts']['url'];
+			if (preg_match('/^https?:\/\/[^\/]+\//', $url)) {
+				$url = preg_replace('/^https?:\/\/[^\/]+(\/.*)$/', '\1', $url);
 			}
+			$url = self::$urlPrepend . $url;
 
-			list($testUrl, $section) = GeneralUtility::revExplode('#', $testUrl, 2);
+            // Adjust the URL
+            $parameters['finalTag'] = str_replace(
+                '"' . htmlspecialchars($parameters['finalTagParts']['url']) . '"',
+                '"' . htmlspecialchars($url) . '"',
+                $parameters['finalTag']
+            );
+            $parameters['finalTagParts']['url'] = $url;
+            $pObj->lastTypoLinkUrl = $url;
 
-			if (isset(self::$urlPrependRegister[$testUrl])) {
-				$urlKey = $url = $testUrl;
-
-				$url = self::$urlPrependRegister[$urlKey] . ($url{0} != '/' ? '/' : '') . $url;
-				if ($section) {
-					$url .= '#' . $section;
-				}
-
-				unset(self::$urlPrependRegister[$testUrl]);
-
-				// Adjust the URL
-				$parameters['finalTag'] = str_replace(
-					'"' . htmlspecialchars($parameters['finalTagParts']['url']) . '"',
-					'"' . htmlspecialchars($url) . '"',
-					$parameters['finalTag']
-				);
-				$parameters['finalTagParts']['url'] = $url;
-				$pObj->lastTypoLinkUrl = $url;
-
-				$this->logger->debug(
-					sprintf(
-						'Post-processed encoded url "%s" to "%s"',
-						$testUrl,
-						$url
-					)
-				);
-			}
+            $this->logger->debug(
+                sprintf(
+                    'Post-processed encoded url "%s" to "%s"',
+                    $url,
+                    $url
+                )
+            );
 		}
 	}
 
@@ -1044,7 +1029,6 @@ class UrlEncoder extends EncodeDecoderBase {
 		$this->reapplyAbsRefPrefix();
 		$this->callPostEncodeHooks();
 		$this->encodedUrl = $this->restoreIgnoredUrlParametersInURL($this->encodedUrl);
-		$this->prepareUrlPrepend();
 	}
 
 	/**
@@ -1247,6 +1231,17 @@ class UrlEncoder extends EncodeDecoderBase {
 		return $result;
 	}
 
+    /**
+     * Initializes the encoder.
+     *
+     * @throws \Exception
+     */
+    protected function initialize()
+    {
+        parent::initialize();
+        self::$urlPrepend = '';
+	}
+
 	/**
 	 * Initializes configuration reader.
 	 */
@@ -1373,17 +1368,6 @@ class UrlEncoder extends EncodeDecoderBase {
 	}
 
 	/**
-	 * Prepares the URL to use with _DOMAINS configuration.
-	 *
-	 * @return void
-	 */
-	protected function prepareUrlPrepend() {
-		if ($this->urlPrepend !== '') {
-			self::$urlPrependRegister[$this->encodedUrl] = $this->urlPrepend;
-		}
-	}
-
-	/**
 	 * Reapplies absRefPrefix if necessary.
 	 *
 	 * If we have urlPrepend, we skip absRefPrefix.
@@ -1393,7 +1377,7 @@ class UrlEncoder extends EncodeDecoderBase {
 	 */
 	protected function reapplyAbsRefPrefix() {
 		$absRefPrefix = $this->getAbsRefPrefix();
-		if ($absRefPrefix && $this->urlPrepend === '' && !$this->isLinkingAcrossDomains()) {
+		if ($absRefPrefix && self::$urlPrepend === '' && !$this->isLinkingAcrossDomains()) {
 			$reapplyAbsRefPrefix = $this->configuration->get('init/reapplyAbsRefPrefix');
 			if ($reapplyAbsRefPrefix === '' || $reapplyAbsRefPrefix) {
 				// Prevent // in case of absRefPrefix ending with / and emptyUrlReturnValue=/
@@ -1446,7 +1430,7 @@ class UrlEncoder extends EncodeDecoderBase {
 			if (isset($configuration['GETvar'])) {
 				$getVarName = $configuration['GETvar'];
 				if (isset($configuration['urlPrepend']) && $configuration['urlPrepend']) {
-					$this->urlPrepend = $configuration['urlPrepend'];
+					self::$urlPrepend = $configuration['urlPrepend'];
 
 					// Note: version 1.x unsets the var if 'useConfiguration' is set
 					// However it makes more sense to unset the var if 'urlPrepend' is set
