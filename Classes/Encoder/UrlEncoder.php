@@ -92,22 +92,6 @@ class UrlEncoder extends EncodeDecoderBase {
 	}
 
 	/**
-	 * Fetches absRefPrefix. See https://github.com/dmitryd/typo3-realurl/issues/548
-	 *
-	 * @return string
-	 */
-	protected function getAbsRefPrefix() {
-		$absRefPrefix = $this->tsfe->absRefPrefix ? $this->tsfe->absRefPrefix :
-			(isset($this->tsfe->config['config']['absRefPrefix']) ? $this->tsfe->config['config']['absRefPrefix'] : '');
-
-		if ($absRefPrefix === 'auto') {
-			$absRefPrefix = GeneralUtility::getIndpEnv('TYPO3_SITE_PATH');
-		}
-
-		return $absRefPrefix;
-	}
-
-	/**
 	 * Returns a coipy of original url parameters. This can be used in hooks.
 	 *
 	 * @return array
@@ -1118,6 +1102,22 @@ class UrlEncoder extends EncodeDecoderBase {
 			}
 		}
 	}
+
+    /**
+   	 * Fetches absRefPrefix. See https://github.com/dmitryd/typo3-realurl/issues/548
+   	 *
+   	 * @return string
+   	 */
+   	protected function getAbsRefPrefix() {
+   		$absRefPrefix = $this->tsfe->absRefPrefix ? $this->tsfe->absRefPrefix :
+   			(isset($this->tsfe->config['config']['absRefPrefix']) ? $this->tsfe->config['config']['absRefPrefix'] : '');
+
+   		if ($absRefPrefix === 'auto') {
+   			$absRefPrefix = GeneralUtility::getIndpEnv('TYPO3_SITE_PATH');
+   		}
+
+   		return $absRefPrefix;
+   	}
 
 	/**
 	 * Obtains the value from the alias cache. If a specific alias is requested,
