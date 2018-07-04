@@ -186,6 +186,8 @@ class UrlEncoder extends EncodeDecoderBase {
                     $url
                 )
             );
+
+            self::$urlPrepend = '';
 		}
 	}
 
