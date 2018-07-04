@@ -163,31 +163,31 @@ class UrlEncoder extends EncodeDecoderBase {
 				$url = preg_replace('/^https?:\/\/[^\/]+(\/.*)$/', '\1', $url);
 			}
 			if (self::$urlPrepend{strlen(self::$urlPrepend) - 1} === '/' && $url && $url{0} === '/') {
-			    $url = substr($url, 1);
-            }
-            if (self::$urlPrepend{strlen(self::$urlPrepend) - 1} !== '/' && ($url === '' || $url{0} !== '/')) {
-                $url = '/' . $url;
-            }
+				$url = substr($url, 1);
+			}
+			if (self::$urlPrepend{strlen(self::$urlPrepend) - 1} !== '/' && ($url === '' || $url{0} !== '/')) {
+				$url = '/' . $url;
+			}
 			$url = self::$urlPrepend . $url;
 
-            // Adjust the URL
-            $parameters['finalTag'] = str_replace(
-                '"' . htmlspecialchars($parameters['finalTagParts']['url']) . '"',
-                '"' . htmlspecialchars($url) . '"',
-                $parameters['finalTag']
-            );
-            $parameters['finalTagParts']['url'] = $url;
-            $pObj->lastTypoLinkUrl = $url;
+			// Adjust the URL
+			$parameters['finalTag'] = str_replace(
+				'"' . htmlspecialchars($parameters['finalTagParts']['url']) . '"',
+				'"' . htmlspecialchars($url) . '"',
+				$parameters['finalTag']
+			);
+			$parameters['finalTagParts']['url'] = $url;
+			$pObj->lastTypoLinkUrl = $url;
 
-            $this->logger->debug(
-                sprintf(
-                    'Post-processed encoded url "%s" to "%s"',
-                    $url,
-                    $url
-                )
-            );
+			$this->logger->debug(
+				sprintf(
+					'Post-processed encoded url "%s" to "%s"',
+					$url,
+					$url
+				)
+			);
 
-            self::$urlPrepend = '';
+			self::$urlPrepend = '';
 		}
 	}
 
@@ -1095,21 +1095,21 @@ class UrlEncoder extends EncodeDecoderBase {
 		}
 	}
 
-    /**
-   	 * Fetches absRefPrefix. See https://github.com/dmitryd/typo3-realurl/issues/548
-   	 *
-   	 * @return string
-   	 */
-   	protected function getAbsRefPrefix() {
-   		$absRefPrefix = $this->tsfe->absRefPrefix ? $this->tsfe->absRefPrefix :
-   			(isset($this->tsfe->config['config']['absRefPrefix']) ? $this->tsfe->config['config']['absRefPrefix'] : '');
+	/**
+	 * Fetches absRefPrefix. See https://github.com/dmitryd/typo3-realurl/issues/548
+	 *
+	 * @return string
+	 */
+	protected function getAbsRefPrefix() {
+		$absRefPrefix = $this->tsfe->absRefPrefix ? $this->tsfe->absRefPrefix :
+			(isset($this->tsfe->config['config']['absRefPrefix']) ? $this->tsfe->config['config']['absRefPrefix'] : '');
 
-   		if ($absRefPrefix === 'auto') {
-   			$absRefPrefix = GeneralUtility::getIndpEnv('TYPO3_SITE_PATH');
-   		}
+		if ($absRefPrefix === 'auto') {
+			$absRefPrefix = GeneralUtility::getIndpEnv('TYPO3_SITE_PATH');
+		}
 
-   		return $absRefPrefix;
-   	}
+		return $absRefPrefix;
+	}
 
 	/**
 	 * Obtains the value from the alias cache. If a specific alias is requested,
@@ -1239,15 +1239,15 @@ class UrlEncoder extends EncodeDecoderBase {
 		return $result;
 	}
 
-    /**
-     * Initializes the encoder.
-     *
-     * @throws \Exception
-     */
-    protected function initialize()
-    {
-        parent::initialize();
-        self::$urlPrepend = '';
+	/**
+	 * Initializes the encoder.
+	 *
+	 * @throws \Exception
+	 */
+	protected function initialize()
+	{
+		parent::initialize();
+		self::$urlPrepend = '';
 	}
 
 	/**
