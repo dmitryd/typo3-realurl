@@ -165,6 +165,9 @@ class UrlEncoder extends EncodeDecoderBase {
 			if (self::$urlPrepend{strlen(self::$urlPrepend) - 1} === '/' && $url && $url{0} === '/') {
 			    $url = substr($url, 1);
             }
+            if (self::$urlPrepend{strlen(self::$urlPrepend) - 1} !== '/' && ($url === '' || $url{0} !== '/')) {
+                $url = '/' . $url;
+            }
 			$url = self::$urlPrepend . $url;
 
             // Adjust the URL
