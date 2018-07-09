@@ -86,3 +86,13 @@ if (!in_array('gclid', $GLOBALS['TYPO3_CONF_VARS']['FE']['cacheHash']['excludedP
     $GLOBALS['TYPO3_CONF_VARS']['FE']['cacheHash']['excludedParameters'][] = 'gclid';
     $GLOBALS['TYPO3_CONF_VARS']['FE']['cHashExcludedParameters'] .= ', gclid';
 }
+
+// Turn logging off by default
+$GLOBALS['TYPO3_CONF_VARS']['LOG']['DmitryDulepov']['Realurl'] = array(
+	'writerConfiguration' => array(
+		\TYPO3\CMS\Core\Log\LogLevel::DEBUG => array(
+			'TYPO3\\CMS\\Core\\Log\Writer\\NullWriter' => array(
+			)
+		)
+	)
+);
