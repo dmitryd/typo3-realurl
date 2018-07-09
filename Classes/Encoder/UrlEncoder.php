@@ -76,10 +76,7 @@ class UrlEncoder extends EncodeDecoderBase {
 	protected $urlParameters = array();
 
 	/** @var string */
-	protected $urlPrepend = '';
-
-	/** @var array */
-	static protected $urlPrependRegister = array();
+	static protected $urlPrepend = '';
 
 	/** @var array */
 	protected $usedAliases = array();
@@ -89,31 +86,6 @@ class UrlEncoder extends EncodeDecoderBase {
 	 */
 	public function __construct() {
 		parent::__construct();
-	}
-
-	/**
-	 * Fetches absRefPrefix. See https://github.com/dmitryd/typo3-realurl/issues/548
-	 *
-	 * @return string
-	 */
-	protected function getAbsRefPrefix() {
-		$absRefPrefix = $this->tsfe->absRefPrefix ? $this->tsfe->absRefPrefix :
-			(isset($this->tsfe->config['config']['absRefPrefix']) ? $this->tsfe->config['config']['absRefPrefix'] : '');
-
-		if ($absRefPrefix === 'auto') {
-			$absRefPrefix = GeneralUtility::getIndpEnv('TYPO3_SITE_PATH');
-		}
-
-		return $absRefPrefix;
-	}
-
-	/**
-	 * Returns the configuration reader. This can be used in hooks.
-	 *
-	 * @return ConfigurationReader
-	 */
-	public function getConfiguration() {
-		return $this->configuration;
 	}
 
 	/**
@@ -181,45 +153,41 @@ class UrlEncoder extends EncodeDecoderBase {
 	 * @return void
 	 */
 	public function postProcessEncodedUrl(array &$parameters, ContentObjectRenderer $pObj) {
-		if (isset($parameters['finalTagParts']['url'])) {
+		if (self::$urlPrepend !== '' && isset($parameters['finalTagParts']['url'])) {
 
 			// We must check for absolute URLs here because typolink can force
 			// absolute URLs for pages with restricted access. It prepends
 			// current host always. See http://bugs.typo3.org/view.php?id=18200
-			$testUrl = $parameters['finalTagParts']['url'];
-			if (preg_match('/^https?:\/\/[^\/]+\//', $testUrl)) {
-				$testUrl = preg_replace('/^https?:\/\/[^\/]+\/(.*)$/', '\1', $testUrl);
+			$url = $parameters['finalTagParts']['url'];
+			if (preg_match('/^https?:\/\/[^\/]+\//', $url)) {
+				$url = preg_replace('/^https?:\/\/[^\/]+(\/.*)$/', '\1', $url);
 			}
-
-			list($testUrl, $section) = GeneralUtility::revExplode('#', $testUrl, 2);
-
-			if (isset(self::$urlPrependRegister[$testUrl])) {
-				$urlKey = $url = $testUrl;
-
-				$url = self::$urlPrependRegister[$urlKey] . ($url{0} != '/' ? '/' : '') . $url;
-				if ($section) {
-					$url .= '#' . $section;
-				}
-
-				unset(self::$urlPrependRegister[$testUrl]);
-
-				// Adjust the URL
-				$parameters['finalTag'] = str_replace(
-					'"' . htmlspecialchars($parameters['finalTagParts']['url']) . '"',
-					'"' . htmlspecialchars($url) . '"',
-					$parameters['finalTag']
-				);
-				$parameters['finalTagParts']['url'] = $url;
-				$pObj->lastTypoLinkUrl = $url;
-
-				$this->logger->debug(
-					sprintf(
-						'Post-processed encoded url "%s" to "%s"',
-						$testUrl,
-						$url
-					)
-				);
+			if (self::$urlPrepend{strlen(self::$urlPrepend) - 1} === '/' && $url && $url{0} === '/') {
+				$url = substr($url, 1);
 			}
+			if (self::$urlPrepend{strlen(self::$urlPrepend) - 1} !== '/' && ($url === '' || $url{0} !== '/')) {
+				$url = '/' . $url;
+			}
+			$url = self::$urlPrepend . $url;
+
+			// Adjust the URL
+			$parameters['finalTag'] = str_replace(
+				'"' . htmlspecialchars($parameters['finalTagParts']['url']) . '"',
+				'"' . htmlspecialchars($url) . '"',
+				$parameters['finalTag']
+			);
+			$parameters['finalTagParts']['url'] = $url;
+			$pObj->lastTypoLinkUrl = $url;
+
+			$this->logger->debug(
+				sprintf(
+					'Post-processed encoded url "%s" to "%s"',
+					$url,
+					$url
+				)
+			);
+
+			self::$urlPrepend = '';
 		}
 	}
 
@@ -256,6 +224,23 @@ class UrlEncoder extends EncodeDecoderBase {
 		$cacheEntry->setPageId($this->urlParameters['id']);
 		$cacheEntry->setPagePath($pagePath);
 		$this->cache->putPathToCache($cacheEntry);
+	}
+
+	/**
+	 * Appends value from 'config.defaultGetVars' to url parameters.
+	 */
+	protected function appendFromDefaultGetVars() {
+		$config = $this->tsfe->config['config'];
+		if (isset($config['defaultGetVars.']) && !empty($config['linkVars'])) {
+			preg_match_all('/(.+?)(\([^)]+\))?(?:,|$)/i', $config['linkVars'], $matches);
+			for ($i = 0; $i < count($matches[0]); $i++) {
+				$linkVar = $matches[1][$i];
+				if (isset($config['defaultGetVars.'][$linkVar]) && !isset($this->urlParameters[$linkVar])) {
+					$value = $config['defaultGetVars.'][$linkVar];
+					$this->urlParameters[$linkVar] = $value;
+				}
+			}
+		}
 	}
 
 	/**
@@ -590,12 +575,47 @@ class UrlEncoder extends EncodeDecoderBase {
 		$rootLine = $rootLineUtility->get();
 
 		// Skip from the root of the tree to the first level of pages
+		$rootLineIsOk = false;
 		while (count($rootLine) !== 0) {
 			$page = array_pop($rootLine);
 			if ($page['uid'] == $this->rootPageId) {
+				// This works only if correct root page id is found for the page.
+				$rootLineIsOk = true;
 				break;
 			}
 		}
+		if (!$rootLineIsOk) {
+			// User error: domain is not configured in realurl & linking across domains. Attempt a workaround.
+			$domainData = $this->tsfe->getDomainDataForPid($this->urlParameters['id']);
+			if (is_array($domainData)) {
+				$rootLine = $rootLineUtility->get();
+				while (count($rootLine) !== 0) {
+					$page = array_pop($rootLine);
+					if ($page['uid'] == $domainData['pid']) {
+						$rootLineIsOk = true;
+						// Hotfix root page id. Note: this will put cache entries
+						// to correct pages but will still use pre/postVars from the
+						// current domain! On the other hand, this is incorrect config
+						// we are trying to fix here, so it is user's fault!
+						$this->rootPageId = $domainData['pid'];
+						break;
+					}
+				}
+			}
+			if (!$rootLineIsOk) {
+				$message = sprintf(
+					'URL cannot be generated because we were unable to find root page for pid=%d. ' .
+						'Usually this means that domain is not configured in realurl configuration ' .
+						'and you try to link across domains. Fix your configuration by configuring ' .
+						'ALL domains there!',
+					$this->urlParameters['id']
+				);
+				$this->logger->warning($message);
+				/** @noinspection PhpUnhandledExceptionInspection */
+				throw new \Exception($message, 1530116654);
+			}
+		}
+		unset($rootLineIsOk);
 
 		$languageExceptionUids = (string)$this->configuration->get('pagePath/languageExceptionUids');
 		$enableLanguageOverlay = ((int)$this->originalUrlParameters['L'] > 0) && (empty($languageExceptionUids) || !GeneralUtility::inList($languageExceptionUids, $this->sysLanguageUid));
@@ -991,8 +1011,10 @@ class UrlEncoder extends EncodeDecoderBase {
 				$this->encodePathComponents();
 			}
 			catch (\Exception $exception) {
-				if ($exception->getCode() === 1343589451) {
-					// Rootline failure: "Could not fetch page data for uid X"
+				if ($exception->getCode() === 1343589451 || $exception->getCode() === 1530116654) {
+					// 1343589451: Rootline failure: "Could not fetch page data for uid X"
+					// 1530116654: Cannot find root page in the root line (see createPathComponentUsingRootline())
+					//
 					// Reset and quit. See https://github.com/dmitryd/typo3-realurl/issues/200
 					$this->encodedUrl = $this->urlToEncode;
 					return;
@@ -1015,7 +1037,6 @@ class UrlEncoder extends EncodeDecoderBase {
 		$this->reapplyAbsRefPrefix();
 		$this->callPostEncodeHooks();
 		$this->encodedUrl = $this->restoreIgnoredUrlParametersInURL($this->encodedUrl);
-		$this->prepareUrlPrepend();
 	}
 
 	/**
@@ -1072,6 +1093,22 @@ class UrlEncoder extends EncodeDecoderBase {
 				throw new \Exception(sprintf('Page with alias "%s" does not exist.', $alias), 1457183797);
 			}
 		}
+	}
+
+	/**
+	 * Fetches absRefPrefix. See https://github.com/dmitryd/typo3-realurl/issues/548
+	 *
+	 * @return string
+	 */
+	protected function getAbsRefPrefix() {
+		$absRefPrefix = $this->tsfe->absRefPrefix ? $this->tsfe->absRefPrefix :
+			(isset($this->tsfe->config['config']['absRefPrefix']) ? $this->tsfe->config['config']['absRefPrefix'] : '');
+
+		if ($absRefPrefix === 'auto') {
+			$absRefPrefix = GeneralUtility::getIndpEnv('TYPO3_SITE_PATH');
+		}
+
+		return $absRefPrefix;
 	}
 
 	/**
@@ -1203,10 +1240,22 @@ class UrlEncoder extends EncodeDecoderBase {
 	}
 
 	/**
+	 * Initializes the encoder.
+	 *
+	 * @throws \Exception
+	 */
+	protected function initialize()
+	{
+		parent::initialize();
+		self::$urlPrepend = '';
+	}
+
+	/**
 	 * Initializes configuration reader.
 	 */
 	protected function initializeConfiguration() {
 		$this->configuration = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\Configuration\\ConfigurationReader', ConfigurationReader::MODE_ENCODE, $this->urlParameters);
+		/** @noinspection PhpUnhandledExceptionInspection */
 		$this->configuration->validate();
 	}
 
@@ -1299,6 +1348,8 @@ class UrlEncoder extends EncodeDecoderBase {
 				$this->urlParameters[urldecode($parameter)] = urldecode($value);
 			}
 		}
+		$this->appendFromDefaultGetVars();
+
 		$this->originalUrlParameters = $this->urlParameters;
 
 		$sortedUrlParameters = $this->urlParameters;
@@ -1325,17 +1376,6 @@ class UrlEncoder extends EncodeDecoderBase {
 	}
 
 	/**
-	 * Prepares the URL to use with _DOMAINS configuration.
-	 *
-	 * @return void
-	 */
-	protected function prepareUrlPrepend() {
-		if ($this->urlPrepend !== '') {
-			self::$urlPrependRegister[$this->encodedUrl] = $this->urlPrepend;
-		}
-	}
-
-	/**
 	 * Reapplies absRefPrefix if necessary.
 	 *
 	 * If we have urlPrepend, we skip absRefPrefix.
@@ -1345,7 +1385,7 @@ class UrlEncoder extends EncodeDecoderBase {
 	 */
 	protected function reapplyAbsRefPrefix() {
 		$absRefPrefix = $this->getAbsRefPrefix();
-		if ($absRefPrefix && $this->urlPrepend === '' && !$this->isLinkingAcrossDomains()) {
+		if ($absRefPrefix && self::$urlPrepend === '' && !$this->isLinkingAcrossDomains()) {
 			$reapplyAbsRefPrefix = $this->configuration->get('init/reapplyAbsRefPrefix');
 			if ($reapplyAbsRefPrefix === '' || $reapplyAbsRefPrefix) {
 				// Prevent // in case of absRefPrefix ending with / and emptyUrlReturnValue=/
@@ -1398,7 +1438,7 @@ class UrlEncoder extends EncodeDecoderBase {
 			if (isset($configuration['GETvar'])) {
 				$getVarName = $configuration['GETvar'];
 				if (isset($configuration['urlPrepend']) && $configuration['urlPrepend']) {
-					$this->urlPrepend = $configuration['urlPrepend'];
+					self::$urlPrepend = $configuration['urlPrepend'];
 
 					// Note: version 1.x unsets the var if 'useConfiguration' is set
 					// However it makes more sense to unset the var if 'urlPrepend' is set

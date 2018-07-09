@@ -65,9 +65,7 @@ class DataHandler implements SingletonInterface {
 				$record = BackendUtility::getRecord($table, $id);
 				$id = $record['pid'];
 			}
-			$this->cache->clearPathCacheForPage((int)$id);
-			$this->cache->clearUrlCacheForPage((int)$id);
-			$this->clearUrlCacheForAliasChanges($table, (int)$id);
+			$this->deleteCachesForPageAndSubpages($id);
 		}
 	}
 
@@ -180,6 +178,34 @@ class DataHandler implements SingletonInterface {
 				}
 			}
 			$this->databaseConnection->sql_free_result($result);
+		}
+	}
+
+	/**
+	 * Expires cache for the page and subpages.
+	 *
+	 * @param int $pageId
+	 * @param int $level
+	 * @return void
+	 */
+	protected function deleteCachesForPageAndSubpages($pageId, $level = 0) {
+		if ($pageId) {
+         $this->cache->clearPathCacheForPage((int)$pageId);
+         $this->cache->clearUrlCacheForPage((int)$pageId);
+         $this->clearUrlCacheForAliasChanges('pages', (int)$pageId);
+			if ($level++ < 20) {
+				$subpages = $this->getRecordsByField('pages', 'pid', $pageId);
+				if (is_array($subpages)) {
+					$uidList = array();
+					foreach ($subpages as $subpage) {
+						$uidList[] = (int)$subpage['uid'];
+					}
+					unset($subpages);
+					foreach ($uidList as $uid) {
+						$this->deleteCachesForPageAndSubpages($uid, $level);
+					}
+				}
+			}
 		}
 	}
 

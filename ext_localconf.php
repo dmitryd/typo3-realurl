@@ -29,11 +29,11 @@ if (!function_exists('includeRealurlConfiguration')) {
 		$realurlConfigurationFile = trim($configuration['configFile']);
 		if ($realurlConfigurationFile && @file_exists(PATH_site . $realurlConfigurationFile)) {
 			/** @noinspection PhpIncludeInspection */
-			require_once(PATH_site . $realurlConfigurationFile);
+			\TYPO3\CMS\Core\Utility\GeneralUtility::requireOnce(PATH_site . $realurlConfigurationFile);
 		}
 		elseif ($configuration['enableAutoConf'] && file_exists(PATH_site . TX_REALURL_AUTOCONF_FILE)) {
 			/** @noinspection PhpIncludeInspection */
-			require_once(PATH_site . TX_REALURL_AUTOCONF_FILE);
+			\TYPO3\CMS\Core\Utility\GeneralUtility::requireOnce(PATH_site . TX_REALURL_AUTOCONF_FILE);
 		}
 
 		if (is_array($existingConfiguration)) {
@@ -86,3 +86,13 @@ if (!in_array('gclid', $GLOBALS['TYPO3_CONF_VARS']['FE']['cacheHash']['excludedP
     $GLOBALS['TYPO3_CONF_VARS']['FE']['cacheHash']['excludedParameters'][] = 'gclid';
     $GLOBALS['TYPO3_CONF_VARS']['FE']['cHashExcludedParameters'] .= ', gclid';
 }
+
+// Turn logging off by default
+$GLOBALS['TYPO3_CONF_VARS']['LOG']['DmitryDulepov']['Realurl'] = array(
+	'writerConfiguration' => array(
+		\TYPO3\CMS\Core\Log\LogLevel::DEBUG => array(
+			'TYPO3\\CMS\\Core\\Log\Writer\\NullWriter' => array(
+			)
+		)
+	)
+);

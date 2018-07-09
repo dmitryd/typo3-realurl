@@ -99,6 +99,24 @@ abstract class EncodeDecoderBase {
 	}
 
 	/**
+	 * Returns the configuration reader. This can be used in hooks.
+	 *
+	 * @return \DmitryDulepov\Realurl\Configuration\ConfigurationReader
+	 */
+	public function getConfiguration() {
+		return $this->configuration;
+	}
+
+	/**
+	 * Returns $this->rootPageId. This can be used in hooks.
+	 *
+	 * @return int
+	 */
+	public function getRootPageId() {
+		return $this->rootPageId;
+	}
+
+	/**
 	 * Creates a query string (without preceding question mark) from
 	 * parameters.
 	 *
