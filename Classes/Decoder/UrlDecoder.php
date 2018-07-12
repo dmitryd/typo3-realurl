@@ -251,6 +251,7 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 					if (preg_match('/^redirect(\[(30[1237])\])?$/', $option, $matches)) {
 						$code = count($matches) > 1 ? $matches[2] : 301;
 						$status = 'HTTP/1.1 ' . $code . ' TYPO3 RealURL redirect';
+						$locationUri = $this->restoreIgnoredUrlParametersInURL($this->speakingUri);
 
 						// Check path segment to be relative for the current site.
 						// parse_url() does not work with relative URLs, so we use it to test
@@ -259,7 +260,7 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 								sprintf(
 									'RealURL redirects from "%s" to "%s" due to missing slash',
 									$originalUri,
-									$this->speakingUri
+									$locationUri
 								)
 							);
 
@@ -268,7 +269,7 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 							header(self::REDIRECT_INFO_HEADER . ': redirect for missing slash');
 							header('Content-length: 0');
 							header('Connection: close');
-							header('Location: ' . GeneralUtility::locationHeaderUrl($this->speakingUri));
+							header('Location: ' . GeneralUtility::locationHeaderUrl($locationUri));
 							exit;
 						}
 					}
