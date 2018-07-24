@@ -57,16 +57,16 @@ $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tcemain.php']['proc
 
 $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['realurl']['cacheImplementation'] = 'DmitryDulepov\\Realurl\\Cache\\DatabaseCache';
 
-if (empty($GLOBALS['TYPO3_CONF_VARS']['FE']['addRootLineFields'])) {
-    $GLOBALS['TYPO3_CONF_VARS']['FE']['addRootLineFields'] = 'tx_realurl_pathsegment,tx_realurl_exclude,tx_realurl_pathoverride';
-} else {
-    $GLOBALS['TYPO3_CONF_VARS']['FE']['addRootLineFields'] .= ',tx_realurl_pathsegment,tx_realurl_exclude,tx_realurl_pathoverride';
+if (!empty($GLOBALS['TYPO3_CONF_VARS']['FE']['addRootLineFields'])) {
+	$GLOBALS['TYPO3_CONF_VARS']['FE']['addRootLineFields'] .= ',';
 }
+$GLOBALS['TYPO3_CONF_VARS']['FE']['addRootLineFields'] .= 'tx_realurl_pathsegment,tx_realurl_exclude,tx_realurl_pathoverride';
 
-if (empty($GLOBALS['TYPO3_CONF_VARS']['FE']['pageOverlayFields'])) {
-    $GLOBALS['TYPO3_CONF_VARS']['FE']['pageOverlayFields'] = 'tx_realurl_pathsegment';
-} else {
-    $GLOBALS['TYPO3_CONF_VARS']['FE']['pageOverlayFields'] .= ',tx_realurl_pathsegment';
+if (isset($GLOBALS['TYPO3_CONF_VARS']['FE']['pageOverlayFields'])) {
+	if (!empty($GLOBALS['TYPO3_CONF_VARS']['FE']['pageOverlayFields'])) {
+		$GLOBALS['TYPO3_CONF_VARS']['FE']['pageOverlayFields'] .= ',';
+	}
+	$GLOBALS['TYPO3_CONF_VARS']['FE']['pageOverlayFields'] .= 'tx_realurl_pathsegment';
 }
 
 $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['tce']['formevals']['DmitryDulepov\\Realurl\\Evaluator\\SegmentFieldCleaner'] = \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath('realurl', 'Classes/Evaluator/SegmentFieldCleaner.php');
