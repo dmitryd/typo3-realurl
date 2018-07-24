@@ -109,7 +109,16 @@ class Utility {
 		$processedTitle = preg_replace('/' . preg_quote($spaceCharacter) . '{2,}/', $spaceCharacter, $processedTitle);
 		$processedTitle = trim($processedTitle, $spaceCharacter);
 
-		// TODO Post-processing hook here
+		// Post-processing hook
+		if (is_array($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['convertToSafeString_postProc'])) {
+			foreach($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['convertToSafeString_postProc'] as $userFunc) {
+				if (is_string($userFunc)) {
+					$encodingConfiguration = array('strtolower' => $strToLower, 'spaceCharacter' => $spaceCharacter);
+					$hookParams = array('pObj' => &$this, 'processedTitle' => $processedTitle, 'encodingConfiguration' => $encodingConfiguration);
+					$processedTitle = GeneralUtility::callUserFunction($userFunc, $hookParams, $this);
+				}
+			}
+		}
 
 		if ($strToLower) {
 			$processedTitle = strtolower($processedTitle);
