@@ -1123,8 +1123,9 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 	protected function handleNonExistingPostVarSet($pageId, $postVarSetKey, array &$pathSegments) {
 		$failureMode = $this->configuration->get('init/postVarSet_failureMode');
 		if ($failureMode == 'redirect_goodUpperDir') {
-			$nonProcessedArray = array($postVarSetKey) + $pathSegments;
+			$nonProcessedArray = array_merge( array($postVarSetKey), $pathSegments );
 			$badPathPart = implode('/', $nonProcessedArray);
+			$badPathPartPos = strrpos($this->originalPath, $badPathPart);
 			$badPathPartLength = strlen($badPathPart);
 			if (strpos($badPathPart, '/') !== FALSE || $badPathPartLength === 0) {
 				// There are two or more adjacent slashes in the URL, e.g. "good/good//index.html" or "good/good//bad///index.html"
