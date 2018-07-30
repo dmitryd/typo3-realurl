@@ -9,6 +9,7 @@ if (!isset($GLOBALS['TCA']['pages']['columns']['tx_realurl_pathsegment'])) {
 			'config' => array (
 				'type' => 'input',
 				'max' => 255,
+				'default' => '',
 				'eval' => 'trim,nospace,lower,DmitryDulepov\\Realurl\\Evaluator\\SegmentFieldCleaner'
 			),
 		),
@@ -17,6 +18,7 @@ if (!isset($GLOBALS['TCA']['pages']['columns']['tx_realurl_pathsegment'])) {
 			'exclude' => 1,
 			'config' => array (
 				'type' => 'check',
+				'default' => 0,
 				'items' => array(
 					array('LLL:EXT:lang/locallang_core.xlf:labels.enabled', '')
 				)
@@ -27,6 +29,7 @@ if (!isset($GLOBALS['TCA']['pages']['columns']['tx_realurl_pathsegment'])) {
 			'exclude' => 1,
 			'config' => array (
 				'type' => 'check',
+				'default' => 0,
 				'items' => array(
 					array('LLL:EXT:lang/locallang_core.xlf:labels.enabled', '')
 				)
@@ -41,4 +44,9 @@ if (!isset($GLOBALS['TCA']['pages']['columns']['tx_realurl_pathsegment'])) {
 		'showitem' => 'tx_realurl_pathsegment,--linebreak--,tx_realurl_exclude,tx_realurl_pathoverride'
 	);
 
+	// Make sure that speaking path and related options are not set when copying pages -- thanks to University of Basel EasyWeb team for the bug report!
+	if (!empty($GLOBALS['TCA']['pages']['ctrl']['setToDefaultOnCopy'])) {
+	    $GLOBALS['TCA']['pages']['ctrl']['setToDefaultOnCopy'] .= ',';
+	}
+	$GLOBALS['TCA']['pages']['ctrl']['setToDefaultOnCopy'] .= 'tx_realurl_pathsegment,tx_realurl_pathoverride,tx_realurl_exclude';
 }

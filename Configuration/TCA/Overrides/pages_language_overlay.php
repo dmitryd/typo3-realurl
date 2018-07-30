@@ -8,6 +8,7 @@ if (!isset($GLOBALS['TCA']['pages_language_overlay']['columns']['tx_realurl_path
 			'config' => array(
 				'type' => 'input',
 				'max' => 255,
+				'default' => '',
 				'eval' => 'trim,nospace,lower,DmitryDulepov\\Realurl\\Evaluator\\SegmentFieldCleaner'
 			),
 		),
@@ -15,5 +16,11 @@ if (!isset($GLOBALS['TCA']['pages_language_overlay']['columns']['tx_realurl_path
 
 	\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addToAllTCAtypes('pages_language_overlay', 'tx_realurl_pathsegment', '1,3,4,6,7', 'after:nav_title');
     \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addToAllTCAtypes('pages_language_overlay', 'tx_realurl_pathsegment', '254', 'after:title');
+
+	// Make sure that speaking path and related options are not set when copying pages -- thanks to University of Basel EasyWeb team for the bug report!
+	if (!empty($GLOBALS['TCA']['pages_language_overlay']['ctrl']['setToDefaultOnCopy'])) {
+	    $GLOBALS['TCA']['pages_language_overlay']['ctrl']['setToDefaultOnCopy'] .= ',';
+	}
+	$GLOBALS['TCA']['pages_language_overlay']['ctrl']['setToDefaultOnCopy'] .= 'tx_realurl_pathsegment';
 }
 
