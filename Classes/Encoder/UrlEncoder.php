@@ -1072,6 +1072,11 @@ class UrlEncoder extends EncodeDecoderBase {
 	 * @retun void
 	 */
 	protected function fixEmptySegments(array &$segments) {
+
+		// Remove trailing empty segments
+		for ($index = count($segments) - 1; $index >= 0 && $segments[$index] == ''; $index--) {
+			unset($segments[$index]);
+		}
 		if ($this->emptySegmentValue !== '') {
 			foreach ($segments as $key => $segment) {
 				if ($segment === '') {
