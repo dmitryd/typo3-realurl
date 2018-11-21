@@ -37,6 +37,7 @@ $EM_CONF[$_EXTKEY] = array (
     'suggests' => 
     array (
       'static_info_tables' => '6.2.0-',
+      'typo3db_legacy' => '1.0.0-1.0.99',
     ),
   ),
   'comment' => 'Stability improvements. More functions are available for hook developers.',
