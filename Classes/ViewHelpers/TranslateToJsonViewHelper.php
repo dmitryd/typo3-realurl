@@ -34,6 +34,9 @@ class TranslateToJsonViewHelper extends AbstractViewHelper  {
 	 */
 	protected $escapeOutput = FALSE;
 
+    /**
+     * Initialize view helper arguments
+     */
     public function initializeArguments()
     {
         parent::initializeArguments();
