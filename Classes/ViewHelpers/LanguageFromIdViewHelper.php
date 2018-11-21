@@ -29,13 +29,23 @@ class LanguageFromIdViewHelper extends AbstractViewHelper {
 
 	static protected $languageCache = array();
 
+    /**
+     * Initialize view helper arguments
+     */
+    public function initializeArguments()
+    {
+        parent::initializeArguments();
+        $this->registerArgument('language', 'string', '', true);
+    }
+
 	/**
 	 * Obtains language title from its id.
 	 *
-	 * @param string $language
 	 * @return string
 	 */
-	public function render($language) {
+	public function render() {
+        $language = $this->arguments['language'];
+
 		if ($language == 0) {
 			$result = $GLOBALS['LANG']->sL('LLL:EXT:realurl/Resources/Private/Language/locallang.xlf:viewhelper.languageFromId.defaultLanguage');
 		}
