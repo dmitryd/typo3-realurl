@@ -32,7 +32,8 @@
         "phpunit/phpunit": "~4.8.0"
     },
     "suggest": {
-      "typo3-ter/static-info-tables": ">=6.2.0"
+      "typo3-ter/static-info-tables": ">=6.2.0",
+      "friendsoftypo3/typo3db-legacy": "~1.0.0"
     },
     "autoload": {
         "psr-4": {
