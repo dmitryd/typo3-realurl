@@ -1,7 +1,7 @@
 {
-    "name": "dmitryd/typo3-realurl",
+    "name": "svendeka/typo3-realurl",
     "type": "typo3-cms-extension",
-    "description": "Speaking URLs for TYPO3",
+    "description": "fork of dmitryd/typo3-realurl - Speaking URLs for TYPO3",
     "homepage": "https://github.com/dmitryd/typo3-realurl",
     "version": "2.4.0",
     "time": "2018-07-09",
