@@ -1387,15 +1387,17 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 				$this->pageRepository->enableFields('pages', 1, array('fe_group' => true)),
 				'', 'sorting'
 		);
-		foreach ($rows as $row) {
-			if ($this->isPageInRootlineOfRootPage((int)$row['uid'])) {
-				// Found it!
-				$result = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\Cache\\PathCacheEntry');
-				/** @var \DmitryDulepov\Realurl\Cache\PathCacheEntry $result */
-				$result->setPageId((int)$row['uid']);
-				$result->setPagePath($path);
-				$result->setRootPageId($this->rootPageId);
-				break;
+		if ($rows !== null) {
+			foreach ($rows as $row) {
+				if ($this->isPageInRootlineOfRootPage((int)$row['uid'])) {
+					// Found it!
+					$result = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\Cache\\PathCacheEntry');
+					/** @var \DmitryDulepov\Realurl\Cache\PathCacheEntry $result */
+					$result->setPageId((int)$row['uid']);
+					$result->setPagePath($path);
+					$result->setRootPageId($this->rootPageId);
+					break;
+				}
 			}
 		}
 
