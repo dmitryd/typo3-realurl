@@ -251,6 +251,7 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 					if (preg_match('/^redirect(\[(30[1237])\])?$/', $option, $matches)) {
 						$code = count($matches) > 1 ? $matches[2] : 301;
 						$status = 'HTTP/1.1 ' . $code . ' TYPO3 RealURL redirect';
+						$locationUri = $this->restoreIgnoredUrlParametersInURL($this->speakingUri);
 
 						// Check path segment to be relative for the current site.
 						// parse_url() does not work with relative URLs, so we use it to test
@@ -259,7 +260,7 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 								sprintf(
 									'RealURL redirects from "%s" to "%s" due to missing slash',
 									$originalUri,
-									$this->speakingUri
+									$locationUri
 								)
 							);
 
@@ -268,7 +269,7 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 							header(self::REDIRECT_INFO_HEADER . ': redirect for missing slash');
 							header('Content-length: 0');
 							header('Connection: close');
-							header('Location: ' . GeneralUtility::locationHeaderUrl($this->speakingUri));
+							header('Location: ' . GeneralUtility::locationHeaderUrl($locationUri));
 							exit;
 						}
 					}
@@ -1122,10 +1123,10 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 	protected function handleNonExistingPostVarSet($pageId, $postVarSetKey, array &$pathSegments) {
 		$failureMode = $this->configuration->get('init/postVarSet_failureMode');
 		if ($failureMode == 'redirect_goodUpperDir') {
-			$nonProcessedArray = array($postVarSetKey) + $pathSegments;
+			$nonProcessedArray = array_merge(array($postVarSetKey), $pathSegments);
 			$badPathPart = implode('/', $nonProcessedArray);
 			$badPathPartLength = strlen($badPathPart);
-			if (strpos($badPathPart, '/') !== FALSE || $badPathPartLength === 0) {
+			if (strpos($badPathPart, '//') !== FALSE || $badPathPartLength === 0) {
 				// There are two or more adjacent slashes in the URL, e.g. "good/good//index.html" or "good/good//bad///index.html"
 				$goodPath = $this->originalPath;
 				// Remove multiple slashes
@@ -1274,10 +1275,10 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 			if (!is_array($getVars)) {
 				$getVars = array();
 			}
-			ArrayUtility::mergeRecursiveWithOverrule($getVars, $getVarsToSet, true, true, false);
+			ArrayUtility::mergeRecursiveWithOverrule($getVarsToSet, $getVars, true, true, false);
 
 			// Store the "new" $_GET-params back
-			GeneralUtility::_GETset($getVars);
+			GeneralUtility::_GETset($getVarsToSet);
 		}
 	}
 
