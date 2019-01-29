@@ -444,7 +444,7 @@ class UrlEncoder extends EncodeDecoderBase {
 				}
 
 				$maxAliasLengthLength = isset($configuration['maxLength']) ? (int)$configuration['maxLength'] : self::MAX_ALIAS_LENGTH;
-				$aliasValue = $this->tsfe->csConvObj->substr('utf-8', $row[$configuration['alias_field']], 0, $maxAliasLengthLength);
+				$aliasValue = mb_substr($row[$configuration['alias_field']], 0, $maxAliasLengthLength);
 
 				# Do not allow aliases to be empty (see issue #1)
 				if (empty($aliasValue)) {

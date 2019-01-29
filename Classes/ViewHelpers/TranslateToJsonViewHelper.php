@@ -34,14 +34,22 @@ class TranslateToJsonViewHelper extends AbstractViewHelper  {
 	 */
 	protected $escapeOutput = FALSE;
 
+    /**
+     * Initialize view helper arguments
+     */
+    public function initializeArguments()
+    {
+        parent::initializeArguments();
+        $this->registerArgument('key', 'string', 'Translation Key', true);
+    }
+
 	/**
 	 * Renders the translation and encodes to json string.
 	 *
-	 * @param string $key Translation Key
 	 * @return string The translated key or tag body if key doesn't exist
 	 */
-	public function render($key) {
-		$result = LocalizationUtility::translate($key, 'realurl');
+	public function render() {
+		$result = LocalizationUtility::translate($this->arguments['key'], 'realurl');
 
 		return json_encode($result);
 	}

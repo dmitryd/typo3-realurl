@@ -25,9 +25,9 @@ $EM_CONF[$_EXTKEY] = array (
   array (
     'depends' => 
     array (
-      'typo3' => '6.2.0-8.9.999',
+      'typo3' => '6.2.0-9.9.999',
       'php' => '5.4.0-7.2.999',
-      'scheduler' => '6.2.0-8.9.999',
+      'scheduler' => '6.2.0-9.5.999',
     ),
     'conflicts' => 
     array (
@@ -37,6 +37,7 @@ $EM_CONF[$_EXTKEY] = array (
     'suggests' => 
     array (
       'static_info_tables' => '6.2.0-',
+      'typo3db_legacy' => '1.0.0-1.0.99',
     ),
   ),
   'comment' => 'More hooks, bug fixes.',
