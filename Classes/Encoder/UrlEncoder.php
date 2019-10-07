@@ -938,6 +938,11 @@ class UrlEncoder extends EncodeDecoderBase {
 				$segments[] = rawurlencode($getVarValue);
 				$result = TRUE;
 			}
+			elseif ($getVarValue === TRUE) {
+				// If the user function returns the special value true
+				// => handle it like no match with "bypass"
+				$result = TRUE;
+			}
 		}
 
 		return $result;

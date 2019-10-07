@@ -827,6 +827,14 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 				$requestVariables[$configuration['GETvar']] = $value;
 				$result = TRUE;
 			}
+			elseif ($value === TRUE) {
+				// If the user function returns the special value true
+				// => handle it like no match with "bypass"
+				if (!$isFakeValue) {
+					array_unshift($pathSegments, $getVarValue);
+				}
+				$result = TRUE;
+			}
 		}
 
 		return $result;
