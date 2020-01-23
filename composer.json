@@ -20,7 +20,7 @@
         "realurl"
     ],
     "replace": {
-        "realurl": "self.version",
+        "dmitryd/typo3-realurl": "self.version",
         "typo3-ter/realurl": "self.version"
     },
     "require": {
