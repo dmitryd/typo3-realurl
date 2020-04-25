@@ -38,6 +38,7 @@ CREATE TABLE tx_realurl_urldata (
 	uid int(11) NOT NULL auto_increment,
 	pid int(11) DEFAULT '0' NOT NULL,
 	crdate int(11) DEFAULT '0' NOT NULL,
+	# Field page_id is deprecated! Use pid field instead!
 	page_id int(11) DEFAULT '0' NOT NULL,
 	rootpage_id int(11) DEFAULT '0' NOT NULL,
 	original_url text,
@@ -60,6 +61,7 @@ CREATE TABLE tx_realurl_urldata (
 CREATE TABLE tx_realurl_pathdata (
 	uid int(11) NOT NULL auto_increment,
 	pid int(11) DEFAULT '0' NOT NULL,
+    # Field page_id is deprecated! Use pid field instead!
 	page_id int(11) DEFAULT '0' NOT NULL,
 	language_id int(11) DEFAULT '0' NOT NULL,
 	rootpage_id int(11) DEFAULT '0' NOT NULL,
