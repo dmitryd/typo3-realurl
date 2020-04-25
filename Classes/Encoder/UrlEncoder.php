@@ -301,10 +301,7 @@ class UrlEncoder extends EncodeDecoderBase {
 	 * @return bool
 	 */
 	protected function canCacheUrl($url) {
-		$bannedUrlsRegExp = $this->configuration->get('cache/banUrlsRegExp');
-
-		$result = (!$bannedUrlsRegExp || !preg_match($bannedUrlsRegExp, $url));
-
+	    $result = $this->canCacheUrlFast($url);
 		if ($result) {
 			// Check page type: do not cache separators
 			$pageRecord = $this->pageRepository->getPage($this->urlParameters['id']);
@@ -322,6 +319,19 @@ class UrlEncoder extends EncodeDecoderBase {
 		}
 
 		return $result;
+	}
+
+    /**
+     * Makes a faster check for url caching than canCacheUrl().
+     *
+     * @param string $url
+     * @return bool
+     */
+    protected function canCacheUrlFast($url)
+    {
+        $bannedUrlsRegExp = $this->configuration->get('cache/banUrlsRegExp');
+
+        return (!$bannedUrlsRegExp || !preg_match($bannedUrlsRegExp, $url));
 	}
 
 	/**
@@ -1005,7 +1015,7 @@ class UrlEncoder extends EncodeDecoderBase {
 		$this->setLanguage();
 		$this->removeIgnoredUrlParameters();
 		$this->initializeUrlPrepend();
-		if (!$this->fetchFromUrlCache()) {
+		if (!$this->canCacheUrlFast($this->originalUrl) || !$this->fetchFromUrlCache()) {
 			$this->encodePreVars();
 			try {
 				$this->encodePathComponents();
