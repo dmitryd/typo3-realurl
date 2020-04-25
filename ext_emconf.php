@@ -12,7 +12,7 @@ $EM_CONF[$_EXTKEY] = array (
   'title' => 'Speaking URLs for TYPO3',
   'description' => 'Makes TYPO3 URLs search engine friendly. Donations are welcome to dmitry.dulepov@gmail.com. They help to support the extension!',
   'category' => 'services',
-  'version' => '2.5.0',
+  'version' => '2.6.0',
   'state' => 'stable',
   'uploadfolder' => 0,
   'createDirs' => '',
@@ -39,8 +39,6 @@ $EM_CONF[$_EXTKEY] = array (
       'static_info_tables' => '6.2.0-',
     ),
   ),
-  'comment' => 'More hooks, bug fixes.',
+  'comment' => 'Maintenance release. Some bug fixes + adjusted PHP version compatibility.',
   'user' => 'dmitry',
 );
-
-?>
