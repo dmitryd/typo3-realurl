@@ -165,7 +165,7 @@ class DataHandler implements SingletonInterface {
 				'SELECT tx_realurl_uniqalias.uid,expire,url_cache_id FROM ' .
 				'tx_realurl_uniqalias LEFT JOIN tx_realurl_uniqalias_cache_map ON tx_realurl_uniqalias.uid=alias_uid ' .
 				'WHERE tablename=' . $this->databaseConnection->fullQuoteStr($tableName, 'tx_realurl_uniqalias') . ' ' .
-				'AND value_id=' . $recordId . ' AND lang=' . $languageId
+				'AND value_id=' . $recordId . ' AND lang IN (-1,' . $languageId . ')'
 			);
 			while (FALSE !== ($data = $this->databaseConnection->sql_fetch_assoc($result))) {
 				if ($data['url_cache_id']) {
