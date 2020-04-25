@@ -352,6 +352,7 @@ class DatabaseCache implements CacheInterface, SingletonInterface {
 			'language_id' => $cacheEntry->getLanguageId(),
 			'mpvar' => $cacheEntry->getMountPoint(),
 			'page_id' => $cacheEntry->getPageId(),
+			'pid' => $cacheEntry->getPageId(),
 			'pagepath' => $cacheEntry->getPagePath(),
 			'rootpage_id' => $cacheEntry->getRootPageId(),
 		);
@@ -381,6 +382,7 @@ class DatabaseCache implements CacheInterface, SingletonInterface {
 			'original_url' => $cacheEntry->getOriginalUrl(),
 			'original_url_hash' => sprintf('%u', crc32($cacheEntry->getOriginalUrl())),
 			'page_id' => $cacheEntry->getPageId(),
+			'pid' => $cacheEntry->getPageId(),
 			'request_variables' => json_encode($requestVariables),
 			'rootpage_id' => $cacheEntry->getRootPageId(),
 			'speaking_url' => $cacheEntry->getSpeakingUrl(),

@@ -65,6 +65,7 @@ class ext_update {
 		$this->removeUrlDataEntriesWithIgnoredParameters();
 		$this->updateCJKSpeakingUrls();
 		$this->updateUrlHashes();
+		$this->updateZeroPids();
 
 		if ($locker && (method_exists($locker, 'isAcquired') && $locker->isAcquired() || method_exists($locker, 'getLockStatus') && $locker->getLockStatus())) {
 			$locker->release();
@@ -79,7 +80,7 @@ class ext_update {
 	 */
 	public function access() {
 		return $this->hasOldCacheTables() || $this->pathCacheNeedsUpdates() || $this->hasUnencodedCJKCharacters() ||
-			$this->hasEmptyUrlHashes()
+			$this->hasEmptyUrlHashes() || $this->hasZeroPids()
 		;
 	}
 
@@ -187,6 +188,19 @@ class ext_update {
 		return ($count > 0);
 	}
 
+    /**
+     * Checks if the system has zer pid values in realurl tables.
+     *
+     * @return bool
+     */
+	protected function hasZeroPids()
+    {
+        $count = $this->databaseConnection->exec_SELECTcountRows('*', 'tx_realurl_urldata', 'pid=0');
+        $count += $this->databaseConnection->exec_SELECTcountRows('*', 'tx_realurl_pathdata', 'pid=0');
+
+        return $count > 0;
+    }
+
 	/**
 	 * Checks if path cache table is ok.
 	 *
@@ -280,5 +294,14 @@ class ext_update {
 			speaking_url_hash=CRC32(speaking_url)
 			WHERE original_url_hash=0 OR speaking_url_hash=0 
 		');
+	}
+
+    /**
+     * Updates zero pid values.
+     */
+    protected function updateZeroPids()
+    {
+        $this->databaseConnection->sql_query('UPDATE tx_realurl_urldata SET pid=page_id');
+        $this->databaseConnection->sql_query('UPDATE tx_realurl_pathdata SET pid=page_id');
 	}
 }
