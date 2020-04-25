@@ -3,9 +3,7 @@
     "type": "typo3-cms-extension",
     "description": "Speaking URLs for TYPO3",
     "homepage": "https://github.com/dmitryd/typo3-realurl",
-    "version": "2.5.0",
-    "time": "2018-07-09",
-    "license": "GPL-3.0+",
+	"license": "GPL-3.0+",
     "conflict": {
         "bednee/cooluri": ">0.0.1",
 		"helhum/realurl": ">0.0.1",
@@ -20,19 +18,19 @@
         "realurl"
     ],
     "replace": {
-        "realurl": "self.version",
+        "dmitryd/typo3-realurl": "self.version",
         "typo3-ter/realurl": "self.version"
     },
     "require": {
         "typo3/cms-core": ">=6.2.0,<9.0.0",
-        "php": ">=5.4.0,<7.3.0",
+        "php": ">=5.4.0,<7.4.0",
         "ext-mbstring": "*"
     },
     "require-dev": {
         "phpunit/phpunit": "~4.8.0"
     },
     "suggest": {
-      "typo3-ter/static-info-tables": ">=6.2.0"
+      "sjbr/static-info-tables": ">=6.2.0"
     },
     "autoload": {
         "psr-4": {
@@ -66,6 +64,7 @@
     "extra": {
         "typo3/cms": {
             "cms-package-dir": "{$vendor-dir}/typo3/cms",
+            "extension-key": "realurl",
             "web-dir": ".Build/Web"
         }
     }

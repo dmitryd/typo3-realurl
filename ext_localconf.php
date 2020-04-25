@@ -113,7 +113,7 @@ if (!in_array('fbclid', $GLOBALS['TYPO3_CONF_VARS']['FE']['cacheHash']['excluded
 
 
 // Turn logging off by default
-$GLOBALS['TYPO3_CONF_VARS']['LOG']['DmitryDulepov']['Realurl'] = array(
+$logConfiguration = array(
 	'writerConfiguration' => array(
 		\TYPO3\CMS\Core\Log\LogLevel::DEBUG => array(
 			'TYPO3\\CMS\\Core\\Log\Writer\\NullWriter' => array(
@@ -121,3 +121,12 @@ $GLOBALS['TYPO3_CONF_VARS']['LOG']['DmitryDulepov']['Realurl'] = array(
 		)
 	)
 );
+
+if (isset($GLOBALS['TYPO3_CONF_VARS']['LOG']['DmitryDulepov']['Realurl'])) {
+	\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule(
+		$logConfiguration,
+		$GLOBALS['TYPO3_CONF_VARS']['LOG']['DmitryDulepov']['Realurl']
+	);
+}
+
+$GLOBALS['TYPO3_CONF_VARS']['LOG']['DmitryDulepov']['Realurl'] = $logConfiguration;
