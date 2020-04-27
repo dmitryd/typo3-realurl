@@ -33,3 +33,6 @@ if (version_compare(TYPO3_version, '7.6.0', '>=')) {
 
 	unset($realurlConfiguration, $realurlModuleIcon);
 }
+
+\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::allowTableOnStandardPages('tx_realurl_pathdata');
+\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::allowTableOnStandardPages('tx_realurl_urldata');

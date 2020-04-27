@@ -27,8 +27,7 @@ $GLOBALS['TCA']['tx_realurl_pathdata'] = array(
 		'title' => 'LLL:EXT:realurl/Resources/Private/Language/locallang_db.xlf:tx_realurl_pathdata',
 		'label' => 'pagepath',
 		'iconfile' => 'EXT:realurl/Resources/Public/Icons/Extension.svg',
-		'hideTable' => 1,
-		'rootLevel' => 1,
+		'hideTable' => 1
 	),
 	'columns' => array(
 		'page_id' => array(
