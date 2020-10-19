@@ -812,6 +812,9 @@ class UrlEncoder extends EncodeDecoderBase {
 
 		if (isset($configuration['GETvar'])) {
 			$getVarName = $configuration['GETvar'];
+			if(!isset($this->urlParameters[$getVarName]) && isset($configuration['optional']) && $configuration['optional']) {
+			  return;
+      }
 			$getVarValue = isset($this->urlParameters[$getVarName]) ? $this->urlParameters[$getVarName] : '';
 
 			if (!isset($configuration['cond']) || $this->checkLegacyCondition($configuration['cond'], $previousValue)) {
