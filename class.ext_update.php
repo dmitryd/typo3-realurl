@@ -80,7 +80,7 @@ class ext_update {
 	 */
 	public function access() {
 		return $this->hasOldCacheTables() || $this->pathCacheNeedsUpdates() || $this->hasUnencodedCJKCharacters() ||
-			$this->hasEmptyUrlHashes() || $this->hasZeroPids()
+			$this->hasEmptyUrlHashes() || $this->hasNonZeroPids()
 		;
 	}
 
@@ -193,10 +193,10 @@ class ext_update {
      *
      * @return bool
      */
-	protected function hasZeroPids()
+	protected function hasNonZeroPids()
     {
-        $count = $this->databaseConnection->exec_SELECTcountRows('*', 'tx_realurl_urldata', 'pid=0');
-        $count += $this->databaseConnection->exec_SELECTcountRows('*', 'tx_realurl_pathdata', 'pid=0');
+        $count = $this->databaseConnection->exec_SELECTcountRows('*', 'tx_realurl_urldata', 'pid<>0');
+        $count += $this->databaseConnection->exec_SELECTcountRows('*', 'tx_realurl_pathdata', 'pid<>0');
 
         return $count > 0;
     }
@@ -301,7 +301,7 @@ class ext_update {
      */
     protected function updateZeroPids()
     {
-        $this->databaseConnection->sql_query('UPDATE tx_realurl_urldata SET pid=page_id');
-        $this->databaseConnection->sql_query('UPDATE tx_realurl_pathdata SET pid=page_id');
+        $this->databaseConnection->sql_query('UPDATE tx_realurl_urldata SET pid=0');
+        $this->databaseConnection->sql_query('UPDATE tx_realurl_pathdata SET pid=0');
 	}
 }

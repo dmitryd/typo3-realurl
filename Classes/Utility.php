@@ -70,7 +70,7 @@ class Utility {
 	 * @return void
 	 */
 	static public function checkAndPerformRequiredUpdates() {
-		$currentUpdateLevel = 5;
+		$currentUpdateLevel = 6;
 
 		$registry = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Registry');
 		/** @var \TYPO3\CMS\Core\Registry $registry */

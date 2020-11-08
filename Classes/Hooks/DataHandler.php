@@ -34,16 +34,12 @@ use DmitryDulepov\Realurl\Cache\CacheInterface;
 use DmitryDulepov\Realurl\EncodeDecoderBase;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\SingletonInterface;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
 
 class DataHandler implements SingletonInterface {
 
 	/** @var CacheInterface */
 	protected $cache;
-
-	/** @var int */
-	protected $copyInProgress = 0;
 
 	/** @var \TYPO3\CMS\Dbal\Database\DatabaseConnection */
 	protected $databaseConnection;
@@ -73,22 +69,6 @@ class DataHandler implements SingletonInterface {
 		}
 	}
 
-    /**
-     * Prevents copying of relaurl entries during page copy operation.
-     *
-     * @param \TYPO3\CMS\Core\DataHandling\DataHandler $dataHandler
-     */
-    public function processDatamap_beforeStart(\TYPO3\CMS\Core\DataHandling\DataHandler $dataHandler)
-    {
-        if ($this->copyInProgress) {
-            foreach ($dataHandler->datamap as $table => $_) {
-                if (GeneralUtility::isFirstPartOfStr($table, 'tx_realurl_')) {
-                    unset($dataHandler->datamap[$table]);
-                }
-            }
-        }
-	}
-
 	/**
 	 * Expires caches if the page was moved.
 	 *
@@ -97,32 +77,21 @@ class DataHandler implements SingletonInterface {
 	 * @param int $id
 	 */
 	public function processCmdmap_postProcess($command, $table, $id) {
-        if ($command === 'copy' && $table === 'pages') {
-            $this->copyInProgress--;
-        }
-		if ($command === 'move' && $table === 'pages') {
-			$this->expireCachesForPageAndSubpages((int)$id, 0);
+		if ($table === 'pages') {
+		    if ($command === 'move') {
+                $this->expireCachesForPageAndSubpages((int)$id, 0);
 
-			$languageOverlays = $this->getRecordsByField('pages_language_overlay', 'pid', $id);
-			if (is_array($languageOverlays)) {
-				foreach ($languageOverlays as $languageOverlay) {
-					$this->expireCachesForPageAndSubpages($languageOverlay['pid'], $languageOverlay['sys_language_uid']);
-				}
-			}
+                $languageOverlays = $this->getRecordsByField('pages_language_overlay', 'pid', $id);
+                if (is_array($languageOverlays)) {
+                    foreach ($languageOverlays as $languageOverlay) {
+                        $this->expireCachesForPageAndSubpages($languageOverlay['pid'], $languageOverlay['sys_language_uid']);
+                    }
+                }
+            } elseif ($command === 'delete') {
+		        $this->cache->clearPathCacheForPage($id);
+                $this->cache->clearUrlCacheForPage($id);
+            }
 		}
-	}
-
-    /**
-     * Detects if page copying happens.
-     *
-     * @param string $command
-     * @param string $table
-     */
-    public function processCmdmap_preProcess($command, $table)
-    {
-        if ($command === 'copy' && $table === 'pages') {
-            $this->copyInProgress++;
-        }
 	}
 
 	/**
