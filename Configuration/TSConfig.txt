@@ -3,6 +3,9 @@ TCEFORM {
 		tables_select {
 			removeItems := addToList(tx_realurl_uniqalias,tx_realurl_urldata,tx_realurl_pathdata)
 		}
+		tables_modify {
+			removeItems := addToList(tx_realurl_uniqalias,tx_realurl_urldata,tx_realurl_pathdata)
+		}
 	}
 	sys_collection {
 		table_name {
