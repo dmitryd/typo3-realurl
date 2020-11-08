@@ -23,7 +23,7 @@
     },
     "require": {
         "typo3/cms-core": ">=6.2.0,<9.0.0",
-        "php": ">=5.4.0,<7.4.0",
+        "php": ">=5.4.0,<=7.4.99",
         "ext-mbstring": "*"
     },
     "require-dev": {
