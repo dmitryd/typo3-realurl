@@ -978,7 +978,14 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 				// No sorting here because pages can be on any level
 				$children = $this->databaseConnection->exec_SELECTgetRows(
 					'*', 'pages', 'pid IN (' . implode(',', $ids) . ')' .
-					' AND doktype NOT IN (' . $this->disallowedDoktypes . ')' . $pagesEnableFields
+					' AND doktype NOT IN (' . $this->disallowedDoktypes . ')' . $pagesEnableFields,
+					/**
+					 * @author Gabriel Kaufmann <info@typoworx.de>
+					 * PATCH to prioritize result into non-hidden pages followed by hidden-pages
+					 * https://github.com/dmitryd/typo3-realurl/issues/641
+					 */
+					'',
+					'hidden ASC'
 				);
 				$languageExceptionUids = (string)$this->configuration->get('pagePath/languageExceptionUids');
 				if ($this->detectedLanguageId > 0 && (empty($languageExceptionUids) || !GeneralUtility::inList($languageExceptionUids, $this->detectedLanguageId))) {
