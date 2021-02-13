@@ -1514,21 +1514,39 @@ class UrlDecoder extends EncodeDecoderBase implements SingletonInterface {
 			});
 			$path = implode('/', $pathSegmentsCopy);
 
-			// Since we know nothing about mount point at this stage, we exclude it from search by passing null as the second argument
-			$cacheEntry = $this->cache->getPathFromCacheByPagePath($this->rootPageId, $this->detectedLanguageId, null, $path);
-			if ($cacheEntry) {
-				if ((int)$cacheEntry->getExpiration() !== 0) {
-					$this->isExpiredPath = TRUE;
-					$nonExpiredCacheEntry = $this->cache->getPathFromCacheByPageId($cacheEntry->getRootPageId(), $cacheEntry->getLanguageId(), $cacheEntry->getPageId(), $cacheEntry->getMountPoint());
-					if ($nonExpiredCacheEntry) {
-						$this->expiredPath = $cacheEntry->getPagePath();
-						$cacheEntry = $nonExpiredCacheEntry;
-					}
-				}
+			// Check if the safe-string path contains changes
+			if ($pathSegmentsCopy !== $pathSegments) {
+				/** @var \DmitryDulepov\Realurl\Cache\PathCacheEntry $cacheEntry */
+				$cacheEntry = GeneralUtility::makeInstance('DmitryDulepov\\Realurl\\Cache\\PathCacheEntry');
+				$cacheEntry->setPagePath($path);
+
+				// Generate the original path and mark it as expired
+				array_walk($pathSegments, function(&$segment) {
+					$segment = rawurlencode($segment);
+				});
+				$expiredPath = implode('/', $pathSegments);
+
+				$this->isExpiredPath = TRUE;
+				$this->expiredPath = $expiredPath;
 				$result = $cacheEntry;
 			} else {
-				if (count($pathSegments) > 0) {
-					array_unshift($removedSegments, array_pop($pathSegments));
+
+				// Since we know nothing about mount point at this stage, we exclude it from search by passing null as the second argument
+				$cacheEntry = $this->cache->getPathFromCacheByPagePath($this->rootPageId, $this->detectedLanguageId, null, $path);
+				if ($cacheEntry) {
+					if ((int)$cacheEntry->getExpiration() !== 0) {
+						$this->isExpiredPath = TRUE;
+						$nonExpiredCacheEntry = $this->cache->getPathFromCacheByPageId($cacheEntry->getRootPageId(), $cacheEntry->getLanguageId(), $cacheEntry->getPageId(), $cacheEntry->getMountPoint());
+						if ($nonExpiredCacheEntry) {
+							$this->expiredPath = $cacheEntry->getPagePath();
+							$cacheEntry = $nonExpiredCacheEntry;
+						}
+					}
+					$result = $cacheEntry;
+				} else {
+					if (count($pathSegments) > 0) {
+						array_unshift($removedSegments, array_pop($pathSegments));
+					}
 				}
 			}
 		} while (is_null($result) && count($pathSegments) > 0);
