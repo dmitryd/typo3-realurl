@@ -573,6 +573,10 @@ class UrlEncoder extends EncodeDecoderBase {
 	protected function createPathComponentUsingRootline() {
 		$this->logger->debug('Starting path generation');
 
+		if ($this->configuration->get('pagePath/dontResolveShortcuts') === FALSE) {
+			$this->urlParameters['id'] = $this->resolveShortcut($this->urlParameters['id']);
+		}
+
 		$mountPointParameter = '';
 		if (isset($this->urlParameters['MP'])) {
 			$mountPointParameter = $this->urlParameters['MP'];
@@ -711,6 +715,34 @@ class UrlEncoder extends EncodeDecoderBase {
 			);
 		}
 		$this->logger->debug('Finished path generation');
+	}
+
+	/**
+	 * Resolve the potential shortcut pageId
+	 * Returns the original uid, if the page is not a shortcut.
+	 * It uses the TypoScriptFrontendController to resolve the page shortcut.
+	 * This is why the method could throw a RuntimeException, when shortcuts are nested 20 or more recursions.
+	 *
+	 * @param int $pageId The pageid of a potential shortcut to resolve
+	 *
+	 * @return int
+	 */
+	protected function resolveShortcut($pageId) {
+		$page = $this->pageRepository->getPage($pageId);
+		if ((int)$page['doktype'] === PageRepository::DOKTYPE_SHORTCUT) {
+			try{
+				$page = $this->tsfe->getPageShortcut($page['shortcut'], $page['shortcut_mode'], $pageId);
+				$pageId = $page['uid'];
+			} catch (\RuntimeException $ex) {
+				if ($ex->getCode() === 1294587212) {
+					$this->logger->warning('Maximum iteration of shortcuts reached on pageId #' . $pageId . '!'
+						. 'The resulting path could be wrong!');
+				}
+			} catch (\TYPO3\CMS\Core\Error\Http\PageNotFoundException $ex) {
+				$this->logger->warning('The target page of the shortcut(#' . $pageId . ') could not be found!');
+			}
+		}
+		return $pageId;
 	}
 
 	/**

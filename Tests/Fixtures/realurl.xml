@@ -16,6 +16,15 @@ Page Tree:
 		- 3: page3
 		- 4: page4 (tx_realurl_exclude=1)
 			- 7: subpage7-without-parent
+		- 10: shortcut10-to-firstsubpage
+			- 11: subpage11
+		- 12: shortcut12-to-parentpage
+		- 13: shortcut13-to-subpage15
+			- 14: subpage14
+			- 15: subpage15
+			- 16: shortcut16-to-page8
+		- 17: shortcut17-to-page3
+		- 18: shortcut18-to-page16
 -->
 	<pages>
 		<uid>1</uid>
@@ -111,6 +120,117 @@ Page Tree:
 		<doktype>1</doktype>
 		<deleted>0</deleted>
 		<title>0</title>
+		<alias></alias>
+		<tx_realurl_pathsegment></tx_realurl_pathsegment>
+		<tx_realurl_pathoverride>0</tx_realurl_pathoverride>
+		<tx_realurl_exclude>0</tx_realurl_exclude>
+	</pages>
+	<pages>
+		<uid>10</uid>
+		<pid>1</pid>
+		<doktype>4</doktype>
+		<shortcut></shortcut>
+		<shortcut_mode>1</shortcut_mode>
+		<deleted>0</deleted>
+		<title>shortcut10-to-firstsubpage</title>
+		<alias></alias>
+		<tx_realurl_pathsegment></tx_realurl_pathsegment>
+		<tx_realurl_pathoverride>0</tx_realurl_pathoverride>
+		<tx_realurl_exclude>0</tx_realurl_exclude>
+	</pages>
+	<pages>
+		<uid>11</uid>
+		<pid>10</pid>
+		<doktype>1</doktype>
+		<deleted>0</deleted>
+		<title>subpage11</title>
+		<alias></alias>
+		<tx_realurl_pathsegment></tx_realurl_pathsegment>
+		<tx_realurl_pathoverride>0</tx_realurl_pathoverride>
+		<tx_realurl_exclude>0</tx_realurl_exclude>
+	</pages>
+	<pages>
+		<uid>12</uid>
+		<pid>1</pid>
+		<doktype>4</doktype>
+		<shortcut></shortcut>
+		<shortcut_mode>3</shortcut_mode>
+		<deleted>0</deleted>
+		<title>shortcut12-to-parentpage</title>
+		<alias></alias>
+		<tx_realurl_pathsegment></tx_realurl_pathsegment>
+		<tx_realurl_pathoverride>0</tx_realurl_pathoverride>
+		<tx_realurl_exclude>0</tx_realurl_exclude>
+	</pages>
+	<pages>
+		<uid>13</uid>
+		<pid>1</pid>
+		<doktype>4</doktype>
+		<shortcut>15</shortcut>
+		<shortcut_mode>0</shortcut_mode>
+		<deleted>0</deleted>
+		<title>shortcut13-to-subpage15</title>
+		<alias></alias>
+		<tx_realurl_pathsegment></tx_realurl_pathsegment>
+		<tx_realurl_pathoverride>0</tx_realurl_pathoverride>
+		<tx_realurl_exclude>0</tx_realurl_exclude>
+	</pages>
+	<pages>
+		<uid>14</uid>
+		<pid>13</pid>
+		<doktype>0</doktype>
+		<deleted>0</deleted>
+		<title>subpage14</title>
+		<alias></alias>
+		<tx_realurl_pathsegment></tx_realurl_pathsegment>
+		<tx_realurl_pathoverride>0</tx_realurl_pathoverride>
+		<tx_realurl_exclude>0</tx_realurl_exclude>
+	</pages>
+	<pages>
+		<uid>15</uid>
+		<pid>13</pid>
+		<doktype>0</doktype>
+		<deleted>0</deleted>
+		<title>subpage15</title>
+		<alias></alias>
+		<tx_realurl_pathsegment></tx_realurl_pathsegment>
+		<tx_realurl_pathoverride>0</tx_realurl_pathoverride>
+		<tx_realurl_exclude>0</tx_realurl_exclude>
+	</pages>
+	<pages>
+		<uid>16</uid>
+		<pid>13</pid>
+		<doktype>4</doktype>
+		<shortcut>8</shortcut>
+		<shortcut_mode>0</shortcut_mode>
+		<deleted>0</deleted>
+		<title>shortcut16-to-page8</title>
+		<alias></alias>
+		<tx_realurl_pathsegment></tx_realurl_pathsegment>
+		<tx_realurl_pathoverride>0</tx_realurl_pathoverride>
+		<tx_realurl_exclude>0</tx_realurl_exclude>
+	</pages>
+	<pages>
+		<uid>17</uid>
+		<pid>1</pid>
+		<doktype>4</doktype>
+		<shortcut>3</shortcut>
+		<shortcut_mode>0</shortcut_mode>
+		<deleted>0</deleted>
+		<title>shortcut17-to-page3</title>
+		<alias></alias>
+		<tx_realurl_pathsegment></tx_realurl_pathsegment>
+		<tx_realurl_pathoverride>0</tx_realurl_pathoverride>
+		<tx_realurl_exclude>0</tx_realurl_exclude>
+	</pages>
+	<pages>
+		<uid>18</uid>
+		<pid>1</pid>
+		<doktype>4</doktype>
+		<shortcut>16</shortcut>
+		<shortcut_mode>0</shortcut_mode>
+		<deleted>0</deleted>
+		<title>shortcut18-to-page16</title>
 		<alias></alias>
 		<tx_realurl_pathsegment></tx_realurl_pathsegment>
 		<tx_realurl_pathoverride>0</tx_realurl_pathoverride>
