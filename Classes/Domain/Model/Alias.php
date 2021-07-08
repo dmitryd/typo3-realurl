@@ -48,6 +48,9 @@ class Alias extends AbstractEntity {
 	/** @var int */
 	protected $valueId;
 
+	/** @var int */
+	protected $pageId;
+
 	/**
 	 * @return int
 	 */
@@ -144,6 +147,20 @@ class Alias extends AbstractEntity {
 	 */
 	public function setValueId($valueId) {
 		$this->valueId = $valueId;
+	}
+
+	/**
+	 * @return int
+	 */
+	public function getPageId() {
+		return $this->pageId;
+	}
+
+	/**
+	 * @param int $pageId
+	 */
+	public function setPageId($pageId) {
+		$this->pageId = $pageId;
 	}
 
 	/**

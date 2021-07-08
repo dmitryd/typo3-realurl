@@ -11,6 +11,7 @@ CREATE TABLE tx_realurl_uniqalias (
 	value_id int(11) DEFAULT '0' NOT NULL,
 	lang int(11) DEFAULT '0' NOT NULL,
 	expire int(11) DEFAULT '0' NOT NULL,
+	page_id INT(11) DEFAULT '0' NOT NULL,
 
 	PRIMARY KEY (uid),
 	KEY parent (pid),

@@ -160,6 +160,7 @@ class AliasesController extends BackendModuleController {
 				$query->equals('valueAlias', $aliasValue),
 				$query->equals('tablename', $alias->getTablename()),
 				$query->equals('lang', $alias->getLang()),
+				$query->equals('pageId', $alias->getPageId()),
 				$query->logicalNot($query->equals('uid', (int)$alias->getUid()))
 			)));
 
@@ -258,6 +259,7 @@ class AliasesController extends BackendModuleController {
 		$query->matching(count($conditons) > 1 ? $query->logicalAnd($conditons) : reset($conditons));
 		$query->setOrderings(array(
 			'valueId' => QueryInterface::ORDER_ASCENDING,
+			'pageId' => QueryInterface::ORDER_ASCENDING,
 			'lang' => QueryInterface::ORDER_ASCENDING,
 		));
 

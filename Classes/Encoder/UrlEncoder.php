@@ -487,7 +487,7 @@ class UrlEncoder extends EncodeDecoderBase {
 		$testNewAliasValue = $newAliasValue;
 		while ($counter < $maxTry) {
 			// If the test-alias did NOT exist, it must be unique and we break out
-			$foundId = $this->getFromAliasCacheByAliasValue($configuration, $testNewAliasValue);
+			$foundId = $this->getFromAliasCacheByAliasValue($configuration, $testNewAliasValue, $this->urlParameters['id']);
 			if (!$foundId || $foundId == $idValue) {
 				$uniqueAlias = $testNewAliasValue;
 				break;
@@ -1142,6 +1142,7 @@ class UrlEncoder extends EncodeDecoderBase {
 				' AND field_id=' . $this->databaseConnection->fullQuoteStr($configuration['id_field'], 'tx_realurl_uniqalias') .
 				' AND tablename=' . $this->databaseConnection->fullQuoteStr($configuration['table'], 'tx_realurl_uniqalias') .
 				' AND lang=' . intval($languageUid) .
+				' AND page_id=' . intval($this->urlParameters['id']) .
 				($onlyThisAlias ? ' AND value_alias=' . $this->databaseConnection->fullQuoteStr($onlyThisAlias, 'tx_realurl_uniqalias') : ' AND expire=0'),
 			'', 'expire'
 		);
@@ -1536,6 +1537,7 @@ class UrlEncoder extends EncodeDecoderBase {
 					AND field_id=' . $this->databaseConnection->fullQuoteStr($configuration['id_field'], 'tx_realurl_uniqalias') . '
 					AND tablename=' . $this->databaseConnection->fullQuoteStr($configuration['table'], 'tx_realurl_uniqalias') . '
 					AND lang=' . intval($languageUid) . '
+					AND page_id=' . intval($this->urlParameters['id']) . '
 					AND expire=0', array('expire' => time() + 24 * 3600 * ($configuration['expireDays'] ? $configuration['expireDays'] : 60)));
 
 			// Store new alias
@@ -1545,7 +1547,8 @@ class UrlEncoder extends EncodeDecoderBase {
 				'field_id' => $configuration['id_field'],
 				'value_alias' => $uniqueAlias,
 				'value_id' => $idValue,
-				'lang' => $languageUid
+				'lang' => $languageUid,
+				'page_id' => $this->urlParameters['id']
 			);
 			$this->databaseConnection->exec_INSERTquery('tx_realurl_uniqalias', $insertArray);
 			$aliasRecordId = $this->databaseConnection->sql_insert_id();
