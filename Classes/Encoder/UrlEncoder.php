@@ -429,7 +429,7 @@ class UrlEncoder extends EncodeDecoderBase {
 			$fieldList[] = $configuration['alias_field'];
 			$row = $this->databaseConnection->exec_SELECTgetSingleRow(implode(',', $fieldList), $configuration['table'],
 						$configuration['id_field'] . '=' . $this->databaseConnection->fullQuoteStr($getVarValue, $configuration['table']) .
-						' ' . $configuration['addWhereClause']);
+						$configuration['addWhereClause']);
 			if (is_array($row)) {
 				// Looking for localized version
 				if ($languageEnabled && $languageUid !== 0) {
