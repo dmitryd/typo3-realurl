@@ -162,10 +162,10 @@ class UrlEncoder extends EncodeDecoderBase {
 			if (preg_match('/^https?:\/\/[^\/]+\//', $url)) {
 				$url = preg_replace('/^https?:\/\/[^\/]+(\/.*)$/', '\1', $url);
 			}
-			if (self::$urlPrepend{strlen(self::$urlPrepend) - 1} === '/' && $url && $url{0} === '/') {
+			if (self::$urlPrepend[strlen(self::$urlPrepend) - 1] === '/' && $url && $url[0] === '/') {
 				$url = substr($url, 1);
 			}
-			if (self::$urlPrepend{strlen(self::$urlPrepend) - 1} !== '/' && ($url === '' || $url{0} !== '/')) {
+			if (self::$urlPrepend[strlen(self::$urlPrepend) - 1] !== '/' && ($url === '' || $url[0] !== '/')) {
 				$url = '/' . $url;
 			}
 			$url = self::$urlPrepend . $url;
@@ -1211,7 +1211,7 @@ class UrlEncoder extends EncodeDecoderBase {
 
 				if ($useThisConfiguration) {
 
-					if ($fileName{0} === '.') {
+					if ($fileName[0] === '.') {
 						if ($this->encodedUrl === '') {
 							$this->encodedUrl = 'index';
 						}
